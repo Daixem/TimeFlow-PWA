@@ -22,12 +22,23 @@
 - [x] Lokaler UI-Prototyp und Demo-Nachrichten
 - [x] Schichtkarten und arbeitsbezogene Schnellaktionen
 - [x] Mobile Chat-Navigation
-- [ ] Server-Synchronisierung und echte Empfänger
+- [x] Sprint-3-Abschluss als funktionsfähiger Alpha-Prototyp
 
-## Alpha 0.5
+Echte Empfänger, Server-Synchronisierung und Benutzerkonten werden in einem
+späteren Backend-Sprint umgesetzt.
 
-- [ ] Profil
-- [ ] Statistik im Profil
+## Alpha 0.5 – Sprint 4: Profil und persönliche Statistik
+
+- [ ] Funktionsfähige Profilseite
+- [ ] Profilbild, Name, Rolle und Abteilung
+- [ ] Persönliche Beschäftigungsdaten
+- [ ] Arbeitszeitkonto mit Überstunden, Urlaub und Krankheit
+- [ ] Statistik innerhalb des Profils
+- [ ] Wochen-, Monats- und Jahresauswertung
+- [ ] Diagramme und Zielerreichung
+- [ ] Verknüpfung zum Dienstplan
+- [ ] Vorbereitete Bereiche für Einstellungen und Datenschutz
+- [ ] Responsive Darstellung und Offline-Unterstützung
 
 ## Alpha 0.6
 
