@@ -18,12 +18,16 @@
 
 ## Alpha 0.4 – Sprint 3
 
-- [ ] Statistik
-- [ ] Chats
+- [x] Chat-Oberfläche
+- [x] Lokaler UI-Prototyp und Demo-Nachrichten
+- [x] Schichtkarten und arbeitsbezogene Schnellaktionen
+- [x] Mobile Chat-Navigation
+- [ ] Server-Synchronisierung und echte Empfänger
 
 ## Alpha 0.5
 
 - [ ] Profil
+- [ ] Statistik im Profil
 
 ## Alpha 0.6
 

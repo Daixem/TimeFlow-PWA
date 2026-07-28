@@ -1,6 +1,7 @@
-const CACHE_NAME = "timeflow-v4";
+const CACHE_NAME = "timeflow-v7";
 const APP_SHELL = [
-  "./", "index.html", "manifest.webmanifest", "css/style.css", "css/pwa.css", "js/script.js",
+  "./", "index.html", "manifest.webmanifest", "css/style.css", "css/pwa.css", "css/sprint3.css",
+  "js/script.js", "js/sprint3.js",
   "assets/icons/timeflow-icon.svg", "assets/icons/timeflow-icon-192.png",
   "assets/icons/timeflow-icon-512.png", "assets/icons/timeflow-maskable-512.png"
 ];

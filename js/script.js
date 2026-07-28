@@ -89,9 +89,9 @@ function showToast(message) { elements.toast.textContent = message; elements.toa
 function navigate(target) {
   document.querySelectorAll(".nav-item").forEach((item) => { const active = item.dataset.target === target; item.classList.toggle("active", active); item.toggleAttribute("aria-current", active); });
   if (target === "home") window.scrollTo({ top: 0, behavior: "smooth" });
-  else if (target === "schedule") return;
+  else if (target === "schedule" || target === "chat") return;
   else if (target === "clock") { elements.clockButton.scrollIntoView({ behavior: "smooth", block: "center" }); elements.clockButton.focus({ preventScroll: true }); }
-  else showToast(`${({ chat: "Statistik", profile: "Profil" })[target]} folgt in einem nächsten Sprint.`);
+  else showToast(`${({ profile: "Profil" })[target]} folgt in einem nächsten Sprint.`);
 }
 function initialise() {
   loadWorkday(); updateDateTime();
@@ -103,7 +103,13 @@ function initialise() {
   updateWorkUi(); if (state.isWorking) startTimer();
   elements.clockButton.addEventListener("click", () => state.isWorking ? clockOut() : clockIn());
   document.querySelectorAll(".nav-item").forEach((item) => item.addEventListener("click", () => navigate(item.dataset.target)));
-  document.querySelectorAll("[data-action]").forEach((button) => button.addEventListener("click", () => showToast("Diese Ansicht folgt in einem nächsten Sprint.")));
+  document.querySelectorAll("[data-action]").forEach((button) => button.addEventListener("click", () => {
+    if (button.dataset.action === "team") {
+      document.dispatchEvent(new CustomEvent("timeflow:open-chat"));
+      return;
+    }
+    showToast("Diese Ansicht folgt in einem nächsten Sprint.");
+  }));
   window.setInterval(updateDateTime, 1000);
 }
 document.addEventListener("DOMContentLoaded", initialise);

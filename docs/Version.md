@@ -1,9 +1,9 @@
 # TimeFlow
 
-Aktuelle Version: **Alpha 0.3**
+Aktuelle Version: **Alpha 0.4 – Entwicklung**
 
-Build: **0004**
+Build: **0006**
 
-Sprint: **Sprint 2 abgeschlossen**
+Sprint: **Sprint 3 – Chat in Entwicklung**
 
 Stand: **28.07.2026**

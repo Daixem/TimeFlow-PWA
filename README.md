@@ -24,3 +24,13 @@ Der Check kontrolliert die benötigten App-Dateien, das Web-App-Manifest und
 den Offline-App-Cache.
 
 Weitere Hinweise stehen in [docs/README.md](docs/README.md).
+
+## Sprint 3
+
+Der aktuelle Entwicklungszweig ergänzt einen eigenen Chat-Bereich mit
+Gesprächsliste, Suche, Filtern und lokal versendbaren Demo-Nachrichten. Das
+Messenger-Konzept verbindet vertraute Chat-Bedienung mit Schichtkarten,
+Bestätigungen, Tauschanfragen und schnellen Verspätungsmeldungen.
+Chatnachrichten werden vorerst nur auf dem jeweiligen Gerät gespeichert; die
+Server-Synchronisierung folgt später. Die Statistik ist für einen späteren
+Ausbau innerhalb des Profils vorgesehen.
