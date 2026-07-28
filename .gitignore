@@ -1,0 +1,23 @@
+# Abhängigkeiten und erzeugte Dateien
+node_modules/
+dist/
+build/
+coverage/
+
+# Lokale Konfiguration und Geheimnisse
+.env
+.env.*
+!.env.example
+
+# Protokolle und temporäre Dateien
+*.log
+*.tmp
+*.swp
+.DS_Store
+Thumbs.db
+
+# Editor-Einstellungen; die gemeinsamen VS-Code-Aufgaben bleiben versioniert
+.idea/
+.history/
+.vscode/*
+!.vscode/tasks.json

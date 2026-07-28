@@ -1,0 +1,1576 @@
+/*
+==============================================================
+
+TimeFlow
+
+Datei:
+style.css
+
+Version:
+Alpha 0.3.0
+
+Beschreibung:
+Globale Styles, Variablen und Grundlayout
+
+==============================================================
+*/
+
+
+/* ==========================================================
+   01 - CSS Variablen
+========================================================== */
+
+:root {
+
+    /* Farben */
+
+    --background: #0D1B2A;
+
+    --surface: #1B263B;
+
+    --surface-light: #24344B;
+
+    --surface-dark: #162334;
+
+    --primary: #3A86FF;
+
+    --primary-hover: #4B93FF;
+
+    --success: #22C55E;
+
+    --warning: #F59E0B;
+
+    --danger: #EF4444;
+
+    --text: #FFFFFF;
+
+    --text-light: #B8C3CF;
+
+    --text-dark: #8D9AA8;
+
+    /* Rahmen */
+
+    --radius-small: 12px;
+
+    --radius-medium: 18px;
+
+    --radius-large: 24px;
+
+    /* Schatten */
+
+    --shadow-small:
+        0 4px 12px rgba(0,0,0,.18);
+
+    --shadow-medium:
+        0 8px 24px rgba(0,0,0,.24);
+
+    --shadow-large:
+        0 14px 36px rgba(0,0,0,.32);
+
+    /* Animation */
+
+    --transition:
+        all .25s ease;
+
+}
+
+
+/* ==========================================================
+   02 - Reset
+========================================================== */
+
+* {
+
+    margin: 0;
+
+    padding: 0;
+
+    box-sizing: border-box;
+
+}
+
+html {
+
+    scroll-behavior: smooth;
+
+}
+
+body {
+
+    background: var(--background);
+
+    color: var(--text);
+
+    font-family:
+        Inter,
+        "Segoe UI",
+        Arial,
+        sans-serif;
+
+    font-size: 16px;
+
+    line-height: 1.5;
+
+}
+
+
+/* ==========================================================
+   03 - Grundlayout
+========================================================== */
+
+body {
+
+    display: flex;
+
+    justify-content: center;
+
+}
+
+.app {
+
+    width: 100%;
+
+    max-width: 1600px;
+
+    min-height: 100vh;
+
+    padding:
+
+        28px
+        28px
+        120px
+        28px;
+
+}
+
+
+/* ==========================================================
+   04 - Typografie
+========================================================== */
+
+h1 {
+
+    font-size: 2.2rem;
+
+    font-weight: 700;
+
+    line-height: 1.2;
+
+}
+
+h2 {
+
+    font-size: 1.6rem;
+
+    font-weight: 700;
+
+}
+
+h3 {
+
+    font-size: 1.2rem;
+
+    font-weight: 600;
+
+}
+
+p {
+
+    color: var(--text-light);
+
+}
+
+small {
+
+    color: var(--text-dark);
+
+}
+
+
+/* ==========================================================
+   05 - Allgemeine Karten
+========================================================== */
+
+.card {
+
+    background: var(--surface);
+
+    border-radius: var(--radius-large);
+
+    padding: 24px;
+
+    box-shadow: var(--shadow-medium);
+
+}
+
+
+/* ==========================================================
+   06 - Buttons
+========================================================== */
+
+button {
+
+    font-family: inherit;
+
+    border: none;
+
+    cursor: pointer;
+
+    transition: var(--transition);
+
+}
+
+button:hover {
+
+    transform: translateY(-2px);
+
+}
+
+button:active {
+
+    transform: scale(.98);
+
+}
+
+
+/* ==========================================================
+   07 - Hilfsklassen
+========================================================== */
+
+.hidden {
+
+    display: none !important;
+
+}
+
+.flex {
+
+    display: flex;
+
+}
+
+.grid {
+
+    display: grid;
+
+}
+
+.center {
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+}
+
+/* ==========================================================
+   08 - HEADER
+========================================================== */
+
+.header {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: flex-start;
+
+    width: 100%;
+
+    margin-bottom: 28px;
+
+}
+
+
+/* ==========================================================
+   09 - Header links
+========================================================== */
+
+.header-left {
+
+    display: flex;
+
+    flex-direction: column;
+
+}
+
+.header-left h1 {
+
+    font-size: 2.25rem;
+
+    font-weight: 700;
+
+    color: var(--text);
+
+    line-height: 1.2;
+
+    margin-bottom: 8px;
+
+}
+
+.subtitle {
+
+    font-size: 1.1rem;
+
+    color: var(--text-light);
+
+    font-weight: 400;
+
+}
+
+#userName {
+
+    color: var(--text);
+
+}
+
+
+/* ==========================================================
+   10 - Header rechts
+========================================================== */
+
+.header-right {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 16px;
+
+}
+
+
+/* ==========================================================
+   11 - Benachrichtigung
+========================================================== */
+
+.notification-btn {
+
+    position: relative;
+
+    width: 58px;
+
+    height: 58px;
+
+    border-radius: 18px;
+
+    background: var(--surface);
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    box-shadow: var(--shadow-small);
+
+}
+
+.notification-btn:hover {
+
+    background: var(--surface-light);
+
+}
+
+.notification-icon {
+
+    font-size: 24px;
+
+}
+
+.notification-count {
+
+    position: absolute;
+
+    top: -5px;
+
+    right: -5px;
+
+    width: 24px;
+
+    height: 24px;
+
+    border-radius: 50%;
+
+    background: #FF3B30;
+
+    color: white;
+
+    font-size: .75rem;
+
+    font-weight: 700;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    border: 3px solid var(--background);
+
+}
+
+
+/* ==========================================================
+   12 - Profil
+========================================================== */
+
+.profile-btn {
+
+    background: transparent;
+
+    border: none;
+
+    padding: 0;
+
+}
+
+.profile-avatar {
+
+    position: relative;
+
+    width: 58px;
+
+    height: 58px;
+
+    border-radius: 50%;
+
+    background: linear-gradient(
+        135deg,
+        #3A86FF,
+        #6CA8FF
+    );
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    overflow: hidden;
+
+    box-shadow: var(--shadow-small);
+
+}
+
+#userInitials {
+
+    font-size: 1.2rem;
+
+    font-weight: 700;
+
+    color: white;
+
+}
+
+.online-dot {
+
+    position: absolute;
+
+    width: 14px;
+
+    height: 14px;
+
+    right: 2px;
+
+    bottom: 2px;
+
+    border-radius: 50%;
+
+    background: var(--success);
+
+    border: 3px solid var(--surface);
+
+}
+
+
+/* ==========================================================
+   13 - Responsive Header
+========================================================== */
+
+@media (max-width: 768px) {
+
+    .header {
+
+        align-items: flex-start;
+
+    }
+
+    .header-left h1 {
+
+        font-size: 1.9rem;
+
+    }
+
+    .subtitle {
+
+        font-size: .95rem;
+
+    }
+
+    .notification-btn,
+    .profile-avatar {
+
+        width: 50px;
+
+        height: 50px;
+
+    }
+
+}
+
+@media (max-width: 480px) {
+
+    .header {
+
+        gap: 12px;
+
+    }
+
+    .header-left h1 {
+
+        font-size: 1.6rem;
+
+    }
+
+    .subtitle {
+
+        font-size: .9rem;
+
+    }
+
+    .notification-btn,
+    .profile-avatar {
+
+        width: 46px;
+
+        height: 46px;
+
+    }
+
+}
+
+/* ==========================================================
+   14 - DASHBOARD GRID
+========================================================== */
+
+.dashboard {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 24px;
+
+}
+
+
+/* ==========================================================
+   15 - FREIGABEN KARTE
+========================================================== */
+
+.approval-card {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    background: var(--surface);
+
+    border-radius: var(--radius-large);
+
+    padding: 18px 22px;
+
+    box-shadow: var(--shadow-small);
+
+}
+
+.approval-left {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 16px;
+
+}
+
+.approval-dot {
+
+    width: 14px;
+
+    height: 14px;
+
+    border-radius: 50%;
+
+    background: var(--danger);
+
+    flex-shrink: 0;
+
+}
+
+.approval-text {
+
+    display: flex;
+
+    flex-direction: column;
+
+}
+
+.approval-title {
+
+    font-size: 1rem;
+
+    color: var(--text);
+
+    font-weight: 600;
+
+}
+
+.approval-subtitle {
+
+    font-size: .9rem;
+
+    color: var(--text-light);
+
+}
+
+.approval-arrow {
+
+    font-size: 1.4rem;
+
+    color: var(--text-light);
+
+}
+
+
+/* ==========================================================
+   16 - DATUM & MOTIVATION
+========================================================== */
+
+.dashboard-row {
+
+    display: grid;
+
+    grid-template-columns: 1fr 1fr;
+
+    gap: 22px;
+
+}
+
+.info-card {
+
+    background: var(--surface);
+
+    border-radius: var(--radius-large);
+
+    padding: 24px;
+
+    box-shadow: var(--shadow-medium);
+
+}
+
+
+/* ==========================================================
+   17 - DATUMSKARTE
+========================================================== */
+
+.date-title {
+
+    font-size: .95rem;
+
+    color: var(--text-light);
+
+    margin-bottom: 12px;
+
+}
+
+.date-day {
+
+    font-size: 2rem;
+
+    font-weight: 700;
+
+    margin-bottom: 10px;
+
+}
+
+.date-time {
+
+    font-size: 2.4rem;
+
+    font-weight: 700;
+
+    color: var(--primary);
+
+}
+
+
+/* ==========================================================
+   18 - MOTIVATIONSKARTE
+========================================================== */
+
+.motivation-title {
+
+    font-size: .95rem;
+
+    color: var(--warning);
+
+    margin-bottom: 14px;
+
+}
+
+.motivation-text {
+
+    font-size: 1.05rem;
+
+    line-height: 1.7;
+
+    color: var(--text);
+
+}
+
+
+/* ==========================================================
+   19 - RESPONSIVE
+========================================================== */
+
+@media (max-width: 900px) {
+
+    .dashboard-row {
+
+        grid-template-columns: 1fr;
+
+    }
+
+}
+
+@media (max-width: 600px) {
+
+    .approval-card {
+
+        padding: 16px;
+
+    }
+
+    .info-card {
+
+        padding: 20px;
+
+    }
+
+    .date-day {
+
+        font-size: 1.7rem;
+
+    }
+
+    .date-time {
+
+        font-size: 2rem;
+
+    }
+
+    .motivation-text {
+
+        font-size: .95rem;
+
+    }
+
+}
+
+/* ==========================================================
+   20 - STEMPELKARTE
+========================================================== */
+
+.time-card {
+
+    background: var(--surface);
+
+    border-radius: var(--radius-large);
+
+    padding: 32px;
+
+    box-shadow: var(--shadow-medium);
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 24px;
+
+}
+
+.time-status {
+
+    font-size: 1rem;
+
+    color: var(--text-light);
+
+}
+
+.time-button {
+
+    width: 180px;
+
+    height: 180px;
+
+    border-radius: 50%;
+
+    background: linear-gradient(
+        135deg,
+        var(--primary),
+        #5A9DFF
+    );
+
+    color: var(--text);
+
+    font-size: 1.2rem;
+
+    font-weight: 700;
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    box-shadow: var(--shadow-large);
+
+    transition: var(--transition);
+
+}
+
+.time-button:hover {
+
+    transform: translateY(-4px) scale(1.02);
+
+}
+
+.time-button:active {
+
+    transform: scale(.98);
+
+}
+
+.time-info {
+
+    width: 100%;
+
+    display: grid;
+
+    grid-template-columns: repeat(2, 1fr);
+
+    gap: 18px;
+
+}
+
+.time-item {
+
+    background: var(--surface-light);
+
+    border-radius: var(--radius-medium);
+
+    padding: 18px;
+
+}
+
+.time-label {
+
+    font-size: .9rem;
+
+    color: var(--text-light);
+
+    margin-bottom: 6px;
+
+}
+
+.time-value {
+
+    font-size: 1.25rem;
+
+    font-weight: 700;
+
+    color: var(--text);
+
+}
+
+
+/* ==========================================================
+   21 - HEUTE
+========================================================== */
+
+.today-card {
+
+    background: var(--surface);
+
+    border-radius: var(--radius-large);
+
+    padding: 28px;
+
+    box-shadow: var(--shadow-medium);
+
+}
+
+.today-title {
+
+    font-size: 1.15rem;
+
+    font-weight: 700;
+
+    margin-bottom: 22px;
+
+}
+
+.today-grid {
+
+    display: grid;
+
+    grid-template-columns: repeat(4, 1fr);
+
+    gap: 18px;
+
+}
+
+.today-item {
+
+    background: var(--surface-light);
+
+    border-radius: var(--radius-medium);
+
+    padding: 20px;
+
+    text-align: center;
+
+}
+
+.today-value {
+
+    display: block;
+
+    font-size: 1.8rem;
+
+    font-weight: 700;
+
+    color: var(--primary);
+
+    margin-bottom: 8px;
+
+}
+
+.today-label {
+
+    font-size: .9rem;
+
+    color: var(--text-light);
+
+}
+
+
+/* ==========================================================
+   22 - FÜR DICH
+========================================================== */
+
+.for-you {
+
+    display: grid;
+
+    grid-template-columns: repeat(2, 1fr);
+
+    gap: 22px;
+
+}
+
+.info-box {
+
+    background: var(--surface);
+
+    border-radius: var(--radius-large);
+
+    padding: 24px;
+
+    box-shadow: var(--shadow-medium);
+
+}
+
+.info-box-title {
+
+    font-size: 1.05rem;
+
+    font-weight: 700;
+
+    margin-bottom: 16px;
+
+}
+
+.info-highlight {
+
+    font-size: 2rem;
+
+    font-weight: 700;
+
+    color: var(--primary);
+
+    margin-bottom: 10px;
+
+}
+
+.info-description {
+
+    color: var(--text-light);
+
+    line-height: 1.6;
+
+}
+
+
+/* ==========================================================
+   23 - RESPONSIVE
+========================================================== */
+
+@media (max-width: 1000px) {
+
+    .today-grid {
+
+        grid-template-columns: repeat(2, 1fr);
+
+    }
+
+}
+
+@media (max-width: 768px) {
+
+    .for-you {
+
+        grid-template-columns: 1fr;
+
+    }
+
+    .time-info {
+
+        grid-template-columns: 1fr;
+
+    }
+
+}
+
+@media (max-width: 480px) {
+
+    .today-grid {
+
+        grid-template-columns: 1fr;
+
+    }
+
+    .time-button {
+
+        width: 150px;
+
+        height: 150px;
+
+        font-size: 1rem;
+
+    }
+
+    .time-card {
+
+        padding: 24px;
+
+    }
+
+}
+
+/* ==========================================================
+   24 - TEAM UPDATES
+========================================================== */
+
+.team-card {
+
+    background: var(--surface);
+
+    border-radius: var(--radius-large);
+
+    padding: 28px;
+
+    box-shadow: var(--shadow-medium);
+
+}
+
+.team-title {
+
+    font-size: 1.2rem;
+
+    font-weight: 700;
+
+    margin-bottom: 22px;
+
+}
+
+.team-list {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 16px;
+
+}
+
+.team-item {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 16px;
+
+    padding: 16px;
+
+    background: var(--surface-light);
+
+    border-radius: var(--radius-medium);
+
+    transition: var(--transition);
+
+}
+
+.team-item:hover {
+
+    transform: translateY(-2px);
+
+    background: #2A3E59;
+
+}
+
+.team-avatar {
+
+    width: 50px;
+
+    height: 50px;
+
+    border-radius: 50%;
+
+    background: var(--primary);
+
+    display: flex;
+
+    justify-content: center;
+
+    align-items: center;
+
+    font-weight: 700;
+
+    color: white;
+
+    flex-shrink: 0;
+
+}
+
+.team-content {
+
+    flex: 1;
+
+}
+
+.team-name {
+
+    font-weight: 600;
+
+    color: var(--text);
+
+    margin-bottom: 4px;
+
+}
+
+.team-message {
+
+    color: var(--text-light);
+
+    font-size: .95rem;
+
+}
+
+.team-time {
+
+    color: var(--text-dark);
+
+    font-size: .8rem;
+
+}
+
+
+/* ==========================================================
+   25 - MONATSÜBERSICHT
+========================================================== */
+
+.month-card {
+
+    background: var(--surface);
+
+    border-radius: var(--radius-large);
+
+    padding: 28px;
+
+    box-shadow: var(--shadow-medium);
+
+}
+
+.month-title {
+
+    font-size: 1.2rem;
+
+    font-weight: 700;
+
+    margin-bottom: 22px;
+
+}
+
+.month-grid {
+
+    display: grid;
+
+    grid-template-columns: repeat(auto-fit, minmax(90px,1fr));
+
+    gap: 14px;
+
+}
+
+.month-day {
+
+    background: var(--surface-light);
+
+    border-radius: var(--radius-medium);
+
+    padding: 16px;
+
+    text-align: center;
+
+    transition: var(--transition);
+
+}
+
+.month-day:hover {
+
+    background: var(--primary);
+
+}
+
+.month-number {
+
+    font-size: 1.2rem;
+
+    font-weight: 700;
+
+    margin-bottom: 6px;
+
+}
+
+.month-hours {
+
+    color: var(--text-light);
+
+    font-size: .85rem;
+
+}
+
+
+/* ==========================================================
+   26 - BOTTOM NAVIGATION
+========================================================== */
+
+.bottom-nav {
+
+    position: fixed;
+
+    left: 50%;
+
+    bottom: 20px;
+
+    transform: translateX(-50%);
+
+    width: min(96%, 900px);
+
+    background: rgba(27,38,59,.95);
+
+    backdrop-filter: blur(20px);
+
+    border-radius: 24px;
+
+    padding: 12px 20px;
+
+    display: flex;
+
+    justify-content: space-around;
+
+    align-items: center;
+
+    box-shadow: var(--shadow-large);
+
+    z-index: 999;
+
+}
+
+.nav-item {
+
+    display: flex;
+
+    flex-direction: column;
+
+    align-items: center;
+
+    gap: 6px;
+
+    color: var(--text-light);
+
+    cursor: pointer;
+
+    transition: var(--transition);
+
+    min-width: 70px;
+
+}
+
+.nav-item:hover {
+
+    color: var(--primary);
+
+}
+
+.nav-item.active {
+
+    color: var(--primary);
+
+}
+
+.nav-icon {
+
+    font-size: 1.5rem;
+
+}
+
+.nav-text {
+
+    font-size: .8rem;
+
+}
+
+
+/* ==========================================================
+   27 - SCROLLBAR
+========================================================== */
+
+::-webkit-scrollbar {
+
+    width: 10px;
+
+}
+
+::-webkit-scrollbar-track {
+
+    background: var(--background);
+
+}
+
+::-webkit-scrollbar-thumb {
+
+    background: var(--surface-light);
+
+    border-radius: 20px;
+
+}
+
+::-webkit-scrollbar-thumb:hover {
+
+    background: var(--primary);
+
+}
+
+
+/* ==========================================================
+   28 - ANIMATIONEN
+========================================================== */
+
+.fade-in {
+
+    animation: fadeIn .4s ease;
+
+}
+
+.slide-up {
+
+    animation: slideUp .35s ease;
+
+}
+
+@keyframes fadeIn {
+
+    from {
+
+        opacity: 0;
+
+    }
+
+    to {
+
+        opacity: 1;
+
+    }
+
+}
+
+@keyframes slideUp {
+
+    from {
+
+        opacity: 0;
+
+        transform: translateY(20px);
+
+    }
+
+    to {
+
+        opacity: 1;
+
+        transform: translateY(0);
+
+    }
+
+}
+
+
+/* ==========================================================
+   29 - DESKTOP OPTIMIERUNG
+========================================================== */
+
+@media (min-width: 1400px) {
+
+    .dashboard {
+
+        gap: 32px;
+
+    }
+
+    .card {
+
+        padding: 32px;
+
+    }
+
+}
+
+
+/* ==========================================================
+   30 - TABLET
+========================================================== */
+
+@media (max-width: 1024px) {
+
+    .app {
+
+        padding: 24px 20px 110px;
+
+    }
+
+}
+
+
+/* ==========================================================
+   31 - SMARTPHONE
+========================================================== */
+
+@media (max-width: 768px) {
+
+    .app {
+
+        padding: 18px 16px 100px;
+
+    }
+
+    .bottom-nav {
+
+        width: calc(100% - 20px);
+
+        bottom: 10px;
+
+        border-radius: 20px;
+
+    }
+
+    .nav-text {
+
+        font-size: .7rem;
+
+    }
+
+}
+
+
+/* ==========================================================
+   32 - KLEINE SMARTPHONES
+========================================================== */
+
+@media (max-width: 430px) {
+
+    h1 {
+
+        font-size: 1.5rem;
+
+    }
+
+    h2 {
+
+        font-size: 1.3rem;
+
+    }
+
+    .card {
+
+        padding: 18px;
+
+    }
+
+    .team-item {
+
+        padding: 14px;
+
+    }
+
+}
+
+/* Sprint 1: funktionales Dashboard */
+.top-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; }
+.info-card { display: grid; gap: 22px; }
+.info-item, .card-title { display: flex; align-items: center; gap: 14px; }
+.icon-circle, .small-icon { display: grid; place-items: center; flex: 0 0 auto; color: var(--primary); background: rgba(58, 134, 255, .13); border-radius: 50%; width: 42px; height: 42px; }
+.label, .overview-item > span, .stat-card > span { display: block; color: var(--text-light); font-size: .9rem; }
+.motivation-card { display: flex; flex-direction: column; justify-content: space-between; gap: 24px; }
+.motivation-card p { color: var(--text); font-size: 1.08rem; line-height: 1.7; }
+.stamp-card { width: 100%; border-radius: var(--radius-large); padding: 24px; display: flex; align-items: center; justify-content: space-between; color: var(--text); background: linear-gradient(135deg, var(--primary), #2563c7); box-shadow: var(--shadow-medium); text-align: left; }
+.stamp-card.is-working { background: linear-gradient(135deg, #1f9b57, var(--success)); }
+.stamp-left { display: flex; align-items: center; gap: 18px; }.stamp-left strong, .stamp-left #clockHint { display: block; }.stamp-left strong { font-size: 1.25rem; }.stamp-left #clockHint { margin-top: 3px; opacity: .88; }.stamp-icon { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 16px; background: rgba(255,255,255,.18); font-size: 1.3rem; }.stamp-arrow { font-size: 1.25rem; }
+.overview-card h2 { margin-bottom: 22px; }.overview-grid { display: grid; grid-template-columns: 1fr 1fr 170px; gap: 18px; align-items: center; }.overview-item { background: var(--surface-light); border-radius: var(--radius-medium); padding: 18px; display: grid; gap: 8px; }.overview-item strong { font-size: 1.25rem; }.overview-progress { display: grid; justify-items: center; gap: 8px; text-align: center; color: var(--text-light); font-size: .85rem; }.progress-circle { --progress: 0deg; display: grid; place-items: center; width: 104px; aspect-ratio: 1; border-radius: 50%; font-size: 1.25rem; font-weight: 700; color: var(--text); background: radial-gradient(circle at center, var(--surface) 62%, transparent 63%), conic-gradient(var(--primary) var(--progress), var(--surface-light) 0); }
+.today-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }.stat-card { padding: 20px; }.stat-card strong { display: block; margin-top: 8px; font-size: 1.25rem; color: var(--primary); }.profile { position: relative; display: block; width: 58px; height: 58px; padding: 0; border-radius: 50%; overflow: visible; }.profile img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }.online-status { position: absolute; width: 14px; height: 14px; right: 0; bottom: 0; border-radius: 50%; background: var(--success); border: 3px solid var(--surface); }.notification-badge { position: absolute; top: -4px; right: -4px; min-width: 21px; height: 21px; padding: 1px 5px; border-radius: 12px; background: var(--danger); color: white; font-size: .7rem; font-weight: 700; border: 2px solid var(--background); }.toast { position: fixed; z-index: 1000; bottom: 105px; left: 50%; transform: translate(-50%, 15px); max-width: calc(100% - 32px); padding: 12px 18px; border-radius: 12px; color: white; background: #07172D; box-shadow: var(--shadow-large); opacity: 0; pointer-events: none; transition: .2s ease; }.toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
+@media (max-width: 768px) { .top-grid, .overview-grid { grid-template-columns: 1fr; }.today-stats { grid-template-columns: repeat(2, 1fr); }.overview-progress { justify-items: start; text-align: left; grid-template-columns: auto 1fr; align-items: center; }.approval-card { width: 100%; color: var(--text); text-align: left; }.team-time { display: none; } }
+@media (max-width: 430px) { .today-stats { grid-template-columns: 1fr; }.stamp-card { padding: 19px; }.stamp-left strong { font-size: 1.1rem; } }
+
+/* Design nach Dashboard-Vorlage */
+body { background: radial-gradient(circle at 50% -20%, #07336f 0, #001830 42%, #001327 100%); }
+.app { max-width: 620px; padding: 70px 22px 130px; }.header { align-items: center; margin-bottom: 20px; }.header-left h1 { font-size: 1.5rem; letter-spacing: -.045em; margin-bottom: 2px; }.subtitle { font-size: 1rem; }.header-right { gap: 14px; }.notification-btn { width: 42px; height: 42px; background: transparent; box-shadow: none; font-size: 1.45rem; }.profile { position: relative; display: block; width: 48px; height: 48px; padding: 0; border-radius: 50%; }.profile img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }.notification-badge { top: -2px; right: -1px; }.online-status { position: absolute; width: 15px; height: 15px; right: 0; bottom: 0; border-radius: 50%; background: #54d95a; border: 3px solid #001830; }
+.dashboard { gap: 15px; }.approval-card, .card, .list-card, .shift-card { background: rgba(3,29,59,.76); border: 1px solid rgba(84,131,181,.13); box-shadow: none; }.approval-card { width: 100%; min-height: 46px; padding: 12px 16px; border-radius: 18px; color: var(--text); text-align: left; font-size: .9rem; }.approval-dot { width: 11px; height: 11px; box-shadow: 0 0 0 4px rgba(255,0,45,.12); }.approval-left { gap: 14px; }
+.top-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; overflow: hidden; border-radius: 18px; background: rgba(3,29,59,.76); border: 1px solid rgba(84,131,181,.13); }.top-grid .card { padding: 18px; border: 0; border-radius: 0; background: transparent; }.info-card { display: grid; gap: 19px; border-right: 1px solid rgba(84,131,181,.18)!important; }.info-item { display: flex; align-items: center; gap: 13px; }.icon-circle, .small-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 12px; color: #2a68ff; background: rgba(24,76,209,.22); }.icon-circle.clock { border-radius: 50%; background: transparent; border: 1px solid rgba(42,104,255,.38); }.label { display: none; }.info-item h3 { font-size: .88rem; font-weight: 500; color: #d3dbe9; }.motivation-card { position: relative; display: flex; flex-direction: column; gap: 9px; }.motivation-card .card-title { display: flex; align-items: center; gap: 10px; font-size: .8rem; color: #3974f7; }.motivation-card .icon-circle { width: 34px; height: 34px; border-radius: 50%; }.motivation-card p { padding-left: 44px; font-size: .93rem; line-height: 1.4; color: #d8deea; }.quote-mark { position: absolute; right: 18px; bottom: 14px; color: #3168ef; font-size: 1.45rem; }
+.stamp-card { width: 100%; min-height: 76px; padding: 18px 20px; border-radius: 17px; display: flex; align-items: center; justify-content: space-between; color: white; background: linear-gradient(115deg,#073da6,#09328b 60%,#123682); box-shadow: 0 12px 24px rgba(0,40,130,.24); text-align: left; }.stamp-icon { display: grid; place-items: center; width: 47px; height: 47px; border-radius: 50%; color: #0842a6; background: white; }.stamp-left { display: flex; align-items: center; gap: 18px; }.stamp-left strong { display: block; font-size: 1.1rem; }.stamp-left #clockHint { display: none; }.stamp-arrow { font-size: 1.05rem; }
+.overview-card { padding: 17px 19px; border-radius: 18px; }.overview-card h2 { font-size: 1rem; margin-bottom: 15px; }.overview-grid { display: grid; grid-template-columns: 1fr 1fr .7fr; gap: 8px; align-items: center; }.overview-item { padding: 6px 0; background: transparent; }.overview-item + .overview-item { border-left: 1px solid rgba(84,131,181,.13); padding-left: 16px; }.overview-item .small-icon { float: left; margin-right: 8px; width: 25px; height: 25px; background: transparent; border: 1px solid rgba(42,104,255,.5); border-radius: 50%; font-size: .72rem; }.overview-item > span { color: var(--text-light); font-size: .72rem; }.overview-item strong { display: block; font-size: 1rem; font-weight: 500; }.overview-progress { display: grid; justify-items: center; gap: 5px; text-align: center; color: var(--text-light); font-size: .7rem; }.progress-circle { --progress: 0deg; display: grid; place-items: center; width: 52px; aspect-ratio: 1; border-radius: 50%; font-size: .82rem; font-weight: 700; background: radial-gradient(circle at center,#06234a 62%,transparent 63%),conic-gradient(#2769ff var(--progress),#173d71 0); }
+.list-card { padding: 16px; border-radius: 18px; }.section-heading { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }.section-heading h2 { font-size: .96rem; }.section-icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; }.green .section-icon { color: #76d34c; background: rgba(48,167,77,.22); }.purple .section-icon { color: #b977ff; background: rgba(117,62,211,.23); }.green h2 { color: #70d74d; }.purple h2 { color: #b785ff; }.count-badge { padding: 2px 6px; border-radius: 4px; color: #06210d; background: #76d34c; font-size: .73rem; font-weight: 800; }.purple .count-badge { color: #321561; background: #c295ff; }.list-row { width: 100%; padding: 8px 0 7px 58px; display: grid; grid-template-columns: 28px 1fr 14px; align-items: center; gap: 7px; color: #dce4ef; background: transparent; font-size: .83rem; text-align: left; }.list-row:hover { transform: none; color: white; }.row-icon { color: #75d84e; font-size: 1.05rem; }.team-card .row-icon { color: #c185ff; }.list-row .fa-chevron-right { color: #d8e0ed; font-size: .7rem; }
+.shift-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }.shift-card { min-height: 124px; position: relative; padding: 15px 18px; border-radius: 16px; overflow: hidden; }.shift-card h2 { font-size: .84rem; }.shift-card p,.shift-card span { display: block; font-size: .73rem; margin-top: 5px; }.shift-card strong { display: block; margin-top: 3px; font-size: 1.15rem; font-weight: 500; }.shift-card > i { position: absolute; right: 18px; bottom: 24px; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; color: white; background: rgba(26,87,207,.35); }.month-card { padding: 17px 18px; border-radius: 18px; }.month-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 17px; }.month-header h2 { font-size: .9rem; }.month-header button { color: #dae1ed; background: transparent; font-size: .75rem; }.month-stats { display: grid; grid-template-columns: repeat(4,1fr); }.month-stats > div { padding: 0 10px; border-right: 1px solid rgba(84,131,181,.18); display: grid; gap: 4px; }.month-stats > div:first-child { padding-left: 0; }.month-stats > div:last-child { padding-right: 0; border: 0; }.month-stats i { font-size: 1.15rem; }.month-stats span { color: #c1cbd9; font-size: .65rem; }.month-stats strong { font-size: .7rem; font-weight: 500; }.green-text{color:#76dc4d}.orange-text{color:#f0a623}.blue-text{color:#5bb6ff}.red-text{color:#ef4955}
+.bottom-nav { bottom: 22px; width: calc(100% - 44px); max-width: 576px; padding: 11px 10px; border: 1px solid rgba(84,131,181,.16); border-radius: 30px; background: rgba(0,22,51,.94); box-shadow: 0 10px 26px rgba(0,0,0,.23); }.nav-item { min-width: 46px; gap: 5px; }.nav-icon { font-size: 1.4rem; }.nav-text { font-size: .68rem; }.nav-item.active { color: #2868ff; }.main-nav .nav-icon { display: grid; place-items: center; width: 56px; height: 56px; margin-top: -28px; border-radius: 50%; color: white; background: linear-gradient(135deg,#3678ff,#2853de); box-shadow: 0 8px 20px rgba(24,83,255,.43); }.main-nav .nav-text { margin-top: -2px; }.sr-only { position:absolute; overflow:hidden; width:1px; height:1px; clip:rect(0,0,0,0); }
+@media (max-width:500px){.app{padding:64px 18px 128px}.top-grid .card{padding:14px}.overview-item + .overview-item{padding-left:10px}.list-row{padding-left:48px;font-size:.78rem}.month-stats>div{padding:0 7px}.month-stats span{font-size:.59rem}}
+
+/* Sprint 2: Dienstpläne */
+.dashboard.schedule-mode>:not(.schedule-page){display:none!important}.schedule-page{width:100%;color:#e6edf6}.schedule-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.schedule-header h1{font-size:1.4rem}.schedule-header button{background:transparent;color:#e5edf8;font-size:1.2rem}.schedule-tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding:3px;margin-bottom:10px;border:1px solid rgba(84,131,181,.14);border-radius:17px;background:rgba(3,29,59,.76)}.schedule-tabs button{padding:8px 1px;border-radius:13px;background:transparent;color:#d6dfec;font-size:.75rem}.schedule-tabs button[aria-selected=true]{background:linear-gradient(120deg,#063fad,#123d92);color:#fff}.date-switch{min-height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 13px;border:1px solid rgba(84,131,181,.14);border-radius:13px;background:rgba(3,29,59,.76);font-size:.78rem;text-align:center}.date-switch button{color:#e1ebf9;background:transparent}.date-switch small{display:block;width:max-content;margin:5px auto 0;padding:2px 8px;border-radius:5px;background:#063b99;color:#77a6ff;font-size:.63rem}.my-shift,.team-today,.period-day,.period-closed{margin-top:12px;padding:15px;border:1px solid rgba(84,131,181,.14);border-radius:14px;background:rgba(3,29,59,.76)}.my-shift>p,.team-today h2{margin:0;font-size:.86rem}.my-shift>div{display:flex;align-items:center;gap:13px;margin:12px 0}.my-shift>div>i{display:grid;place-items:center;width:40px;height:40px;border:2px solid #236bff;border-radius:50%;color:#236bff;font-size:1.25rem}.my-shift strong,.my-shift small{display:block}.my-shift strong{font-size:1.05rem;font-weight:500}.my-shift small,.team-today>p{font-size:.7rem;color:#bdc8d8}.my-shift em{margin-left:auto;padding:7px 12px;border-radius:14px;background:rgba(48,165,77,.13);color:#64d567;font-size:.7rem;font-style:normal}.my-shift footer{padding-top:11px;border-top:1px solid rgba(84,131,181,.12);font-size:.68rem;color:#d2dce8}.team-today>p{margin:5px 0 9px}.team-person{display:grid;grid-template-columns:28px 100px 1fr;gap:7px;align-items:center;padding:5px 0;border-bottom:1px solid rgba(84,131,181,.1);font-size:.73rem}.team-person>b{display:grid;place-items:center;width:24px;height:24px;border-radius:50%;background:linear-gradient(135deg,#f3bb9e,#5a4148);color:#13213c;font-size:.55rem}.team-person.active{margin:0 -15px;padding:6px 15px;background:linear-gradient(90deg,#073a9f,#08295d)}.team-person time{color:#ebf1f8}.team-person span{color:#d4dce7}.team-today>button{width:100%;margin-top:8px;padding:8px;border:1px solid rgba(84,131,181,.14);border-radius:9px;background:transparent;color:#d9e3ef;font-size:.72rem}.team-today>button i{float:right}.week-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin:10px 0}.week-summary span{padding:9px 5px;border:1px solid rgba(84,131,181,.14);border-radius:9px;background:rgba(3,29,59,.76);font-size:.59rem}.week-summary strong{display:block;margin-top:5px;font-size:.76rem;font-weight:500}.week-summary span:nth-child(3) strong{color:#65d874}.week-list{overflow:hidden;border:1px solid rgba(84,131,181,.14);border-radius:12px}.week-row{display:grid;grid-template-columns:40px 3px minmax(78px,1fr) 60px 44px 10px;gap:7px;align-items:center;min-height:56px;padding:8px 10px;border-bottom:1px solid rgba(84,131,181,.1);font-size:.68rem}.week-row:last-child{border:0}.week-row.active{background:linear-gradient(90deg,#063a9c,#082962)}.week-row>b{font-size:.73rem}.week-row small{display:block;margin-top:3px;color:#c1ccda;font-size:.59rem;font-weight:400}.week-row>i:not(.arrow){height:31px;border-radius:3px;background:#67dd75}.week-row.orange>i{background:#f2a522}.week-row.free>i,.week-row.vacation>i{background:transparent}.week-row em{color:#f2c3a4;font-size:.53rem;font-style:normal;white-space:nowrap}.week-row strong{font-size:.67rem;font-weight:500;text-align:right}.week-row.vacation>b,.week-row.vacation strong{color:#e7c327}.calendar-weekdays,.month-calendar{display:grid;grid-template-columns:repeat(7,1fr);text-align:center}.calendar-weekdays{margin-top:12px;color:#c9d3e0;font-size:.62rem}.month-calendar{margin-top:6px}.month-calendar span{position:relative;display:grid;place-items:center;height:40px;border:1px solid rgba(84,131,181,.09);font-size:.76rem}.month-calendar span:not(.muted)::after{content:"";position:absolute;bottom:4px;width:5px;height:5px;border-radius:50%;background:currentColor}.month-calendar .selected{background:#063c9e;color:white}.month-calendar .selected::after{background:white}.muted{color:#53627a}.green{color:#6edb76}.orange{color:#f0a72b}.purple{color:#a37cff}.blue{color:#3c9fff}.free{color:#a5b0c1}.red{color:#ed5a5b}.calendar-legend{display:flex;flex-wrap:wrap;gap:7px 12px;padding:11px 0;font-size:.6rem}.month-overview{padding:12px;border:1px solid rgba(84,131,181,.14);border-radius:12px;background:rgba(3,29,59,.76)}.month-overview h2{margin:0 0 10px;font-size:.78rem}.month-overview>div{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}.month-overview span{padding:8px 2px;border-radius:8px;background:rgba(24,69,43,.5);text-align:center;font-size:.56rem}.month-overview span:nth-child(2){background:rgba(89,62,17,.43)}.month-overview span:nth-child(3){background:rgba(57,61,18,.43)}.month-overview span:nth-child(4){background:rgba(30,45,63,.6)}.month-overview b{display:block;font-size:1.1rem}.period-filter{display:grid;grid-template-columns:1fr 1.25fr;gap:7px;margin:10px 0}.period-filter button{padding:8px;border-radius:8px;border:0;background:#082151;color:#cad6e6;font-size:.68rem}.period-filter .active{background:#063da6;color:white}.period-day{padding:0;overflow:hidden}.period-day h2,.period-closed{display:flex;justify-content:space-between;margin:0;padding:11px;font-size:.71rem}.period-day h2 span,.period-closed span{font-size:.65rem;font-weight:400}.period-day p{display:grid;grid-template-columns:110px 1fr auto;gap:7px;margin:0;padding:6px 11px;color:#69dc76;font-size:.65rem}.period-day p.active{background:#063a9d}.period-day p span{color:#d4ddea}.period-day p b{font-size:.62rem;font-weight:500}.orange-day p{color:#efa62a}.period-closed{margin-top:8px}@media(min-width:680px){.schedule-page{grid-column:1/-1;max-width:780px;justify-self:center}.team-person{grid-template-columns:34px 140px 1fr}.week-row{grid-template-columns:55px 4px minmax(150px,1fr) 110px 55px 12px}}

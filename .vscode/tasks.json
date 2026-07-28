@@ -1,0 +1,32 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "TimeFlow: PWA starten",
+      "type": "npm",
+      "script": "dev",
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "timeflow",
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "TimeFlow",
+          "endsPattern": "TimeFlow läuft auf"
+        }
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      }
+    },
+    {
+      "label": "TimeFlow: PWA prüfen",
+      "type": "npm",
+      "script": "check",
+      "problemMatcher": []
+    }
+  ]
+}

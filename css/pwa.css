@@ -1,0 +1,18 @@
+/* PWA: sichere Flächen und Anpassung für mobile Geräte, Tablets und Desktop */
+html { min-height: 100%; background: #00142b; }
+body { min-height: 100dvh; -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
+button { touch-action: manipulation; }
+.profile-initials { display: grid; place-items: center; width: 100%; height: 100%; border-radius: 50%; color: #062044; background: linear-gradient(145deg, #f8fafc, #9fc2ff); font-size: .72rem; font-weight: 800; letter-spacing: -.02em; }
+.bottom-nav button { appearance: none; border: 0; background: transparent; font: inherit; }
+.motivation-card p { padding-right: 24px; }
+@media (display-mode: standalone) { .app { padding-top: max(36px, env(safe-area-inset-top)); padding-bottom: max(130px, calc(112px + env(safe-area-inset-bottom))); } .bottom-nav { bottom: max(18px, env(safe-area-inset-bottom)); } }
+@media (min-width: 680px) { .app { max-width: 900px; padding-left: 32px; padding-right: 32px; } .dashboard { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; } .dashboard > .approval-card, .dashboard > .top-grid, .dashboard > .stamp-card, .dashboard > .overview-card, .dashboard > .month-card { grid-column: 1 / -1; } .dashboard > .for-you-card { grid-column: 1; } .dashboard > .team-card { grid-column: 2; } .shift-grid { grid-column: 1 / -1; } .shift-card { min-height: 145px; } .bottom-nav { max-width: 650px; } }
+@media (min-width: 1100px) { .app { max-width: 1120px; } .header-left h1 { font-size: 2rem; } .top-grid .card { padding: 24px; } .month-stats strong { font-size: .9rem; } }
+@media (max-width: 380px) { .header-left h1 { font-size: 1.28rem; } .header-right { gap: 7px; } .profile { width: 42px; height: 42px; } .notification-btn { width: 36px; height: 36px; } .overview-grid { grid-template-columns: 1fr 1fr .62fr; } }
+@media (max-width: 430px) {
+  .header-left h1 { font-size: 1.28rem; white-space: nowrap; }
+  .header-right { gap: 8px; }
+  .top-grid .card { min-width: 0; }
+  .motivation-card p { padding-left: 0; padding-right: 22px; }
+  .overview-progress { min-width: 58px; }
+}
