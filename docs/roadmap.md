@@ -82,8 +82,20 @@ späteren Backend-Sprint umgesetzt.
 - [x] Benutzerübersicht mit Aktivstatus
 - [x] Rollen Mitarbeiter, Teamleitung und Administrator
 - [x] Lokale Bearbeitung und Zurücksetzen der Demo-Benutzer
-- [ ] Zentrale Benutzerkonten und Rollenberechtigungen im Backend
-- [ ] Datensynchronisierung zwischen Geräten
+- [ ] Zentrale Rollenberechtigungen für mehrere Betriebe
+
+## Alpha 0.9 – Sprint 9: Datensynchronisierung
+
+- [x] Benutzerbezogener Cloud-Speicher in der privaten Site
+- [x] Geschützte Synchronisierungs-API mit serverseitiger Identitätsprüfung
+- [x] Synchronisierung von Profil und Einstellungen
+- [x] Automatische Erstsicherung auf dem ersten Gerät
+- [x] Wiederherstellung auf einem weiteren angemeldeten Gerät
+- [x] Revisionsstand und Zeitstempel je Benutzer
+- [x] Sichtbarer Cloud-, Offline- und Fehlerstatus im Profil
+- [x] Manuelle Synchronisierung
+- [x] Lokaler Fallback ohne Datenverlust
+- [x] Chats, Gesundheitsmeldungen und Demo-Sitzungen bewusst ausgeschlossen
 
 ## Alpha 1.0
 

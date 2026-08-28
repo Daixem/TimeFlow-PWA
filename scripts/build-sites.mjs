@@ -42,6 +42,7 @@ for (const file of files) {
 }
 
 const worker = `const FILES = ${JSON.stringify(payload)};
+const SYNC_KEYS = ["timeflow-profile-v1", "timeflow-settings-v1", "timeflow-profile-preferences-v1"];
 
 function decode(value) {
   const binary = atob(value);
@@ -50,25 +51,84 @@ function decode(value) {
   return bytes;
 }
 
+function jsonResponse(value, status = 200, extraHeaders = {}) {
+  return new Response(JSON.stringify(value), {
+    status,
+    headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", ...extraHeaders }
+  });
+}
+
+function authenticatedUser(request) {
+  const id = request.headers.get("oai-authenticated-user-id");
+  const email = request.headers.get("oai-authenticated-user-email");
+  const encodedName = request.headers.get("oai-authenticated-user-full-name");
+  const nameEncoding = request.headers.get("oai-authenticated-user-full-name-encoding");
+  let name = "";
+  if (encodedName && nameEncoding === "percent-encoded-utf-8") {
+    try { name = decodeURIComponent(encodedName); } catch { name = ""; }
+  }
+  if (!name && email) name = email.split("@")[0].replace(/[._-]+/g, " ").replace(/(^|\\s)\\S/g, (letter) => letter.toUpperCase());
+  return { authenticated: Boolean(id || email), id, email, name };
+}
+
+async function ensureSyncTable(database) {
+  await database.prepare("CREATE TABLE IF NOT EXISTS timeflow_user_sync (user_id TEXT PRIMARY KEY NOT NULL, payload_json TEXT NOT NULL DEFAULT '{}', revision INTEGER NOT NULL DEFAULT 1 CHECK (revision > 0), updated_at TEXT NOT NULL)").run();
+}
+
+function validatedSnapshot(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const snapshot = {};
+  for (const key of SYNC_KEYS) {
+    const item = value[key];
+    if (item && typeof item === "object" && !Array.isArray(item)) snapshot[key] = item;
+  }
+  return snapshot;
+}
+
+async function handleSync(request, env, url) {
+  const user = authenticatedUser(request);
+  if (!user.authenticated || !user.id) return jsonResponse({ error: "authentication_required" }, 401);
+  if (!env?.DB) return jsonResponse({ error: "storage_unavailable" }, 503);
+  await ensureSyncTable(env.DB);
+
+  if (request.method === "GET") {
+    const row = await env.DB.prepare("SELECT payload_json, revision, updated_at FROM timeflow_user_sync WHERE user_id = ?").bind(user.id).first();
+    if (!row) return jsonResponse({ snapshot: null, revision: 0, updatedAt: null });
+    try {
+      return jsonResponse({ snapshot: JSON.parse(row.payload_json), revision: row.revision, updatedAt: row.updated_at });
+    } catch {
+      return jsonResponse({ error: "stored_data_invalid" }, 500);
+    }
+  }
+
+  if (request.method === "PUT") {
+    const origin = request.headers.get("Origin");
+    if (origin && origin !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
+    const contentLength = Number(request.headers.get("Content-Length") || 0);
+    if (contentLength > 65536) return jsonResponse({ error: "payload_too_large" }, 413);
+    let body;
+    try { body = await request.json(); } catch { return jsonResponse({ error: "invalid_json" }, 400); }
+    const snapshot = validatedSnapshot(body?.snapshot);
+    if (!snapshot) return jsonResponse({ error: "invalid_snapshot" }, 400);
+    const payloadJson = JSON.stringify(snapshot);
+    if (payloadJson.length > 50000) return jsonResponse({ error: "payload_too_large" }, 413);
+    const updatedAt = new Date().toISOString();
+    await env.DB.prepare("INSERT INTO timeflow_user_sync (user_id, payload_json, revision, updated_at) VALUES (?, ?, 1, ?) ON CONFLICT(user_id) DO UPDATE SET payload_json = excluded.payload_json, revision = timeflow_user_sync.revision + 1, updated_at = excluded.updated_at").bind(user.id, payloadJson, updatedAt).run();
+    const row = await env.DB.prepare("SELECT revision, updated_at FROM timeflow_user_sync WHERE user_id = ?").bind(user.id).first();
+    return jsonResponse({ saved: true, revision: row?.revision || 1, updatedAt: row?.updated_at || updatedAt });
+  }
+
+  return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "GET, PUT" });
+}
+
 export default {
-  async fetch(request) {
+  async fetch(request, env) {
     const url = new URL(request.url);
     if (url.pathname === "/api/session") {
-      const id = request.headers.get("oai-authenticated-user-id");
-      const email = request.headers.get("oai-authenticated-user-email");
-      const encodedName = request.headers.get("oai-authenticated-user-full-name");
-      const nameEncoding = request.headers.get("oai-authenticated-user-full-name-encoding");
-      let name = "";
-      if (encodedName && nameEncoding === "percent-encoded-utf-8") {
-        try { name = decodeURIComponent(encodedName); } catch { name = ""; }
-      }
-      if (!name && email) name = email.split("@")[0].replace(/[._-]+/g, " ").replace(/(^|\\s)\\S/g, (letter) => letter.toUpperCase());
-      const authenticated = Boolean(id || email);
-      return new Response(JSON.stringify({ authenticated, user: authenticated ? { id, email, name } : null }), {
-        status: 200,
-        headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" }
-      });
+      const user = authenticatedUser(request);
+      return jsonResponse({ authenticated: user.authenticated, user: user.authenticated ? { id: user.id, email: user.email, name: user.name } : null });
     }
+    if (url.pathname === "/api/sync") return handleSync(request, env, url);
     let path;
     try {
       path = decodeURIComponent(url.pathname).replace(/^\\/+/, "") || "index.html";

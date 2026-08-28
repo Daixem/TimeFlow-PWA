@@ -1,0 +1,32 @@
+.cloud-sync-card { display: grid; grid-template-columns: 43px minmax(0, 1fr) auto auto; gap: 11px; align-items: center; margin-top: 10px; padding: 12px 13px; border: 1px solid rgba(83, 145, 222, .17); border-radius: 16px; background: linear-gradient(115deg, rgba(3, 33, 66, .82), rgba(4, 40, 75, .68)); }
+.cloud-sync-icon { display: grid; place-items: center; width: 43px; height: 43px; border-radius: 14px; color: #78a8ff; background: rgba(52, 111, 226, .14); }
+.cloud-sync-copy { display: grid; gap: 2px; min-width: 0; }
+.cloud-sync-copy small { color: #6d88a6; font-size: .43rem; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; }
+.cloud-sync-copy strong { overflow: hidden; color: #e7f0fa; font-size: .57rem; text-overflow: ellipsis; white-space: nowrap; }
+.cloud-sync-copy p { overflow: hidden; color: #748aa2; font-size: .43rem; text-overflow: ellipsis; white-space: nowrap; }
+.cloud-sync-state { display: inline-flex; align-items: center; gap: 6px; padding: 7px 9px; border-radius: 9px; color: #9bb3cc; background: rgba(65, 101, 136, .13); font-size: .42rem; white-space: nowrap; }
+.cloud-sync-state i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 13%, transparent); }
+.cloud-sync-state b { font-weight: 750; }
+.cloud-sync-card > button { display: flex; align-items: center; gap: 8px; min-height: 38px; padding: 7px 10px; border: 1px solid rgba(81, 141, 220, .18); border-radius: 10px; color: #bad0ee; background: rgba(15, 59, 107, .56); text-align: left; }
+.cloud-sync-card > button > i { color: #74a5f7; font-size: .56rem; }
+.cloud-sync-card > button > span { display: grid; gap: 2px; }
+.cloud-sync-card > button strong { font-size: .46rem; }
+.cloud-sync-card > button small { color: #6e849d; font-size: .38rem; }
+.cloud-sync-card > button:disabled { opacity: .5; cursor: not-allowed; }
+.cloud-sync-card.is-synced { border-color: rgba(69, 201, 154, .18); background: linear-gradient(115deg, rgba(5, 45, 70, .78), rgba(6, 51, 68, .63)); }
+.cloud-sync-card.is-synced .cloud-sync-icon, .cloud-sync-card.is-synced .cloud-sync-state { color: #5ed8ad; background: rgba(35, 145, 105, .1); }
+.cloud-sync-card.is-syncing .cloud-sync-icon > i, .cloud-sync-card.is-syncing > button > i { animation: sync-spin 1s linear infinite; }
+.cloud-sync-card.is-syncing .cloud-sync-state { color: #75a7ff; background: rgba(45, 100, 196, .12); }
+.cloud-sync-card.is-local .cloud-sync-state { color: #ffc16b; background: rgba(183, 118, 24, .1); }
+.cloud-sync-card.is-error .cloud-sync-state { color: #ef929b; background: rgba(142, 46, 57, .1); }
+@keyframes sync-spin { to { transform: rotate(1turn); } }
+@media (max-width: 760px) {
+  .cloud-sync-card { grid-template-columns: 40px 1fr auto; }
+  .cloud-sync-state { grid-column: 2; justify-self: start; }
+  .cloud-sync-card > button { grid-column: 3; grid-row: 1 / span 2; }
+}
+@media (max-width: 520px) {
+  .cloud-sync-card { grid-template-columns: 39px 1fr; }
+  .cloud-sync-state { grid-column: 2; }
+  .cloud-sync-card > button { grid-column: 1 / -1; grid-row: auto; justify-content: center; }
+}
