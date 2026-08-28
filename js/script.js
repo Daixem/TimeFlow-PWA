@@ -138,6 +138,10 @@ function initialise() {
       document.dispatchEvent(new CustomEvent("timeflow:open-quick-actions", { detail: { action: "vacation" } }));
       return;
     }
+    if (button.dataset.action === "notifications") {
+      document.dispatchEvent(new CustomEvent("timeflow:open-notifications"));
+      return;
+    }
     showToast("Diese Ansicht folgt in einem nächsten Sprint.");
   }));
   window.setInterval(updateDateTime, 1000);

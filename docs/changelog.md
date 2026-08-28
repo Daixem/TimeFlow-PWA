@@ -133,3 +133,28 @@
 
 - Anträge und Meldungen werden in der Alpha-Version nur auf dem Gerät gespeichert
 - Serverseitige Freigaben, Dokumentenuploads und echte Personalprozesse folgen mit dem Backend
+
+---
+
+## Alpha 0.8 – Sprint 7
+
+### Hinzugefügt
+
+- Eigenständiges Notification Center über die Glocke im Home-Header
+- Ungelesen-Zähler, Einzelstatus und Funktion „Alle gelesen“
+- Lokale Hinweise für Freigaben, Dienstplan, Teamchat und Schnellaktionen
+- Explizite Gerätefreigabe für Browser- und PWA-Benachrichtigungen
+- Testbenachrichtigung über die aktive Service-Worker-Registrierung
+- Verknüpfung von Hinweisen mit Dienstplan, Teamchat und Schnellaktionsverlauf
+- Geräte-Berechtigungsstatus direkt in den Profileinstellungen
+
+### Verbessert
+
+- Neu erfasste Schnellaktionen erzeugen automatisch einen passenden Hinweis
+- Klick auf eine Gerätebenachrichtigung fokussiert oder öffnet TimeFlow
+- PWA-App-Cache und Versionsbindung wurden auf Build 0012 aktualisiert
+
+### Abgrenzung
+
+- Lokale Benachrichtigungen funktionieren nach ausdrücklicher Freigabe im Browser
+- Serverseitige Push-Zustellung bei vollständig geschlossener App benötigt ein Backend, Benutzerkonten und Push-Abonnements

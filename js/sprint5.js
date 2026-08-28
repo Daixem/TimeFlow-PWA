@@ -43,7 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="app-status-list">
             <div><span><i class="fa-solid fa-wifi"></i><strong>Verbindung</strong></span><em id="onlineStatus">Online</em></div>
             <div><span><i class="fa-solid fa-shield-halved"></i><strong>Offline-Modus</strong></span><em id="offlineStatus">Wird geprüft</em></div>
-            <div><span><i class="fa-solid fa-code-branch"></i><strong>Installierte Version</strong></span><em>Alpha 0.7 · 0011</em></div>
+            <div><span><i class="fa-solid fa-code-branch"></i><strong>Installierte Version</strong></span><em>Alpha 0.8 · 0012</em></div>
           </div>
           <button class="settings-primary-button" type="button" data-check-update><i class="fa-solid fa-rotate"></i><span><strong>Auf Updates prüfen</strong><small>Letzte Prüfung: noch nicht geprüft</small></span></button>
         </section>
@@ -58,7 +58,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </section>
       </div>
 
-      <section class="settings-about"><span><i class="fa-solid fa-fingerprint"></i></span><div><strong>TimeFlow PWA</strong><p>Sprint 6 · Alpha 0.7 · Build 0011</p></div><em>Made for better workdays</em></section>
+      <section class="settings-about"><span><i class="fa-solid fa-fingerprint"></i></span><div><strong>TimeFlow PWA</strong><p>Sprint 7 · Alpha 0.8 · Build 0012</p></div><em>Made for better workdays</em></section>
 
       <dialog class="settings-dialog" id="settingsResetDialog" aria-labelledby="settingsResetTitle">
         <div class="settings-dialog-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
@@ -162,7 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const rawValue = localStorage.getItem(key);
       try { localData[key] = JSON.parse(rawValue); } catch { localData[key] = rawValue; }
     }
-    const exportPayload = { app: "TimeFlow PWA", version: "0.7.0-alpha.1", exportedAt: new Date().toISOString(), data: localData };
+    const exportPayload = { app: "TimeFlow PWA", version: "0.8.0-alpha.1", exportedAt: new Date().toISOString(), data: localData };
     const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: "application/json" });
     const downloadUrl = URL.createObjectURL(blob);
     const link = document.createElement("a");

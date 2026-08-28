@@ -240,6 +240,12 @@ document.addEventListener("DOMContentLoaded", () => {
     records.unshift(record);
     saveRecords();
     renderLatest();
+    document.dispatchEvent(new CustomEvent("timeflow:create-notification", { detail: {
+      type: currentAction === "vacation" ? "approval" : "success",
+      title: `${action.title} erfasst`,
+      body: `${record.summary} · ${record.status}`,
+      action: "history"
+    } }));
     if (action.makeMessage) {
       document.dispatchEvent(new CustomEvent("timeflow:send-team-message", { detail: { text: action.makeMessage(data), confirmation: `${action.title} wurde im Teamchat geteilt.` } }));
     } else {
