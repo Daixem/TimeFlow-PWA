@@ -1,6 +1,7 @@
 "use strict";
 
 const STORAGE_KEY = "timeflow-workday-v2";
+const SETTINGS_STORAGE_KEY = "timeflow-settings-v1";
 const TARGET_WORK_MINUTES = 480;
 const BREAK_AFTER_MINUTES = 360;
 const AUTO_BREAK_MINUTES = 30;
@@ -40,7 +41,22 @@ function elapsedMinutes() {
   const end = state.isWorking ? new Date() : state.workEnd;
   return end ? Math.max(0, Math.floor((end - state.workStart) / 60000)) : 0;
 }
-function breakMinutes() { return elapsedMinutes() >= BREAK_AFTER_MINUTES ? AUTO_BREAK_MINUTES : 0; }
+function timeSettings() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY));
+    return {
+      dailyTargetMinutes: Number(saved?.dailyTargetMinutes) || TARGET_WORK_MINUTES,
+      autoBreakMinutes: Number.isFinite(Number(saved?.autoBreakMinutes)) ? Number(saved.autoBreakMinutes) : AUTO_BREAK_MINUTES,
+      autoBreakAfterMinutes: Number(saved?.autoBreakAfterMinutes) || BREAK_AFTER_MINUTES
+    };
+  } catch {
+    return { dailyTargetMinutes: TARGET_WORK_MINUTES, autoBreakMinutes: AUTO_BREAK_MINUTES, autoBreakAfterMinutes: BREAK_AFTER_MINUTES };
+  }
+}
+function breakMinutes() {
+  const settings = timeSettings();
+  return elapsedMinutes() >= settings.autoBreakAfterMinutes ? settings.autoBreakMinutes : 0;
+}
 function workedMinutes() { return Math.max(0, elapsedMinutes() - breakMinutes()); }
 
 function saveWorkday() {
@@ -64,7 +80,8 @@ function updateDateTime() {
   elements.greeting.textContent = hour < 12 && hour >= 5 ? "Guten Morgen" : hour < 18 ? "Guten Tag" : "Guten Abend";
 }
 function updateWorkUi() {
-  const worked = workedMinutes(); const pause = breakMinutes(); const percentage = Math.min(100, Math.round((worked / TARGET_WORK_MINUTES) * 100));
+  const targetMinutes = timeSettings().dailyTargetMinutes;
+  const worked = workedMinutes(); const pause = breakMinutes(); const percentage = Math.min(100, Math.round((worked / targetMinutes) * 100));
   elements.startTime.textContent = state.workStart ? formatTime(state.workStart) : "--:--";
   elements.endTime.textContent = state.workEnd ? formatTime(state.workEnd) : "--:--";
   elements.workStatus.textContent = state.isWorking ? "Im Dienst" : "Nicht im Dienst";
@@ -74,8 +91,8 @@ function updateWorkUi() {
   elements.clockIcon.className = `fa-solid ${state.isWorking ? "fa-right-from-bracket" : "fa-right-to-bracket"}`;
   elements.todayHours.textContent = formatMinutes(worked);
   elements.todayBreak.textContent = `${pause} min`;
-  elements.todayOvertime.textContent = formatMinutes(Math.max(0, worked - TARGET_WORK_MINUTES));
-  elements.todayTarget.textContent = formatMinutes(TARGET_WORK_MINUTES);
+  elements.todayOvertime.textContent = formatMinutes(Math.max(0, worked - targetMinutes));
+  elements.todayTarget.textContent = formatMinutes(targetMinutes);
   elements.progressCircle.textContent = `${percentage}%`;
   elements.progressCircle.style.setProperty("--progress", `${percentage * 3.6}deg`);
   elements.progressCircle.setAttribute("aria-valuenow", String(percentage));
@@ -119,6 +136,7 @@ function initialise() {
 }
 document.addEventListener("DOMContentLoaded", initialise);
 document.addEventListener("timeflow:toggle-clock", () => state.isWorking ? clockOut() : clockIn());
+document.addEventListener("timeflow:settings-updated", updateWorkUi);
 
 document.addEventListener("DOMContentLoaded", () => {
   const dashboard = document.getElementById("dashboard");

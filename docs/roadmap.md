@@ -40,9 +40,16 @@ späteren Backend-Sprint umgesetzt.
 - [x] Vorbereitete Bereiche für Einstellungen und Datenschutz
 - [x] Responsive Darstellung und Offline-Unterstützung
 
-## Alpha 0.6
+## Alpha 0.6 – Sprint 5: Einstellungen
 
-- [ ] Einstellungen
+- [x] Eigene Einstellungsseite innerhalb des Profils
+- [x] Lokale Benachrichtigungswünsche
+- [x] Tagesziel und automatische Pause konfigurierbar
+- [x] Sofortige Übernahme in Home und Stempelansicht
+- [x] Reduzierte Animationen
+- [x] Online-, Offline- und PWA-Update-Status
+- [x] Lokale Datensicherung als JSON
+- [x] Kontrolliertes Zurücksetzen lokaler TimeFlow-Daten
 
 ## Alpha 0.7
 

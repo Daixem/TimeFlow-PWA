@@ -59,7 +59,7 @@
 
 ---
 
-## Alpha 0.5 – Sprint 4 (in Entwicklung)
+## Alpha 0.5 – Sprint 4
 
 ### Hinzugefügt
 
@@ -85,3 +85,25 @@
 
 - Profildaten und Einstellungen werden in der Alpha-Version nur lokal gespeichert
 - Serverseitige Benutzerkonten und Synchronisierung folgen in einem späteren Sprint
+
+---
+
+## Alpha 0.6 – Sprint 5 (in Entwicklung)
+
+### Hinzugefügt
+
+- Eigene Einstellungsseite innerhalb des Profils
+- Lokal gespeicherte Benachrichtigungswünsche für Dienstplan, Chat und Freigaben
+- Einstellbares tägliches Arbeitsziel von 6 bis 10 Stunden
+- Einstellbare automatische Pause nach sechs Stunden Arbeitszeit
+- Direkte Übernahme von Arbeitsziel und Pause in Home und Stempelansicht
+- Optional reduzierte Animationen in der gesamten PWA
+- Sichtbarer Online-, Offline- und Service-Worker-Status
+- Manuelle Prüfung auf eine neue PWA-Version
+- Lokale Datensicherung aller TimeFlow-Daten als JSON-Datei
+- Bestätigtes Zurücksetzen ausschließlich lokaler TimeFlow-Daten
+
+### Abgrenzung
+
+- Benachrichtigungswünsche werden lokal gespeichert; echte Push-Nachrichten folgen in Alpha 0.8
+- Synchronisierung und Wiederherstellung über mehrere Geräte folgen mit dem Backend

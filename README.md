@@ -44,3 +44,12 @@ Profiländerungen und Einstellungen werden in der Alpha-Version lokal auf dem
 Gerät gespeichert. Home dient ausschließlich als Übersicht; der zentrale
 Menüpunkt „Stempeln“ öffnet eine eigenständige Zeiterfassung mit Live-Zeit,
 Schichtverlauf und Ein-/Ausstempel-Aktion.
+
+## Sprint 5
+
+Sprint 5 ergänzt im Profil eine eigene Einstellungsseite. Dort lassen sich
+Benachrichtigungswünsche, das tägliche Arbeitsziel, die automatische Pause und
+reduzierte Animationen lokal konfigurieren. Arbeitsziel und Pause wirken
+sofort auf Home und die Stempelansicht. Zusätzlich zeigt die Seite den
+Online- und Offline-Status, prüft PWA-Updates und kann die lokalen
+TimeFlow-Daten sichern oder kontrolliert zurücksetzen.

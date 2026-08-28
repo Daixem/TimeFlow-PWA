@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <h1 id="profileTitle">Mein Profil</h1>
           <p>Deine Arbeit. Deine Entwicklung. Alles im Blick.</p>
         </div>
-        <button class="profile-settings-shortcut" type="button" data-open-section="settings" aria-label="Einstellungen öffnen">
+        <button class="profile-settings-shortcut" type="button" data-open-settings aria-label="Einstellungen öffnen">
           <i class="fa-solid fa-sliders"></i>
         </button>
       </header>
@@ -111,18 +111,12 @@ document.addEventListener("DOMContentLoaded", () => {
         </article>
 
         <article class="profile-menu-card">
-          <details id="settingsSection">
-            <summary><span class="menu-icon settings"><i class="fa-solid fa-sliders"></i></span><span><strong>Einstellungen</strong><small>Benachrichtigungen und Darstellung</small></span><i class="fa-solid fa-chevron-down"></i></summary>
-            <div class="detail-content">
-              <label><span><strong>Dienstplan-Erinnerungen</strong><small>30 Minuten vor Schichtbeginn</small></span><input type="checkbox" data-preference="shiftReminders" checked><i></i></label>
-              <label><span><strong>Chat-Benachrichtigungen</strong><small>Neue Teamnachrichten anzeigen</small></span><input type="checkbox" data-preference="chatAlerts" checked><i></i></label>
-            </div>
-          </details>
+          <button class="profile-menu-link" type="button" data-open-settings><span class="menu-icon settings"><i class="fa-solid fa-sliders"></i></span><span><strong>Einstellungen</strong><small>Benachrichtigungen, Zeiterfassung und Daten</small></span><i class="fa-solid fa-chevron-right"></i></button>
           <details id="privacySection">
             <summary><span class="menu-icon privacy"><i class="fa-solid fa-shield-halved"></i></span><span><strong>Datenschutz</strong><small>Lokale Daten und Berechtigungen</small></span><i class="fa-solid fa-chevron-down"></i></summary>
             <div class="detail-content privacy-copy"><p>Profiländerungen und Statistikeinstellungen bleiben in dieser Vorschau auf deinem Gerät.</p><button type="button" data-clear-profile><i class="fa-solid fa-rotate-left"></i> Lokale Profildaten zurücksetzen</button></div>
           </details>
-          <div class="version-row"><span class="menu-icon version"><i class="fa-solid fa-mobile-screen"></i></span><span><strong>TimeFlow PWA</strong><small>Alpha 0.5 · Build 0007</small></span><em>Offline bereit</em></div>
+          <div class="version-row"><span class="menu-icon version"><i class="fa-solid fa-mobile-screen"></i></span><span><strong>TimeFlow PWA</strong><small>Alpha 0.6 · Build 0010</small></span><em>Offline bereit</em></div>
         </article>
       </section>
 
@@ -143,7 +137,6 @@ document.addEventListener("DOMContentLoaded", () => {
   `);
 
   const PROFILE_STORAGE_KEY = "timeflow-profile-v1";
-  const PREFERENCES_STORAGE_KEY = "timeflow-profile-preferences-v1";
   const defaultProfile = {
     name: "Max Mustermann",
     role: "Servicemitarbeiter",
@@ -172,7 +165,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const profileDialog = document.getElementById("profileDialog");
   const profileForm = document.getElementById("profileForm");
   let profile = loadJson(PROFILE_STORAGE_KEY, defaultProfile);
-  let preferences = loadJson(PREFERENCES_STORAGE_KEY, { shiftReminders: true, chatAlerts: true });
 
   function loadJson(key, fallback) {
     try {
@@ -270,11 +262,9 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll("[data-edit-profile]").forEach((button) => button.addEventListener("click", openProfileDialog));
   document.querySelectorAll("[data-close-profile-dialog]").forEach((button) => button.addEventListener("click", () => profileDialog.close()));
   document.querySelector("[data-open-schedule]").addEventListener("click", () => document.querySelector('[data-target="schedule"]')?.click());
-  document.querySelector("[data-open-section='settings']").addEventListener("click", () => {
-    const section = document.getElementById("settingsSection");
-    section.open = true;
-    section.scrollIntoView({ behavior: "smooth", block: "center" });
-  });
+  document.querySelectorAll("[data-open-settings]").forEach((button) => button.addEventListener("click", () => {
+    document.dispatchEvent(new CustomEvent("timeflow:open-settings"));
+  }));
 
   profileForm.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -294,15 +284,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   profileDialog.addEventListener("click", (event) => {
     if (event.target === profileDialog) profileDialog.close();
-  });
-
-  document.querySelectorAll("[data-preference]").forEach((input) => {
-    input.checked = preferences[input.dataset.preference] !== false;
-    input.addEventListener("change", () => {
-      preferences[input.dataset.preference] = input.checked;
-      localStorage.setItem(PREFERENCES_STORAGE_KEY, JSON.stringify(preferences));
-      notify("Einstellung wurde auf diesem Gerät gespeichert.");
-    });
   });
 
   document.querySelector("[data-clear-profile]").addEventListener("click", () => {

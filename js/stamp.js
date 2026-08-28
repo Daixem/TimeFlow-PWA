@@ -51,7 +51,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <section class="clock-summary" aria-label="Tagesübersicht">
         <article><span class="summary-icon blue"><i class="fa-solid fa-hourglass-half"></i></span><div><small>Nettozeit</small><strong id="clockNetTime">0 h 0 min</strong></div></article>
         <article><span class="summary-icon amber"><i class="fa-solid fa-mug-hot"></i></span><div><small>Pause</small><strong id="clockBreakSummary">0 min</strong></div></article>
-        <article><span class="summary-icon mint"><i class="fa-solid fa-bullseye"></i></span><div><small>Tagesziel</small><strong>8 h 0 min</strong></div></article>
+        <article><span class="summary-icon mint"><i class="fa-solid fa-bullseye"></i></span><div><small>Tagesziel</small><strong id="clockTargetTime">8 h 0 min</strong></div></article>
       </section>
 
       <section class="clock-note" id="clockNote">
@@ -62,6 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
   `);
 
   const STORAGE_KEY = "timeflow-workday-v2";
+  const SETTINGS_STORAGE_KEY = "timeflow-settings-v1";
   const TARGET_MINUTES = 480;
   const AUTO_BREAK_AFTER = 360;
   const AUTO_BREAK_MINUTES = 30;
@@ -80,8 +81,22 @@ document.addEventListener("DOMContentLoaded", () => {
     breakTime: document.getElementById("clockBreakTime"),
     net: document.getElementById("clockNetTime"),
     breakSummary: document.getElementById("clockBreakSummary"),
+    target: document.getElementById("clockTargetTime"),
     note: document.getElementById("clockNote")
   };
+
+  function readSettings() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY));
+      return {
+        dailyTargetMinutes: Number(saved?.dailyTargetMinutes) || TARGET_MINUTES,
+        autoBreakMinutes: Number.isFinite(Number(saved?.autoBreakMinutes)) ? Number(saved.autoBreakMinutes) : AUTO_BREAK_MINUTES,
+        autoBreakAfterMinutes: Number(saved?.autoBreakAfterMinutes) || AUTO_BREAK_AFTER
+      };
+    } catch {
+      return { dailyTargetMinutes: TARGET_MINUTES, autoBreakMinutes: AUTO_BREAK_MINUTES, autoBreakAfterMinutes: AUTO_BREAK_AFTER };
+    }
+  }
 
   function readState() {
     try {
@@ -112,11 +127,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const saved = readState();
     const start = saved.workStart ? new Date(saved.workStart) : null;
     const end = saved.isWorking ? now : saved.workEnd ? new Date(saved.workEnd) : null;
+    const settings = readSettings();
     const elapsedSeconds = start && end ? Math.max(0, Math.floor((end - start) / 1000)) : 0;
     const grossMinutes = Math.floor(elapsedSeconds / 60);
-    const breakMinutes = grossMinutes >= AUTO_BREAK_AFTER ? AUTO_BREAK_MINUTES : 0;
+    const breakMinutes = grossMinutes >= settings.autoBreakAfterMinutes ? settings.autoBreakMinutes : 0;
     const netMinutes = Math.max(0, grossMinutes - breakMinutes);
-    const progress = Math.min(100, Math.round((netMinutes / TARGET_MINUTES) * 100));
+    const progress = Math.min(100, Math.round((netMinutes / settings.dailyTargetMinutes) * 100));
 
     elements.liveTime.textContent = now.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
     elements.liveDate.textContent = now.toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
@@ -124,7 +140,8 @@ document.addEventListener("DOMContentLoaded", () => {
     elements.start.textContent = start ? formatTime(start) : "--:--";
     elements.net.textContent = formatMinutes(netMinutes);
     elements.breakSummary.textContent = `${breakMinutes} min`;
-    elements.breakTime.textContent = breakMinutes ? `${breakMinutes} Min.` : "Automatisch";
+    elements.breakTime.textContent = settings.autoBreakMinutes ? `${settings.autoBreakMinutes} Min.` : "Deaktiviert";
+    elements.target.textContent = formatMinutes(settings.dailyTargetMinutes);
     elements.elapsedHint.textContent = saved.isWorking ? `${progress} % deines Tagesziels` : start ? `Beendet um ${formatTime(end)}` : "Noch nicht gestartet";
     elements.state.classList.toggle("is-working", Boolean(saved.isWorking));
     elements.state.querySelector("span").textContent = saved.isWorking ? "Im Dienst" : start ? "Dienst beendet" : "Nicht im Dienst";
@@ -142,6 +159,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   elements.action.addEventListener("click", () => document.dispatchEvent(new CustomEvent("timeflow:toggle-clock")));
   document.addEventListener("timeflow:workday-updated", renderClock);
+  document.addEventListener("timeflow:settings-updated", renderClock);
   window.setInterval(renderClock, 1000);
   renderClock();
 });

@@ -1,9 +1,9 @@
 # TimeFlow
 
-Aktuelle Version: **Alpha 0.5 – Entwicklung**
+Aktuelle Version: **Alpha 0.6 – Entwicklung**
 
-Build: **0009**
+Build: **0010**
 
-Sprint: **Sprint 4 – Profil und persönliche Statistik**
+Sprint: **Sprint 5 – Einstellungen**
 
 Stand: **28.08.2026**

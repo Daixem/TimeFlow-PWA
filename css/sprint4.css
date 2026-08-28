@@ -114,12 +114,14 @@
 .profile-info-card dt i { width: 18px; color: #5f8fcf; }
 .profile-info-card dd { overflow: hidden; color: #cbd6e4; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
 .profile-menu-card details { border-bottom: 1px solid rgba(91, 139, 190, .09); }
-.profile-menu-card summary, .version-row { display: grid; grid-template-columns: 36px 1fr auto; gap: 10px; align-items: center; min-height: 59px; padding: 10px 13px; cursor: pointer; list-style: none; }
+.profile-menu-card summary, .profile-menu-link, .version-row { display: grid; width: 100%; grid-template-columns: 36px 1fr auto; gap: 10px; align-items: center; min-height: 59px; padding: 10px 13px; border: 0; color: inherit; background: transparent; cursor: pointer; list-style: none; text-align: left; }
+.profile-menu-link { border-bottom: 1px solid rgba(91, 139, 190, .09); }
+.profile-menu-link:hover { background: rgba(30, 79, 133, .12); }
 .profile-menu-card summary::-webkit-details-marker { display: none; }
-.profile-menu-card summary > span:nth-child(2), .version-row > span:nth-child(2) { min-width: 0; display: grid; gap: 3px; }
-.profile-menu-card summary strong, .version-row strong { font-size: .62rem; }
-.profile-menu-card summary small, .version-row small { color: #71859d; font-size: .48rem; }
-.profile-menu-card summary > i { color: #627996; font-size: .53rem; transition: transform .2s; }
+.profile-menu-card summary > span:nth-child(2), .profile-menu-link > span:nth-child(2), .version-row > span:nth-child(2) { min-width: 0; display: grid; gap: 3px; }
+.profile-menu-card summary strong, .profile-menu-link strong, .version-row strong { font-size: .62rem; }
+.profile-menu-card summary small, .profile-menu-link small, .version-row small { color: #71859d; font-size: .48rem; }
+.profile-menu-card summary > i, .profile-menu-link > i { color: #627996; font-size: .53rem; transition: transform .2s; }
 .profile-menu-card details[open] summary > i { transform: rotate(180deg); }
 .menu-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 11px; }
 .menu-icon.settings { color: #75a6ff; background: rgba(52, 111, 226, .13); }
