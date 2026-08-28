@@ -68,3 +68,13 @@ Verspätung, Schichttausch und Krankmeldung. Abgesendete Vorgänge werden mit
 Status und Zeitpunkt lokal gespeichert. Teamrelevante Meldungen erscheinen
 zusätzlich als eigene Nachricht im Teamchat; der Verlauf lässt sich über Home
 oder die Karte mit den offenen Freigaben öffnen.
+
+## Sprint 7
+
+Sprint 7 macht die Glocke im Home-Header zum vollständigen Notification Center.
+Hinweise für Freigaben, Dienstpläne, Teamchat und Schnellaktionen besitzen einen
+Ungelesen-Status und bleiben lokal auf dem Gerät gespeichert. In den
+Einstellungen kann die Browser-/PWA-Berechtigung bewusst aktiviert und mit
+einer Testbenachrichtigung geprüft werden. Echte serverseitige Push-Nachrichten
+bei vollständig geschlossener App benötigen später die Benutzerverwaltung und
+das Backend.

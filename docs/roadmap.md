@@ -62,9 +62,16 @@ späteren Backend-Sprint umgesetzt.
 - [x] Verknüpfung der offenen Freigaben mit dem Verlauf
 - [x] Responsive und offline nutzbare Darstellung
 
-## Alpha 0.8
+## Alpha 0.8 – Sprint 7: Benachrichtigungen
 
-- [ ] Push-Benachrichtigungen
+- [x] Notification Center über die Glocke im Home-Header
+- [x] Ungelesen-Zähler und Gelesen-Status
+- [x] Hinweise für Freigaben, Dienstplan, Teamchat und Schnellaktionen
+- [x] Explizite Browser-/PWA-Berechtigung in den Einstellungen
+- [x] Testbenachrichtigung über den Service Worker
+- [x] Klick auf eine Gerätebenachrichtigung öffnet TimeFlow
+- [x] Lokale Speicherung und Offline-Verfügbarkeit
+- [ ] Serverseitige Push-Zustellung bei geschlossener App (benötigt Backend)
 
 ## Alpha 0.9
 

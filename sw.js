@@ -1,7 +1,7 @@
-const CACHE_NAME = "timeflow-v12";
+const CACHE_NAME = "timeflow-v13";
 const APP_SHELL = [
-  "./", "index.html", "manifest.webmanifest?v=0011", "css/style.css?v=0011", "css/pwa.css?v=0011", "css/sprint3.css?v=0011", "css/sprint4.css?v=0011", "css/sprint5.css?v=0011", "css/sprint6.css?v=0011", "css/stamp.css?v=0011",
-  "js/script.js?v=0011", "js/sprint3.js?v=0011", "js/sprint4.js?v=0011", "js/sprint5.js?v=0011", "js/sprint6.js?v=0011", "js/stamp.js?v=0011",
+  "./", "index.html", "manifest.webmanifest?v=0012", "css/style.css?v=0012", "css/pwa.css?v=0012", "css/sprint3.css?v=0012", "css/sprint4.css?v=0012", "css/sprint5.css?v=0012", "css/sprint6.css?v=0012", "css/sprint7.css?v=0012", "css/stamp.css?v=0012",
+  "js/script.js?v=0012", "js/sprint3.js?v=0012", "js/sprint4.js?v=0012", "js/sprint5.js?v=0012", "js/sprint6.js?v=0012", "js/sprint7.js?v=0012", "js/stamp.js?v=0012",
   "assets/icons/timeflow-icon.svg", "assets/icons/timeflow-icon-192.png",
   "assets/icons/timeflow-icon-512.png", "assets/icons/timeflow-maskable-512.png"
 ];
@@ -33,4 +33,14 @@ self.addEventListener("fetch", (event) => {
     }
     return response;
   }).catch(() => caches.match("./"))));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const targetUrl = new URL(event.notification.data?.url || "./", self.location.href).href;
+  event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
+    const appClient = clients.find((client) => new URL(client.url).origin === new URL(targetUrl).origin);
+    if (appClient) return appClient.focus();
+    return self.clients.openWindow(targetUrl);
+  }));
 });
