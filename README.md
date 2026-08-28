@@ -107,4 +107,6 @@ unterstützten Geräten direkt installieren. Lokale JSON-Datensicherungen könne
 nach einer Struktur- und Sicherheitsprüfung kontrolliert wiederhergestellt
 werden; Sitzung und Cloud-Revisionsstand bleiben dabei geschützt. Eine neue
 Bereitschaftskarte im Profil fasst Installation, Offline-Modus,
-Synchronisierung und Backup zusammen.
+Synchronisierung und Backup zusammen. Der Dienstplan springt beim Öffnen
+automatisch in die aktuelle Kalenderwoche und verwendet dasselbe Tagesdatum
+wie der Home-Bildschirm.

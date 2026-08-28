@@ -78,6 +78,100 @@ document.addEventListener("DOMContentLoaded", () => {
   const confirmRestore = restoreDialog.querySelector("[data-confirm-restore]");
   let pendingRestore = null;
 
+  function dateOnly(value = new Date()) {
+    return new Date(value.getFullYear(), value.getMonth(), value.getDate());
+  }
+
+  function addDays(value, amount) {
+    const result = new Date(value);
+    result.setDate(result.getDate() + amount);
+    return result;
+  }
+
+  function mondayOf(value) {
+    const result = dateOnly(value);
+    result.setDate(result.getDate() - ((result.getDay() + 6) % 7));
+    return result;
+  }
+
+  function isoWeek(value) {
+    const date = new Date(Date.UTC(value.getFullYear(), value.getMonth(), value.getDate()));
+    date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
+    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+    return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+  }
+
+  function longDate(value) {
+    return value.toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
+  }
+
+  function shortDate(value) {
+    return value.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" });
+  }
+
+  function refreshCurrentSchedule() {
+    const schedulePage = document.getElementById("schedulePage");
+    if (!schedulePage) return;
+    const today = dateOnly();
+    const monday = mondayOf(today);
+    const sunday = addDays(monday, 6);
+    const weekHeader = schedulePage.querySelector('[data-panel="week"] .date-switch span');
+    const dayHeader = schedulePage.querySelector('[data-panel="day"] .date-switch span');
+    const monthHeader = schedulePage.querySelector('[data-panel="month"] .date-switch span');
+    const periodHeader = schedulePage.querySelector('[data-panel="period"] .date-switch span');
+
+    if (dayHeader) dayHeader.innerHTML = `<i class="fa-regular fa-calendar"></i> ${longDate(today)} <small>Heute</small>`;
+    if (weekHeader) {
+      const rangeStart = monday.toLocaleDateString("de-DE", { day: "numeric", month: "long" });
+      const rangeEnd = sunday.toLocaleDateString("de-DE", { day: "numeric", month: "long", year: "numeric" });
+      weekHeader.textContent = `KW ${isoWeek(today)} • ${rangeStart} – ${rangeEnd}`;
+    }
+    if (monthHeader) monthHeader.textContent = today.toLocaleDateString("de-DE", { month: "long", year: "numeric" });
+    if (periodHeader) {
+      const first = new Date(today.getFullYear(), today.getMonth(), 1);
+      const last = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      periodHeader.innerHTML = `<i class="fa-regular fa-calendar"></i> ${shortDate(first)} – ${last.toLocaleDateString("de-DE")}`;
+    }
+
+    schedulePage.querySelectorAll(".week-row").forEach((row, index) => {
+      const rowDate = addDays(monday, index);
+      row.classList.toggle("active", rowDate.getTime() === today.getTime());
+      const dateLabel = row.querySelector("b small");
+      if (dateLabel) dateLabel.textContent = shortDate(rowDate);
+      row.toggleAttribute("aria-current", rowDate.getTime() === today.getTime());
+    });
+
+    const monthCalendar = schedulePage.querySelector(".month-calendar");
+    if (monthCalendar) {
+      const first = new Date(today.getFullYear(), today.getMonth(), 1);
+      const calendarStart = mondayOf(first);
+      const last = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      const calendarEnd = addDays(mondayOf(last), 6);
+      const fragment = document.createDocumentFragment();
+      for (let date = calendarStart; date <= calendarEnd; date = addDays(date, 1)) {
+        const cell = document.createElement("span");
+        const inMonth = date.getMonth() === today.getMonth();
+        const isToday = date.getTime() === today.getTime();
+        const weekday = date.getDay();
+        cell.className = !inMonth ? "muted" : `${weekday === 0 ? "free" : weekday === 6 ? "blue" : weekday === 3 ? "orange" : "green"}${isToday ? " selected" : ""}`;
+        cell.textContent = String(date.getDate());
+        if (isToday) cell.setAttribute("aria-current", "date");
+        fragment.append(cell);
+      }
+      monthCalendar.replaceChildren(fragment);
+    }
+
+    const periodDates = [monday, addDays(monday, 1), addDays(monday, 2), addDays(monday, 3)];
+    schedulePage.querySelectorAll(".period-day h2").forEach((heading, index) => {
+      heading.innerHTML = `${longDate(periodDates[index])} <span>8:00 h <i class="fa-solid fa-chevron-up"></i></span>`;
+    });
+    schedulePage.querySelectorAll(".period-closed").forEach((row, index) => {
+      const date = periodDates[index + 2];
+      const label = index ? "Frei" : "8:00 h";
+      row.innerHTML = `${longDate(date)} <span>${label} <i class="fa-solid fa-chevron-down"></i></span>`;
+    });
+  }
+
   function notify(message) {
     const toast = document.getElementById("toast");
     if (!toast) return;
@@ -199,6 +293,16 @@ document.addEventListener("DOMContentLoaded", () => {
   confirmRestore.addEventListener("click", restoreBackup);
   restoreDialog.addEventListener("click", (event) => { if (event.target === restoreDialog) restoreDialog.close(); });
   profilePage.querySelector("[data-open-readiness-settings]")?.addEventListener("click", () => document.dispatchEvent(new CustomEvent("timeflow:open-settings")));
+  const scheduleNav = document.querySelector('[data-target="schedule"]');
+  const currentWeekTab = document.querySelector('#schedulePage [data-view="week"]');
+  scheduleNav?.addEventListener("click", () => {
+    refreshCurrentSchedule();
+    currentWeekTab?.click();
+  });
+  document.querySelector("#schedulePage .schedule-header button")?.addEventListener("click", () => {
+    refreshCurrentSchedule();
+    currentWeekTab?.click();
+  });
   if (cloudCard) new MutationObserver(renderReadiness).observe(cloudCard, { attributes: true, attributeFilter: ["class"] });
   navigator.serviceWorker?.ready.then(renderReadiness).catch(() => undefined);
 
@@ -208,4 +312,5 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   renderInstallState();
   renderReadiness();
+  refreshCurrentSchedule();
 });

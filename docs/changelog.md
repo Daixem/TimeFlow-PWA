@@ -237,6 +237,8 @@
 - Prüfung von Format, Größe und enthaltenen TimeFlow-Daten vor dem Import
 - Bestätigungsübersicht mit Datum und Anzahl der wiederherstellbaren Datensätze
 - Bereitschaftskarte im Profil für App, Offline-Modus, Synchronisierung und Backup
+- Dienstplan öffnet standardmäßig die aktuelle Kalenderwoche
+- Dienstplan-Datumsangaben werden aus dem aktuellen Home-Datum berechnet
 - Sprunglink für Tastaturnutzer zum Hauptinhalt
 
 ### Sicherheit und Datenschutz

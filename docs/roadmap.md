@@ -104,6 +104,7 @@ späteren Backend-Sprint umgesetzt.
 - [x] Kontrollierte Wiederherstellung lokaler Datensicherungen
 - [x] Schutz von Sitzung und Cloud-Status beim Import
 - [x] Bereitschaftsübersicht für App, Offline, Synchronisierung und Backup
+- [x] Dienstplan startet immer mit der aktuellen Kalenderwoche
 - [x] Verbesserter Tastaturzugang zum Hauptinhalt
 - [x] Release-Candidate-Build mit erneuertem Offline-Cache
 - [ ] Praktischer Abnahmetest auf Android und iOS

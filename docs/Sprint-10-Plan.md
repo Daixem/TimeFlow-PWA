@@ -18,6 +18,8 @@ Installationsbereitschaft, Offline-Nutzung und einem klaren Systemstatus.
 - Schutz von Sitzung und Cloud-Revisionsstand vor einer Backup-Übernahme
 - Zusammenfassung und ausdrückliche Bestätigung vor dem Überschreiben
 - Bereitschaftsübersicht für App, Offline-Modus, Synchronisierung und Backup
+- Dienstpläne öffnen automatisch in der aktuellen Kalenderwoche
+- Tages-, Wochen-, Monats- und Zeitraumdaten folgen dem aktuellen Home-Datum
 - Tastatur-Sprunglink zum Hauptinhalt
 - Release-Candidate-Version mit erneuertem Offline-App-Cache
 
