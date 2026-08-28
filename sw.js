@@ -1,7 +1,7 @@
-const CACHE_NAME = "timeflow-v11";
+const CACHE_NAME = "timeflow-v12";
 const APP_SHELL = [
-  "./", "index.html", "manifest.webmanifest?v=0010", "css/style.css?v=0010", "css/pwa.css?v=0010", "css/sprint3.css?v=0010", "css/sprint4.css?v=0010", "css/sprint5.css?v=0010", "css/stamp.css?v=0010",
-  "js/script.js?v=0010", "js/sprint3.js?v=0010", "js/sprint4.js?v=0010", "js/sprint5.js?v=0010", "js/stamp.js?v=0010",
+  "./", "index.html", "manifest.webmanifest?v=0011", "css/style.css?v=0011", "css/pwa.css?v=0011", "css/sprint3.css?v=0011", "css/sprint4.css?v=0011", "css/sprint5.css?v=0011", "css/sprint6.css?v=0011", "css/stamp.css?v=0011",
+  "js/script.js?v=0011", "js/sprint3.js?v=0011", "js/sprint4.js?v=0011", "js/sprint5.js?v=0011", "js/sprint6.js?v=0011", "js/stamp.js?v=0011",
   "assets/icons/timeflow-icon.svg", "assets/icons/timeflow-icon-192.png",
   "assets/icons/timeflow-icon-512.png", "assets/icons/timeflow-maskable-512.png"
 ];

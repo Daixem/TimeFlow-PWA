@@ -51,9 +51,16 @@ späteren Backend-Sprint umgesetzt.
 - [x] Lokale Datensicherung als JSON
 - [x] Kontrolliertes Zurücksetzen lokaler TimeFlow-Daten
 
-## Alpha 0.7
+## Alpha 0.7 – Sprint 6: Schnellaktionen
 
-- [ ] Schnellaktionen
+- [x] Zentraler Schnellaktionsbereich auf Home
+- [x] Urlaubsantrag mit Zeitraum und lokalem Prüfstatus
+- [x] Verspätungsmeldung mit direkter Teamchat-Verknüpfung
+- [x] Schichttauschanfrage mit gewünschtem Tauschtag
+- [x] Datensparsame Krankmeldung
+- [x] Lokaler Verlauf mit Status und Zeitpunkt
+- [x] Verknüpfung der offenen Freigaben mit dem Verlauf
+- [x] Responsive und offline nutzbare Darstellung
 
 ## Alpha 0.8
 

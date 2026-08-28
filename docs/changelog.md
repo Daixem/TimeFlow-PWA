@@ -107,3 +107,29 @@
 
 - Benachrichtigungswünsche werden lokal gespeichert; echte Push-Nachrichten folgen in Alpha 0.8
 - Synchronisierung und Wiederherstellung über mehrere Geräte folgen mit dem Backend
+
+---
+
+## Alpha 0.7 – Sprint 6 (in Entwicklung)
+
+### Hinzugefügt
+
+- Zentraler Schnellaktionsbereich auf dem Home-Dashboard
+- Urlaubsantrag mit Zeitraum, Urlaubsart und lokalem Prüfstatus
+- Verspätungsmeldung mit Angabe der erwarteten Minuten
+- Schichttauschanfrage für geplante Schichten und gewünschte Tauschtage
+- Datensparsame Krankmeldung ohne Diagnose- oder Dokumentenupload
+- Lokaler Verlauf der letzten 30 Schnellaktionen
+- Status, Zusammenfassung und Zeitpunkt für jeden Vorgang
+- Automatische Ablage teamrelevanter Meldungen im bestehenden Teamchat
+
+### Verbessert
+
+- Die Karte mit offenen Freigaben öffnet jetzt den Schnellaktionsverlauf
+- Die vorhandenen Urlaubshinweise öffnen direkt den Urlaubsantrag
+- PWA-App-Cache und Versionsbindung wurden auf Build 0011 aktualisiert
+
+### Abgrenzung
+
+- Anträge und Meldungen werden in der Alpha-Version nur auf dem Gerät gespeichert
+- Serverseitige Freigaben, Dokumentenuploads und echte Personalprozesse folgen mit dem Backend

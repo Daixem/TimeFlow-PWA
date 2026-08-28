@@ -130,6 +130,14 @@ function initialise() {
       document.dispatchEvent(new CustomEvent("timeflow:open-profile"));
       return;
     }
+    if (button.dataset.action === "approvals") {
+      document.dispatchEvent(new CustomEvent("timeflow:open-quick-actions", { detail: { action: "history" } }));
+      return;
+    }
+    if (button.dataset.action === "vacation") {
+      document.dispatchEvent(new CustomEvent("timeflow:open-quick-actions", { detail: { action: "vacation" } }));
+      return;
+    }
     showToast("Diese Ansicht folgt in einem nächsten Sprint.");
   }));
   window.setInterval(updateDateTime, 1000);

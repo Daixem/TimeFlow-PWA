@@ -407,6 +407,23 @@ document.addEventListener("DOMContentLoaded", () => {
     if (time) time.textContent = "Jetzt";
   }
 
+  document.addEventListener("timeflow:send-team-message", (event) => {
+    const text = String(event.detail?.text || "").trim();
+    if (!text) return;
+    storedMessages.restaurant ||= [];
+    storedMessages.restaurant.push({
+      sender: "Du",
+      text,
+      time: new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }),
+      own: true,
+      read: false
+    });
+    localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(storedMessages));
+    updateConversationPreview("restaurant", text);
+    if (activeChat === "restaurant") renderConversation("restaurant", false);
+    notify(event.detail?.confirmation || "Meldung wurde im Teamchat gespeichert.");
+  });
+
   function confirmShift() {
     if (shiftConfirmed) {
       notify("Diese Schicht ist bereits bestätigt.");
