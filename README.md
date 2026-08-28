@@ -41,4 +41,6 @@ Sprint 4 ergänzt eine vollständige Profilseite mit persönlichen Daten,
 Arbeitszeitkonto sowie Wochen-, Monats- und Jahresstatistiken. Diagramme,
 Zielerreichung und die Verknüpfung zum Dienstplan sind direkt bedienbar.
 Profiländerungen und Einstellungen werden in der Alpha-Version lokal auf dem
-Gerät gespeichert.
+Gerät gespeichert. Home dient ausschließlich als Übersicht; der zentrale
+Menüpunkt „Stempeln“ öffnet eine eigenständige Zeiterfassung mit Live-Zeit,
+Schichtverlauf und Ein-/Ausstempel-Aktion.

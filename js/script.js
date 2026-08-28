@@ -80,6 +80,7 @@ function updateWorkUi() {
   elements.progressCircle.style.setProperty("--progress", `${percentage * 3.6}deg`);
   elements.progressCircle.setAttribute("aria-valuenow", String(percentage));
   elements.progressLabel.textContent = percentage >= 100 ? "Ziel erreicht" : "Tagesziel";
+  document.dispatchEvent(new CustomEvent("timeflow:workday-updated"));
 }
 function clockIn() { state = { isWorking: true, workStart: new Date(), workEnd: null }; saveWorkday(); startTimer(); updateWorkUi(); showToast("Du bist eingestempelt."); }
 function clockOut() { state.isWorking = false; state.workEnd = new Date(); saveWorkday(); stopTimer(); updateWorkUi(); showToast("Du bist ausgestempelt."); }
@@ -101,7 +102,7 @@ function initialise() {
   const vacation = new Date(2026, 7, 15); const days = Math.max(0, Math.ceil((vacation - new Date()) / 86400000));
   elements.vacationCountdown.textContent = days ? `${days} Tagen` : "Kürze";
   updateWorkUi(); if (state.isWorking) startTimer();
-  elements.clockButton.addEventListener("click", () => state.isWorking ? clockOut() : clockIn());
+  elements.clockButton.addEventListener("click", () => document.dispatchEvent(new CustomEvent("timeflow:open-clock")));
   document.querySelectorAll(".nav-item").forEach((item) => item.addEventListener("click", () => navigate(item.dataset.target)));
   document.querySelectorAll("[data-action]").forEach((button) => button.addEventListener("click", () => {
     if (button.dataset.action === "team") {
@@ -117,6 +118,7 @@ function initialise() {
   window.setInterval(updateDateTime, 1000);
 }
 document.addEventListener("DOMContentLoaded", initialise);
+document.addEventListener("timeflow:toggle-clock", () => state.isWorking ? clockOut() : clockIn());
 
 document.addEventListener("DOMContentLoaded", () => {
   const dashboard = document.getElementById("dashboard");

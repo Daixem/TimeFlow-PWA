@@ -71,6 +71,13 @@
 - Direkte Verknüpfung vom Profil zum Dienstplan
 - Lokal gespeicherte Benachrichtigungseinstellungen
 - Vorbereiteter Datenschutzbereich und Offline-Anzeige
+- Eigenständige Stempelansicht getrennt vom Home-Dashboard
+- Live-Arbeitszeit, Schichtverlauf und Tagesübersicht in der Stempelansicht
+
+### Verbessert
+
+- Der Home-Stempelstatus öffnet jetzt die Zeiterfassung, statt direkt ein- oder auszustempeln
+- Der zentrale Menüpunkt „Stempeln“ besitzt einen eigenen Bildschirm und eine eindeutige Funktion
 
 ### Abgrenzung
 

@@ -1,6 +1,9 @@
 # Sprint 4 – Profil und persönliche Statistik
 
-Status: **Erste funktionsfähige Alpha-Version umgesetzt (Build 0007)**
+Status: **Erste funktionsfähige Alpha-Version umgesetzt (Build 0008)**
+
+Ergänzung in Build 0008: Home-Dashboard und Zeiterfassung wurden funktional
+getrennt. Der Menüpunkt „Stempeln“ öffnet nun eine eigene Ansicht.
 
 ## Ziel
 
