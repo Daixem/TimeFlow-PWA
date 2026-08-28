@@ -223,3 +223,30 @@
 
 - Die öffentliche GitHub-Version besitzt keinen Cloud-Speicher und bleibt ein lokaler Demo-Modus
 - Zentrale Rollenverwaltung, Betriebsmandanten und serverseitige Chats folgen in späteren Ausbaustufen
+
+---
+
+## Alpha 1.0 RC – Sprint 10
+
+### Hinzugefügt
+
+- Sichtbarer Installationsstatus in den App-Einstellungen
+- Direkter PWA-Installationsdialog auf unterstützten Geräten
+- Verständliche Anleitung zur Installation über das Browsermenü
+- Kontrollierte Wiederherstellung einer lokalen JSON-Datensicherung
+- Prüfung von Format, Größe und enthaltenen TimeFlow-Daten vor dem Import
+- Bestätigungsübersicht mit Datum und Anzahl der wiederherstellbaren Datensätze
+- Bereitschaftskarte im Profil für App, Offline-Modus, Synchronisierung und Backup
+- Sprunglink für Tastaturnutzer zum Hauptinhalt
+
+### Sicherheit und Datenschutz
+
+- Lokale Sitzungen und Cloud-Revisionsstände werden nicht aus Backups übernommen
+- Unbekannte Schlüssel und ungültige Dateien werden beim Import abgewiesen
+- Die Backup-Datei bleibt vollständig auf dem Gerät
+- Der Cloud-Umfang bleibt auf Profil und Einstellungen begrenzt
+
+### Verbessert
+
+- PWA-App-Cache und Versionsbindung wurden auf Build 0015 aktualisiert
+- Version wurde auf `1.0.0-rc.1` angehoben

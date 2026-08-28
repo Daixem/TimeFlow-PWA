@@ -116,7 +116,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <summary><span class="menu-icon privacy"><i class="fa-solid fa-shield-halved"></i></span><span><strong>Datenschutz</strong><small>Lokale Daten und Berechtigungen</small></span><i class="fa-solid fa-chevron-down"></i></summary>
             <div class="detail-content privacy-copy"><p>Profil und Einstellungen werden in der privaten Site mit deinem Konto synchronisiert. Chats und sensible Schnellaktionen bleiben lokal.</p><button type="button" data-clear-profile><i class="fa-solid fa-rotate-left"></i> Lokale Profildaten zurücksetzen</button></div>
           </details>
-          <div class="version-row"><span class="menu-icon version"><i class="fa-solid fa-mobile-screen"></i></span><span><strong>TimeFlow PWA</strong><small>Alpha 0.9 · Build 0014</small></span><em>Cloud bereit</em></div>
+          <div class="version-row"><span class="menu-icon version"><i class="fa-solid fa-mobile-screen"></i></span><span><strong>TimeFlow PWA</strong><small>Alpha 1.0 RC · Build 0015</small></span><em>Startklar</em></div>
         </article>
       </section>
 

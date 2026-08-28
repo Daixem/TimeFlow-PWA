@@ -97,6 +97,14 @@ späteren Backend-Sprint umgesetzt.
 - [x] Lokaler Fallback ohne Datenverlust
 - [x] Chats, Gesundheitsmeldungen und Demo-Sitzungen bewusst ausgeschlossen
 
-## Alpha 1.0
+## Alpha 1.0 RC – Sprint 10: Stabilisierung
 
-- [ ] Erste stabile Version
+- [x] Verständlicher PWA-Installationsstatus
+- [x] Geführte Installation auf unterstützten Geräten
+- [x] Kontrollierte Wiederherstellung lokaler Datensicherungen
+- [x] Schutz von Sitzung und Cloud-Status beim Import
+- [x] Bereitschaftsübersicht für App, Offline, Synchronisierung und Backup
+- [x] Verbesserter Tastaturzugang zum Hauptinhalt
+- [x] Release-Candidate-Build mit erneuertem Offline-Cache
+- [ ] Praktischer Abnahmetest auf Android und iOS
+- [ ] Alpha 1.0 nach erfolgreicher Abnahme freigeben

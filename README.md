@@ -98,3 +98,13 @@ Statusbereich im Profil zeigt Synchronisierung, Offline-Betrieb und den letzten
 Abgleich. Die öffentliche GitHub-Vorschau bleibt vollständig lokal. Chats,
 Krankmeldungen und andere sensible Schnellaktionen werden in diesem Sprint
 bewusst nicht in die Cloud übertragen.
+
+## Sprint 10
+
+Sprint 10 stabilisiert TimeFlow als Alpha-1.0-Release-Candidate. In den
+Einstellungen lässt sich der Installationsstatus erkennen und die PWA auf
+unterstützten Geräten direkt installieren. Lokale JSON-Datensicherungen können
+nach einer Struktur- und Sicherheitsprüfung kontrolliert wiederhergestellt
+werden; Sitzung und Cloud-Revisionsstand bleiben dabei geschützt. Eine neue
+Bereitschaftskarte im Profil fasst Installation, Offline-Modus,
+Synchronisierung und Backup zusammen.

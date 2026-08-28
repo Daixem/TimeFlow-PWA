@@ -43,14 +43,14 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="app-status-list">
             <div><span><i class="fa-solid fa-wifi"></i><strong>Verbindung</strong></span><em id="onlineStatus">Online</em></div>
             <div><span><i class="fa-solid fa-shield-halved"></i><strong>Offline-Modus</strong></span><em id="offlineStatus">Wird geprüft</em></div>
-            <div><span><i class="fa-solid fa-code-branch"></i><strong>Installierte Version</strong></span><em>Alpha 0.9 · 0014</em></div>
+            <div><span><i class="fa-solid fa-code-branch"></i><strong>Installierte Version</strong></span><em>Alpha 1.0 RC · 0015</em></div>
           </div>
           <button class="settings-primary-button" type="button" data-check-update><i class="fa-solid fa-rotate"></i><span><strong>Auf Updates prüfen</strong><small>Letzte Prüfung: noch nicht geprüft</small></span></button>
         </section>
 
         <section class="settings-card" aria-labelledby="dataSettingsTitle">
           <header><span class="settings-card-icon amber"><i class="fa-solid fa-database"></i></span><div><small>Selbstbestimmt</small><h2 id="dataSettingsTitle">Daten & Datenschutz</h2></div></header>
-          <p class="settings-card-copy">Diese Vorschau nutzt keine Cloud-Datenbank. Deine Profil-, Chat- und Zeiterfassungsdaten liegen lokal in diesem Browser.</p>
+          <p class="settings-card-copy">In der privaten Site werden Profil und Einstellungen geschützt synchronisiert. Chats, Zeiterfassung und sensible Schnellaktionen bleiben lokal in diesem Browser.</p>
           <div class="data-actions">
             <button type="button" data-export-data><span class="data-action-icon"><i class="fa-solid fa-file-arrow-down"></i></span><span><strong>Datensicherung erstellen</strong><small>Alle lokalen TimeFlow-Daten als JSON</small></span><i class="fa-solid fa-chevron-right"></i></button>
             <button class="danger" type="button" data-open-reset><span class="data-action-icon"><i class="fa-solid fa-trash-can"></i></span><span><strong>Lokale Daten löschen</strong><small>TimeFlow auf diesem Gerät zurücksetzen</small></span><i class="fa-solid fa-chevron-right"></i></button>
@@ -58,7 +58,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </section>
       </div>
 
-      <section class="settings-about"><span><i class="fa-solid fa-fingerprint"></i></span><div><strong>TimeFlow PWA</strong><p>Sprint 9 · Alpha 0.9 · Build 0014</p></div><em>Made for better workdays</em></section>
+      <section class="settings-about"><span><i class="fa-solid fa-fingerprint"></i></span><div><strong>TimeFlow PWA</strong><p>Sprint 10 · Alpha 1.0 RC · Build 0015</p></div><em>Made for better workdays</em></section>
 
       <dialog class="settings-dialog" id="settingsResetDialog" aria-labelledby="settingsResetTitle">
         <div class="settings-dialog-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
@@ -162,7 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const rawValue = localStorage.getItem(key);
       try { localData[key] = JSON.parse(rawValue); } catch { localData[key] = rawValue; }
     }
-    const exportPayload = { app: "TimeFlow PWA", version: "0.9.0-alpha.2", exportedAt: new Date().toISOString(), data: localData };
+    const exportPayload = { app: "TimeFlow PWA", version: "1.0.0-rc.1", exportedAt: new Date().toISOString(), data: localData };
     const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: "application/json" });
     const downloadUrl = URL.createObjectURL(blob);
     const link = document.createElement("a");
