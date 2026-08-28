@@ -40,7 +40,7 @@
 
 ---
 
-## Alpha 0.4 – Sprint 3 (in Entwicklung)
+## Alpha 0.4 – Sprint 3
 
 ### Hinzugefügt
 
@@ -56,4 +56,54 @@
 ### Noch offen
 
 - Serverseitige Chats und Synchronisierung zwischen Benutzern
-- Statistik als späterer Bereich innerhalb des Profils
+
+---
+
+## Alpha 0.5 – Sprint 4
+
+### Hinzugefügt
+
+- Vollständige Profilseite mit Rolle, Abteilung und persönlichen Beschäftigungsdaten
+- Lokal bearbeitbare Profildaten
+- Arbeitszeitkonto mit Sollzeit, Überstunden, Urlaub und Krankheit
+- Umschaltbare Wochen-, Monats- und Jahresstatistik
+- Dynamische Arbeitszeitdiagramme und persönliche Zielerreichung
+- Direkte Verknüpfung vom Profil zum Dienstplan
+- Lokal gespeicherte Benachrichtigungseinstellungen
+- Vorbereiteter Datenschutzbereich und Offline-Anzeige
+- Eigenständige Stempelansicht getrennt vom Home-Dashboard
+- Live-Arbeitszeit, Schichtverlauf und Tagesübersicht in der Stempelansicht
+
+### Verbessert
+
+- Der Home-Stempelstatus öffnet jetzt die Zeiterfassung, statt direkt ein- oder auszustempeln
+- Der zentrale Menüpunkt „Stempeln“ besitzt einen eigenen Bildschirm und eine eindeutige Funktion
+- Versionsgebundene PWA-Dateien verhindern Mischstände aus altem Cache und neuer Oberfläche
+- Ein aktualisierter Service Worker lädt neue App-Versionen automatisch vollständig neu
+
+### Abgrenzung
+
+- Profildaten und Einstellungen werden in der Alpha-Version nur lokal gespeichert
+- Serverseitige Benutzerkonten und Synchronisierung folgen in einem späteren Sprint
+
+---
+
+## Alpha 0.6 – Sprint 5 (in Entwicklung)
+
+### Hinzugefügt
+
+- Eigene Einstellungsseite innerhalb des Profils
+- Lokal gespeicherte Benachrichtigungswünsche für Dienstplan, Chat und Freigaben
+- Einstellbares tägliches Arbeitsziel von 6 bis 10 Stunden
+- Einstellbare automatische Pause nach sechs Stunden Arbeitszeit
+- Direkte Übernahme von Arbeitsziel und Pause in Home und Stempelansicht
+- Optional reduzierte Animationen in der gesamten PWA
+- Sichtbarer Online-, Offline- und Service-Worker-Status
+- Manuelle Prüfung auf eine neue PWA-Version
+- Lokale Datensicherung aller TimeFlow-Daten als JSON-Datei
+- Bestätigtes Zurücksetzen ausschließlich lokaler TimeFlow-Daten
+
+### Abgrenzung
+
+- Benachrichtigungswünsche werden lokal gespeichert; echte Push-Nachrichten folgen in Alpha 0.8
+- Synchronisierung und Wiederherstellung über mehrere Geräte folgen mit dem Backend

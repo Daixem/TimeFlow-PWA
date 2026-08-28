@@ -29,20 +29,27 @@ späteren Backend-Sprint umgesetzt.
 
 ## Alpha 0.5 – Sprint 4: Profil und persönliche Statistik
 
-- [ ] Funktionsfähige Profilseite
-- [ ] Profilbild, Name, Rolle und Abteilung
-- [ ] Persönliche Beschäftigungsdaten
-- [ ] Arbeitszeitkonto mit Überstunden, Urlaub und Krankheit
-- [ ] Statistik innerhalb des Profils
-- [ ] Wochen-, Monats- und Jahresauswertung
-- [ ] Diagramme und Zielerreichung
-- [ ] Verknüpfung zum Dienstplan
-- [ ] Vorbereitete Bereiche für Einstellungen und Datenschutz
-- [ ] Responsive Darstellung und Offline-Unterstützung
+- [x] Funktionsfähige Profilseite
+- [x] Profilbild, Name, Rolle und Abteilung
+- [x] Persönliche Beschäftigungsdaten
+- [x] Arbeitszeitkonto mit Überstunden, Urlaub und Krankheit
+- [x] Statistik innerhalb des Profils
+- [x] Wochen-, Monats- und Jahresauswertung
+- [x] Diagramme und Zielerreichung
+- [x] Verknüpfung zum Dienstplan
+- [x] Vorbereitete Bereiche für Einstellungen und Datenschutz
+- [x] Responsive Darstellung und Offline-Unterstützung
 
-## Alpha 0.6
+## Alpha 0.6 – Sprint 5: Einstellungen
 
-- [ ] Einstellungen
+- [x] Eigene Einstellungsseite innerhalb des Profils
+- [x] Lokale Benachrichtigungswünsche
+- [x] Tagesziel und automatische Pause konfigurierbar
+- [x] Sofortige Übernahme in Home und Stempelansicht
+- [x] Reduzierte Animationen
+- [x] Online-, Offline- und PWA-Update-Status
+- [x] Lokale Datensicherung als JSON
+- [x] Kontrolliertes Zurücksetzen lokaler TimeFlow-Daten
 
 ## Alpha 0.7
 

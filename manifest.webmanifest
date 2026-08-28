@@ -2,7 +2,7 @@
   "id": "./",
   "name": "TimeFlow – Zeiterfassung",
   "short_name": "TimeFlow",
-  "description": "Die moderne Zeiterfassungs-App für dein Team.",
+  "description": "Zeiterfassung, Dienstpläne, Teamchat, persönliche Arbeitsstatistiken und Einstellungen in einer modernen PWA.",
   "lang": "de",
   "start_url": "./",
   "scope": "./",

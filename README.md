@@ -32,5 +32,24 @@ Gesprächsliste, Suche, Filtern und lokal versendbaren Demo-Nachrichten. Das
 Messenger-Konzept verbindet vertraute Chat-Bedienung mit Schichtkarten,
 Bestätigungen, Tauschanfragen und schnellen Verspätungsmeldungen.
 Chatnachrichten werden vorerst nur auf dem jeweiligen Gerät gespeichert; die
-Server-Synchronisierung folgt später. Die Statistik ist für einen späteren
-Ausbau innerhalb des Profils vorgesehen.
+Server-Synchronisierung folgt später. Die persönliche Statistik wurde mit
+Sprint 4 innerhalb des Profils umgesetzt.
+
+## Sprint 4
+
+Sprint 4 ergänzt eine vollständige Profilseite mit persönlichen Daten,
+Arbeitszeitkonto sowie Wochen-, Monats- und Jahresstatistiken. Diagramme,
+Zielerreichung und die Verknüpfung zum Dienstplan sind direkt bedienbar.
+Profiländerungen und Einstellungen werden in der Alpha-Version lokal auf dem
+Gerät gespeichert. Home dient ausschließlich als Übersicht; der zentrale
+Menüpunkt „Stempeln“ öffnet eine eigenständige Zeiterfassung mit Live-Zeit,
+Schichtverlauf und Ein-/Ausstempel-Aktion.
+
+## Sprint 5
+
+Sprint 5 ergänzt im Profil eine eigene Einstellungsseite. Dort lassen sich
+Benachrichtigungswünsche, das tägliche Arbeitsziel, die automatische Pause und
+reduzierte Animationen lokal konfigurieren. Arbeitsziel und Pause wirken
+sofort auf Home und die Stempelansicht. Zusätzlich zeigt die Seite den
+Online- und Offline-Status, prüft PWA-Updates und kann die lokalen
+TimeFlow-Daten sichern oder kontrolliert zurücksetzen.

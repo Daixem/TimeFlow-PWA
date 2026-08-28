@@ -222,8 +222,14 @@ document.addEventListener("DOMContentLoaded", () => {
   function showPage(name) {
     dashboard.classList.toggle("schedule-mode", name === "schedule");
     dashboard.classList.toggle("chat-mode", name === "chat");
+    dashboard.classList.toggle("profile-mode", name === "profile");
+    dashboard.classList.toggle("clock-mode", name === "clock");
+    dashboard.classList.toggle("settings-mode", name === "settings");
     schedulePage?.classList.toggle("hidden", name !== "schedule");
     chatPage.classList.toggle("hidden", name !== "chat");
+    document.getElementById("profilePage")?.classList.toggle("hidden", name !== "profile");
+    document.getElementById("clockPage")?.classList.toggle("hidden", name !== "clock");
+    document.getElementById("settingsPage")?.classList.toggle("hidden", name !== "settings");
     app.classList.toggle("subpage-mode", name !== "home");
     if (name === "chat") chatPage.classList.remove("thread-open");
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -232,14 +238,23 @@ document.addEventListener("DOMContentLoaded", () => {
   homeNav?.addEventListener("click", () => showPage("home"));
   scheduleNav?.addEventListener("click", () => showPage("schedule"));
   chatNav?.addEventListener("click", () => showPage("chat"));
-  profileNav?.addEventListener("click", () => showPage("home"));
-  clockNav?.addEventListener("click", () => {
-    showPage("home");
-    window.setTimeout(() => document.getElementById("clockButton")?.scrollIntoView({ behavior: "smooth", block: "center" }), 0);
-  });
+  profileNav?.addEventListener("click", () => showPage("profile"));
+  clockNav?.addEventListener("click", () => showPage("clock"));
   document.addEventListener("timeflow:open-chat", () => {
     showPage("chat");
     setNavActive("chat");
+  });
+  document.addEventListener("timeflow:open-profile", () => {
+    showPage("profile");
+    setNavActive("profile");
+  });
+  document.addEventListener("timeflow:open-clock", () => {
+    showPage("clock");
+    setNavActive("clock");
+  });
+  document.addEventListener("timeflow:open-settings", () => {
+    showPage("settings");
+    setNavActive("profile");
   });
 
   function loadStoredMessages() {
