@@ -158,3 +158,35 @@
 
 - Lokale Benachrichtigungen funktionieren nach ausdrücklicher Freigabe im Browser
 - Serverseitige Push-Zustellung bei vollständig geschlossener App benötigt ein Backend, Benutzerkonten und Push-Abonnements
+
+---
+
+## Alpha 0.9 – Sprint 8
+
+### Hinzugefügt
+
+- Geschützte Kontoerkennung über die bestehende Anmeldung der privaten Site
+- Klar gekennzeichneter Demo-Login für die öffentliche GitHub-Vorschau
+- Drei lokale Demo-Konten für Mitarbeiter, Teamleitung und Administration
+- Wiederherstellung der lokalen Demo-Sitzung auf demselben Gerät
+- Sitzungsstatus mit Kontoquelle direkt im Profil
+- Kontrollierte Abmeldung für private und öffentliche Vorschau
+- Lokale Benutzerverwaltung mit Rolle und Aktivstatus
+- Zurücksetzen der Demo-Belegschaft auf den Ausgangsstand
+
+### Sicherheit
+
+- TimeFlow speichert keine Passwörter oder Zugangsdaten
+- Die private Site übernimmt die vorhandene Site-Authentifizierung
+- Die öffentliche Version bezeichnet lokale Konten ausdrücklich als Demo
+- Der Identitätsendpunkt wird nicht zwischengespeichert
+
+### Verbessert
+
+- PWA-App-Cache und Versionsbindung wurden auf Build 0013 aktualisiert
+- Der Site-Build stellt den angemeldeten Besucher datensparsam für die Oberfläche bereit
+
+### Abgrenzung
+
+- Rollenänderungen und Aktivstatus gelten in dieser Alpha nur im aktuellen Browser
+- Zentrale Benutzerkonten, echte serverseitige Rollenprüfung und Synchronisierung folgen mit dem Backend
