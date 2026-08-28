@@ -3,6 +3,13 @@
 Eine lokal testbare Progressive Web App für Zeiterfassung und Dienstpläne,
 zusammengeführt aus den bereitgestellten TimeFlow-Ständen.
 
+## Online-Vorschau
+
+Die jeweils zuletzt veröffentlichte Sprint-Version ist unter
+[daixem.github.io/TimeFlow-PWA](https://daixem.github.io/TimeFlow-PWA/)
+erreichbar. Änderungen auf `main` und neuen `codex/sprint-*`-Branches werden
+automatisch über GitHub Pages veröffentlicht.
+
 ## In VS Code starten
 
 1. Diesen Ordner in VS Code öffnen.
