@@ -2,7 +2,7 @@
 
 Aktuelle Version: **Alpha 0.5 – Entwicklung**
 
-Build: **0008**
+Build: **0009**
 
 Sprint: **Sprint 4 – Profil und persönliche Statistik**
 

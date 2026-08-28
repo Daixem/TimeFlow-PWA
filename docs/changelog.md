@@ -78,6 +78,8 @@
 
 - Der Home-Stempelstatus öffnet jetzt die Zeiterfassung, statt direkt ein- oder auszustempeln
 - Der zentrale Menüpunkt „Stempeln“ besitzt einen eigenen Bildschirm und eine eindeutige Funktion
+- Versionsgebundene PWA-Dateien verhindern Mischstände aus altem Cache und neuer Oberfläche
+- Ein aktualisierter Service Worker lädt neue App-Versionen automatisch vollständig neu
 
 ### Abgrenzung
 
