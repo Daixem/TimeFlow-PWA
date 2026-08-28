@@ -60,3 +60,11 @@ reduzierte Animationen lokal konfigurieren. Arbeitsziel und Pause wirken
 sofort auf Home und die Stempelansicht. Zusätzlich zeigt die Seite den
 Online- und Offline-Status, prüft PWA-Updates und kann die lokalen
 TimeFlow-Daten sichern oder kontrolliert zurücksetzen.
+
+## Sprint 6
+
+Sprint 6 ergänzt das Home-Dashboard um bedienbare Schnellaktionen für Urlaub,
+Verspätung, Schichttausch und Krankmeldung. Abgesendete Vorgänge werden mit
+Status und Zeitpunkt lokal gespeichert. Teamrelevante Meldungen erscheinen
+zusätzlich als eigene Nachricht im Teamchat; der Verlauf lässt sich über Home
+oder die Karte mit den offenen Freigaben öffnen.
