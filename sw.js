@@ -1,6 +1,7 @@
-const CACHE_NAME = "timeflow-v4";
+const CACHE_NAME = "timeflow-v11";
 const APP_SHELL = [
-  "./", "index.html", "manifest.webmanifest", "css/style.css", "css/pwa.css", "js/script.js",
+  "./", "index.html", "manifest.webmanifest?v=0010", "css/style.css?v=0010", "css/pwa.css?v=0010", "css/sprint3.css?v=0010", "css/sprint4.css?v=0010", "css/sprint5.css?v=0010", "css/stamp.css?v=0010",
+  "js/script.js?v=0010", "js/sprint3.js?v=0010", "js/sprint4.js?v=0010", "js/sprint5.js?v=0010", "js/stamp.js?v=0010",
   "assets/icons/timeflow-icon.svg", "assets/icons/timeflow-icon-192.png",
   "assets/icons/timeflow-icon-512.png", "assets/icons/timeflow-maskable-512.png"
 ];
@@ -15,6 +16,14 @@ self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
   if (event.request.mode === "navigate") {
     event.respondWith(fetch(event.request).catch(() => caches.match("./")));
+    return;
+  }
+  if (["script", "style"].includes(event.request.destination)) {
+    event.respondWith(fetch(event.request).then((response) => {
+      const copy = response.clone();
+      caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+      return response;
+    }).catch(() => caches.match(event.request)));
     return;
   }
   event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {

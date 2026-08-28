@@ -1,6 +1,7 @@
 "use strict";
 
 const STORAGE_KEY = "timeflow-workday-v2";
+const SETTINGS_STORAGE_KEY = "timeflow-settings-v1";
 const TARGET_WORK_MINUTES = 480;
 const BREAK_AFTER_MINUTES = 360;
 const AUTO_BREAK_MINUTES = 30;
@@ -40,7 +41,22 @@ function elapsedMinutes() {
   const end = state.isWorking ? new Date() : state.workEnd;
   return end ? Math.max(0, Math.floor((end - state.workStart) / 60000)) : 0;
 }
-function breakMinutes() { return elapsedMinutes() >= BREAK_AFTER_MINUTES ? AUTO_BREAK_MINUTES : 0; }
+function timeSettings() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY));
+    return {
+      dailyTargetMinutes: Number(saved?.dailyTargetMinutes) || TARGET_WORK_MINUTES,
+      autoBreakMinutes: Number.isFinite(Number(saved?.autoBreakMinutes)) ? Number(saved.autoBreakMinutes) : AUTO_BREAK_MINUTES,
+      autoBreakAfterMinutes: Number(saved?.autoBreakAfterMinutes) || BREAK_AFTER_MINUTES
+    };
+  } catch {
+    return { dailyTargetMinutes: TARGET_WORK_MINUTES, autoBreakMinutes: AUTO_BREAK_MINUTES, autoBreakAfterMinutes: BREAK_AFTER_MINUTES };
+  }
+}
+function breakMinutes() {
+  const settings = timeSettings();
+  return elapsedMinutes() >= settings.autoBreakAfterMinutes ? settings.autoBreakMinutes : 0;
+}
 function workedMinutes() { return Math.max(0, elapsedMinutes() - breakMinutes()); }
 
 function saveWorkday() {
@@ -64,7 +80,8 @@ function updateDateTime() {
   elements.greeting.textContent = hour < 12 && hour >= 5 ? "Guten Morgen" : hour < 18 ? "Guten Tag" : "Guten Abend";
 }
 function updateWorkUi() {
-  const worked = workedMinutes(); const pause = breakMinutes(); const percentage = Math.min(100, Math.round((worked / TARGET_WORK_MINUTES) * 100));
+  const targetMinutes = timeSettings().dailyTargetMinutes;
+  const worked = workedMinutes(); const pause = breakMinutes(); const percentage = Math.min(100, Math.round((worked / targetMinutes) * 100));
   elements.startTime.textContent = state.workStart ? formatTime(state.workStart) : "--:--";
   elements.endTime.textContent = state.workEnd ? formatTime(state.workEnd) : "--:--";
   elements.workStatus.textContent = state.isWorking ? "Im Dienst" : "Nicht im Dienst";
@@ -74,12 +91,13 @@ function updateWorkUi() {
   elements.clockIcon.className = `fa-solid ${state.isWorking ? "fa-right-from-bracket" : "fa-right-to-bracket"}`;
   elements.todayHours.textContent = formatMinutes(worked);
   elements.todayBreak.textContent = `${pause} min`;
-  elements.todayOvertime.textContent = formatMinutes(Math.max(0, worked - TARGET_WORK_MINUTES));
-  elements.todayTarget.textContent = formatMinutes(TARGET_WORK_MINUTES);
+  elements.todayOvertime.textContent = formatMinutes(Math.max(0, worked - targetMinutes));
+  elements.todayTarget.textContent = formatMinutes(targetMinutes);
   elements.progressCircle.textContent = `${percentage}%`;
   elements.progressCircle.style.setProperty("--progress", `${percentage * 3.6}deg`);
   elements.progressCircle.setAttribute("aria-valuenow", String(percentage));
   elements.progressLabel.textContent = percentage >= 100 ? "Ziel erreicht" : "Tagesziel";
+  document.dispatchEvent(new CustomEvent("timeflow:workday-updated"));
 }
 function clockIn() { state = { isWorking: true, workStart: new Date(), workEnd: null }; saveWorkday(); startTimer(); updateWorkUi(); showToast("Du bist eingestempelt."); }
 function clockOut() { state.isWorking = false; state.workEnd = new Date(); saveWorkday(); stopTimer(); updateWorkUi(); showToast("Du bist ausgestempelt."); }
@@ -89,9 +107,9 @@ function showToast(message) { elements.toast.textContent = message; elements.toa
 function navigate(target) {
   document.querySelectorAll(".nav-item").forEach((item) => { const active = item.dataset.target === target; item.classList.toggle("active", active); item.toggleAttribute("aria-current", active); });
   if (target === "home") window.scrollTo({ top: 0, behavior: "smooth" });
-  else if (target === "schedule") return;
+  else if (target === "schedule" || target === "chat" || target === "profile") return;
   else if (target === "clock") { elements.clockButton.scrollIntoView({ behavior: "smooth", block: "center" }); elements.clockButton.focus({ preventScroll: true }); }
-  else showToast(`${({ chat: "Statistik", profile: "Profil" })[target]} folgt in einem nächsten Sprint.`);
+  else showToast(`${({ profile: "Profil" })[target]} folgt in einem nächsten Sprint.`);
 }
 function initialise() {
   loadWorkday(); updateDateTime();
@@ -101,12 +119,24 @@ function initialise() {
   const vacation = new Date(2026, 7, 15); const days = Math.max(0, Math.ceil((vacation - new Date()) / 86400000));
   elements.vacationCountdown.textContent = days ? `${days} Tagen` : "Kürze";
   updateWorkUi(); if (state.isWorking) startTimer();
-  elements.clockButton.addEventListener("click", () => state.isWorking ? clockOut() : clockIn());
+  elements.clockButton.addEventListener("click", () => document.dispatchEvent(new CustomEvent("timeflow:open-clock")));
   document.querySelectorAll(".nav-item").forEach((item) => item.addEventListener("click", () => navigate(item.dataset.target)));
-  document.querySelectorAll("[data-action]").forEach((button) => button.addEventListener("click", () => showToast("Diese Ansicht folgt in einem nächsten Sprint.")));
+  document.querySelectorAll("[data-action]").forEach((button) => button.addEventListener("click", () => {
+    if (button.dataset.action === "team") {
+      document.dispatchEvent(new CustomEvent("timeflow:open-chat"));
+      return;
+    }
+    if (button.dataset.action === "profile") {
+      document.dispatchEvent(new CustomEvent("timeflow:open-profile"));
+      return;
+    }
+    showToast("Diese Ansicht folgt in einem nächsten Sprint.");
+  }));
   window.setInterval(updateDateTime, 1000);
 }
 document.addEventListener("DOMContentLoaded", initialise);
+document.addEventListener("timeflow:toggle-clock", () => state.isWorking ? clockOut() : clockIn());
+document.addEventListener("timeflow:settings-updated", updateWorkUi);
 
 document.addEventListener("DOMContentLoaded", () => {
   const dashboard = document.getElementById("dashboard");

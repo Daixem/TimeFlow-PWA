@@ -1,0 +1,50 @@
+name: TimeFlow auf GitHub Pages veröffentlichen
+
+on:
+  push:
+    branches:
+      - main
+      - "codex/sprint-*"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: timeflow-github-pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Aktuellen TimeFlow-Stand veröffentlichen
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Projekt laden
+        uses: actions/checkout@v4
+
+      - name: PWA-Paket vorbereiten
+        shell: bash
+        run: |
+          mkdir -p _site
+          cp index.html manifest.webmanifest sw.js _site/
+          cp -R assets css js _site/
+          touch _site/.nojekyll
+
+      - name: GitHub Pages vorbereiten
+        uses: actions/configure-pages@v5
+        with:
+          enablement: true
+
+      - name: PWA hochladen
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - name: GitHub Pages aktualisieren
+        id: deployment
+        uses: actions/deploy-pages@v4

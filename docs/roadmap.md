@@ -18,16 +18,38 @@
 
 ## Alpha 0.4 – Sprint 3
 
-- [ ] Statistik
-- [ ] Chats
+- [x] Chat-Oberfläche
+- [x] Lokaler UI-Prototyp und Demo-Nachrichten
+- [x] Schichtkarten und arbeitsbezogene Schnellaktionen
+- [x] Mobile Chat-Navigation
+- [x] Sprint-3-Abschluss als funktionsfähiger Alpha-Prototyp
 
-## Alpha 0.5
+Echte Empfänger, Server-Synchronisierung und Benutzerkonten werden in einem
+späteren Backend-Sprint umgesetzt.
 
-- [ ] Profil
+## Alpha 0.5 – Sprint 4: Profil und persönliche Statistik
 
-## Alpha 0.6
+- [x] Funktionsfähige Profilseite
+- [x] Profilbild, Name, Rolle und Abteilung
+- [x] Persönliche Beschäftigungsdaten
+- [x] Arbeitszeitkonto mit Überstunden, Urlaub und Krankheit
+- [x] Statistik innerhalb des Profils
+- [x] Wochen-, Monats- und Jahresauswertung
+- [x] Diagramme und Zielerreichung
+- [x] Verknüpfung zum Dienstplan
+- [x] Vorbereitete Bereiche für Einstellungen und Datenschutz
+- [x] Responsive Darstellung und Offline-Unterstützung
 
-- [ ] Einstellungen
+## Alpha 0.6 – Sprint 5: Einstellungen
+
+- [x] Eigene Einstellungsseite innerhalb des Profils
+- [x] Lokale Benachrichtigungswünsche
+- [x] Tagesziel und automatische Pause konfigurierbar
+- [x] Sofortige Übernahme in Home und Stempelansicht
+- [x] Reduzierte Animationen
+- [x] Online-, Offline- und PWA-Update-Status
+- [x] Lokale Datensicherung als JSON
+- [x] Kontrolliertes Zurücksetzen lokaler TimeFlow-Daten
 
 ## Alpha 0.7
 
