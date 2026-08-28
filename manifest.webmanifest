@@ -2,7 +2,7 @@
   "id": "./",
   "name": "TimeFlow – Zeiterfassung",
   "short_name": "TimeFlow",
-  "description": "Zeiterfassung, Dienstpläne, Teamchat, Schnellaktionen, Benachrichtigungen und lokale Benutzerrollen in einer modernen PWA.",
+  "description": "Zeiterfassung, Dienstpläne, Teamchat, Benachrichtigungen, Benutzerrollen und sichere Profilsynchronisierung in einer modernen PWA.",
   "lang": "de",
   "start_url": "./",
   "scope": "./",

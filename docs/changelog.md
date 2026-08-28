@@ -190,3 +190,36 @@
 
 - Rollenänderungen und Aktivstatus gelten in dieser Alpha nur im aktuellen Browser
 - Zentrale Benutzerkonten, echte serverseitige Rollenprüfung und Synchronisierung folgen mit dem Backend
+
+---
+
+## Alpha 0.9 – Sprint 9
+
+### Hinzugefügt
+
+- Verwalteter Cloud-Speicher für benutzerbezogene TimeFlow-Daten
+- Geschützte Synchronisierungs-API mit serverseitiger Identitätsprüfung
+- Automatische Erstsicherung von Profil und Einstellungen
+- Wiederherstellung eines vorhandenen Cloud-Stands auf einem weiteren Gerät
+- Revisionsnummer und Zeitstempel für jeden gespeicherten Benutzerstand
+- Cloud-Statuskarte im Profil mit manueller Synchronisierung
+- Verständliche Zustände für Synchronisierung, Offline-Betrieb und Fehler
+- Lokaler Fallback, wenn die Cloud vorübergehend nicht erreichbar ist
+
+### Datenschutz und Sicherheit
+
+- Ausschließlich Profil und Einstellungen werden synchronisiert
+- Teamchats, Krankmeldungen, Schnellaktionen und Demo-Sitzungen bleiben lokal
+- Lese- und Schreibzugriffe benötigen eine serverseitig geprüfte Benutzeridentität
+- Fremde Ursprünge dürfen keine Synchronisierungsdaten schreiben
+- Datenpakete werden in Größe und Struktur begrenzt
+
+### Verbessert
+
+- Datenschutzhinweis im Profil unterscheidet jetzt lokale und synchronisierte Daten
+- PWA-App-Cache und Versionsbindung wurden auf Build 0014 aktualisiert
+
+### Abgrenzung
+
+- Die öffentliche GitHub-Version besitzt keinen Cloud-Speicher und bleibt ein lokaler Demo-Modus
+- Zentrale Rollenverwaltung, Betriebsmandanten und serverseitige Chats folgen in späteren Ausbaustufen

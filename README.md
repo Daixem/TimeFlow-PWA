@@ -88,3 +88,13 @@ nutzt stattdessen bewusst gekennzeichnete Demo-Konten ohne Passwort. Rollen,
 Aktivstatus und Demo-Benutzer lassen sich lokal verwalten. Zentrale Konten,
 echte Berechtigungen und geräteübergreifende Synchronisierung folgen mit dem
 Backend.
+
+## Sprint 9
+
+Sprint 9 verbindet die private TimeFlow-Site mit einem benutzerbezogenen
+Cloud-Speicher. Profil und Einstellungen werden nach der Anmeldung automatisch
+gesichert und können auf einem weiteren Gerät wiederhergestellt werden. Ein
+Statusbereich im Profil zeigt Synchronisierung, Offline-Betrieb und den letzten
+Abgleich. Die öffentliche GitHub-Vorschau bleibt vollständig lokal. Chats,
+Krankmeldungen und andere sensible Schnellaktionen werden in diesem Sprint
+bewusst nicht in die Cloud übertragen.
