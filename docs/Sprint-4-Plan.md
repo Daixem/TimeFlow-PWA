@@ -1,5 +1,7 @@
 # Sprint 4 – Profil und persönliche Statistik
 
+Status: **Erste funktionsfähige Alpha-Version umgesetzt (Build 0007)**
+
 ## Ziel
 
 Sprint 4 ergänzt TimeFlow um eine persönliche Profilansicht. Dort werden

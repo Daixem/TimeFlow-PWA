@@ -40,7 +40,7 @@
 
 ---
 
-## Alpha 0.4 – Sprint 3 (in Entwicklung)
+## Alpha 0.4 – Sprint 3
 
 ### Hinzugefügt
 
@@ -56,4 +56,23 @@
 ### Noch offen
 
 - Serverseitige Chats und Synchronisierung zwischen Benutzern
-- Statistik als späterer Bereich innerhalb des Profils
+
+---
+
+## Alpha 0.5 – Sprint 4 (in Entwicklung)
+
+### Hinzugefügt
+
+- Vollständige Profilseite mit Rolle, Abteilung und persönlichen Beschäftigungsdaten
+- Lokal bearbeitbare Profildaten
+- Arbeitszeitkonto mit Sollzeit, Überstunden, Urlaub und Krankheit
+- Umschaltbare Wochen-, Monats- und Jahresstatistik
+- Dynamische Arbeitszeitdiagramme und persönliche Zielerreichung
+- Direkte Verknüpfung vom Profil zum Dienstplan
+- Lokal gespeicherte Benachrichtigungseinstellungen
+- Vorbereiteter Datenschutzbereich und Offline-Anzeige
+
+### Abgrenzung
+
+- Profildaten und Einstellungen werden in der Alpha-Version nur lokal gespeichert
+- Serverseitige Benutzerkonten und Synchronisierung folgen in einem späteren Sprint
