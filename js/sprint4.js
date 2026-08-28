@@ -116,7 +116,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <summary><span class="menu-icon privacy"><i class="fa-solid fa-shield-halved"></i></span><span><strong>Datenschutz</strong><small>Lokale Daten und Berechtigungen</small></span><i class="fa-solid fa-chevron-down"></i></summary>
             <div class="detail-content privacy-copy"><p>Profiländerungen und Statistikeinstellungen bleiben in dieser Vorschau auf deinem Gerät.</p><button type="button" data-clear-profile><i class="fa-solid fa-rotate-left"></i> Lokale Profildaten zurücksetzen</button></div>
           </details>
-          <div class="version-row"><span class="menu-icon version"><i class="fa-solid fa-mobile-screen"></i></span><span><strong>TimeFlow PWA</strong><small>Alpha 0.8 · Build 0012</small></span><em>Offline bereit</em></div>
+          <div class="version-row"><span class="menu-icon version"><i class="fa-solid fa-mobile-screen"></i></span><span><strong>TimeFlow PWA</strong><small>Alpha 0.9 · Build 0013</small></span><em>Offline bereit</em></div>
         </article>
       </section>
 

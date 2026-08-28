@@ -78,3 +78,13 @@ Einstellungen kann die Browser-/PWA-Berechtigung bewusst aktiviert und mit
 einer Testbenachrichtigung geprüft werden. Echte serverseitige Push-Nachrichten
 bei vollständig geschlossener App benötigen später die Benutzerverwaltung und
 das Backend.
+
+## Sprint 8
+
+Sprint 8 ergänzt Anmeldung, Sitzungsstatus und eine erste Benutzerverwaltung.
+Die private TimeFlow-Site verwendet die vorhandene geschützte Site-Anmeldung
+und zeigt das verifizierte Konto im Profil. Die öffentliche GitHub-Vorschau
+nutzt stattdessen bewusst gekennzeichnete Demo-Konten ohne Passwort. Rollen,
+Aktivstatus und Demo-Benutzer lassen sich lokal verwalten. Zentrale Konten,
+echte Berechtigungen und geräteübergreifende Synchronisierung folgen mit dem
+Backend.

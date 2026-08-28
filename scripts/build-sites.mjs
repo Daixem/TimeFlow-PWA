@@ -53,6 +53,22 @@ function decode(value) {
 export default {
   async fetch(request) {
     const url = new URL(request.url);
+    if (url.pathname === "/api/session") {
+      const id = request.headers.get("oai-authenticated-user-id");
+      const email = request.headers.get("oai-authenticated-user-email");
+      const encodedName = request.headers.get("oai-authenticated-user-full-name");
+      const nameEncoding = request.headers.get("oai-authenticated-user-full-name-encoding");
+      let name = "";
+      if (encodedName && nameEncoding === "percent-encoded-utf-8") {
+        try { name = decodeURIComponent(encodedName); } catch { name = ""; }
+      }
+      if (!name && email) name = email.split("@")[0].replace(/[._-]+/g, " ").replace(/(^|\\s)\\S/g, (letter) => letter.toUpperCase());
+      const authenticated = Boolean(id || email);
+      return new Response(JSON.stringify({ authenticated, user: authenticated ? { id, email, name } : null }), {
+        status: 200,
+        headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" }
+      });
+    }
     let path;
     try {
       path = decodeURIComponent(url.pathname).replace(/^\\/+/, "") || "index.html";

@@ -1,9 +1,9 @@
 # TimeFlow
 
-Aktuelle Version: **Alpha 0.8 – Entwicklung**
+Aktuelle Version: **Alpha 0.9 – Entwicklung**
 
-Build: **0012**
+Build: **0013**
 
-Sprint: **Sprint 7 – Benachrichtigungen**
+Sprint: **Sprint 8 – Anmeldung und Benutzerrollen**
 
 Stand: **28.08.2026**

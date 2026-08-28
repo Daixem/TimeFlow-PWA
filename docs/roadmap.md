@@ -73,10 +73,17 @@ späteren Backend-Sprint umgesetzt.
 - [x] Lokale Speicherung und Offline-Verfügbarkeit
 - [ ] Serverseitige Push-Zustellung bei geschlossener App (benötigt Backend)
 
-## Alpha 0.9
+## Alpha 0.9 – Sprint 8: Anmeldung und Benutzerrollen
 
-- [ ] Login und Benutzerverwaltung
-- [ ] Backend und Datensynchronisierung
+- [x] Bestehende sichere Site-Anmeldung für die private Vorschau verwenden
+- [x] Klar gekennzeichneter Demo-Login für die öffentliche GitHub-Version
+- [x] Lokale Sitzung auf dem Gerät wiederherstellen
+- [x] Kontrollierte Abmeldung
+- [x] Benutzerübersicht mit Aktivstatus
+- [x] Rollen Mitarbeiter, Teamleitung und Administrator
+- [x] Lokale Bearbeitung und Zurücksetzen der Demo-Benutzer
+- [ ] Zentrale Benutzerkonten und Rollenberechtigungen im Backend
+- [ ] Datensynchronisierung zwischen Geräten
 
 ## Alpha 1.0
 
