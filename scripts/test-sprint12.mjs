@@ -1,9 +1,9 @@
 import { readFile } from "node:fs/promises";
 
 const requiredSnippets = new Map([
-  ["index.html", ["css/sprint12.css?v=0017", "js/sprint12.js?v=0017", "sw.js?v=0017"]],
-  ["sw.js", ["timeflow-v18", "relativePath.startsWith(\"api/\")", "response.type === \"opaque\"", "css/sprint12.css?v=0017", "js/sprint12.js?v=0017"]],
-  ["js/sprint12.js", ["Geräte- und PWA-Check", "timeflow-device-check-v1", "Sichere Ausführung", "Mobile Darstellung", "Datensicherung", "timeflow:device-resumed"]],
+  ["index.html", ["css/sprint12.css?v=0018", "js/sprint12.js?v=0018", "sw.js?v=0018"]],
+  ["sw.js", ["timeflow-v19", "relativePath.startsWith(\"api/\")", "response.type === \"opaque\"", "css/sprint12.css?v=0018", "js/sprint12.js?v=0018"]],
+  ["js/sprint12.js", ["Geräte- und PWA-Check", "timeflow-device-check-v1", "Sichere Ausführung", "Mobile Darstellung", "Datensicherung", "timeflow:device-resumed", "function enforcePageState", "dataset.timeflowPage"]],
   ["js/script.js", ["&& !saved.isWorking", "timeflow:device-resumed", "Number.isNaN(start.valueOf())"]],
   ["js/sprint11.js", ["data-select-mode=\"private\"", "data-select-mode=\"team\""]],
   ["js/sprint9.js", ["timeflow:sync-ready", "cache: \"no-store\""]],
@@ -36,7 +36,7 @@ const worker = (await import("../dist/server/index.js")).default;
 const home = await worker.fetch(new Request("https://timeflow.test/"), {});
 const missing = await worker.fetch(new Request("https://timeflow.test/nicht-vorhanden"), {});
 const unauthenticatedSync = await worker.fetch(new Request("https://timeflow.test/api/sync"), {});
-if (home.status !== 200 || !(await home.text()).includes("js/sprint12.js?v=0017")) {
+if (home.status !== 200 || !(await home.text()).includes("js/sprint12.js?v=0018")) {
   throw new Error("Der Sites-Build enthält Sprint 12 nicht vollständig.");
 }
 if (missing.status !== 404) throw new Error("Unbekannte Dateien liefern keinen korrekten 404-Status.");

@@ -1,6 +1,6 @@
 # Sprint 12 – Praxistest und Produktionshärtung
 
-Status: **Technische Testversion 1.0.1 umgesetzt (Build 0017)**
+Status: **Technische Testversion 1.0.1 umgesetzt (Build 0018)**
 
 ## Ziel
 
@@ -15,7 +15,8 @@ nach dem Wiederöffnen der App.
 - Prüfung von sicherem Kontext, Offline-App, lokalem Speicher und Darstellung
 - Sichtbarer Status für Nutzungsmodus, Backup, Synchronisierung und Verbindung
 - Keine Zwischenspeicherung benutzerbezogener API-Antworten im Service Worker
-- Aktualisierung des App-Shell-Caches auf Build 0017
+- Aktualisierung des App-Shell-Caches auf Build 0018
+- Wiederherstellung eines konsistenten Seitenzustands auf Tablets und nach App-Rückkehr
 - Laufende Nachtschichten bleiben über den Tageswechsel erhalten
 - Erneute Zustandsprüfung nach Rückkehr aus dem Hintergrund
 - Automatisierte Sprint-12-Abnahme für Build, PWA, Backup und Synchronisierung

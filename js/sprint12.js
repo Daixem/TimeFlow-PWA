@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!readinessCard || !profilePage) return;
 
   const CHECK_KEY = "timeflow-device-check-v1";
-  const BUILD = "0017";
+  const BUILD = "0018";
   const heading = readinessCard.querySelector("header small");
   const title = readinessCard.querySelector("header h2");
   if (heading) heading.textContent = "Sprint 12 · Praxistest";
@@ -38,6 +38,42 @@ document.addEventListener("DOMContentLoaded", () => {
   const progress = document.getElementById("deviceCheckProgress");
   const summary = document.getElementById("deviceCheckSummary");
   let running = false;
+
+  const pageModes = ["schedule-mode", "chat-mode", "profile-mode", "clock-mode", "settings-mode"];
+  const pageElements = {
+    schedule: "schedulePage",
+    chat: "chatPage",
+    profile: "profilePage",
+    clock: "clockPage",
+    settings: "settingsPage"
+  };
+
+  function enforcePageState(requestedPage = "home") {
+    const dashboard = document.getElementById("dashboard");
+    const app = document.querySelector(".app");
+    const privateMode = document.documentElement.classList.contains("timeflow-private-mode");
+    const page = requestedPage === "chat" && privateMode ? "home" : requestedPage;
+    if (!dashboard || !app) return;
+
+    dashboard.classList.remove(...pageModes);
+    if (page !== "home") dashboard.classList.add(`${page}-mode`);
+    Object.entries(pageElements).forEach(([name, id]) => {
+      document.getElementById(id)?.classList.toggle("hidden", name !== page);
+    });
+    app.classList.toggle("subpage-mode", page !== "home");
+    document.querySelectorAll(".nav-item").forEach((item) => {
+      const active = item.dataset.target === page;
+      item.classList.toggle("active", active);
+      if (active) item.setAttribute("aria-current", "page");
+      else item.removeAttribute("aria-current");
+    });
+    document.documentElement.dataset.timeflowPage = page;
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+  }
+
+  function settlePageState(page) {
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => enforcePageState(page)));
+  }
 
   function parseJson(value, fallback = {}) {
     try { return JSON.parse(value) ?? fallback; } catch { return fallback; }
@@ -157,8 +193,22 @@ document.addEventListener("DOMContentLoaded", () => {
   dialog.querySelector("[data-repeat-device-check]").addEventListener("click", runCheck);
   dialog.querySelector("[data-close-device-check]").addEventListener("click", () => dialog.close());
   dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
-  window.addEventListener("pageshow", () => document.dispatchEvent(new CustomEvent("timeflow:device-resumed")));
+  document.querySelectorAll(".nav-item[data-target]").forEach((item) => item.addEventListener("click", () => settlePageState(item.dataset.target)));
+  document.addEventListener("timeflow:open-chat", () => settlePageState("chat"));
+  document.addEventListener("timeflow:open-profile", () => settlePageState("profile"));
+  document.addEventListener("timeflow:open-clock", () => settlePageState("clock"));
+  document.addEventListener("timeflow:open-settings", () => settlePageState("settings"));
+  document.addEventListener("timeflow:open-notifications", () => settlePageState("home"));
+  window.addEventListener("pageshow", () => {
+    const activePage = document.querySelector(".nav-item.active")?.dataset.target || "home";
+    settlePageState(activePage);
+    document.dispatchEvent(new CustomEvent("timeflow:device-resumed"));
+  });
   document.addEventListener("visibilitychange", () => {
-    if (document.visibilityState === "visible") document.dispatchEvent(new CustomEvent("timeflow:device-resumed"));
+    if (document.visibilityState === "visible") {
+      const activePage = document.documentElement.dataset.timeflowPage || document.querySelector(".nav-item.active")?.dataset.target || "home";
+      settlePageState(activePage);
+      document.dispatchEvent(new CustomEvent("timeflow:device-resumed"));
+    }
   });
 });
