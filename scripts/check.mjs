@@ -18,6 +18,7 @@ const required = [
   "css/sprint12.css",
   "css/stamp.css",
   "js/script.js",
+  "js/shell.js",
   "js/sprint3.js",
   "js/sprint4.js",
   "js/sprint5.js",

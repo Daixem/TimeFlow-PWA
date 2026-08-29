@@ -294,8 +294,9 @@
 
 - Laufende Zeiterfassung bleibt über Tageswechsel und App-Rückkehr erhalten
 - Externe Schrift- und Symbolressourcen können nach dem ersten Laden offline genutzt werden
-- Navigations- und App-Shell-Cache werden kontrolliert auf Build 0018 erneuert
+- Navigations- und App-Shell-Cache werden kontrolliert auf Build 0019 erneuert
 - Tablet-Navigation stellt nach Seitenwechsel, Rückkehr und Neuladen immer den passenden Inhalt wieder her
+- Ein früher, iPad-kompatibler Shell-Wächter verhindert einen leeren Inhaltsbereich bei einem Teilausfall dynamischer Seiten
 - Version wurde auf `1.0.1` angehoben
 
 ### Sicherheit und Datenschutz
