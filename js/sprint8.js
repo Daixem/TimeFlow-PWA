@@ -2,6 +2,12 @@
 
 document.documentElement.classList.add("timeflow-auth-pending");
 
+// Ein langsamer oder blockierter Sitzungs-Endpunkt darf die Oberfläche nicht
+// dauerhaft unsichtbar lassen (besonders in iPad-WebViews).
+const authVisibilityFallback = window.setTimeout(() => {
+  document.documentElement.classList.remove("timeflow-auth-pending");
+}, 4000);
+
 document.addEventListener("DOMContentLoaded", () => {
   const SESSION_KEY = "timeflow-session-v1";
   const USERS_KEY = "timeflow-users-v1";
@@ -65,17 +71,29 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function storageGet(key) {
+    try { return localStorage.getItem(key); } catch { return null; }
+  }
+
+  function storageSet(key, value) {
+    try { localStorage.setItem(key, value); } catch { /* Sitzung bleibt temporär nutzbar. */ }
+  }
+
+  function storageRemove(key) {
+    try { localStorage.removeItem(key); } catch { /* Kein persistenter Speicher verfügbar. */ }
+  }
+
   function loadUsers() {
-    const stored = parseJson(localStorage.getItem(USERS_KEY), null);
+    const stored = parseJson(storageGet(USERS_KEY), null);
     return Array.isArray(stored) && stored.length ? stored : defaultUsers.map((user) => ({ ...user }));
   }
 
   function saveUsers() {
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+    storageSet(USERS_KEY, JSON.stringify(users));
   }
 
   function loadDemoSession() {
-    const stored = parseJson(localStorage.getItem(SESSION_KEY), null);
+    const stored = parseJson(storageGet(SESSION_KEY), null);
     if (!stored?.userId) return null;
     const user = users.find((entry) => entry.id === stored.userId && entry.active);
     return user ? { source: "demo", user } : null;
@@ -107,6 +125,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function showGate() {
+    window.clearTimeout(authVisibilityFallback);
     renderDemoUsers();
     gate.hidden = false;
     document.documentElement.classList.add("timeflow-auth-locked");
@@ -115,6 +134,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function showApp() {
+    window.clearTimeout(authVisibilityFallback);
     gate.hidden = true;
     document.documentElement.classList.remove("timeflow-auth-pending", "timeflow-auth-locked");
     renderSessionCard();
@@ -141,7 +161,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!user) return;
     authMode = "demo";
     session = { source: "demo", user };
-    localStorage.setItem(SESSION_KEY, JSON.stringify({ userId: user.id, signedInAt: new Date().toISOString() }));
+    storageSet(SESSION_KEY, JSON.stringify({ userId: user.id, signedInAt: new Date().toISOString() }));
     showApp();
     notify(`Willkommen, ${user.name.split(" ")[0]}.`);
   }
@@ -181,19 +201,32 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function resolveSession() {
-    try {
-      const response = await fetch(new URL("api/session", document.baseURI), { cache: "no-store", headers: { Accept: "application/json" } });
-      if (response.ok) {
-        const data = await response.json();
-        if (data.authenticated && data.user) {
-          authMode = "platform";
-          session = { source: "platform", user: data.user };
-          showApp();
-          return;
+    // GitHub Pages besitzt keinen Identitäts-Endpunkt. Der frühere Request auf
+    // /api/session konnte dort in eingebetteten iPad-Browsern hängen bleiben.
+    const isStaticPreview = window.location.hostname.endsWith(".github.io");
+    if (!isStaticPreview) {
+      const controller = typeof AbortController === "function" ? new AbortController() : null;
+      const requestTimeout = window.setTimeout(() => controller?.abort(), 3000);
+      try {
+        const response = await fetch(new URL("api/session", document.baseURI), {
+          cache: "no-store",
+          headers: { Accept: "application/json" },
+          signal: controller?.signal
+        });
+        if (response.ok) {
+          const data = await response.json();
+          if (data.authenticated && data.user) {
+            authMode = "platform";
+            session = { source: "platform", user: data.user };
+            showApp();
+            return;
+          }
         }
+      } catch {
+        // Ohne erreichbaren Identitätsdienst wird lokal weitergearbeitet.
+      } finally {
+        window.clearTimeout(requestTimeout);
       }
-    } catch {
-      // GitHub Pages has no identity endpoint and intentionally uses demo mode.
     }
     const demoSession = loadDemoSession();
     if (demoSession) {
@@ -214,7 +247,7 @@ document.addEventListener("DOMContentLoaded", () => {
       window.location.assign("/signout-with-chatgpt?return_to=/");
       return;
     }
-    localStorage.removeItem(SESSION_KEY);
+    storageRemove(SESSION_KEY);
     session = null;
     showGate();
   });
