@@ -1,13 +1,13 @@
 import { readFile } from "node:fs/promises";
 
 const requiredSnippets = new Map([
-  ["index.html", ["css/sprint12.css?v=0020", "js/shell.js?v=0020", "js/sprint12.js?v=0020", "sw.js?v=0020"]],
-  ["sw.js", ["timeflow-v21", "relativePath.startsWith(\"api/\")", "response.type === \"opaque\"", "js/shell.js?v=0020", "css/sprint12.css?v=0020", "js/sprint12.js?v=0020"]],
+  ["index.html", ["css/sprint12.css?v=0021", "js/shell.js?v=0021", "js/sprint12.js?v=0021", "sw.js?v=0021"]],
+  ["sw.js", ["timeflow-v22", "relativePath.startsWith(\"api/\")", "response.type === \"opaque\"", "js/shell.js?v=0021", "css/sprint12.css?v=0021", "js/sprint12.js?v=0021"]],
   ["js/shell.js", ["function repair", "data-timeflow-shell", "window.TimeFlowShell", "window.scrollTo(0, 0)"]],
   ["js/sprint8.js", ["authVisibilityFallback", "isStaticPreview", "AbortController", "storageGet"]],
   ["js/sprint12.js", ["Geräte- und PWA-Check", "timeflow-device-check-v1", "Sichere Ausführung", "Mobile Darstellung", "Datensicherung", "timeflow:device-resumed", "function enforcePageState", "dataset.timeflowPage"]],
   ["js/script.js", ["&& !saved.isWorking", "timeflow:device-resumed", "Number.isNaN(start.valueOf())"]],
-  ["js/sprint11.js", ["data-select-mode=\"private\"", "data-select-mode=\"team\""]],
+  ["js/sprint11.js", ["data-select-mode=\"private\"", "data-select-mode=\"team\"", "writeSettings", "pointerup"]],
   ["js/sprint9.js", ["timeflow:sync-ready", "cache: \"no-store\""]],
   ["js/sprint10.js", ["function safeBackupPayload", "RESTORE_EXCLUDED_KEYS", "function refreshCurrentSchedule"]]
 ]);
@@ -38,7 +38,7 @@ const worker = (await import("../dist/server/index.js")).default;
 const home = await worker.fetch(new Request("https://timeflow.test/"), {});
 const missing = await worker.fetch(new Request("https://timeflow.test/nicht-vorhanden"), {});
 const unauthenticatedSync = await worker.fetch(new Request("https://timeflow.test/api/sync"), {});
-if (home.status !== 200 || !(await home.text()).includes("js/shell.js?v=0020")) {
+if (home.status !== 200 || !(await home.text()).includes("js/shell.js?v=0021")) {
   throw new Error("Der Sites-Build enthält Sprint 12 nicht vollständig.");
 }
 if (missing.status !== 404) throw new Error("Unbekannte Dateien liefern keinen korrekten 404-Status.");

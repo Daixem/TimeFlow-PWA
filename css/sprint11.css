@@ -6,7 +6,7 @@
 .mode-onboarding h2 { margin-top: 6px; color: white; font-size: 1.08rem; }
 .mode-onboarding > section > p { margin: 7px auto 0; max-width: 470px; color: #8297af; font-size: .58rem; line-height: 1.5; }
 .mode-choice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; margin-top: 20px; text-align: left; }
-.mode-choice-grid > button { position: relative; display: grid; grid-template-columns: 44px 1fr; gap: 6px 11px; padding: 16px; border: 1px solid rgba(91, 145, 207, .17); border-radius: 17px; color: #dfeaf7; background: rgba(4, 34, 67, .8); text-align: left; transition: .18s ease; }
+.mode-choice-grid > button { position: relative; display: grid; grid-template-columns: 44px 1fr; gap: 6px 11px; padding: 16px; border: 1px solid rgba(91, 145, 207, .17); border-radius: 17px; color: #dfeaf7; background: rgba(4, 34, 67, .8); text-align: left; transition: .18s ease; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: rgba(72, 133, 255, .22); }
 .mode-choice-grid > button:hover, .mode-choice-grid > button:focus-visible { border-color: rgba(80, 144, 255, .48); background: rgba(8, 48, 91, .93); transform: translateY(-2px); outline: 0; }
 .mode-choice-grid > button > span { grid-row: 1 / span 3; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; color: #78a8ff; background: rgba(52, 111, 226, .15); }
 .mode-choice-grid strong { font-size: .65rem; }

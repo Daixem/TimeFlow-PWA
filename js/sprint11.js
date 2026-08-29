@@ -44,12 +44,26 @@ document.addEventListener("DOMContentLoaded", () => {
   const note = document.getElementById("modeCurrentNote");
   const notificationButton = document.querySelector('[data-action="notifications"]');
   const notificationList = document.getElementById("notificationList");
+  let runtimeSettings = {};
+  let modeSelectionLocked = false;
 
   function readSettings() {
     try {
       const value = JSON.parse(localStorage.getItem(SETTINGS_KEY));
-      return value && typeof value === "object" && !Array.isArray(value) ? value : {};
-    } catch { return {}; }
+      const stored = value && typeof value === "object" && !Array.isArray(value) ? value : {};
+      runtimeSettings = { ...runtimeSettings, ...stored };
+    } catch {
+      // iPad-WebViews können lokalen Speicher einschränken. Die Auswahl bleibt
+      // dann wenigstens für die aktuelle Sitzung erhalten.
+    }
+    return { ...runtimeSettings };
+  }
+
+  function writeSettings(settings) {
+    runtimeSettings = { ...settings };
+    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch {
+      // Der aktive Modus funktioniert auch ohne dauerhaften Browserspeicher.
+    }
   }
 
   function currentMode() {
@@ -141,12 +155,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function saveMode(mode, announce = true) {
+    if (mode !== "private" && mode !== "team") return;
     const settings = readSettings();
     settings.appMode = mode;
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    writeSettings(settings);
+    // Zuerst die Sperre entfernen: Selbst wenn eine nachgelagerte Anpassung auf
+    // einem älteren WebView scheitert, bleibt der Nutzer nicht im Dialog hängen.
+    if (dialog.open) dialog.close();
     applyMode(mode);
     document.dispatchEvent(new CustomEvent("timeflow:settings-updated", { detail: { ...settings } }));
-    if (dialog.open) dialog.close();
     if (announce) {
       const toast = document.getElementById("toast");
       if (toast) {
@@ -157,7 +174,18 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  dialog.querySelectorAll("[data-select-mode]").forEach((button) => button.addEventListener("click", () => saveMode(button.dataset.selectMode)));
+  function selectModeFromEvent(event) {
+    const button = event.target.closest?.("[data-select-mode]");
+    if (!button || modeSelectionLocked || !dialog.open) return;
+    modeSelectionLocked = true;
+    saveMode(button.dataset.selectMode);
+    window.setTimeout(() => { modeSelectionLocked = false; }, 350);
+  }
+
+  dialog.addEventListener("click", selectModeFromEvent);
+  dialog.addEventListener("pointerup", (event) => {
+    if (event.pointerType === "touch") selectModeFromEvent(event);
+  });
   dialog.addEventListener("cancel", (event) => event.preventDefault());
   settingsPage.querySelectorAll("[data-mode-setting]").forEach((button) => button.addEventListener("click", () => saveMode(button.dataset.modeSetting)));
   document.addEventListener("timeflow:session-ready", (event) => {
