@@ -110,3 +110,15 @@ Bereitschaftskarte im Profil fasst Installation, Offline-Modus,
 Synchronisierung und Backup zusammen. Der Dienstplan springt beim Öffnen
 automatisch in die aktuelle Kalenderwoche und verwendet dasselbe Tagesdatum
 wie der Home-Bildschirm.
+
+## Sprint 11
+
+Sprint 11 macht TimeFlow sowohl für Einzelpersonen als auch für Unternehmen
+nutzbar. Beim ersten Start wird zwischen „Privat / Einzelperson“ und „Team /
+Unternehmen“ gewählt; der Modus bleibt später in den Einstellungen wechselbar.
+Der Privatmodus konzentriert sich auf Zeiterfassung, Überstunden, Pausen,
+Statistik, persönlichen Dienstplan, eigene Urlaubs- und Krankheitseinträge,
+Offline-Nutzung und Backups. Teamchat, Rollen, Freigaben und gemeinsame
+Schichtprozesse werden dort ausgeblendet. Der Teammodus behält den vollständigen
+bisherigen Funktionsumfang. Sprint 11 veröffentlicht TimeFlow als stabile
+Version 1.0.0.

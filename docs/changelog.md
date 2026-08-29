@@ -252,3 +252,29 @@
 
 - PWA-App-Cache und Versionsbindung wurden auf Build 0015 aktualisiert
 - Version wurde auf `1.0.0-rc.1` angehoben
+
+---
+
+## Alpha 1.0 – Sprint 11
+
+### Hinzugefügt
+
+- Erstauswahl zwischen „Privat / Einzelperson“ und „Team / Unternehmen“
+- Eigener Einstellungsbereich zum späteren Wechseln des Nutzungsmodus
+- Persönlicher Modus für Zeiterfassung, Statistik, Dienstplan und Abwesenheiten
+- Direkte persönliche Erfassung von Urlaub und Krankheit ohne Freigabeprozess
+- Synchronisierte Modusauswahl innerhalb der vorhandenen Einstellungen
+
+### Verbessert
+
+- Privatmodus blendet Teamchat, Freigaben, Rollenverwaltung und Teamlisten aus
+- Schichttausch und Verspätungsmeldung erscheinen nur im Teammodus
+- Navigation, Startseite, Dienstplan und Benachrichtigungen passen sich dem Modus an
+- Teammodus stellt den vollständigen bisherigen Funktionsumfang bereit
+- PWA-App-Cache und Versionsbindung wurden auf Build 0016 aktualisiert
+- Version wurde auf `1.0.0` angehoben
+
+### Datenschutz
+
+- Die Modusauswahl wird nur als normale TimeFlow-Einstellung gespeichert
+- Persönliche Arbeitszeiten, Chats und Abwesenheiten werden nicht zusätzlich synchronisiert

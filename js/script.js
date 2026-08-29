@@ -76,6 +76,18 @@ function updateDateTime() {
   const now = new Date();
   elements.currentDate.textContent = now.toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
   elements.currentTime.textContent = now.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  const monthButton = document.querySelector(".month-card .month-header button");
+  if (monthButton) monthButton.innerHTML = `${now.toLocaleDateString("de-DE", { month: "long", year: "numeric" })} <i class="fa-solid fa-chevron-right"></i>`;
+  const workdayNear = (direction) => {
+    const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    do { date.setDate(date.getDate() + direction); } while ([0, 6].includes(date.getDay()));
+    return date;
+  };
+  const shiftCards = document.querySelectorAll(".shift-card");
+  const previousWorkday = workdayNear(-1);
+  const nextWorkday = workdayNear(1);
+  if (shiftCards[0]) shiftCards[0].querySelector("p").textContent = previousWorkday.toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" });
+  if (shiftCards[1]) shiftCards[1].querySelector("p").textContent = nextWorkday.toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" });
   const hour = now.getHours();
   elements.greeting.textContent = hour < 12 && hour >= 5 ? "Guten Morgen" : hour < 18 ? "Guten Tag" : "Guten Abend";
 }
@@ -116,8 +128,11 @@ function initialise() {
   const day = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
   elements.dailyQuote.textContent = quotes[day % quotes.length];
   elements.teamNews.textContent = teamUpdates[day % teamUpdates.length];
-  const vacation = new Date(2026, 7, 15); const days = Math.max(0, Math.ceil((vacation - new Date()) / 86400000));
-  elements.vacationCountdown.textContent = days ? `${days} Tagen` : "Kürze";
+  const now = new Date();
+  let vacation = new Date(now.getFullYear(), now.getMonth(), 15);
+  if (vacation <= now) vacation = new Date(now.getFullYear(), now.getMonth() + 1, 15);
+  const days = Math.max(1, Math.ceil((vacation - now) / 86400000));
+  elements.vacationCountdown.textContent = days === 1 ? "ein Tag" : `${days} Tage`;
   updateWorkUi(); if (state.isWorking) startTimer();
   elements.clockButton.addEventListener("click", () => document.dispatchEvent(new CustomEvent("timeflow:open-clock")));
   document.querySelectorAll(".nav-item").forEach((item) => item.addEventListener("click", () => navigate(item.dataset.target)));

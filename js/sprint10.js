@@ -138,7 +138,8 @@ document.addEventListener("DOMContentLoaded", () => {
       row.classList.toggle("active", rowDate.getTime() === today.getTime());
       const dateLabel = row.querySelector("b small");
       if (dateLabel) dateLabel.textContent = shortDate(rowDate);
-      row.toggleAttribute("aria-current", rowDate.getTime() === today.getTime());
+      if (rowDate.getTime() === today.getTime()) row.setAttribute("aria-current", "date");
+      else row.removeAttribute("aria-current");
     });
 
     const monthCalendar = schedulePage.querySelector(".month-calendar");

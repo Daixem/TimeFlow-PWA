@@ -49,6 +49,11 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentAction = null;
   let records = loadRecords();
 
+  function privateMode() {
+    try { return JSON.parse(localStorage.getItem("timeflow-settings-v1"))?.appMode === "private"; }
+    catch { return false; }
+  }
+
   const actions = {
     vacation: {
       title: "Urlaub beantragen", icon: "fa-umbrella-beach", accent: "vacation", submit: "Antrag senden",
@@ -152,6 +157,10 @@ document.addEventListener("DOMContentLoaded", () => {
   function openAction(type) {
     const action = actions[type];
     if (!action) return;
+    if (privateMode() && ["late", "swap"].includes(type)) {
+      notify("Diese Teamfunktion ist im Privatmodus ausgeblendet.");
+      return;
+    }
     currentAction = type;
     dialog.className = `quick-action-dialog ${action.accent}`;
     icon.className = `quick-dialog-icon ${action.accent}`;
@@ -161,6 +170,17 @@ document.addEventListener("DOMContentLoaded", () => {
     fields.innerHTML = action.fields;
     footer.hidden = false;
     submitButton.innerHTML = `<i class="fa-solid fa-paper-plane"></i> ${action.submit}`;
+    if (privateMode() && type === "vacation") {
+      title.textContent = "Urlaub eintragen";
+      copy.textContent = "Trage deinen persönlichen Urlaubszeitraum ein. Der Eintrag bleibt auf deinem Gerät verfügbar.";
+      submitButton.innerHTML = '<i class="fa-solid fa-calendar-check"></i> Eintragen';
+      fields.querySelector('textarea[name="note"]')?.setAttribute("placeholder", "Persönliche Notiz");
+    }
+    if (privateMode() && type === "sick") {
+      title.textContent = "Krankheit eintragen";
+      copy.textContent = "Erfasse deine Abwesenheit ausschließlich für deine persönliche Arbeitszeitübersicht.";
+      submitButton.innerHTML = '<i class="fa-solid fa-calendar-check"></i> Eintragen';
+    }
     setDefaultDates();
     dialog.showModal();
     fields.querySelector("input, select, textarea")?.focus();
@@ -231,9 +251,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const record = {
       id: window.crypto?.randomUUID?.() || `qa-${Date.now()}`,
       type: currentAction,
-      title: action.title,
+      title: privateMode() && currentAction === "vacation" ? "Urlaub eingetragen" : privateMode() && currentAction === "sick" ? "Krankheit eingetragen" : action.title,
       summary: action.makeSummary(data),
-      status: action.status,
+      status: privateMode() ? "Persönlich erfasst" : action.status,
       createdAt: new Date().toISOString(),
       createdLabel: new Date().toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
     };
@@ -241,15 +261,15 @@ document.addEventListener("DOMContentLoaded", () => {
     saveRecords();
     renderLatest();
     document.dispatchEvent(new CustomEvent("timeflow:create-notification", { detail: {
-      type: currentAction === "vacation" ? "approval" : "success",
+      type: currentAction === "vacation" && !privateMode() ? "approval" : "success",
       title: `${action.title} erfasst`,
       body: `${record.summary} · ${record.status}`,
       action: "history"
     } }));
-    if (action.makeMessage) {
+    if (action.makeMessage && !privateMode()) {
       document.dispatchEvent(new CustomEvent("timeflow:send-team-message", { detail: { text: action.makeMessage(data), confirmation: `${action.title} wurde im Teamchat geteilt.` } }));
     } else {
-      notify("Dein Urlaubsantrag wurde lokal mit dem Status „In Prüfung“ gespeichert.");
+      notify(privateMode() ? "Dein persönlicher Eintrag wurde lokal gespeichert." : "Dein Urlaubsantrag wurde lokal mit dem Status „In Prüfung“ gespeichert.");
     }
     dialog.close();
   });

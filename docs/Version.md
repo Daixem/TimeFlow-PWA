@@ -1,9 +1,9 @@
 # TimeFlow
 
-Aktuelle Version: **Alpha 1.0 – Release Candidate 1**
+Aktuelle Version: **Alpha 1.0 – Stabil**
 
-Build: **0015**
+Build: **0016**
 
-Sprint: **Sprint 10 – Stabilisierung und Datenwiederherstellung**
+Sprint: **Sprint 11 – Privat- und Teammodus**
 
-Stand: **28.08.2026**
+Stand: **29.08.2026**

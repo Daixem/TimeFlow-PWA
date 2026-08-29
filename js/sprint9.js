@@ -120,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!cloud.snapshot) {
         syncing = false;
         await upload(false);
-        ready = true;
+        markReady();
         return;
       }
       if (!localMeta.revision || Number(cloud.revision) > Number(localMeta.revision)) {
@@ -132,10 +132,10 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       saveMeta(cloud.revision, cloud.updatedAt);
       renderStatus("synced", "Cloud-Sicherung ist aktuell", "Profil und Einstellungen sind mit deinem privaten Konto verbunden.", "Synchron");
-      ready = true;
+      markReady();
     } catch {
       renderStatus("error", "Nur lokal verfügbar", "Die Cloud ist gerade nicht erreichbar; deine Daten bleiben auf diesem Gerät erhalten.", "Offline");
-      ready = true;
+      markReady();
     } finally {
       syncing = false;
       syncButton.disabled = !platformSession || !navigator.onLine;
@@ -148,13 +148,18 @@ document.addEventListener("DOMContentLoaded", () => {
     scheduleUpload.timer = window.setTimeout(() => upload(false), 900);
   }
 
+  function markReady() {
+    ready = true;
+    document.dispatchEvent(new CustomEvent("timeflow:sync-ready", { detail: { platformSession } }));
+  }
+
   document.addEventListener("timeflow:session-ready", (event) => {
     platformSession = event.detail?.source === "platform";
     if (platformSession) {
       syncButton.disabled = false;
       initialSync();
     } else {
-      ready = true;
+      markReady();
       renderStatus("local", "Demo-Daten bleiben lokal", "Cloud-Synchronisierung ist ausschließlich in der geschützten privaten Site aktiv.", "Lokal");
     }
   });

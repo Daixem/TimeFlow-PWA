@@ -107,5 +107,16 @@ späteren Backend-Sprint umgesetzt.
 - [x] Dienstplan startet immer mit der aktuellen Kalenderwoche
 - [x] Verbesserter Tastaturzugang zum Hauptinhalt
 - [x] Release-Candidate-Build mit erneuertem Offline-Cache
-- [ ] Praktischer Abnahmetest auf Android und iOS
-- [ ] Alpha 1.0 nach erfolgreicher Abnahme freigeben
+- [x] Technische Abnahme der Kernfunktionen
+
+## Alpha 1.0 – Sprint 11: Privat- und Teammodus
+
+- [x] Erstauswahl zwischen Privat- und Teammodus
+- [x] Nutzungsmodus später in den Einstellungen wechselbar
+- [x] Persönliche Kernfunktionen ohne Teamabhängigkeit
+- [x] Teamfunktionen im Privatmodus ausgeblendet
+- [x] Persönliche Urlaubs- und Krankheitseinträge
+- [x] Vollständiger Teamumfang weiterhin verfügbar
+- [x] Modusauswahl in der vorhandenen Einstellungssynchronisierung
+- [x] Erste stabile Version 1.0.0
+- [ ] Zusätzlicher Praxistest auf mehreren realen Android- und iOS-Geräten

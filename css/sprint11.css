@@ -1,0 +1,48 @@
+.mode-onboarding { width: min(92vw, 690px); padding: 0; border: 1px solid rgba(89, 151, 225, .24); border-radius: 26px; color: #edf5ff; background: #052440; box-shadow: 0 35px 110px rgba(0, 5, 17, .78); }
+.mode-onboarding::backdrop { background: rgba(0, 8, 22, .84); backdrop-filter: blur(8px); }
+.mode-onboarding > section { padding: 25px; text-align: center; background: radial-gradient(circle at 50% 0, rgba(48, 116, 240, .2), transparent 40%); }
+.mode-onboarding-brand { display: grid; place-items: center; width: 55px; height: 55px; margin: 0 auto 12px; border-radius: 18px; color: white; background: linear-gradient(135deg, #347cff, #1748ba); box-shadow: 0 11px 30px rgba(35, 99, 231, .3); }
+.mode-onboarding > section > small { color: #79a8ff; font-size: .5rem; font-weight: 800; letter-spacing: .09em; text-transform: uppercase; }
+.mode-onboarding h2 { margin-top: 6px; color: white; font-size: 1.08rem; }
+.mode-onboarding > section > p { margin: 7px auto 0; max-width: 470px; color: #8297af; font-size: .58rem; line-height: 1.5; }
+.mode-choice-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 11px; margin-top: 20px; text-align: left; }
+.mode-choice-grid > button { position: relative; display: grid; grid-template-columns: 44px 1fr; gap: 6px 11px; padding: 16px; border: 1px solid rgba(91, 145, 207, .17); border-radius: 17px; color: #dfeaf7; background: rgba(4, 34, 67, .8); text-align: left; transition: .18s ease; }
+.mode-choice-grid > button:hover, .mode-choice-grid > button:focus-visible { border-color: rgba(80, 144, 255, .48); background: rgba(8, 48, 91, .93); transform: translateY(-2px); outline: 0; }
+.mode-choice-grid > button > span { grid-row: 1 / span 3; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; color: #78a8ff; background: rgba(52, 111, 226, .15); }
+.mode-choice-grid strong { font-size: .65rem; }
+.mode-choice-grid small { color: #7990a8; font-size: .47rem; line-height: 1.45; }
+.mode-choice-grid em { width: max-content; padding: 4px 7px; border-radius: 7px; color: #73d8b2; background: rgba(34, 139, 101, .12); font-size: .4rem; font-style: normal; font-weight: 750; }
+.mode-privacy-note { display: flex; justify-content: center; gap: 6px; color: #647e9a !important; font-size: .44rem !important; }
+.mode-settings-card { grid-column: 1 / -1; }
+.mode-settings-options { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.mode-settings-options > button { display: grid; grid-template-columns: 30px 1fr 22px; gap: 9px; align-items: center; padding: 11px; border: 1px solid rgba(90, 139, 193, .14); border-radius: 12px; color: #8da2ba; background: rgba(4, 30, 61, .62); text-align: left; }
+.mode-settings-options > button > i { color: #7190b4; text-align: center; }
+.mode-settings-options span { display: grid; gap: 2px; }
+.mode-settings-options strong { color: #d6e2ef; font-size: .54rem; }
+.mode-settings-options small { font-size: .42rem; }
+.mode-settings-options b { display: none; place-items: center; width: 22px; height: 22px; border-radius: 50%; color: white; background: #2771ee; font-size: .4rem; }
+.mode-settings-options > button.is-selected { border-color: rgba(66, 133, 240, .42); background: rgba(31, 83, 161, .18); }
+.mode-settings-options > button.is-selected b { display: grid; }
+.mode-current-note { display: flex; gap: 7px; margin-top: 10px; padding: 9px; border-radius: 9px; color: #7590af; background: rgba(19, 58, 101, .42); font-size: .43rem; line-height: 1.45; }
+.timeflow-private-mode .approval-card,
+.timeflow-private-mode .team-card,
+.timeflow-private-mode .nav-item[data-target="chat"],
+.timeflow-private-mode .session-card [data-manage-users],
+.timeflow-private-mode .team-today,
+.timeflow-private-mode .week-row em,
+.timeflow-private-mode .period-filter button:nth-child(2),
+.timeflow-private-mode [data-quick-action="late"],
+.timeflow-private-mode [data-quick-action="swap"],
+.timeflow-private-mode [aria-labelledby="notificationSettingsTitle"] .settings-toggle:has([data-setting="chatAlerts"]),
+.timeflow-private-mode [aria-labelledby="notificationSettingsTitle"] .settings-toggle:has([data-setting="approvalAlerts"]),
+.timeflow-private-mode .notification-item.chat,
+.timeflow-private-mode .notification-item.approval { display: none !important; }
+.timeflow-private-mode .quick-actions-grid { grid-template-columns: 1fr 1fr; }
+.timeflow-private-mode .bottom-nav { justify-content: space-evenly; }
+.timeflow-private-mode .session-card { grid-template-columns: 42px minmax(0, 1fr) auto auto; }
+@media (max-width: 560px) {
+  .mode-onboarding > section { padding: 19px 14px; }
+  .mode-choice-grid { grid-template-columns: 1fr; }
+  .mode-settings-options { grid-template-columns: 1fr; }
+  .timeflow-private-mode .session-card { grid-template-columns: 38px 1fr; }
+}

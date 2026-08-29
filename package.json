@@ -1,12 +1,13 @@
 {
   "name": "timeflow-pwa",
-  "version": "1.0.0-rc.1",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "node server.mjs",
     "start": "node server.mjs",
     "check": "node scripts/check.mjs",
-    "build": "node scripts/build-sites.mjs"
+    "build": "node scripts/build-sites.mjs",
+    "test": "node scripts/check.mjs && node scripts/build-sites.mjs && node scripts/test-sprint11.mjs"
   }
 }
