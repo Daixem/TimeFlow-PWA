@@ -7,8 +7,8 @@ zusammengeführt aus den bereitgestellten TimeFlow-Ständen.
 
 Die jeweils zuletzt veröffentlichte Sprint-Version ist unter
 [daixem.github.io/TimeFlow-PWA](https://daixem.github.io/TimeFlow-PWA/)
-erreichbar. Änderungen auf `main` und neuen `codex/sprint-*`-Branches werden
-automatisch über GitHub Pages veröffentlicht.
+erreichbar. Änderungen auf `main` werden automatisch über GitHub Pages
+veröffentlicht. Sprint-Branches lösen keine eigene Veröffentlichung aus.
 
 ## In VS Code starten
 

@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - "codex/sprint-*"
   workflow_dispatch:
 
 permissions:
@@ -13,8 +12,8 @@ permissions:
   id-token: write
 
 concurrency:
-  group: timeflow-github-pages
-  cancel-in-progress: true
+  group: timeflow-github-pages-main
+  cancel-in-progress: false
 
 jobs:
   deploy:
