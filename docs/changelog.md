@@ -278,3 +278,26 @@
 
 - Die Modusauswahl wird nur als normale TimeFlow-Einstellung gespeichert
 - Persönliche Arbeitszeiten, Chats und Abwesenheiten werden nicht zusätzlich synchronisiert
+
+---
+
+## Version 1.0.1 – Sprint 12
+
+### Hinzugefügt
+
+- Geführter Geräte- und PWA-Check im Profil
+- Prüfung von Installation, Offline-App, Speicher, Darstellung und Verbindung
+- Lokaler Prüfstatus für reale Android- und iOS-Praxistests
+- Automatisierte Sprint-12-Abnahme
+
+### Verbessert
+
+- Laufende Zeiterfassung bleibt über Tageswechsel und App-Rückkehr erhalten
+- Externe Schrift- und Symbolressourcen können nach dem ersten Laden offline genutzt werden
+- Navigations- und App-Shell-Cache werden kontrolliert auf Build 0017 erneuert
+- Version wurde auf `1.0.1` angehoben
+
+### Sicherheit und Datenschutz
+
+- Personenbezogene `/api/`-Antworten werden vollständig vom Service-Worker-Cache ausgenommen
+- Der Gerätecheck überträgt keine persönlichen Daten

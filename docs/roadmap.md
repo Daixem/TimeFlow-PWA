@@ -119,4 +119,16 @@ späteren Backend-Sprint umgesetzt.
 - [x] Vollständiger Teamumfang weiterhin verfügbar
 - [x] Modusauswahl in der vorhandenen Einstellungssynchronisierung
 - [x] Erste stabile Version 1.0.0
-- [ ] Zusätzlicher Praxistest auf mehreren realen Android- und iOS-Geräten
+- [x] Technischer Gerätecheck und Testversion 1.0.1
+
+## Version 1.0.1 – Sprint 12: Praxistest und Produktionshärtung
+
+- [x] Geführter Geräte- und PWA-Check
+- [x] Schutz persönlicher API-Antworten vor dem Offline-Cache
+- [x] Laufende Zeiterfassung über Tageswechsel und App-Rückkehr
+- [x] Erneuerter Offline- und Update-Cache
+- [x] Automatisierte Sprint-12-Abnahme
+- [ ] Installationstest auf einem realen Android-Gerät
+- [ ] Installationstest auf einem realen iPhone
+- [ ] Geräteübergreifender Synchronisationstest
+- [ ] Backup-Wiederherstellung mit einer echten Testdatei

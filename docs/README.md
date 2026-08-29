@@ -15,8 +15,8 @@ Alternativ kann über **Terminal → Aufgabe ausführen** die Aufgabe
 `TimeFlow: PWA starten` gewählt werden. Es sind keine Pakete und kein
 `npm install` erforderlich.
 
-Mit `npm run check` werden Manifest, Offline-Cache und benötigte Dateien
-automatisch geprüft.
+Mit `npm test` werden Manifest, Offline-Cache, Sites-Build und die aktuellen
+Sprint-12-Abnahmekriterien automatisch geprüft.
 
 ## Als App installieren
 
@@ -36,7 +36,10 @@ gespeichert.
 - Service Worker mit App-Shell-Cache
 - VS-Code-Aufgaben zum Starten und Prüfen
 
-## Noch nicht angebunden
+## Bereitstellung und Synchronisierung
 
-Login, Datenbank, Cloud-Synchronisierung, Push-Benachrichtigungen und echte
-Mitarbeiterdaten sind als spätere Backend-Funktionen vorgesehen.
+Die private Sites-Version besitzt eine kontogeschützte Synchronisierung für
+Profil und Einstellungen. Die öffentliche GitHub-Version arbeitet als Demo
+lokal im jeweiligen Browser. Echte Mehrbenutzerrollen, gemeinsamer Teamchat,
+zentrale Dienstplanfreigaben und serverseitige Push-Zustellung bleiben spätere
+Backend-Funktionen.

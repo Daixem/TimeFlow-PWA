@@ -1,0 +1,36 @@
+.release-readiness-card .device-check-button { color: #dbe9ff; border-color: rgba(82, 143, 220, .28); background: linear-gradient(135deg, rgba(25, 94, 189, .46), rgba(14, 61, 126, .5)); }
+.device-check-dialog { width: min(92vw, 520px); max-height: min(86vh, 720px); padding: 18px; overflow: auto; }
+.device-check-dialog > header { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 11px; align-items: center; text-align: left; }
+.device-check-dialog > header > span { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; color: #79aaff; background: rgba(48, 111, 217, .14); }
+.device-check-dialog > header div { min-width: 0; }
+.device-check-dialog > header small { color: #6f9ee7; font-size: .42rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.device-check-dialog > header h2 { margin: 2px 0; color: #edf5ff; font-size: .72rem; }
+.device-check-dialog > header p { color: #7f94aa; font-size: .43rem; line-height: 1.45; }
+.device-check-dialog > header > strong { color: #91baff; font-size: .6rem; }
+.device-check-progress { height: 5px; margin: 14px 0 12px; overflow: hidden; border-radius: 999px; background: rgba(73, 116, 166, .16); }
+.device-check-progress i { display: block; width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #176ee7, #48d2a3); transition: width .35s ease; }
+.device-check-list { display: grid; gap: 7px; margin: 0; padding: 0; list-style: none; }
+.device-check-list li { display: grid; grid-template-columns: 31px minmax(0, 1fr) auto; gap: 9px; align-items: center; padding: 9px 10px; border: 1px solid rgba(85, 137, 194, .11); border-radius: 10px; background: rgba(8, 37, 68, .62); text-align: left; }
+.device-check-list li > span { display: grid; place-items: center; width: 31px; height: 31px; border-radius: 9px; color: #7591b0; background: rgba(66, 105, 151, .12); }
+.device-check-list li div { display: grid; gap: 2px; min-width: 0; }
+.device-check-list li strong { color: #d5e2f2; font-size: .48rem; }
+.device-check-list li small { overflow: hidden; color: #758ba4; font-size: .4rem; text-overflow: ellipsis; white-space: nowrap; }
+.device-check-list li em { padding: 3px 6px; border-radius: 999px; color: #8fa7c1; background: rgba(77, 111, 151, .13); font-size: .36rem; font-style: normal; font-weight: 800; }
+.device-check-list li.is-passed > span, .device-check-list li.is-passed em { color: #64d6aa; background: rgba(32, 143, 104, .12); }
+.device-check-list li.is-advisory > span, .device-check-list li.is-advisory em { color: #efbd6a; background: rgba(178, 111, 22, .12); }
+.device-check-list li.is-failed > span, .device-check-list li.is-failed em { color: #ef8994; background: rgba(158, 52, 65, .12); }
+.device-check-list li.is-running i { animation: device-check-spin .8s linear infinite; }
+.device-check-summary { display: flex; gap: 7px; align-items: flex-start; margin: 11px 0 0; padding: 9px; border-radius: 9px; color: #78d7b2 !important; background: rgba(29, 126, 92, .1); text-align: left; }
+.device-check-summary.is-warning { color: #e4b362 !important; background: rgba(158, 98, 22, .1); }
+.device-check-dialog > footer { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 13px; }
+.device-check-dialog > footer button { min-height: 38px; border: 1px solid rgba(80, 135, 197, .17); border-radius: 10px; color: #9db6d5; background: rgba(13, 49, 86, .6); font-size: .44rem; font-weight: 750; }
+.device-check-dialog > footer .device-check-repeat { color: white; background: linear-gradient(135deg, #1768df, #0845aa); }
+@keyframes device-check-spin { to { transform: rotate(360deg); } }
+@media (max-width: 520px) {
+  .device-check-dialog { width: calc(100vw - 24px); padding: 15px 12px; }
+  .device-check-dialog > header { grid-template-columns: 39px 1fr auto; }
+  .device-check-dialog > header > span { width: 39px; height: 39px; }
+  .device-check-list li { grid-template-columns: 29px minmax(0, 1fr) auto; padding: 8px; }
+  .device-check-list li > span { width: 29px; height: 29px; }
+}
+@media (prefers-reduced-motion: reduce) { .device-check-progress i { transition: none; } .device-check-list li.is-running i { animation: none; } }

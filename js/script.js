@@ -67,7 +67,11 @@ function loadWorkday() {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
     if (!saved?.workStart) return;
     const start = new Date(saved.workStart);
-    if (dateKey(start) !== dateKey(new Date())) { localStorage.removeItem(STORAGE_KEY); return; }
+    const now = new Date();
+    if (Number.isNaN(start.valueOf()) || start > now) { localStorage.removeItem(STORAGE_KEY); return; }
+    // Eine aktive Schicht darf beim Tageswechsel oder nach dem Wiederöffnen der
+    // PWA nicht verloren gehen. Abgeschlossene Vortage werden weiterhin entfernt.
+    if (dateKey(start) !== dateKey(now) && !saved.isWorking) { localStorage.removeItem(STORAGE_KEY); return; }
     state = { isWorking: Boolean(saved.isWorking), workStart: start, workEnd: saved.workEnd ? new Date(saved.workEnd) : null };
   } catch { localStorage.removeItem(STORAGE_KEY); }
 }
@@ -164,6 +168,7 @@ function initialise() {
 document.addEventListener("DOMContentLoaded", initialise);
 document.addEventListener("timeflow:toggle-clock", () => state.isWorking ? clockOut() : clockIn());
 document.addEventListener("timeflow:settings-updated", updateWorkUi);
+document.addEventListener("timeflow:device-resumed", () => { loadWorkday(); updateDateTime(); updateWorkUi(); if (state.isWorking) startTimer(); });
 
 document.addEventListener("DOMContentLoaded", () => {
   const dashboard = document.getElementById("dashboard");

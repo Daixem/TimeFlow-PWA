@@ -122,3 +122,14 @@ Offline-Nutzung und Backups. Teamchat, Rollen, Freigaben und gemeinsame
 Schichtprozesse werden dort ausgeblendet. Der Teammodus behält den vollständigen
 bisherigen Funktionsumfang. Sprint 11 veröffentlicht TimeFlow als stabile
 Version 1.0.0.
+
+## Sprint 12
+
+Sprint 12 bereitet Version 1.0.1 für den Praxiseinsatz vor. Ein geführter
+Gerätecheck prüft direkt im Profil den sicheren App-Kontext, Offline-Betrieb,
+lokalen Speicher, mobile Darstellung, Nutzungsmodus, Backup, Synchronisierung
+und Verbindung. Persönliche Synchronisierungsantworten werden ausdrücklich vom
+PWA-Cache ausgeschlossen. Eine laufende Zeiterfassung bleibt außerdem bei
+einem Tageswechsel und nach der Rückkehr aus dem Hintergrund erhalten. Die
+abschließende Sprint-Freigabe erfolgt nach Tests auf realen Android- und
+iOS-Geräten.
