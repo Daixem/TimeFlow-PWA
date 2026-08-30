@@ -129,6 +129,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const quickAccessModal = document.getElementById("quickAccessModal");
   applyPrivateHomeMode();
   document.addEventListener("timeflow:mode-changed", applyPrivateHomeMode);
+  new MutationObserver(applyPrivateHomeMode).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+  new MutationObserver(applyPrivateHomeMode).observe(document.body, { attributes: true, attributeFilter: ["data-app-mode"] });
   document.querySelector("[data-open-quick-access]").addEventListener("click", () => window.TimeFlowPlatform?.dialog?.open(quickAccessModal) || quickAccessModal.showModal());
   quickAccessModal.querySelector("[data-close-quick-access]").addEventListener("click", () => quickAccessModal.close());
   quickAccessModal.addEventListener("click", (event) => { if (event.target === quickAccessModal) quickAccessModal.close(); });
