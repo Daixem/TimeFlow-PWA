@@ -133,6 +133,19 @@ späteren Backend-Sprint umgesetzt.
 - [ ] Geräteübergreifender Synchronisationstest
 - [ ] Backup-Wiederherstellung mit einer echten Testdatei
 
+## Geräteübergreifende Parität – vor weiteren Funktionssprints
+
+- [x] Verbindliche Geräte- und Betriebssystemmatrix festgelegt
+- [x] Gemeinsame Plattformerkennung für iOS, iPadOS, Android, Windows, macOS und Linux
+- [x] Fehlertoleranter lokaler Speicher mit Sitzungsspeicher-Fallback
+- [x] Dialog-Fallback für unterschiedliche Browserimplementierungen
+- [x] Dynamische Viewport-Höhe, Touch-Ziele, Hoch-/Querformat und Desktopbreiten abgesichert
+- [x] Plattformspezifische Installationshinweise
+- [ ] Reale Abnahme auf iPhone und iPad
+- [ ] Reale Abnahme auf Android-Smartphone und Android-Tablet
+- [ ] Reale Abnahme unter Windows und macOS
+- [ ] Reale Abnahme unter Linux
+
 ## Vorgemerkt – echte Benutzerkonten und Anmeldung
 
 - [ ] Registrierung mit E-Mail-Adresse und Passwort

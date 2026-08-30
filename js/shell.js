@@ -75,7 +75,7 @@
     }
 
     document.documentElement.setAttribute("data-timeflow-page", page);
-    document.documentElement.setAttribute("data-timeflow-shell", "0021");
+    document.documentElement.setAttribute("data-timeflow-shell", "0022");
     window.scrollTo(0, 0);
   }
 

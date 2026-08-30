@@ -47,7 +47,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function loadEntries() {
     try {
-      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      const stored = JSON.parse(window.TimeFlowPlatform.storage.getItem(STORAGE_KEY));
       return Array.isArray(stored) && stored.length ? stored : seedEntries();
     } catch {
       return seedEntries();
@@ -55,7 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function saveEntries() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries.slice(0, 50)));
+    window.TimeFlowPlatform.storage.setItem(STORAGE_KEY, JSON.stringify(entries.slice(0, 50)));
   }
 
   function relativeTime(value) {
@@ -224,7 +224,7 @@ document.addEventListener("DOMContentLoaded", () => {
     entry.read = true;
     saveEntries();
     renderEntries();
-    center.close();
+    window.TimeFlowPlatform.dialog.close(center);
     if (entry.action === "chat") document.dispatchEvent(new CustomEvent("timeflow:open-chat"));
     else if (entry.action === "schedule") document.querySelector('[data-target="schedule"]')?.click();
     else if (entry.action === "history") document.dispatchEvent(new CustomEvent("timeflow:open-quick-actions", { detail: { action: "history" } }));
@@ -233,7 +233,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function openCenter() {
     renderEntries();
     renderPermission();
-    center.showModal();
+    window.TimeFlowPlatform.dialog.open(center);
   }
 
   center.querySelector("[data-enable-notifications]").addEventListener("click", requestPermission);
@@ -244,9 +244,9 @@ document.addEventListener("DOMContentLoaded", () => {
     renderEntries();
     toast("Alle Benachrichtigungen wurden als gelesen markiert.");
   });
-  center.querySelector("[data-close-notifications]").addEventListener("click", () => center.close());
+  center.querySelector("[data-close-notifications]").addEventListener("click", () => window.TimeFlowPlatform.dialog.close(center));
   center.addEventListener("click", (event) => {
-    if (event.target === center) center.close();
+    if (event.target === center) window.TimeFlowPlatform.dialog.close(center);
     const item = event.target.closest("[data-notification-id]");
     if (item) openEntry(item.dataset.notificationId);
   });

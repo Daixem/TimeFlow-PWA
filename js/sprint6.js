@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let records = loadRecords();
 
   function privateMode() {
-    try { return JSON.parse(localStorage.getItem("timeflow-settings-v1"))?.appMode === "private"; }
+    try { return JSON.parse(window.TimeFlowPlatform.storage.getItem("timeflow-settings-v1"))?.appMode === "private"; }
     catch { return false; }
   }
 
@@ -103,7 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function loadRecords() {
     try {
-      const value = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      const value = JSON.parse(window.TimeFlowPlatform.storage.getItem(STORAGE_KEY));
       return Array.isArray(value) ? value : [];
     } catch {
       return [];
@@ -111,7 +111,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function saveRecords() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(records.slice(0, 30)));
+    window.TimeFlowPlatform.storage.setItem(STORAGE_KEY, JSON.stringify(records.slice(0, 30)));
   }
 
   function formatDate(value) {
@@ -182,7 +182,7 @@ document.addEventListener("DOMContentLoaded", () => {
       submitButton.innerHTML = '<i class="fa-solid fa-calendar-check"></i> Eintragen';
     }
     setDefaultDates();
-    dialog.showModal();
+    window.TimeFlowPlatform.dialog.open(dialog);
     fields.querySelector("input, select, textarea")?.focus();
   }
 
@@ -235,7 +235,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       fields.append(list);
     }
-    dialog.showModal();
+    window.TimeFlowPlatform.dialog.open(dialog);
   }
 
   form.addEventListener("submit", (event) => {
@@ -271,13 +271,13 @@ document.addEventListener("DOMContentLoaded", () => {
     } else {
       notify(privateMode() ? "Dein persönlicher Eintrag wurde lokal gespeichert." : "Dein Urlaubsantrag wurde lokal mit dem Status „In Prüfung“ gespeichert.");
     }
-    dialog.close();
+    window.TimeFlowPlatform.dialog.close(dialog);
   });
 
   document.querySelectorAll("[data-quick-action]").forEach((button) => button.addEventListener("click", () => openAction(button.dataset.quickAction)));
   document.querySelector("[data-quick-history]").addEventListener("click", openHistory);
-  document.querySelectorAll("[data-close-quick-dialog]").forEach((button) => button.addEventListener("click", () => dialog.close()));
-  dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
+  document.querySelectorAll("[data-close-quick-dialog]").forEach((button) => button.addEventListener("click", () => window.TimeFlowPlatform.dialog.close(dialog)));
+  dialog.addEventListener("click", (event) => { if (event.target === dialog) window.TimeFlowPlatform.dialog.close(dialog); });
   document.addEventListener("timeflow:open-quick-actions", (event) => event.detail?.action && event.detail.action !== "history" ? openAction(event.detail.action) : openHistory());
   renderLatest();
 });

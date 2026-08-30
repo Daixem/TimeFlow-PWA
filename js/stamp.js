@@ -87,7 +87,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function readSettings() {
     try {
-      const saved = JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY));
+      const saved = JSON.parse(window.TimeFlowPlatform.storage.getItem(SETTINGS_STORAGE_KEY));
       return {
         dailyTargetMinutes: Number(saved?.dailyTargetMinutes) || TARGET_MINUTES,
         autoBreakMinutes: Number.isFinite(Number(saved?.autoBreakMinutes)) ? Number(saved.autoBreakMinutes) : AUTO_BREAK_MINUTES,
@@ -100,7 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function readState() {
     try {
-      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+      const saved = JSON.parse(window.TimeFlowPlatform.storage.getItem(STORAGE_KEY));
       return saved && saved.workStart ? saved : { isWorking: false, workStart: null, workEnd: null };
     } catch {
       return { isWorking: false, workStart: null, workEnd: null };

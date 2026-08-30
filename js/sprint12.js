@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!readinessCard || !profilePage) return;
 
   const CHECK_KEY = "timeflow-device-check-v1";
-  const BUILD = "0021";
+  const BUILD = "0022";
   const heading = readinessCard.querySelector("header small");
   const title = readinessCard.querySelector("header h2");
   if (heading) heading.textContent = "Sprint 12 · Praxistest";
@@ -97,9 +97,9 @@ document.addEventListener("DOMContentLoaded", () => {
   async function storageResult() {
     try {
       const probe = `timeflow-check-${Date.now()}`;
-      localStorage.setItem(probe, "ok");
-      const usable = localStorage.getItem(probe) === "ok";
-      localStorage.removeItem(probe);
+      window.TimeFlowPlatform.storage.setItem(probe, "ok");
+      const usable = window.TimeFlowPlatform.storage.getItem(probe) === "ok";
+      window.TimeFlowPlatform.storage.removeItem(probe);
       if (!usable) throw new Error("storage_failed");
       const estimate = await navigator.storage?.estimate?.();
       const used = Number(estimate?.usage || 0);
@@ -118,13 +118,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function modeResult() {
-    const mode = parseJson(localStorage.getItem("timeflow-settings-v1"), {}).appMode;
+    const mode = parseJson(window.TimeFlowPlatform.storage.getItem("timeflow-settings-v1"), {}).appMode;
     const valid = mode === "private" || mode === "team";
     return result("Nutzungsmodus", valid ? `${mode === "private" ? "Privat" : "Team"} ist gespeichert` : "Bitte Privat oder Team auswählen", valid, false, "fa-users-viewfinder");
   }
 
   function backupResult() {
-    const value = localStorage.getItem("timeflow-last-backup-v1");
+    const value = window.TimeFlowPlatform.storage.getItem("timeflow-last-backup-v1");
     const date = value ? new Date(value) : null;
     const valid = date && !Number.isNaN(date.valueOf());
     return result("Datensicherung", valid ? `Gesichert am ${date.toLocaleDateString("de-DE")}` : "Backup vor dem Praxistest empfohlen", Boolean(valid), true, "fa-box-archive");
@@ -162,7 +162,7 @@ document.addEventListener("DOMContentLoaded", () => {
     summary.innerHTML = criticalFailed
       ? '<i class="fa-solid fa-triangle-exclamation"></i> Mindestens eine wichtige Gerätefunktion benötigt Aufmerksamkeit.'
       : '<i class="fa-solid fa-circle-check"></i> Die wichtigen PWA-Funktionen sind auf diesem Gerät einsatzbereit.';
-    localStorage.setItem(CHECK_KEY, JSON.stringify({ build: BUILD, checkedAt: new Date().toISOString(), passed, criticalFailed }));
+    window.TimeFlowPlatform.storage.setItem(CHECK_KEY, JSON.stringify({ build: BUILD, checkedAt: new Date().toISOString(), passed, criticalFailed }));
   }
 
   async function runCheck() {
@@ -187,12 +187,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   readinessCard.querySelector("[data-run-device-check]")?.addEventListener("click", () => {
-    dialog.showModal();
+    window.TimeFlowPlatform.dialog.open(dialog);
     runCheck();
   });
   dialog.querySelector("[data-repeat-device-check]").addEventListener("click", runCheck);
-  dialog.querySelector("[data-close-device-check]").addEventListener("click", () => dialog.close());
-  dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); });
+  dialog.querySelector("[data-close-device-check]").addEventListener("click", () => window.TimeFlowPlatform.dialog.close(dialog));
+  dialog.addEventListener("click", (event) => { if (event.target === dialog) window.TimeFlowPlatform.dialog.close(dialog); });
   document.querySelectorAll(".nav-item[data-target]").forEach((item) => item.addEventListener("click", () => settlePageState(item.dataset.target)));
   document.addEventListener("timeflow:open-chat", () => settlePageState("chat"));
   document.addEventListener("timeflow:open-profile", () => settlePageState("profile"));

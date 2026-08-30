@@ -204,7 +204,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const storedMessages = loadStoredMessages();
   let activeChat = "restaurant";
   let activeFilter = "all";
-  let shiftConfirmed = localStorage.getItem(SHIFT_STORAGE_KEY) === "true";
+  let shiftConfirmed = window.TimeFlowPlatform.storage.getItem(SHIFT_STORAGE_KEY) === "true";
 
   const navBadge = document.createElement("span");
   navBadge.className = "nav-unread-badge";
@@ -259,7 +259,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function loadStoredMessages() {
     try {
-      const value = JSON.parse(localStorage.getItem(CHAT_STORAGE_KEY));
+      const value = JSON.parse(window.TimeFlowPlatform.storage.getItem(CHAT_STORAGE_KEY));
       return value && typeof value === "object" ? value : {};
     } catch {
       return {};
@@ -388,7 +388,7 @@ document.addEventListener("DOMContentLoaded", () => {
       own: true,
       read: false
     });
-    localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(storedMessages));
+    window.TimeFlowPlatform.storage.setItem(CHAT_STORAGE_KEY, JSON.stringify(storedMessages));
     renderConversation(activeChat, false);
     updateConversationPreview(activeChat, cleanText);
     notify(confirmation);
@@ -418,7 +418,7 @@ document.addEventListener("DOMContentLoaded", () => {
       own: true,
       read: false
     });
-    localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(storedMessages));
+    window.TimeFlowPlatform.storage.setItem(CHAT_STORAGE_KEY, JSON.stringify(storedMessages));
     updateConversationPreview("restaurant", text);
     if (activeChat === "restaurant") renderConversation("restaurant", false);
     notify(event.detail?.confirmation || "Meldung wurde im Teamchat gespeichert.");
@@ -430,7 +430,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
     shiftConfirmed = true;
-    localStorage.setItem(SHIFT_STORAGE_KEY, "true");
+    window.TimeFlowPlatform.storage.setItem(SHIFT_STORAGE_KEY, "true");
     sendMessage("Ich habe meine Frühschicht am Freitag bestätigt.", "Schicht bestätigt und im Chat geteilt.");
   }
 
@@ -479,16 +479,16 @@ document.addEventListener("DOMContentLoaded", () => {
   chatPage.querySelector("[data-shift-details]")?.addEventListener("click", () => notify("Frühschicht: Freitag, 31. Juli · 07:30 – 15:00 Uhr · Restaurant"));
 
   chatPage.querySelector("[data-new-chat]")?.addEventListener("click", () => {
-    if (typeof chatDialog.showModal === "function") chatDialog.showModal();
+    window.TimeFlowPlatform.dialog.open(chatDialog);
   });
-  chatPage.querySelector("[data-close-dialog]")?.addEventListener("click", () => chatDialog.close());
+  chatPage.querySelector("[data-close-dialog]")?.addEventListener("click", () => window.TimeFlowPlatform.dialog.close(chatDialog));
   chatPage.querySelectorAll("[data-start-chat]").forEach((button) => button.addEventListener("click", () => {
-    chatDialog.close();
+    window.TimeFlowPlatform.dialog.close(chatDialog);
     renderConversation(button.dataset.startChat);
     chatPage.classList.add("thread-open");
   }));
   chatDialog.addEventListener("click", (event) => {
-    if (event.target === chatDialog) chatDialog.close();
+    if (event.target === chatDialog) window.TimeFlowPlatform.dialog.close(chatDialog);
   });
 
   renderConversation("restaurant", window.matchMedia("(min-width: 621px)").matches);

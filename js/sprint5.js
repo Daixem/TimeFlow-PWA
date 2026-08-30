@@ -89,7 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function parseStored(key) {
     try {
-      const value = JSON.parse(localStorage.getItem(key));
+      const value = JSON.parse(window.TimeFlowPlatform.storage.getItem(key));
       return value && typeof value === "object" ? value : {};
     } catch {
       return {};
@@ -101,8 +101,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function saveSettings() {
-    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-    localStorage.setItem(LEGACY_PREFERENCES_KEY, JSON.stringify({ shiftReminders: settings.shiftReminders, chatAlerts: settings.chatAlerts }));
+    window.TimeFlowPlatform.storage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    window.TimeFlowPlatform.storage.setItem(LEGACY_PREFERENCES_KEY, JSON.stringify({ shiftReminders: settings.shiftReminders, chatAlerts: settings.chatAlerts }));
     applyPreferences();
     document.dispatchEvent(new CustomEvent("timeflow:settings-updated", { detail: { ...settings } }));
     notify("Einstellung wurde auf diesem Gerät gespeichert.");
@@ -156,10 +156,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function exportData() {
     const localData = {};
-    for (let index = 0; index < localStorage.length; index += 1) {
-      const key = localStorage.key(index);
+    for (const key of window.TimeFlowPlatform.storage.keys()) {
       if (!key?.startsWith("timeflow-")) continue;
-      const rawValue = localStorage.getItem(key);
+      const rawValue = window.TimeFlowPlatform.storage.getItem(key);
       try { localData[key] = JSON.parse(rawValue); } catch { localData[key] = rawValue; }
     }
     const exportPayload = { app: "TimeFlow PWA", version: "1.0.1", exportedAt: new Date().toISOString(), data: localData };
@@ -202,19 +201,18 @@ document.addEventListener("DOMContentLoaded", () => {
   page.querySelector("[data-settings-back]").addEventListener("click", () => document.dispatchEvent(new CustomEvent("timeflow:open-profile")));
   page.querySelector("[data-check-update]").addEventListener("click", (event) => checkForUpdate(event.currentTarget));
   page.querySelector("[data-export-data]").addEventListener("click", exportData);
-  page.querySelector("[data-open-reset]").addEventListener("click", () => resetDialog.showModal());
-  page.querySelector("[data-close-reset]").addEventListener("click", () => resetDialog.close());
+  page.querySelector("[data-open-reset]").addEventListener("click", () => window.TimeFlowPlatform.dialog.open(resetDialog));
+  page.querySelector("[data-close-reset]").addEventListener("click", () => window.TimeFlowPlatform.dialog.close(resetDialog));
   page.querySelector("[data-confirm-reset]").addEventListener("click", () => {
     const keys = [];
-    for (let index = 0; index < localStorage.length; index += 1) {
-      const key = localStorage.key(index);
+    for (const key of window.TimeFlowPlatform.storage.keys()) {
       if (key?.startsWith("timeflow-")) keys.push(key);
     }
-    keys.forEach((key) => localStorage.removeItem(key));
-    resetDialog.close();
+    keys.forEach((key) => window.TimeFlowPlatform.storage.removeItem(key));
+    window.TimeFlowPlatform.dialog.close(resetDialog);
     window.location.reload();
   });
-  resetDialog.addEventListener("click", (event) => { if (event.target === resetDialog) resetDialog.close(); });
+  resetDialog.addEventListener("click", (event) => { if (event.target === resetDialog) window.TimeFlowPlatform.dialog.close(resetDialog); });
   window.addEventListener("online", updateConnection);
   window.addEventListener("offline", updateConnection);
 

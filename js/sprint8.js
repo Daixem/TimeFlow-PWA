@@ -72,15 +72,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function storageGet(key) {
-    try { return localStorage.getItem(key); } catch { return null; }
+    try { return window.TimeFlowPlatform.storage.getItem(key); } catch { return null; }
   }
 
   function storageSet(key, value) {
-    try { localStorage.setItem(key, value); } catch { /* Sitzung bleibt temporär nutzbar. */ }
+    try { window.TimeFlowPlatform.storage.setItem(key, value); } catch { /* Sitzung bleibt temporär nutzbar. */ }
   }
 
   function storageRemove(key) {
-    try { localStorage.removeItem(key); } catch { /* Kein persistenter Speicher verfügbar. */ }
+    try { window.TimeFlowPlatform.storage.removeItem(key); } catch { /* Kein persistenter Speicher verfügbar. */ }
   }
 
   function loadUsers() {
@@ -197,7 +197,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function openManagement() {
     renderManagement();
-    managementDialog.showModal();
+    window.TimeFlowPlatform.dialog.open(managementDialog);
   }
 
   async function resolveSession() {
@@ -251,7 +251,7 @@ document.addEventListener("DOMContentLoaded", () => {
     session = null;
     showGate();
   });
-  managementDialog.querySelector("[data-close-users]").addEventListener("click", () => managementDialog.close());
+  managementDialog.querySelector("[data-close-users]").addEventListener("click", () => window.TimeFlowPlatform.dialog.close(managementDialog));
   managementDialog.querySelector("[data-reset-users]").addEventListener("click", () => {
     users = defaultUsers.map((user) => ({ ...user }));
     saveUsers();
@@ -268,7 +268,7 @@ document.addEventListener("DOMContentLoaded", () => {
     renderManagement();
     notify("Benutzerverwaltung wurde lokal aktualisiert.");
   });
-  managementDialog.addEventListener("click", (event) => { if (event.target === managementDialog) managementDialog.close(); });
+  managementDialog.addEventListener("click", (event) => { if (event.target === managementDialog) window.TimeFlowPlatform.dialog.close(managementDialog); });
 
   resolveSession();
 });

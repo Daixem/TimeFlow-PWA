@@ -49,7 +49,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function readSettings() {
     try {
-      const value = JSON.parse(localStorage.getItem(SETTINGS_KEY));
+      const value = JSON.parse(window.TimeFlowPlatform.storage.getItem(SETTINGS_KEY));
       const stored = value && typeof value === "object" && !Array.isArray(value) ? value : {};
       runtimeSettings = { ...runtimeSettings, ...stored };
     } catch {
@@ -61,7 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function writeSettings(settings) {
     runtimeSettings = { ...settings };
-    try { localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch {
+    try { window.TimeFlowPlatform.storage.setItem(SETTINGS_KEY, JSON.stringify(settings)); } catch {
       // Der aktive Modus funktioniert auch ohne dauerhaften Browserspeicher.
     }
   }
@@ -161,7 +161,7 @@ document.addEventListener("DOMContentLoaded", () => {
     writeSettings(settings);
     // Zuerst die Sperre entfernen: Selbst wenn eine nachgelagerte Anpassung auf
     // einem älteren WebView scheitert, bleibt der Nutzer nicht im Dialog hängen.
-    if (dialog.open) dialog.close();
+    if (dialog.open) window.TimeFlowPlatform.dialog.close(dialog);
     applyMode(mode);
     document.dispatchEvent(new CustomEvent("timeflow:settings-updated", { detail: { ...settings } }));
     if (announce) {
@@ -191,12 +191,12 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("timeflow:session-ready", (event) => {
     const mode = currentMode();
     if (mode) applyMode(mode);
-    else if (event.detail?.source !== "platform" && !dialog.open) dialog.showModal();
+    else if (event.detail?.source !== "platform" && !dialog.open) window.TimeFlowPlatform.dialog.open(dialog);
   });
   document.addEventListener("timeflow:sync-ready", () => {
     const mode = currentMode();
     if (mode) applyMode(mode);
-    else if (!dialog.open) dialog.showModal();
+    else if (!dialog.open) window.TimeFlowPlatform.dialog.open(dialog);
   });
   document.addEventListener("timeflow:profile-updated", () => {
     const identityMeta = document.querySelector(".profile-identity > p");

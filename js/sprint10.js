@@ -183,7 +183,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function installed() {
-    return window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+    return window.TimeFlowPlatform?.isStandalone || window.matchMedia("(display-mode: standalone)").matches || window.navigator.standalone === true;
+  }
+
+  function manualInstallHint() {
+    const platform = window.TimeFlowPlatform?.name;
+    if (platform === "ios" || platform === "ipados") return "Safari: Teilen → Zum Home-Bildschirm";
+    if (platform === "android") return "Browsermenü → App installieren";
+    if (["windows", "macos", "linux"].includes(platform)) return "Browsermenü → TimeFlow installieren";
+    return "Über das Browsermenü installierbar";
   }
 
   function renderInstallState() {
@@ -193,7 +201,7 @@ document.addEventListener("DOMContentLoaded", () => {
     installStatus.textContent = isInstalled ? "Installiert" : timeFlowInstallPrompt ? "Bereit" : "Im Browser";
     installHint.textContent = isInstalled
       ? "TimeFlow läuft bereits als App"
-      : timeFlowInstallPrompt ? "Zum Startbildschirm hinzufügen" : "Über das Browsermenü installierbar";
+      : timeFlowInstallPrompt ? "Zum Startbildschirm hinzufügen" : manualInstallHint();
     installButton.querySelector("strong").textContent = isInstalled ? "TimeFlow ist installiert" : "TimeFlow installieren";
     renderReadiness();
   }
@@ -201,7 +209,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function installApp() {
     if (installed()) return;
     if (!timeFlowInstallPrompt) {
-      notify("Öffne das Browsermenü und wähle „App installieren“ oder „Zum Home-Bildschirm“.");
+      notify(manualInstallHint());
       return;
     }
     const prompt = timeFlowInstallPrompt;
@@ -246,16 +254,16 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (error) {
       restoreDescription.textContent = error instanceof Error ? error.message : "Die Datei konnte nicht gelesen werden.";
     }
-    restoreDialog.showModal();
+    window.TimeFlowPlatform.dialog.open(restoreDialog);
   }
 
   function restoreBackup() {
     if (!pendingRestore) return;
     for (const [key, value] of Object.entries(pendingRestore.data)) {
-      localStorage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
+      window.TimeFlowPlatform.storage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
     }
-    localStorage.setItem(BACKUP_KEY, new Date().toISOString());
-    sessionStorage.setItem("timeflow-restore-complete", "1");
+    window.TimeFlowPlatform.storage.setItem(BACKUP_KEY, new Date().toISOString());
+    window.TimeFlowPlatform.session.setItem("timeflow-restore-complete", "1");
     window.location.reload();
   }
 
@@ -270,7 +278,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderReadiness() {
     const offlineReady = Boolean(navigator.serviceWorker?.controller);
     const syncState = cloudCard?.classList.contains("is-synced") || cloudCard?.classList.contains("is-local");
-    const backupDate = localStorage.getItem(BACKUP_KEY);
+    const backupDate = window.TimeFlowPlatform.storage.getItem(BACKUP_KEY);
     const states = [
       readinessItem("app", installed(), installed() ? "Installiert" : "Browser"),
       readinessItem("offline", offlineReady, offlineReady ? "Bereit" : "Lädt"),
@@ -289,10 +297,10 @@ document.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("appinstalled", () => { timeFlowInstallPrompt = null; renderInstallState(); notify("TimeFlow wurde erfolgreich installiert."); });
   importButton?.addEventListener("click", () => importFile.click());
   importFile?.addEventListener("change", () => { const [file] = importFile.files; if (file) inspectBackup(file); importFile.value = ""; });
-  settingsPage.querySelector("[data-export-data]")?.addEventListener("click", () => { localStorage.setItem(BACKUP_KEY, new Date().toISOString()); window.setTimeout(renderReadiness); });
-  restoreDialog.querySelector("[data-close-restore]").addEventListener("click", () => restoreDialog.close());
+  settingsPage.querySelector("[data-export-data]")?.addEventListener("click", () => { window.TimeFlowPlatform.storage.setItem(BACKUP_KEY, new Date().toISOString()); window.setTimeout(renderReadiness); });
+  restoreDialog.querySelector("[data-close-restore]").addEventListener("click", () => window.TimeFlowPlatform.dialog.close(restoreDialog));
   confirmRestore.addEventListener("click", restoreBackup);
-  restoreDialog.addEventListener("click", (event) => { if (event.target === restoreDialog) restoreDialog.close(); });
+  restoreDialog.addEventListener("click", (event) => { if (event.target === restoreDialog) window.TimeFlowPlatform.dialog.close(restoreDialog); });
   profilePage.querySelector("[data-open-readiness-settings]")?.addEventListener("click", () => document.dispatchEvent(new CustomEvent("timeflow:open-settings")));
   const scheduleNav = document.querySelector('[data-target="schedule"]');
   const currentWeekTab = document.querySelector('#schedulePage [data-view="week"]');
@@ -307,8 +315,8 @@ document.addEventListener("DOMContentLoaded", () => {
   if (cloudCard) new MutationObserver(renderReadiness).observe(cloudCard, { attributes: true, attributeFilter: ["class"] });
   navigator.serviceWorker?.ready.then(renderReadiness).catch(() => undefined);
 
-  if (sessionStorage.getItem("timeflow-restore-complete") === "1") {
-    sessionStorage.removeItem("timeflow-restore-complete");
+  if (window.TimeFlowPlatform.session.getItem("timeflow-restore-complete") === "1") {
+    window.TimeFlowPlatform.session.removeItem("timeflow-restore-complete");
     notify("Deine Datensicherung wurde erfolgreich wiederhergestellt.");
   }
   renderInstallState();

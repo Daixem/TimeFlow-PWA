@@ -1,0 +1,45 @@
+/* Geräteübergreifende PWA-Basis: iOS/iPadOS, Android und Desktop */
+:root { --tf-viewport-height: 100vh; }
+html, body { min-height: 100%; }
+body, .app { min-height: var(--tf-viewport-height); }
+body { width: 100%; overflow-x: hidden; }
+.app { min-width: 0; }
+button, input, select, textarea { font: inherit; }
+button { min-width: 0; }
+dialog { max-width: calc(100vw - 24px); max-height: calc(var(--tf-viewport-height) - 24px); overflow: auto; }
+
+@supports (height: 100dvh) {
+  :root { --tf-viewport-height: 100dvh; }
+}
+
+@media (pointer: coarse) {
+  button, [role="button"], input, select { min-height: 44px; }
+  .nav-item { min-width: 52px; }
+}
+
+@media (max-width: 430px) {
+  .app { padding-left: max(14px, env(safe-area-inset-left)); padding-right: max(14px, env(safe-area-inset-right)); }
+  .bottom-nav { width: calc(100% - 20px - env(safe-area-inset-left) - env(safe-area-inset-right)); padding-left: 10px; padding-right: 10px; }
+}
+
+@media (orientation: landscape) and (max-height: 560px) {
+  .app { padding-top: max(18px, env(safe-area-inset-top)); padding-bottom: max(94px, calc(78px + env(safe-area-inset-bottom))); }
+  .bottom-nav { bottom: max(8px, env(safe-area-inset-bottom)); padding-top: 7px; padding-bottom: 7px; }
+  .nav-item { gap: 3px; }
+  .nav-icon { font-size: 1rem; }
+  .main-nav { transform: none; }
+}
+
+@media (min-width: 1200px) {
+  .app { width: min(1120px, calc(100% - 48px)); }
+  .bottom-nav { width: min(720px, calc(100% - 48px)); }
+}
+
+@media (prefers-contrast: more) {
+  .card, .list-card, .shift-card, .bottom-nav, dialog { border-color: rgba(160, 202, 255, .42); }
+}
+
+@media (forced-colors: active) {
+  button, .card, .list-card, .shift-card, .bottom-nav, dialog { border: 1px solid ButtonText; }
+  .notification-badge, .online-status { forced-color-adjust: none; }
+}

@@ -43,7 +43,7 @@ function elapsedMinutes() {
 }
 function timeSettings() {
   try {
-    const saved = JSON.parse(localStorage.getItem(SETTINGS_STORAGE_KEY));
+    const saved = JSON.parse(window.TimeFlowPlatform.storage.getItem(SETTINGS_STORAGE_KEY));
     return {
       dailyTargetMinutes: Number(saved?.dailyTargetMinutes) || TARGET_WORK_MINUTES,
       autoBreakMinutes: Number.isFinite(Number(saved?.autoBreakMinutes)) ? Number(saved.autoBreakMinutes) : AUTO_BREAK_MINUTES,
@@ -60,20 +60,20 @@ function breakMinutes() {
 function workedMinutes() { return Math.max(0, elapsedMinutes() - breakMinutes()); }
 
 function saveWorkday() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...state, workStart: state.workStart?.toISOString() || null, workEnd: state.workEnd?.toISOString() || null }));
+  window.TimeFlowPlatform.storage.setItem(STORAGE_KEY, JSON.stringify({ ...state, workStart: state.workStart?.toISOString() || null, workEnd: state.workEnd?.toISOString() || null }));
 }
 function loadWorkday() {
   try {
-    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
+    const saved = JSON.parse(window.TimeFlowPlatform.storage.getItem(STORAGE_KEY));
     if (!saved?.workStart) return;
     const start = new Date(saved.workStart);
     const now = new Date();
-    if (Number.isNaN(start.valueOf()) || start > now) { localStorage.removeItem(STORAGE_KEY); return; }
+    if (Number.isNaN(start.valueOf()) || start > now) { window.TimeFlowPlatform.storage.removeItem(STORAGE_KEY); return; }
     // Eine aktive Schicht darf beim Tageswechsel oder nach dem Wiederöffnen der
     // PWA nicht verloren gehen. Abgeschlossene Vortage werden weiterhin entfernt.
-    if (dateKey(start) !== dateKey(now) && !saved.isWorking) { localStorage.removeItem(STORAGE_KEY); return; }
+    if (dateKey(start) !== dateKey(now) && !saved.isWorking) { window.TimeFlowPlatform.storage.removeItem(STORAGE_KEY); return; }
     state = { isWorking: Boolean(saved.isWorking), workStart: start, workEnd: saved.workEnd ? new Date(saved.workEnd) : null };
-  } catch { localStorage.removeItem(STORAGE_KEY); }
+  } catch { window.TimeFlowPlatform.storage.removeItem(STORAGE_KEY); }
 }
 
 function updateDateTime() {

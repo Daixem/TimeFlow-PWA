@@ -32,7 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function collectSnapshot() {
     const snapshot = {};
     SYNC_KEYS.forEach((key) => {
-      const value = parseJson(localStorage.getItem(key));
+      const value = parseJson(window.TimeFlowPlatform.storage.getItem(key));
       if (value && typeof value === "object" && !Array.isArray(value)) snapshot[key] = value;
     });
     return snapshot;
@@ -42,17 +42,17 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!snapshot || typeof snapshot !== "object") return;
     SYNC_KEYS.forEach((key) => {
       const value = snapshot[key];
-      if (value && typeof value === "object" && !Array.isArray(value)) localStorage.setItem(key, JSON.stringify(value));
-      else localStorage.removeItem(key);
+      if (value && typeof value === "object" && !Array.isArray(value)) window.TimeFlowPlatform.storage.setItem(key, JSON.stringify(value));
+      else window.TimeFlowPlatform.storage.removeItem(key);
     });
   }
 
   function meta() {
-    return parseJson(localStorage.getItem(META_KEY), {});
+    return parseJson(window.TimeFlowPlatform.storage.getItem(META_KEY), {});
   }
 
   function saveMeta(revision, updatedAt) {
-    localStorage.setItem(META_KEY, JSON.stringify({ revision, updatedAt, syncedAt: new Date().toISOString() }));
+    window.TimeFlowPlatform.storage.setItem(META_KEY, JSON.stringify({ revision, updatedAt, syncedAt: new Date().toISOString() }));
   }
 
   function formatTimestamp(value) {
@@ -126,7 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!localMeta.revision || Number(cloud.revision) > Number(localMeta.revision)) {
         applySnapshot(cloud.snapshot);
         saveMeta(cloud.revision, cloud.updatedAt);
-        sessionStorage.setItem("timeflow-sync-restored", "1");
+        window.TimeFlowPlatform.session.setItem("timeflow-sync-restored", "1");
         window.location.reload();
         return;
       }
@@ -169,8 +169,8 @@ document.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("online", () => platformSession ? initialSync() : undefined);
   window.addEventListener("offline", () => renderStatus("error", "Offline – lokale Daten aktiv", "Änderungen bleiben auf diesem Gerät und können später synchronisiert werden.", "Offline"));
 
-  if (sessionStorage.getItem("timeflow-sync-restored") === "1") {
-    sessionStorage.removeItem("timeflow-sync-restored");
+  if (window.TimeFlowPlatform.session.getItem("timeflow-sync-restored") === "1") {
+    window.TimeFlowPlatform.session.removeItem("timeflow-sync-restored");
     notify("Deine Cloud-Daten wurden auf diesem Gerät wiederhergestellt.");
   }
 });

@@ -168,7 +168,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function loadJson(key, fallback) {
     try {
-      const value = JSON.parse(localStorage.getItem(key));
+      const value = JSON.parse(window.TimeFlowPlatform.storage.getItem(key));
       return value && typeof value === "object" ? { ...fallback, ...value } : { ...fallback };
     } catch {
       return { ...fallback };
@@ -246,7 +246,7 @@ document.addEventListener("DOMContentLoaded", () => {
     profileForm.elements.department.value = profile.department;
     profileForm.elements.email.value = profile.email;
     profileForm.elements.phone.value = profile.phone;
-    if (typeof profileDialog.showModal === "function") profileDialog.showModal();
+    window.TimeFlowPlatform.dialog.open(profileDialog);
   }
 
   function notify(message) {
@@ -260,7 +260,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.querySelectorAll("[data-stat-period]").forEach((button) => button.addEventListener("click", () => renderStatistics(button.dataset.statPeriod)));
   document.querySelectorAll("[data-edit-profile]").forEach((button) => button.addEventListener("click", openProfileDialog));
-  document.querySelectorAll("[data-close-profile-dialog]").forEach((button) => button.addEventListener("click", () => profileDialog.close()));
+  document.querySelectorAll("[data-close-profile-dialog]").forEach((button) => button.addEventListener("click", () => window.TimeFlowPlatform.dialog.close(profileDialog)));
   document.querySelector("[data-open-schedule]").addEventListener("click", () => document.querySelector('[data-target="schedule"]')?.click());
   document.querySelectorAll("[data-open-settings]").forEach((button) => button.addEventListener("click", () => {
     document.dispatchEvent(new CustomEvent("timeflow:open-settings"));
@@ -276,19 +276,19 @@ document.addEventListener("DOMContentLoaded", () => {
       email: String(values.get("email")).trim(),
       phone: String(values.get("phone")).trim()
     };
-    localStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+    window.TimeFlowPlatform.storage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
     renderProfile();
     document.dispatchEvent(new CustomEvent("timeflow:profile-updated", { detail: { ...profile } }));
-    profileDialog.close();
+    window.TimeFlowPlatform.dialog.close(profileDialog);
     notify("Dein Profil wurde lokal gespeichert.");
   });
 
   profileDialog.addEventListener("click", (event) => {
-    if (event.target === profileDialog) profileDialog.close();
+    if (event.target === profileDialog) window.TimeFlowPlatform.dialog.close(profileDialog);
   });
 
   document.querySelector("[data-clear-profile]").addEventListener("click", () => {
-    localStorage.removeItem(PROFILE_STORAGE_KEY);
+    window.TimeFlowPlatform.storage.removeItem(PROFILE_STORAGE_KEY);
     profile = { ...defaultProfile };
     renderProfile();
     document.dispatchEvent(new CustomEvent("timeflow:profile-updated", { detail: { ...profile } }));
