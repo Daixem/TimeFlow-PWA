@@ -80,14 +80,14 @@ document.addEventListener("DOMContentLoaded", () => {
     </article>`;
   (shiftGrid || clockDetails)?.insertAdjacentElement("afterend", workflow);
 
-  // Im Privatmodus gibt es keine Organisationsunterlagen oder Wunschzeiten.
-  // Der Test-Build folgt der bereits gespeicherten Moduswahl sofort.
+  // Der Home-Screen bleibt auf Zeit und die nächste Schicht fokussiert.
+  // Planung und Unterlagen werden nur über Schnellzugriff geöffnet.
   function applyPrivateHomeMode() {
     let savedMode = null;
     try { savedMode = JSON.parse(window.TimeFlowPlatform.storage.getItem("timeflow-settings-v1") || "{}").appMode; } catch { /* Fallback auf die sichtbare App-Klasse */ }
     const isPrivate = savedMode === "private" || document.documentElement.classList.contains("timeflow-private-mode");
     workflow.classList.toggle("is-private", isPrivate);
-    workflow.querySelector(".workflow-team-only")?.toggleAttribute("hidden", isPrivate);
+    workflow.querySelector(".workflow-team-only")?.remove();
     dashboard.querySelectorAll(".team-card, .approval-card").forEach((card) => card.toggleAttribute("hidden", isPrivate));
     quickAccessModal?.querySelectorAll('[data-quick-action="documents"], [data-quick-action="availability"]')
       .forEach((button) => button.toggleAttribute("hidden", isPrivate));
