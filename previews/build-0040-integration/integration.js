@@ -60,17 +60,6 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("timeflow:workday-updated", renderHomeClockDetails);
   document.addEventListener("timeflow:settings-updated", renderHomeClockDetails);
   window.setInterval(renderHomeClockDetails, 30000);
-  const hub = document.createElement("section");
-  hub.className = "operations-hub";
-  hub.innerHTML = `
-    <div class="operations-hub-head"><div><small>NEU GEDACHT · ZENTRALES POSTFACH</small><h2>Arbeitsalltag im Blick</h2></div><button type="button" data-open-operations>Alle Mitteilungen</button></div>
-    <div class="operations-pulse">
-      <button class="operations-item important" type="button" data-open-operation-detail="time"><i class="fa-solid fa-rotate"></i><span><small>ZEITERFASSUNG · AKTION NÖTIG</small><strong>Automatische Ausstempelung prüfen</strong></span><em>›</em></button>
-      <button class="operations-item" type="button" data-open-operation-detail="schedule"><i class="fa-regular fa-calendar"></i><span><small>DIENSTPLAN · NEU</small><strong>5 neue Einsätze veröffentlicht</strong></span><em>›</em></button>
-      <button class="operations-item" type="button" data-open-operation-detail="documents"><i class="fa-regular fa-file-lines"></i><span><small>DOKUMENT · NEU</small><strong>Nachweis August bereit</strong></span><em>›</em></button>
-    </div>`;
-  const target = dashboard.querySelector(".overview-card");
-  target?.insertAdjacentElement("afterend", hub);
   const workflow = document.createElement("section");
   workflow.className = "workflow-concept";
   workflow.innerHTML = `
@@ -82,7 +71,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="workflow-card-head"><div><small>TEAMMODUS · ORGANISATION</small><h2>Planung & Unterlagen</h2></div></div>
       <div class="concept-links"><button type="button" data-open-workflow="documents"><i class="fa-regular fa-file-lines"></i><span><small>1 UNTERSCHRIFT AUSSTEHEND</small><strong>Dokumente</strong></span><em>›</em></button><button type="button" data-open-workflow="availability"><i class="fa-regular fa-heart"></i><span><small>SEPTEMBER</small><strong>Wunschzeiten</strong></span><em>›</em></button></div>
     </article>`;
-  hub.insertAdjacentElement("afterend", workflow);
+  dashboard.querySelector(".home-clock-details")?.insertAdjacentElement("afterend", workflow);
   document.body.insertAdjacentHTML("beforeend", `
     <dialog class="operations-modal" id="operationsModal">
       <header><div><small>KONZEPT · ZENTRALES POSTFACH</small><h2>Mitteilungen & Aufgaben</h2><p>Dienstplan, Zeiterfassung, Dokumente und Team-News werden getrennt priorisiert.</p></div><button type="button" data-close-operations aria-label="Schließen"><i class="fa-solid fa-xmark"></i></button></header>
@@ -107,7 +96,7 @@ document.addEventListener("DOMContentLoaded", () => {
     </dialog>`);
   const modal = document.getElementById("operationsModal");
   const open = () => window.TimeFlowPlatform?.dialog?.open(modal) || modal.showModal();
-  document.querySelectorAll("[data-open-operations]").forEach((button) => button.addEventListener("click", open));
+  document.querySelector('[data-action="notifications"]')?.addEventListener("click", (event) => { event.preventDefault(); event.stopImmediatePropagation(); open(); }, true);
   const quickAccessModal = document.getElementById("quickAccessModal");
   document.querySelector("[data-open-quick-access]").addEventListener("click", () => window.TimeFlowPlatform?.dialog?.open(quickAccessModal) || quickAccessModal.showModal());
   quickAccessModal.querySelector("[data-close-quick-access]").addEventListener("click", () => quickAccessModal.close());
