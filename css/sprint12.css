@@ -76,3 +76,22 @@
 .personal-status.is-planned { color: #81aaf1; background: rgba(48, 106, 207, .13); }
 .personal-status.is-approved { color: #71d89f; background: rgba(40, 153, 105, .13); }
 @media (max-width: 430px) { .for-you-card .personal-update { grid-template-columns: 32px minmax(0, 1fr) 12px; padding: 9px; } .for-you-card .personal-update .row-icon { width: 32px; height: 32px; } .personal-status { display: none; } .personal-update-end { grid-template-columns: 12px; } }
+
+.team-card .section-heading { align-items: center; margin-bottom: 12px; }
+.team-card .section-heading > div { min-width: 0; }
+.team-card .section-heading h2 { line-height: 1.1; }
+.team-card .section-heading p { margin-top: 3px; color: #70889e; font-size: .43rem; }
+.team-card .count-badge { margin-left: auto; border-radius: 999px; }
+.team-update-list { display: grid; gap: 7px; }
+.team-card .team-update { grid-template-columns: 35px minmax(0, 1fr) auto; gap: 10px; min-height: 68px; padding: 10px; border: 1px solid rgba(145, 99, 202, .12); border-radius: 13px; background: rgba(5, 35, 67, .58); }
+.team-card .team-update:hover { border-color: rgba(185, 119, 255, .3); background: rgba(44, 29, 77, .52); }
+.team-card .team-update .row-icon { display: grid; place-items: center; width: 35px; height: 35px; border-radius: 11px; color: #c68aff; background: rgba(139, 66, 205, .15); font-size: .8rem; }
+.team-update-copy { display: grid; gap: 3px; min-width: 0; }
+.team-update-copy > small { color: #c38cff; font-size: .4rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.team-update-copy > strong { overflow: hidden; color: #edf5fb; font-size: .58rem; text-overflow: ellipsis; white-space: nowrap; }
+.team-update-copy > em { overflow: hidden; color: #71869c; font-size: .41rem; font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
+.team-update-end { display: grid; grid-template-columns: auto 12px; gap: 8px; align-items: center; }
+.team-update-status { padding: 4px 7px; border-radius: 999px; font-size: .36rem; font-weight: 800; white-space: nowrap; }
+.team-update-status.is-upcoming { color: #e2a9ff; background: rgba(153, 68, 205, .15); }
+.team-update-status.is-anniversary { color: #e8c46e; background: rgba(183, 130, 27, .14); }
+@media (max-width: 430px) { .team-card .team-update { grid-template-columns: 32px minmax(0, 1fr) 12px; padding: 9px; } .team-card .team-update .row-icon { width: 32px; height: 32px; } .team-update-status { display: none; } .team-update-end { grid-template-columns: 12px; } }

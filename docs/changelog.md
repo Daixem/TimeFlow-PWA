@@ -312,3 +312,4 @@
 - Build 0025 spannt die Schnellaktionen auf Desktop-Bildschirmen über die vollständige Dashboardbreite. Dadurch bleiben alle vier Bezeichnungen und Untertitel lesbar.
 - Build 0026 strukturiert „Für dich“ als persönliche Übersicht mit eindeutigen Kategorien, Datum, Freigabestatus und klar getrennten Detailaktionen.
 - Build 0027 macht einen fehlenden Nutzungsmodus im Gerätecheck direkt bedienbar: Der Prüfeintrag öffnet die Auswahl zwischen Privat- und Teammodus.
+- Build 0028 gliedert auch „Team-Update“ in eigenständige Einträge mit Anlass, Person, Termin und Status – entsprechend der optimierten „Für dich“-Übersicht.

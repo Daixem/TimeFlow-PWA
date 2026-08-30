@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 
 const requiredSnippets = new Map([
-  ["index.html", ["css/compat.css?v=0027", "css/sprint12.css?v=0027", "js/platform.js?v=0027", "js/shell.js?v=0027", "js/sprint12.js?v=0027", "sw.js?v=0027", "personal-update-list", "data-personal-message"]],
-  ["sw.js", ["timeflow-v28", "relativePath.startsWith(\"api/\")", "response.type === \"opaque\"", "js/platform.js?v=0027", "js/shell.js?v=0027", "css/compat.css?v=0027", "js/sprint12.js?v=0027"]],
+  ["index.html", ["css/compat.css?v=0028", "css/sprint12.css?v=0028", "js/platform.js?v=0028", "js/shell.js?v=0028", "js/sprint12.js?v=0028", "sw.js?v=0028", "personal-update-list", "data-personal-message", "team-update-list", "team-update-status"]],
+  ["sw.js", ["timeflow-v29", "relativePath.startsWith(\"api/\")", "response.type === \"opaque\"", "js/platform.js?v=0028", "js/shell.js?v=0028", "css/compat.css?v=0028", "js/sprint12.js?v=0028"]],
   ["js/platform.js", ["tf-platform-", "createStorage", "visualViewport", "openDialog", "data-timeflow-platform"]],
   ["css/compat.css", ["--tf-viewport-height", "pointer: coarse", "orientation: landscape", "forced-colors: active"]],
   ["css/sprint6.css", ["@media (min-width: 680px)", ".quick-actions-card { grid-column: 1 / -1; }"]],
@@ -41,7 +41,7 @@ const worker = (await import("../dist/server/index.js")).default;
 const home = await worker.fetch(new Request("https://timeflow.test/"), {});
 const missing = await worker.fetch(new Request("https://timeflow.test/nicht-vorhanden"), {});
 const unauthenticatedSync = await worker.fetch(new Request("https://timeflow.test/api/sync"), {});
-if (home.status !== 200 || !(await home.text()).includes("js/platform.js?v=0027")) {
+if (home.status !== 200 || !(await home.text()).includes("js/platform.js?v=0028")) {
   throw new Error("Der Sites-Build enthält Sprint 12 nicht vollständig.");
 }
 if (missing.status !== 404) throw new Error("Unbekannte Dateien liefern keinen korrekten 404-Status.");
