@@ -46,3 +46,4 @@
   .mode-settings-options { grid-template-columns: 1fr; }
   .timeflow-private-mode .session-card { grid-template-columns: 38px 1fr; }
 }
+.quick-actions-card[hidden] { display: none !important; }

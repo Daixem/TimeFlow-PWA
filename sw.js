@@ -1,7 +1,7 @@
-const CACHE_NAME = "timeflow-v35";
+const CACHE_NAME = "timeflow-v36";
 const APP_SHELL = [
-  "./", "index.html", "manifest.webmanifest?v=0034", "css/style.css?v=0034", "css/pwa.css?v=0034", "css/sprint3.css?v=0034", "css/sprint4.css?v=0034", "css/sprint5.css?v=0034", "css/sprint6.css?v=0034", "css/sprint7.css?v=0034", "css/sprint8.css?v=0034", "css/sprint9.css?v=0034", "css/sprint10.css?v=0034", "css/sprint11.css?v=0034", "css/sprint12.css?v=0034", "css/stamp.css?v=0034", "css/compat.css?v=0034",
-  "js/platform.js?v=0034", "js/shell.js?v=0034", "js/script.js?v=0034", "js/sprint3.js?v=0034", "js/sprint4.js?v=0034", "js/sprint5.js?v=0034", "js/sprint6.js?v=0034", "js/sprint7.js?v=0034", "js/sprint8.js?v=0034", "js/sprint9.js?v=0034", "js/sprint10.js?v=0034", "js/sprint11.js?v=0034", "js/sprint12.js?v=0034", "js/stamp.js?v=0034",
+  "./", "index.html", "manifest.webmanifest?v=0035", "css/style.css?v=0035", "css/pwa.css?v=0035", "css/sprint3.css?v=0035", "css/sprint4.css?v=0035", "css/sprint5.css?v=0035", "css/sprint6.css?v=0035", "css/sprint7.css?v=0035", "css/sprint8.css?v=0035", "css/sprint9.css?v=0035", "css/sprint10.css?v=0035", "css/sprint11.css?v=0035", "css/sprint12.css?v=0035", "css/stamp.css?v=0035", "css/compat.css?v=0035",
+  "js/platform.js?v=0035", "js/shell.js?v=0035", "js/script.js?v=0035", "js/sprint3.js?v=0035", "js/sprint4.js?v=0035", "js/sprint5.js?v=0035", "js/sprint6.js?v=0035", "js/sprint7.js?v=0035", "js/sprint8.js?v=0035", "js/sprint9.js?v=0035", "js/sprint10.js?v=0035", "js/sprint11.js?v=0035", "js/sprint12.js?v=0035", "js/stamp.js?v=0035",
   "assets/icons/timeflow-icon.svg", "assets/icons/timeflow-icon-192.png",
   "assets/icons/timeflow-icon-512.png", "assets/icons/timeflow-maskable-512.png"
 ];

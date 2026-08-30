@@ -114,6 +114,7 @@ späteren Backend-Sprint umgesetzt.
 - [x] Erstauswahl zwischen Privat- und Teammodus
 - [x] Nutzungsmodus später in den Einstellungen wechselbar
 - [x] Persönliche Kernfunktionen ohne Teamabhängigkeit
+- [x] Privatmodus auf persönliche Zeiterfassung begrenzt; organisatorische Schnellaktionen ausgeblendet
 - [x] Teamfunktionen im Privatmodus ausgeblendet
 - [x] Persönliche Urlaubs- und Krankheitseinträge
 - [x] Vollständiger Teamumfang weiterhin verfügbar

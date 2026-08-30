@@ -116,6 +116,9 @@ document.addEventListener("DOMContentLoaded", () => {
     document.documentElement.classList.toggle("timeflow-team-mode", !isPrivate);
     document.body.dataset.appMode = mode;
 
+    const quickActionsCard = document.querySelector(".quick-actions-card");
+    if (quickActionsCard) quickActionsCard.hidden = isPrivate;
+
     textFor(".subtitle", "Dein persönlicher Arbeitstag im Überblick.", "Schön, dass du da bist.");
     textFor('[data-target="schedule"] .nav-text', "Dienstplan", "Dienstpläne");
     textFor("#schedulePage .schedule-header h1", "Mein Dienstplan", "Dienstpläne");

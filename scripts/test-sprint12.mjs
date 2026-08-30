@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 
 const requiredSnippets = new Map([
-  ["index.html", ["css/compat.css?v=0034", "css/sprint12.css?v=0034", "js/platform.js?v=0034", "js/shell.js?v=0034", "js/sprint12.js?v=0034", "sw.js?v=0034", "personal-update-list", "data-personal-message", "team-update-list", "team-update-status", "month-open-statistics", "homeMonthLabel"]],
-  ["sw.js", ["timeflow-v35", "relativePath.startsWith(\"api/\")", "response.type === \"opaque\"", "js/platform.js?v=0034", "js/shell.js?v=0034", "css/compat.css?v=0034", "js/sprint12.js?v=0034"]],
+  ["index.html", ["css/compat.css?v=0035", "css/sprint12.css?v=0035", "js/platform.js?v=0035", "js/shell.js?v=0035", "js/sprint12.js?v=0035", "sw.js?v=0035", "personal-update-list", "data-personal-message", "team-update-list", "team-update-status", "month-open-statistics", "homeMonthLabel"]],
+  ["sw.js", ["timeflow-v36", "relativePath.startsWith(\"api/\")", "response.type === \"opaque\"", "js/platform.js?v=0035", "js/shell.js?v=0035", "css/compat.css?v=0035", "js/sprint12.js?v=0035"]],
   ["js/platform.js", ["tf-platform-", "createStorage", "visualViewport", "openDialog", "data-timeflow-platform"]],
   ["css/compat.css", ["--tf-viewport-height", "pointer: coarse", "orientation: landscape", "forced-colors: active"]],
   ["css/sprint12.css", [".header .notification-btn", ".notification-badge", "focus-visible"]],
@@ -11,7 +11,7 @@ const requiredSnippets = new Map([
   ["js/sprint8.js", ["authVisibilityFallback", "isStaticPreview", "AbortController", "storageGet"]],
   ["js/sprint12.js", ["Geräte- und PWA-Check", "timeflow-device-check-v1", "Sichere Ausführung", "Mobile Darstellung", "Datensicherung", "timeflow:device-resumed", "function enforcePageState", "dataset.timeflowPage", "homeDetailDialog", "action: null, event: \"info\"", "Im Chat gratulieren", "timeflow:open-mode-selection", "timeflow:open-month-statistics", "is-actionable"]],
   ["js/script.js", ["&& !saved.isWorking", "timeflow:device-resumed", "Number.isNaN(start.valueOf())", "timeflow:open-home-detail"]],
-  ["js/sprint11.js", ["data-select-mode=\"private\"", "data-select-mode=\"team\"", "writeSettings", "pointerup", "timeflow:open-mode-selection"]],
+  ["js/sprint11.js", ["data-select-mode=\"private\"", "data-select-mode=\"team\"", "writeSettings", "pointerup", "timeflow:open-mode-selection", "quickActionsCard.hidden = isPrivate"]],
   ["js/sprint4.js", ["profile-details-grid", "profile-menu-card", "data-edit-profile", "profilePhotoInput", "optimizePhoto", "canvas.toDataURL", "avatar: pendingAvatar"]],
   ["js/sprint9.js", ["timeflow:sync-ready", "cache: \"no-store\""]],
   ["js/sprint10.js", ["function safeBackupPayload", "RESTORE_EXCLUDED_KEYS", "function refreshCurrentSchedule"]]
@@ -47,7 +47,7 @@ const worker = (await import("../dist/server/index.js")).default;
 const home = await worker.fetch(new Request("https://timeflow.test/"), {});
 const missing = await worker.fetch(new Request("https://timeflow.test/nicht-vorhanden"), {});
 const unauthenticatedSync = await worker.fetch(new Request("https://timeflow.test/api/sync"), {});
-if (home.status !== 200 || !(await home.text()).includes("js/platform.js?v=0034")) {
+if (home.status !== 200 || !(await home.text()).includes("js/platform.js?v=0035")) {
   throw new Error("Der Sites-Build enthält Sprint 12 nicht vollständig.");
 }
 if (missing.status !== 404) throw new Error("Unbekannte Dateien liefern keinen korrekten 404-Status.");

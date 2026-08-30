@@ -319,3 +319,4 @@
 - Build 0032 entfernt die untere Kontakt- und Beschäftigungsübersicht vollständig. Profilpflege findet ausschließlich im Profilkopf statt; Einstellungen und Datenschutz nutzen darunter die volle Breite.
 - Build 0033 passt die Benachrichtigungsglocke mit dunkelblauem Verlauf, blauem Rand und aktivem Fokuszustand an den Home-Screen an; der rote Hinweiszähler bleibt deutlich erkennbar.
 - Build 0034 ergänzt die Profilbearbeitung um Auswahl, optimierte Vorschau und Entfernung eines eigenen Profilbilds. Das Bild erscheint auf Home und im Profil und wird lokal gespeichert.
+- Build 0035 entfernt im Privatmodus den gesamten organisatorischen Schnellaktionsbereich mit Urlaub, Krankheit, Verspätung und Schichttausch. Im Teammodus bleiben diese Aktionen verfügbar.
