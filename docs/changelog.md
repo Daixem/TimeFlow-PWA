@@ -308,3 +308,4 @@
 - Build 0022: Gemeinsame Plattformbasis für iOS, iPadOS, Android, Windows, macOS und Linux; fehlertoleranter Geräte- und Sitzungsspeicher, kompatible Dialoge, dynamische Viewport-Höhe, Touch-Ziele und plattformspezifische Installationshinweise.
 - Build 0022 wurde auf einem realen iPhone vollständig bestätigt. Auf dem iPad funktionieren App und Darstellung; Safari meldete jedoch blockierten dauerhaften Speicher.
 - Build 0023 unterscheidet deshalb zuverlässig zwischen dauerhaftem Browserspeicher und dem sicheren Sitzungsspeicher-Fallback. Eine fehlgeschlagene Speicherplatzschätzung erzeugt keinen falschen Komplettfehler mehr.
+- Build 0024 ersetzt die pauschalen Weiterleitungen der Karten „Für dich“ und „Team-Update“ durch eigene Detailansichten. Urlaubsverlauf und Chat werden erst über eine ausdrücklich gewählte Folgeaktion geöffnet.

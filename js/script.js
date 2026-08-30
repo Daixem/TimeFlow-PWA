@@ -145,6 +145,10 @@ function initialise() {
       document.dispatchEvent(new CustomEvent("timeflow:open-chat"));
       return;
     }
+    if (button.dataset.action === "home-detail") {
+      document.dispatchEvent(new CustomEvent("timeflow:open-home-detail", { detail: { id: button.dataset.detail } }));
+      return;
+    }
     if (button.dataset.action === "profile") {
       document.dispatchEvent(new CustomEvent("timeflow:open-profile"));
       return;

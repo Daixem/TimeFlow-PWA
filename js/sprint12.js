@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!readinessCard || !profilePage) return;
 
   const CHECK_KEY = "timeflow-device-check-v1";
-  const BUILD = "0023";
+  const BUILD = "0024";
   const heading = readinessCard.querySelector("header small");
   const title = readinessCard.querySelector("header h2");
   if (heading) heading.textContent = "Sprint 12 · Praxistest";
@@ -32,12 +32,52 @@ document.addEventListener("DOMContentLoaded", () => {
     </dialog>
   `);
 
+  document.body.insertAdjacentHTML("beforeend", `
+    <dialog class="home-detail-dialog" id="homeDetailDialog" aria-labelledby="homeDetailTitle">
+      <header><span id="homeDetailIcon"><i class="fa-solid fa-circle-info"></i></span><div><small id="homeDetailEyebrow">Hinweis</small><h2 id="homeDetailTitle">Details</h2></div><button type="button" data-close-home-detail aria-label="Schließen"><i class="fa-solid fa-xmark"></i></button></header>
+      <div class="home-detail-content"><p id="homeDetailCopy"></p><dl id="homeDetailFacts"></dl></div>
+      <footer><button type="button" data-close-home-detail>Schließen</button><button class="home-detail-action" type="button" id="homeDetailAction"></button></footer>
+    </dialog>
+  `);
+
   const dialog = document.getElementById("deviceCheckDialog");
   const list = document.getElementById("deviceCheckList");
   const score = document.getElementById("deviceCheckScore");
   const progress = document.getElementById("deviceCheckProgress");
   const summary = document.getElementById("deviceCheckSummary");
+  const homeDetailDialog = document.getElementById("homeDetailDialog");
+  const homeDetailIcon = document.getElementById("homeDetailIcon");
+  const homeDetailEyebrow = document.getElementById("homeDetailEyebrow");
+  const homeDetailTitle = document.getElementById("homeDetailTitle");
+  const homeDetailCopy = document.getElementById("homeDetailCopy");
+  const homeDetailFacts = document.getElementById("homeDetailFacts");
+  const homeDetailAction = document.getElementById("homeDetailAction");
   let running = false;
+
+  const homeDetails = {
+    "vacation-countdown": { eyebrow: "Für dich", title: "Dein Urlaub rückt näher", icon: "fa-umbrella-beach", copy: "Dein genehmigter Urlaub ist bereits in TimeFlow eingeplant.", facts: [["Zeitraum", "15.–28. September 2026"], ["Dauer", "10 Urlaubstage"], ["Status", "Genehmigt"]], action: "Urlaubsdetails öffnen", event: "vacation" },
+    "vacation-approved": { eyebrow: "Für dich", title: "Urlaubsantrag genehmigt", icon: "fa-clipboard-check", copy: "Die Freigabe ist abgeschlossen. Du musst keinen neuen Antrag stellen.", facts: [["Antrag", "Erholungsurlaub"], ["Zeitraum", "15.–28. September 2026"], ["Freigabe", "Abteilungsleitung"]], action: "Urlaubsdetails öffnen", event: "vacation" },
+    birthday: { eyebrow: "Team-Update", title: "Anna hat morgen Geburtstag", icon: "fa-cake-candles", copy: "Ein persönlicher Teamhinweis – ohne automatische Weiterleitung in den Chat.", facts: [["Kollegin", "Anna Müller"], ["Team", "Restaurant"], ["Termin", "Morgen"]], action: "Im Chat gratulieren", event: "chat" },
+    anniversary: { eyebrow: "Team-Update", title: "10-jähriges Jubiläum", icon: "fa-award", copy: "Thomas feiert am Freitag zehn Jahre im Unternehmen.", facts: [["Kollege", "Thomas Becker"], ["Anlass", "10 Jahre TimeFlow-Team"], ["Termin", "Freitag"]], action: "Im Chat gratulieren", event: "chat" }
+  };
+
+  function openHomeDetail(id) {
+    const detail = homeDetails[id];
+    if (!detail) return;
+    homeDetailEyebrow.textContent = detail.eyebrow;
+    homeDetailTitle.textContent = detail.title;
+    homeDetailCopy.textContent = detail.copy;
+    homeDetailIcon.innerHTML = `<i class="fa-solid ${detail.icon}"></i>`;
+    homeDetailFacts.replaceChildren(...detail.facts.map(([label, value]) => {
+      const row = document.createElement("div");
+      row.innerHTML = `<dt>${label}</dt><dd>${value}</dd>`;
+      return row;
+    }));
+    homeDetailAction.textContent = detail.action;
+    homeDetailAction.dataset.detailEvent = detail.event;
+    homeDetailDialog.className = `home-detail-dialog is-${detail.event}`;
+    window.TimeFlowPlatform.dialog.open(homeDetailDialog);
+  }
 
   const pageModes = ["schedule-mode", "chat-mode", "profile-mode", "clock-mode", "settings-mode"];
   const pageElements = {
@@ -199,6 +239,15 @@ document.addEventListener("DOMContentLoaded", () => {
   dialog.querySelector("[data-repeat-device-check]").addEventListener("click", runCheck);
   dialog.querySelector("[data-close-device-check]").addEventListener("click", () => window.TimeFlowPlatform.dialog.close(dialog));
   dialog.addEventListener("click", (event) => { if (event.target === dialog) window.TimeFlowPlatform.dialog.close(dialog); });
+  document.addEventListener("timeflow:open-home-detail", (event) => openHomeDetail(event.detail?.id));
+  homeDetailDialog.querySelectorAll("[data-close-home-detail]").forEach((button) => button.addEventListener("click", () => window.TimeFlowPlatform.dialog.close(homeDetailDialog)));
+  homeDetailDialog.addEventListener("click", (event) => { if (event.target === homeDetailDialog) window.TimeFlowPlatform.dialog.close(homeDetailDialog); });
+  homeDetailAction.addEventListener("click", () => {
+    const action = homeDetailAction.dataset.detailEvent;
+    window.TimeFlowPlatform.dialog.close(homeDetailDialog);
+    if (action === "chat") document.dispatchEvent(new CustomEvent("timeflow:open-chat"));
+    if (action === "vacation") document.dispatchEvent(new CustomEvent("timeflow:open-quick-actions", { detail: { action: "history" } }));
+  });
   document.querySelectorAll(".nav-item[data-target]").forEach((item) => item.addEventListener("click", () => settlePageState(item.dataset.target)));
   document.addEventListener("timeflow:open-chat", () => settlePageState("chat"));
   document.addEventListener("timeflow:open-profile", () => settlePageState("profile"));
