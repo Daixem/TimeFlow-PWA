@@ -78,6 +78,8 @@ function loadWorkday() {
 
 function updateDateTime() {
   const now = new Date();
+  const homeMonthLabel = document.getElementById("homeMonthLabel");
+  if (homeMonthLabel) homeMonthLabel.textContent = now.toLocaleDateString("de-DE", { month: "long", year: "numeric" });
   elements.currentDate.textContent = now.toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
   elements.currentTime.textContent = now.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   const monthButton = document.querySelector(".month-card .month-header button");
@@ -159,6 +161,10 @@ function initialise() {
     }
     if (button.dataset.action === "vacation") {
       document.dispatchEvent(new CustomEvent("timeflow:open-quick-actions", { detail: { action: "vacation" } }));
+      return;
+    }
+    if (button.dataset.action === "month") {
+      document.dispatchEvent(new CustomEvent("timeflow:open-month-statistics"));
       return;
     }
     if (button.dataset.action === "notifications") {

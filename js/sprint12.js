@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!readinessCard || !profilePage) return;
 
   const CHECK_KEY = "timeflow-device-check-v1";
-  const BUILD = "0029";
+  const BUILD = "0030";
   const heading = readinessCard.querySelector("header small");
   const title = readinessCard.querySelector("header h2");
   if (heading) heading.textContent = "Sprint 12 · Praxistest";
@@ -266,6 +266,13 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll(".nav-item[data-target]").forEach((item) => item.addEventListener("click", () => settlePageState(item.dataset.target)));
   document.addEventListener("timeflow:open-chat", () => settlePageState("chat"));
   document.addEventListener("timeflow:open-profile", () => settlePageState("profile"));
+  document.addEventListener("timeflow:open-month-statistics", () => {
+    settlePageState("profile");
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
+      document.querySelector('[data-stat-period="month"]')?.click();
+      document.querySelector(".statistics-section")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }));
+  });
   document.addEventListener("timeflow:open-clock", () => settlePageState("clock"));
   document.addEventListener("timeflow:open-settings", () => settlePageState("settings"));
   document.addEventListener("timeflow:open-notifications", () => settlePageState("home"));

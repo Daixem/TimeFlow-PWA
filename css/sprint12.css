@@ -97,3 +97,16 @@
 .team-update-status.is-upcoming { color: #e2a9ff; background: rgba(153, 68, 205, .15); }
 .team-update-status.is-anniversary { color: #e8c46e; background: rgba(183, 130, 27, .14); }
 @media (max-width: 430px) { .team-card .team-update { grid-template-columns: 32px minmax(0, 1fr) 12px; padding: 9px; } .team-card .team-update .row-icon { width: 32px; height: 32px; } .team-update-status { display: none; } .team-update-end { grid-template-columns: 12px; } }
+
+.month-card .month-header > div { min-width: 0; }
+.month-card .month-header small { display: block; margin-top: 3px; color: #71869c; font-size: .42rem; }
+.month-card .month-header > button { display: flex; align-items: center; gap: 7px; padding: 7px 9px; border: 1px solid rgba(82, 139, 207, .14); border-radius: 10px; background: rgba(7, 42, 79, .62); }
+.month-card .month-header > button .fa-chart-column { color: #6f9fff; }
+.month-open-statistics { display: grid; grid-template-columns: 30px minmax(0, 1fr) 14px; gap: 9px; align-items: center; width: 100%; margin-top: 14px; padding: 10px 11px; border: 1px solid rgba(76, 138, 218, .15); border-radius: 11px; color: #9fb9dd; background: linear-gradient(135deg, rgba(25, 84, 169, .17), rgba(10, 49, 95, .34)); text-align: left; }
+.month-open-statistics > i:first-child { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; color: #78a9ff; background: rgba(49, 108, 211, .14); }
+.month-open-statistics > span { display: grid; gap: 2px; min-width: 0; }
+.month-open-statistics strong { color: #dce8f7; font-size: .47rem; }
+.month-open-statistics small { color: #70869e; font-size: .4rem; }
+.month-open-statistics > i:last-child { color: #6685a9; font-size: .46rem; }
+.month-open-statistics:hover { border-color: rgba(77, 142, 235, .32); background: linear-gradient(135deg, rgba(31, 99, 197, .25), rgba(12, 58, 111, .42)); }
+@media (max-width: 430px) { .month-card .month-header > div > small { display: none; } .month-card .month-header > button { padding: 6px 8px; } .month-card .month-header > button .fa-chart-column { display: none; } }
