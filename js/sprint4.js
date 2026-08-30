@@ -19,6 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       <section class="profile-hero" aria-labelledby="profileName">
         <button class="profile-avatar-large" type="button" data-edit-profile aria-label="Profil bearbeiten">
+          <img id="profileAvatarImage" alt="" hidden>
           <span id="profileInitials">MM</span>
           <i class="fa-solid fa-pen"></i>
         </button>
@@ -113,6 +114,10 @@ document.addEventListener("DOMContentLoaded", () => {
       <dialog class="profile-dialog" id="profileDialog" aria-labelledby="profileDialogTitle">
         <form method="dialog" id="profileForm">
           <header><div><small>Persönliche Daten</small><h2 id="profileDialogTitle">Profil bearbeiten</h2></div><button type="button" data-close-profile-dialog aria-label="Schließen"><i class="fa-solid fa-xmark"></i></button></header>
+          <section class="profile-photo-editor" aria-labelledby="profilePhotoTitle">
+            <span class="profile-photo-preview"><img id="profilePhotoPreview" alt="Vorschau des Profilbilds" hidden><b id="profilePhotoInitials">MM</b></span>
+            <div><strong id="profilePhotoTitle">Profilbild</strong><small>JPG, PNG oder WebP · wird für TimeFlow optimiert</small><span><label><i class="fa-solid fa-camera"></i> Bild auswählen<input id="profilePhotoInput" type="file" accept="image/jpeg,image/png,image/webp"></label><button type="button" data-remove-profile-photo><i class="fa-regular fa-trash-can"></i> Entfernen</button></span></div>
+          </section>
           <div class="profile-form-grid">
             <label><span>Name</span><input name="name" autocomplete="name" required maxlength="50"></label>
             <label><span>Rolle</span><input name="role" required maxlength="40"></label>
@@ -132,7 +137,8 @@ document.addEventListener("DOMContentLoaded", () => {
     role: "Servicemitarbeiter",
     department: "Restaurant",
     email: "max.mustermann@timeflow.de",
-    phone: "+49 170 1234567"
+    phone: "+49 170 1234567",
+    avatar: null
   };
   const periods = {
     week: {
@@ -154,7 +160,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const profileDialog = document.getElementById("profileDialog");
   const profileForm = document.getElementById("profileForm");
+  const photoInput = document.getElementById("profilePhotoInput");
+  const photoPreview = document.getElementById("profilePhotoPreview");
+  const photoInitials = document.getElementById("profilePhotoInitials");
   let profile = loadJson(PROFILE_STORAGE_KEY, defaultProfile);
+  let pendingAvatar = profile.avatar || null;
 
   function loadJson(key, fallback) {
     try {
@@ -173,9 +183,48 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("profileName").textContent = profile.name;
     document.getElementById("profileRole").textContent = profile.role;
     document.getElementById("profileDepartment").textContent = profile.department;
-    document.getElementById("profileInitials").textContent = initials(profile.name);
+    const largeImage = document.getElementById("profileAvatarImage");
+    const largeInitials = document.getElementById("profileInitials");
+    largeImage.hidden = !profile.avatar;
+    largeImage.src = profile.avatar || "";
+    largeInitials.hidden = Boolean(profile.avatar);
+    largeInitials.textContent = initials(profile.name);
     document.getElementById("userName").textContent = profile.name.split(/\s+/)[0] || "Max";
-    document.querySelector(".profile-initials").textContent = initials(profile.name);
+    const smallAvatar = document.querySelector(".profile-initials");
+    smallAvatar.textContent = profile.avatar ? "" : initials(profile.name);
+    smallAvatar.style.backgroundImage = profile.avatar ? `url(${profile.avatar})` : "";
+  }
+
+  function renderPhotoPreview() {
+    const value = initials(profileForm.elements.name.value || profile.name);
+    photoPreview.hidden = !pendingAvatar;
+    photoPreview.src = pendingAvatar || "";
+    photoInitials.hidden = Boolean(pendingAvatar);
+    photoInitials.textContent = value;
+  }
+
+  function optimizePhoto(file) {
+    return new Promise((resolve, reject) => {
+      if (!file.type.startsWith("image/")) { reject(new Error("type")); return; }
+      if (file.size > 5 * 1024 * 1024) { reject(new Error("size")); return; }
+      const reader = new FileReader();
+      reader.onerror = () => reject(new Error("read"));
+      reader.onload = () => {
+        const image = new Image();
+        image.onerror = () => reject(new Error("image"));
+        image.onload = () => {
+          const size = Math.min(image.naturalWidth, image.naturalHeight);
+          const canvas = document.createElement("canvas");
+          canvas.width = 512; canvas.height = 512;
+          const context = canvas.getContext("2d");
+          if (!context) { reject(new Error("canvas")); return; }
+          context.drawImage(image, (image.naturalWidth - size) / 2, (image.naturalHeight - size) / 2, size, size, 0, 0, 512, 512);
+          resolve(canvas.toDataURL("image/jpeg", .84));
+        };
+        image.src = String(reader.result);
+      };
+      reader.readAsDataURL(file);
+    });
   }
 
   function renderStatistics(periodKey) {
@@ -234,6 +283,9 @@ document.addEventListener("DOMContentLoaded", () => {
     profileForm.elements.department.value = profile.department;
     profileForm.elements.email.value = profile.email;
     profileForm.elements.phone.value = profile.phone;
+    pendingAvatar = profile.avatar || null;
+    photoInput.value = "";
+    renderPhotoPreview();
     window.TimeFlowPlatform.dialog.open(profileDialog);
   }
 
@@ -249,6 +301,14 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll("[data-stat-period]").forEach((button) => button.addEventListener("click", () => renderStatistics(button.dataset.statPeriod)));
   document.querySelectorAll("[data-edit-profile]").forEach((button) => button.addEventListener("click", openProfileDialog));
   document.querySelectorAll("[data-close-profile-dialog]").forEach((button) => button.addEventListener("click", () => window.TimeFlowPlatform.dialog.close(profileDialog)));
+  photoInput.addEventListener("change", async () => {
+    const file = photoInput.files?.[0];
+    if (!file) return;
+    try { pendingAvatar = await optimizePhoto(file); renderPhotoPreview(); }
+    catch (error) { notify(error.message === "size" ? "Das Profilbild darf höchstens 5 MB groß sein." : "Dieses Bild konnte nicht verarbeitet werden."); }
+  });
+  profileForm.elements.name.addEventListener("input", renderPhotoPreview);
+  document.querySelector("[data-remove-profile-photo]").addEventListener("click", () => { pendingAvatar = null; photoInput.value = ""; renderPhotoPreview(); });
   document.querySelector("[data-open-schedule]").addEventListener("click", () => document.querySelector('[data-target="schedule"]')?.click());
   document.querySelectorAll("[data-open-settings]").forEach((button) => button.addEventListener("click", () => {
     document.dispatchEvent(new CustomEvent("timeflow:open-settings"));
@@ -262,7 +322,8 @@ document.addEventListener("DOMContentLoaded", () => {
       role: String(values.get("role")).trim(),
       department: String(values.get("department")).trim(),
       email: String(values.get("email")).trim(),
-      phone: String(values.get("phone")).trim()
+      phone: String(values.get("phone")).trim(),
+      avatar: pendingAvatar
     };
     window.TimeFlowPlatform.storage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
     renderProfile();

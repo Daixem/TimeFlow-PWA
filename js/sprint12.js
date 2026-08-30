@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!readinessCard || !profilePage) return;
 
   const CHECK_KEY = "timeflow-device-check-v1";
-  const BUILD = "0033";
+  const BUILD = "0034";
   const heading = readinessCard.querySelector("header small");
   const title = readinessCard.querySelector("header h2");
   if (heading) heading.textContent = "Sprint 12 · Praxistest";
