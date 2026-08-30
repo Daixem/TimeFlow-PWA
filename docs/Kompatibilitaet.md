@@ -1,8 +1,8 @@
 # TimeFlow – Geräte- und Betriebssystem-Kompatibilität
 
-Stand: Version 1.0.1, Build 0022
+Stand: Version 1.0.1, Build 0023
 
-Realer Gerätestatus: **iPhone und iPad erfolgreich abgenommen.**
+Realer Gerätestatus: **iPhone vollständig abgenommen. Auf dem iPad funktionieren App und Darstellung; die dauerhafte lokale Speicherung muss im installierten PWA-Kontext noch bestätigt werden.**
 
 ## Unterstützte Plattformen
 

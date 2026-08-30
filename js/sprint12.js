@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!readinessCard || !profilePage) return;
 
   const CHECK_KEY = "timeflow-device-check-v1";
-  const BUILD = "0022";
+  const BUILD = "0023";
   const heading = readinessCard.querySelector("header small");
   const title = readinessCard.querySelector("header h2");
   if (heading) heading.textContent = "Sprint 12 · Praxistest";
@@ -96,12 +96,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
   async function storageResult() {
     try {
+      const storage = window.TimeFlowPlatform?.storage;
+      if (!storage) throw new Error("storage_unavailable");
       const probe = `timeflow-check-${Date.now()}`;
-      window.TimeFlowPlatform.storage.setItem(probe, "ok");
-      const usable = window.TimeFlowPlatform.storage.getItem(probe) === "ok";
-      window.TimeFlowPlatform.storage.removeItem(probe);
+      storage.setItem(probe, "ok");
+      const usable = storage.getItem(probe) === "ok";
+      storage.removeItem(probe);
       if (!usable) throw new Error("storage_failed");
-      const estimate = await navigator.storage?.estimate?.();
+      if (typeof storage.isPersistent === "function" && !storage.isPersistent()) {
+        return result("Datenspeicher", "Sitzungsspeicher aktiv – dauerhaftes Speichern blockiert", false, true, "fa-database");
+      }
+      let estimate;
+      try { estimate = await navigator.storage?.estimate?.(); } catch { estimate = undefined; }
       const used = Number(estimate?.usage || 0);
       const quota = Number(estimate?.quota || 0);
       const detail = quota ? `${Math.max(1, Math.round(used / 1048576))} von ${Math.max(1, Math.round(quota / 1048576))} MB belegt` : "Lokaler Speicher verfügbar";

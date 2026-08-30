@@ -5,6 +5,19 @@
   var memorySession = {};
 
   function createStorage(nativeStorage, memory) {
+    var persistent = false;
+
+    try {
+      if (nativeStorage) {
+        var initialProbe = "__timeflow_storage_probe__";
+        nativeStorage.setItem(initialProbe, "1");
+        persistent = nativeStorage.getItem(initialProbe) === "1";
+        nativeStorage.removeItem(initialProbe);
+      }
+    } catch (_error) {
+      persistent = false;
+    }
+
     function getItem(key) {
       try {
         var value = nativeStorage && nativeStorage.getItem(key);
@@ -18,7 +31,14 @@
     function setItem(key, value) {
       var text = String(value);
       memory[key] = text;
-      try { if (nativeStorage) nativeStorage.setItem(key, text); } catch (_error) { /* Sitzungsspeicher bleibt aktiv. */ }
+      try {
+        if (nativeStorage) {
+          nativeStorage.setItem(key, text);
+          persistent = nativeStorage.getItem(key) === text;
+        }
+      } catch (_error) {
+        persistent = false;
+      }
     }
 
     function removeItem(key) {
@@ -39,7 +59,11 @@
       return result;
     }
 
-    return { getItem: getItem, setItem: setItem, removeItem: removeItem, keys: keys };
+    function isPersistent() {
+      return persistent;
+    }
+
+    return { getItem: getItem, setItem: setItem, removeItem: removeItem, keys: keys, isPersistent: isPersistent };
   }
 
   function nativeStorage(name) {

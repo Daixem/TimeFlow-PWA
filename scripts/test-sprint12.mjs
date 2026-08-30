@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 
 const requiredSnippets = new Map([
-  ["index.html", ["css/compat.css?v=0022", "css/sprint12.css?v=0022", "js/platform.js?v=0022", "js/shell.js?v=0022", "js/sprint12.js?v=0022", "sw.js?v=0022"]],
-  ["sw.js", ["timeflow-v23", "relativePath.startsWith(\"api/\")", "response.type === \"opaque\"", "js/platform.js?v=0022", "js/shell.js?v=0022", "css/compat.css?v=0022", "js/sprint12.js?v=0022"]],
+  ["index.html", ["css/compat.css?v=0023", "css/sprint12.css?v=0023", "js/platform.js?v=0023", "js/shell.js?v=0023", "js/sprint12.js?v=0023", "sw.js?v=0023"]],
+  ["sw.js", ["timeflow-v24", "relativePath.startsWith(\"api/\")", "response.type === \"opaque\"", "js/platform.js?v=0023", "js/shell.js?v=0023", "css/compat.css?v=0023", "js/sprint12.js?v=0023"]],
   ["js/platform.js", ["tf-platform-", "createStorage", "visualViewport", "openDialog", "data-timeflow-platform"]],
   ["css/compat.css", ["--tf-viewport-height", "pointer: coarse", "orientation: landscape", "forced-colors: active"]],
   ["js/shell.js", ["function repair", "data-timeflow-shell", "window.TimeFlowShell", "window.scrollTo(0, 0)"]],
@@ -40,7 +40,7 @@ const worker = (await import("../dist/server/index.js")).default;
 const home = await worker.fetch(new Request("https://timeflow.test/"), {});
 const missing = await worker.fetch(new Request("https://timeflow.test/nicht-vorhanden"), {});
 const unauthenticatedSync = await worker.fetch(new Request("https://timeflow.test/api/sync"), {});
-if (home.status !== 200 || !(await home.text()).includes("js/platform.js?v=0022")) {
+if (home.status !== 200 || !(await home.text()).includes("js/platform.js?v=0023")) {
   throw new Error("Der Sites-Build enthält Sprint 12 nicht vollständig.");
 }
 if (missing.status !== 404) throw new Error("Unbekannte Dateien liefern keinen korrekten 404-Status.");

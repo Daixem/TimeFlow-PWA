@@ -1,6 +1,6 @@
 # Sprint 12 – Praxistest und Produktionshärtung
 
-Status: **Technische Testversion 1.0.1 umgesetzt (Build 0022)**
+Status: **Technische Testversion 1.0.1 umgesetzt (Build 0023)**
 
 ## Ziel
 
@@ -15,7 +15,7 @@ nach dem Wiederöffnen der App.
 - Prüfung von sicherem Kontext, Offline-App, lokalem Speicher und Darstellung
 - Sichtbarer Status für Nutzungsmodus, Backup, Synchronisierung und Verbindung
 - Keine Zwischenspeicherung benutzerbezogener API-Antworten im Service Worker
-- Aktualisierung des App-Shell-Caches auf Build 0022
+- Aktualisierung des App-Shell-Caches auf Build 0023
 - Wiederherstellung eines konsistenten Seitenzustands auf Tablets und nach App-Rückkehr
 - Früher kompatibler Shell-Wächter stellt Home oder die gewählte Seite auch nach einem Teilausfall einzelner Skripte sichtbar wieder her
 - Laufende Nachtschichten bleiben über den Tageswechsel erhalten
@@ -24,7 +24,7 @@ nach dem Wiederöffnen der App.
 
 ## Noch durch den Nutzer zu prüfen
 
-- Installation und Start über den Home-Bildschirm auf einem realen iPhone
+- Dauerhafte lokale Speicherung in der installierten PWA auf dem realen iPad
 - Installation und Start als PWA auf einem realen Android-Gerät
 - Offline-Start nach vorherigem vollständigem Laden
 - Synchronisierung desselben Profils auf zwei angemeldeten Geräten

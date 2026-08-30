@@ -141,7 +141,8 @@ späteren Backend-Sprint umgesetzt.
 - [x] Dialog-Fallback für unterschiedliche Browserimplementierungen
 - [x] Dynamische Viewport-Höhe, Touch-Ziele, Hoch-/Querformat und Desktopbreiten abgesichert
 - [x] Plattformspezifische Installationshinweise
-- [x] Reale Abnahme auf iPhone und iPad
+- [x] Reale Abnahme auf iPhone
+- [ ] Reale Abnahme auf iPad: App und Darstellung bestätigt, dauerhafte Speicherung noch offen
 - [ ] Reale Abnahme auf Android-Smartphone und Android-Tablet
 - [ ] Reale Abnahme unter Windows und macOS
 - [ ] Reale Abnahme unter Linux
