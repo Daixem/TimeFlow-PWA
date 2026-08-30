@@ -1,10 +1,11 @@
 import { readFile } from "node:fs/promises";
 
 const requiredSnippets = new Map([
-  ["index.html", ["css/compat.css?v=0024", "css/sprint12.css?v=0024", "js/platform.js?v=0024", "js/shell.js?v=0024", "js/sprint12.js?v=0024", "sw.js?v=0024"]],
-  ["sw.js", ["timeflow-v25", "relativePath.startsWith(\"api/\")", "response.type === \"opaque\"", "js/platform.js?v=0024", "js/shell.js?v=0024", "css/compat.css?v=0024", "js/sprint12.js?v=0024"]],
+  ["index.html", ["css/compat.css?v=0025", "css/sprint12.css?v=0025", "js/platform.js?v=0025", "js/shell.js?v=0025", "js/sprint12.js?v=0025", "sw.js?v=0025"]],
+  ["sw.js", ["timeflow-v26", "relativePath.startsWith(\"api/\")", "response.type === \"opaque\"", "js/platform.js?v=0025", "js/shell.js?v=0025", "css/compat.css?v=0025", "js/sprint12.js?v=0025"]],
   ["js/platform.js", ["tf-platform-", "createStorage", "visualViewport", "openDialog", "data-timeflow-platform"]],
   ["css/compat.css", ["--tf-viewport-height", "pointer: coarse", "orientation: landscape", "forced-colors: active"]],
+  ["css/sprint6.css", ["@media (min-width: 680px)", ".quick-actions-card { grid-column: 1 / -1; }"]],
   ["js/shell.js", ["function repair", "data-timeflow-shell", "window.TimeFlowShell", "window.scrollTo(0, 0)"]],
   ["js/sprint8.js", ["authVisibilityFallback", "isStaticPreview", "AbortController", "storageGet"]],
   ["js/sprint12.js", ["Geräte- und PWA-Check", "timeflow-device-check-v1", "Sichere Ausführung", "Mobile Darstellung", "Datensicherung", "timeflow:device-resumed", "function enforcePageState", "dataset.timeflowPage", "homeDetailDialog", "Urlaubsdetails öffnen", "Im Chat gratulieren"]],
@@ -40,7 +41,7 @@ const worker = (await import("../dist/server/index.js")).default;
 const home = await worker.fetch(new Request("https://timeflow.test/"), {});
 const missing = await worker.fetch(new Request("https://timeflow.test/nicht-vorhanden"), {});
 const unauthenticatedSync = await worker.fetch(new Request("https://timeflow.test/api/sync"), {});
-if (home.status !== 200 || !(await home.text()).includes("js/platform.js?v=0024")) {
+if (home.status !== 200 || !(await home.text()).includes("js/platform.js?v=0025")) {
   throw new Error("Der Sites-Build enthält Sprint 12 nicht vollständig.");
 }
 if (missing.status !== 404) throw new Error("Unbekannte Dateien liefern keinen korrekten 404-Status.");
