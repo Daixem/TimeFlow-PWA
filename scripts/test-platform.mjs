@@ -6,10 +6,10 @@ const worker = await readFile("sw.js", "utf8");
 const compatibility = await readFile("css/compat.css", "utf8");
 const platform = await readFile("js/platform.js", "utf8");
 
-if (index.indexOf("js/platform.js?v=0026") < 0 || index.indexOf("js/platform.js?v=0026") > index.indexOf("js/script.js?v=0026")) {
+if (index.indexOf("js/platform.js?v=0027") < 0 || index.indexOf("js/platform.js?v=0027") > index.indexOf("js/script.js?v=0027")) {
   throw new Error("Die Plattformbasis wird nicht vor den Funktionsskripten geladen.");
 }
-for (const asset of ["js/platform.js?v=0026", "css/compat.css?v=0026"]) {
+for (const asset of ["js/platform.js?v=0027", "css/compat.css?v=0027"]) {
   if (!worker.includes(asset)) throw new Error(`Der Offline-Cache enthält ${asset} nicht.`);
 }
 for (const marker of ["ios", "ipados", "android", "windows", "macos", "linux", "visualViewport", "createStorage"]) {

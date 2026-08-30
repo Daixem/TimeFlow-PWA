@@ -19,6 +19,8 @@
 .device-check-list li.is-passed > span, .device-check-list li.is-passed em { color: #64d6aa; background: rgba(32, 143, 104, .12); }
 .device-check-list li.is-advisory > span, .device-check-list li.is-advisory em { color: #efbd6a; background: rgba(178, 111, 22, .12); }
 .device-check-list li.is-failed > span, .device-check-list li.is-failed em { color: #ef8994; background: rgba(158, 52, 65, .12); }
+.device-check-list li.is-actionable { cursor: pointer; transition: border-color .18s, background .18s, transform .18s; }
+.device-check-list li.is-actionable:hover, .device-check-list li.is-actionable:focus-visible { border-color: rgba(239, 137, 148, .35); outline: 0; background: rgba(78, 36, 59, .36); transform: translateY(-1px); }
 .device-check-list li.is-running i { animation: device-check-spin .8s linear infinite; }
 .device-check-summary { display: flex; gap: 7px; align-items: flex-start; margin: 11px 0 0; padding: 9px; border-radius: 9px; color: #78d7b2 !important; background: rgba(29, 126, 92, .1); text-align: left; }
 .device-check-summary.is-warning { color: #e4b362 !important; background: rgba(158, 98, 22, .1); }

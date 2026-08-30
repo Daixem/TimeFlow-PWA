@@ -203,6 +203,9 @@ document.addEventListener("DOMContentLoaded", () => {
     applyMode(currentMode() || "team");
   });
   document.addEventListener("timeflow:open-settings", () => applyMode(currentMode() || "team"));
+  document.addEventListener("timeflow:open-mode-selection", () => {
+    if (!dialog.open) window.TimeFlowPlatform.dialog.open(dialog);
+  });
   if (notificationList) new MutationObserver(() => updateNotificationCount(currentMode() || "team")).observe(notificationList, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
 
   const initialMode = currentMode();

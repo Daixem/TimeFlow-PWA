@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!readinessCard || !profilePage) return;
 
   const CHECK_KEY = "timeflow-device-check-v1";
-  const BUILD = "0026";
+  const BUILD = "0027";
   const heading = readinessCard.querySelector("header small");
   const title = readinessCard.querySelector("header h2");
   if (heading) heading.textContent = "Sprint 12 · Praxistest";
@@ -119,8 +119,8 @@ document.addEventListener("DOMContentLoaded", () => {
     try { return JSON.parse(value) ?? fallback; } catch { return fallback; }
   }
 
-  function result(label, detail, passed, advisory = false, icon = "fa-circle-check") {
-    return { label, detail, passed: Boolean(passed), advisory, icon };
+  function result(label, detail, passed, advisory = false, icon = "fa-circle-check", action = null) {
+    return { label, detail, passed: Boolean(passed), advisory, icon, action };
   }
 
   async function serviceWorkerResult() {
@@ -166,7 +166,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function modeResult() {
     const mode = parseJson(window.TimeFlowPlatform.storage.getItem("timeflow-settings-v1"), {}).appMode;
     const valid = mode === "private" || mode === "team";
-    return result("Nutzungsmodus", valid ? `${mode === "private" ? "Privat" : "Team"} ist gespeichert` : "Bitte Privat oder Team auswählen", valid, false, "fa-users-viewfinder");
+    return result("Nutzungsmodus", valid ? `${mode === "private" ? "Privat" : "Team"} ist gespeichert` : "Antippen und Privat oder Team auswählen", valid, false, "fa-users-viewfinder", valid ? null : "mode");
   }
 
   function backupResult() {
@@ -198,6 +198,20 @@ document.addEventListener("DOMContentLoaded", () => {
       const row = document.createElement("li");
       row.className = item.passed ? "is-passed" : item.advisory ? "is-advisory" : "is-failed";
       row.innerHTML = `<span><i class="fa-solid ${item.icon}"></i></span><div><strong>${item.label}</strong><small>${item.detail}</small></div><em>${item.passed ? "Bereit" : item.advisory ? "Hinweis" : "Prüfen"}</em>`;
+      if (item.action === "mode") {
+        row.classList.add("is-actionable");
+        row.tabIndex = 0;
+        row.setAttribute("role", "button");
+        row.setAttribute("aria-label", "Nutzungsmodus auswählen");
+        const openMode = () => {
+          window.TimeFlowPlatform.dialog.close(dialog);
+          document.dispatchEvent(new CustomEvent("timeflow:open-mode-selection"));
+        };
+        row.addEventListener("click", openMode);
+        row.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") { event.preventDefault(); openMode(); }
+        });
+      }
       return row;
     }));
     const passed = results.filter((item) => item.passed).length;
