@@ -36,6 +36,8 @@
 .operation-message em { padding: 4px 6px; border-radius: 7px; color: #91b8f3; background: rgba(57, 113, 211, .14); font-size: .36rem; font-style: normal; }
 .operation-message.urgent em { color: #ff9aa5; background: rgba(211, 65, 86, .14); }
 .workflow-concept { display: grid; grid-template-columns: 1.35fr 1fr; gap: 11px; margin-top: 11px; }
+.workflow-concept.is-private { grid-template-columns: minmax(0, 1fr); }
+.workflow-team-only[hidden] { display: none !important; }
 .workflow-card { padding: 14px; border: 1px solid rgba(88, 142, 214, .18); border-radius: 17px; background: rgba(3, 29, 59, .8); }
 .workflow-card-head { display: flex; align-items: start; justify-content: space-between; gap: 9px; }
 .workflow-card-head small { color: #7198ca; font-size: .4rem; font-weight: 800; letter-spacing: .08em; }
@@ -73,7 +75,7 @@
 .availability-days small { color: #7891ad; font-size: .32rem; }
 .clock-page { display: none !important; }
 .dashboard > .overview-card { display: none !important; }
-.dashboard > .home-clock-details, .dashboard > .operations-hub, .dashboard > .workflow-concept { grid-column: 1 / -1; min-width: 0; }
+.dashboard > .home-clock-details, .dashboard > .operations-hub, .dashboard > .workflow-concept, .dashboard > .shift-grid { grid-column: 1 / -1; min-width: 0; }
 .dashboard > .stamp-card { justify-self: center; width: 136px; min-height: 136px; padding: 14px; border-radius: 50%; flex-direction: column; justify-content: center; gap: 6px; text-align: center; background: radial-gradient(circle at 35% 25%, #4d8dff, #1851c5 66%, #0d388d); box-shadow: 0 0 0 9px rgba(47, 112, 240, .08), 0 15px 36px rgba(16, 69, 180, .38); }
 .dashboard > .stamp-card.is-working { background: radial-gradient(circle at 35% 25%, #45da8a, #1bae61 66%, #118044); box-shadow: 0 0 0 9px rgba(43, 202, 114, .08), 0 15px 36px rgba(9, 133, 67, .34); }
 .dashboard > .stamp-card .stamp-left { flex-direction: column; gap: 6px; }
@@ -101,6 +103,9 @@
 .home-clock-summary span:nth-child(3) i { color: #62dcb0; background: rgba(42, 172, 107, .13); }
 .home-clock-summary b { overflow: hidden; color: #eaf2fc; font-size: .46rem; text-overflow: ellipsis; white-space: nowrap; }
 .home-clock-summary small { color: #7289a4; font-size: .34rem; }
+.for-you-card .personal-update { cursor: default; }
+.for-you-card .personal-update .fa-chevron-right { display: none; }
+.for-you-card .personal-update-end { min-width: 54px; justify-content: flex-end; }
 .bottom-nav { display: none !important; }
 body > dialog { position: fixed; inset: auto; top: 50%; left: 50%; max-width: calc(100vw - 24px); max-height: calc(100dvh - 24px); margin: 0; transform: translate(-50%, -50%); }
 body > dialog[open] { display: block; }

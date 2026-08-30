@@ -60,10 +60,17 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("timeflow:workday-updated", renderHomeClockDetails);
   document.addEventListener("timeflow:settings-updated", renderHomeClockDetails);
   window.setInterval(renderHomeClockDetails, 30000);
+
+  // Die beiden Einsatz-Karten gehören zur heutigen Schicht und nicht ans Ende
+  // des Dashboards. So bleibt der Ablauf auf Home klar lesbar.
+  const clockDetails = dashboard.querySelector(".home-clock-details");
+  const shiftGrid = dashboard.querySelector(".shift-grid");
+  if (clockDetails && shiftGrid) clockDetails.insertAdjacentElement("afterend", shiftGrid);
+
   const workflow = document.createElement("section");
   workflow.className = "workflow-concept";
   workflow.innerHTML = `
-    <article class="workflow-card">
+    <article class="workflow-card workflow-team-only">
       <div class="workflow-card-head"><div><small>ZEITEN · TRANSPARENT GETRENNT</small><h2>Arbeitszeitkonto</h2></div><button type="button" data-open-workflow="times">Monatsarchiv</button></div>
       <div class="account-summary"><span><small>BESTÄTIGT</small><strong>95:02 h</strong></span><span><small>IN PRÜFUNG</small><strong>08:15 h</strong></span><span><small>ZEITKONTO</small><strong class="positive">+18:08 h</strong></span></div>
     </article>
@@ -71,7 +78,34 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="workflow-card-head"><div><small>TEAMMODUS · ORGANISATION</small><h2>Planung & Unterlagen</h2></div></div>
       <div class="concept-links"><button type="button" data-open-workflow="documents"><i class="fa-regular fa-file-lines"></i><span><small>1 UNTERSCHRIFT AUSSTEHEND</small><strong>Dokumente</strong></span><em>›</em></button><button type="button" data-open-workflow="availability"><i class="fa-regular fa-heart"></i><span><small>SEPTEMBER</small><strong>Wunschzeiten</strong></span><em>›</em></button></div>
     </article>`;
-  dashboard.querySelector(".home-clock-details")?.insertAdjacentElement("afterend", workflow);
+  (shiftGrid || clockDetails)?.insertAdjacentElement("afterend", workflow);
+
+  // Im Privatmodus gibt es keine Organisationsunterlagen oder Wunschzeiten.
+  // Der Test-Build folgt der bereits gespeicherten Moduswahl sofort.
+  function applyPrivateHomeMode() {
+    const isPrivate = document.documentElement.classList.contains("timeflow-private-mode");
+    workflow.classList.toggle("is-private", isPrivate);
+    workflow.querySelector(".workflow-team-only")?.toggleAttribute("hidden", isPrivate);
+    quickAccessModal?.querySelectorAll('[data-quick-action="documents"], [data-quick-action="availability"]')
+      .forEach((button) => button.toggleAttribute("hidden", isPrivate));
+  }
+
+  // „Für dich“ bleibt ein ruhiger Informationsbereich. Die Einträge öffnen
+  // keine leere Detailansicht und blockieren dadurch keine Schnellaktionen.
+  const forYou = dashboard.querySelector(".for-you-card");
+  if (forYou) {
+    const heading = forYou.querySelector(".section-heading h2");
+    const copy = forYou.querySelector(".section-heading p");
+    if (heading) heading.textContent = "Persönliche Infos";
+    if (copy) copy.textContent = "Wichtige Hinweise zu deinem Arbeitsalltag";
+    forYou.querySelectorAll(".personal-update").forEach((item) => {
+      item.setAttribute("aria-label", `${item.innerText.trim()} · reine Information`);
+      item.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+      }, true);
+    });
+  }
   document.body.insertAdjacentHTML("beforeend", `
     <dialog class="operations-modal" id="operationsModal">
       <header><div><small>KONZEPT · ZENTRALES POSTFACH</small><h2>Mitteilungen & Aufgaben</h2><p>Dienstplan, Zeiterfassung, Dokumente und Team-News werden getrennt priorisiert.</p></div><button type="button" data-close-operations aria-label="Schließen"><i class="fa-solid fa-xmark"></i></button></header>
@@ -98,6 +132,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const open = () => window.TimeFlowPlatform?.dialog?.open(modal) || modal.showModal();
   document.querySelector('[data-action="notifications"]')?.addEventListener("click", (event) => { event.preventDefault(); event.stopImmediatePropagation(); open(); }, true);
   const quickAccessModal = document.getElementById("quickAccessModal");
+  applyPrivateHomeMode();
+  document.addEventListener("timeflow:mode-changed", applyPrivateHomeMode);
   document.querySelector("[data-open-quick-access]").addEventListener("click", () => window.TimeFlowPlatform?.dialog?.open(quickAccessModal) || quickAccessModal.showModal());
   quickAccessModal.querySelector("[data-close-quick-access]").addEventListener("click", () => quickAccessModal.close());
   quickAccessModal.addEventListener("click", (event) => { if (event.target === quickAccessModal) quickAccessModal.close(); });
