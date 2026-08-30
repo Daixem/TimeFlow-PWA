@@ -54,6 +54,8 @@
 .home-detail-dialog > footer { display: grid; grid-template-columns: 1fr 1.35fr; gap: 8px; padding: 12px 18px 18px; }
 .home-detail-dialog > footer button { min-height: 40px; border: 1px solid rgba(80, 135, 197, .17); border-radius: 11px; color: #a3b8cf; background: rgba(13, 49, 86, .7); font-size: .46rem; font-weight: 750; }
 .home-detail-dialog > footer .home-detail-action { color: white; background: linear-gradient(135deg, #249d68, #16734c); }
+.home-detail-dialog > footer .home-detail-action[hidden] { display: none; }
+.home-detail-dialog.has-no-action > footer { grid-template-columns: 1fr; }
 .home-detail-dialog.is-chat > footer .home-detail-action { background: linear-gradient(135deg, #8e50df, #6230ad); }
 @media (max-width: 520px) { .home-detail-dialog { width: calc(100vw - 24px); } .home-detail-dialog > header, .home-detail-content { padding-left: 14px; padding-right: 14px; } .home-detail-dialog > footer { padding: 12px 14px 15px; } }
 

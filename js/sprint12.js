@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!readinessCard || !profilePage) return;
 
   const CHECK_KEY = "timeflow-device-check-v1";
-  const BUILD = "0028";
+  const BUILD = "0029";
   const heading = readinessCard.querySelector("header small");
   const title = readinessCard.querySelector("header h2");
   if (heading) heading.textContent = "Sprint 12 · Praxistest";
@@ -55,7 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let running = false;
 
   const homeDetails = {
-    "vacation-countdown": { eyebrow: "Für dich", title: "Dein Urlaub rückt näher", icon: "fa-umbrella-beach", copy: "Dein genehmigter Urlaub ist bereits in TimeFlow eingeplant.", facts: [["Zeitraum", "15.–28. September 2026"], ["Dauer", "10 Urlaubstage"], ["Status", "Genehmigt"]], action: "Urlaubsdetails öffnen", event: "vacation" },
+    "vacation-countdown": { eyebrow: "Für dich · Information", title: "Dein Urlaub rückt näher", icon: "fa-umbrella-beach", copy: "Dein genehmigter Urlaub ist bereits in TimeFlow eingeplant. Diese Ansicht dient ausschließlich zur Information.", facts: [["Zeitraum", "15.–28. September 2026"], ["Dauer", "10 Urlaubstage"], ["Status", "Genehmigt"]], action: null, event: "info" },
     "vacation-approved": { eyebrow: "Für dich", title: "Urlaubsantrag genehmigt", icon: "fa-clipboard-check", copy: "Die Freigabe ist abgeschlossen. Du musst keinen neuen Antrag stellen.", facts: [["Antrag", "Erholungsurlaub"], ["Zeitraum", "15.–28. September 2026"], ["Freigabe", "Abteilungsleitung"]], action: "Urlaubsdetails öffnen", event: "vacation" },
     birthday: { eyebrow: "Team-Update", title: "Anna hat morgen Geburtstag", icon: "fa-cake-candles", copy: "Ein persönlicher Teamhinweis – ohne automatische Weiterleitung in den Chat.", facts: [["Kollegin", "Anna Müller"], ["Team", "Restaurant"], ["Termin", "Morgen"]], action: "Im Chat gratulieren", event: "chat" },
     anniversary: { eyebrow: "Team-Update", title: "10-jähriges Jubiläum", icon: "fa-award", copy: "Thomas feiert am Freitag zehn Jahre im Unternehmen.", facts: [["Kollege", "Thomas Becker"], ["Anlass", "10 Jahre TimeFlow-Team"], ["Termin", "Freitag"]], action: "Im Chat gratulieren", event: "chat" }
@@ -73,9 +73,10 @@ document.addEventListener("DOMContentLoaded", () => {
       row.innerHTML = `<dt>${label}</dt><dd>${value}</dd>`;
       return row;
     }));
-    homeDetailAction.textContent = detail.action;
+    homeDetailAction.textContent = detail.action || "";
     homeDetailAction.dataset.detailEvent = detail.event;
-    homeDetailDialog.className = `home-detail-dialog is-${detail.event}`;
+    homeDetailAction.hidden = !detail.action;
+    homeDetailDialog.className = `home-detail-dialog is-${detail.event}${detail.action ? "" : " has-no-action"}`;
     window.TimeFlowPlatform.dialog.open(homeDetailDialog);
   }
 
