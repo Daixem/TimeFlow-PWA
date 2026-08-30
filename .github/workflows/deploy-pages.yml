@@ -34,6 +34,8 @@ jobs:
           cp -R assets css js _site/
           mkdir -p _site/previews/operations-concept
           cp previews/operations-concept/index.html _site/previews/operations-concept/
+          mkdir -p _site/previews/build-0040-integration
+          cp previews/build-0040-integration/index.html previews/build-0040-integration/integration.css previews/build-0040-integration/integration.js _site/previews/build-0040-integration/
           touch _site/.nojekyll
 
       - name: GitHub Pages vorbereiten
