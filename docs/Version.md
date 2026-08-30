@@ -2,7 +2,7 @@
 
 Aktuelle Version: **1.0.1 – Praxistest**
 
-Build: **0039**
+Build: **0040**
 
 Sprint: **Sprint 12 – Praxistest und Produktionshärtung**
 

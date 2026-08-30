@@ -324,3 +324,4 @@
 - Build 0037 ersetzt den automatischen Profilbildzuschnitt durch einen interaktiven Editor. Gerätekompatible Bildformate bis 20 MB können ausgewählt, im runden Rahmen verschoben und stufenlos gezoomt werden.
 - Build 0038 vereinfacht das Profil auf Identität, Arbeitszeitkonto und Statistik. Synchronisierung, Gerätecheck, Datenschutz und Versionsinformationen befinden sich jetzt ausschließlich in den Einstellungen.
 - Build 0039 integriert das angemeldete Konto in den Profilkopf. Rolle beziehungsweise Berechtigung, Benutzerverwaltung und Abmelden sind dort direkt erreichbar; die doppelte separate Kontokarte wurde entfernt.
+- Build 0040 bindet den Profilnamen fest an das angemeldete Konto. Normale Benutzer können ihn in der Profilbearbeitung nur lesen; ausschließlich Administratoren dürfen ihn nachträglich ändern.

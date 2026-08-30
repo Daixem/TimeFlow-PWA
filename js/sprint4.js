@@ -120,7 +120,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <div><button type="button" data-cancel-profile-crop>Verwerfen</button><button type="button" data-apply-profile-crop><i class="fa-solid fa-crop-simple"></i> Ausschnitt übernehmen</button></div>
           </section>
           <div class="profile-form-grid">
-            <label><span>Name</span><input name="name" autocomplete="name" required maxlength="50"></label>
+            <label class="profile-account-name"><span>Name <i class="fa-solid fa-lock" aria-hidden="true"></i></span><input name="name" autocomplete="name" required maxlength="50" readonly aria-describedby="profileNameHelp"><small id="profileNameHelp">Wird beim Erstellen des Kontos festgelegt und kann nur von Administratoren geändert werden.</small></label>
             <label><span>Rolle</span><input name="role" required maxlength="40"></label>
             <label><span>Abteilung</span><input name="department" required maxlength="40"></label>
             <label><span>E-Mail</span><input name="email" type="email" autocomplete="email" required></label>
@@ -171,6 +171,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let profile = loadJson(PROFILE_STORAGE_KEY, defaultProfile);
   let pendingAvatar = profile.avatar || null;
   let cropState = null;
+  let accountName = profile.name;
+  let canEditAccountName = false;
 
   function loadJson(key, fallback) {
     try {
@@ -327,6 +329,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function openProfileDialog() {
     profileForm.elements.name.value = profile.name;
+    profileForm.elements.name.readOnly = !canEditAccountName;
+    profileForm.elements.name.closest("label")?.classList.toggle("is-admin-editable", canEditAccountName);
+    document.getElementById("profileNameHelp").textContent = canEditAccountName
+      ? "Administratorzugriff: Du darfst den fest hinterlegten Kontonamen ändern."
+      : "Wird beim Erstellen des Kontos festgelegt und kann nur von Administratoren geändert werden.";
     profileForm.elements.role.value = profile.role;
     profileForm.elements.department.value = profile.department;
     profileForm.elements.email.value = profile.email;
@@ -396,8 +403,10 @@ document.addEventListener("DOMContentLoaded", () => {
   profileForm.addEventListener("submit", (event) => {
     event.preventDefault();
     const values = new FormData(profileForm);
+    const requestedName = String(values.get("name")).trim();
+    const savedName = canEditAccountName && requestedName ? requestedName : accountName;
     profile = {
-      name: String(values.get("name")).trim(),
+      name: savedName,
       role: String(values.get("role")).trim(),
       department: String(values.get("department")).trim(),
       email: String(values.get("email")).trim(),
@@ -405,6 +414,10 @@ document.addEventListener("DOMContentLoaded", () => {
       avatar: pendingAvatar
     };
     window.TimeFlowPlatform.storage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+    if (canEditAccountName && savedName !== accountName) {
+      accountName = savedName;
+      document.dispatchEvent(new CustomEvent("timeflow:account-name-change", { detail: { name: savedName } }));
+    }
     renderProfile();
     document.dispatchEvent(new CustomEvent("timeflow:profile-updated", { detail: { ...profile } }));
     window.TimeFlowPlatform.dialog.close(profileDialog);
@@ -413,6 +426,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
   profileDialog.addEventListener("click", (event) => {
     if (event.target === profileDialog) window.TimeFlowPlatform.dialog.close(profileDialog);
+  });
+
+  document.addEventListener("timeflow:session-ready", (event) => {
+    const user = event.detail?.user;
+    const fixedName = String(user?.name || "").trim();
+    if (!fixedName) return;
+    accountName = fixedName;
+    canEditAccountName = user.role === "Administrator";
+    profile = {
+      ...profile,
+      name: fixedName,
+      email: user.email || profile.email
+    };
+    window.TimeFlowPlatform.storage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+    renderProfile();
   });
 
   renderProfile();

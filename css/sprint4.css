@@ -168,6 +168,11 @@
 .profile-form-grid label:first-child, .profile-form-grid label:nth-child(4) { grid-column: 1 / -1; }
 .profile-form-grid input { width: 100%; padding: 10px 11px; border: 1px solid rgba(93, 143, 196, .17); border-radius: 11px; outline: 0; color: white; background: rgba(2, 24, 50, .8); font: inherit; font-size: .62rem; }
 .profile-form-grid input:focus { border-color: rgba(68, 129, 255, .55); box-shadow: 0 0 0 3px rgba(53, 113, 232, .1); }
+.profile-account-name > span { display: flex; align-items: center; gap: 6px; }
+.profile-account-name > span i { color: #75a5ff; font-size: .46rem; }
+.profile-account-name > small { color: #6f849d; font-size: .44rem; line-height: 1.45; }
+.profile-account-name input[readonly] { color: #94a9c0; background: rgba(5, 30, 58, .58); cursor: not-allowed; }
+.profile-account-name.is-admin-editable > span i { color: #60d5aa; }
 .profile-dialog footer { display: flex; justify-content: flex-end; gap: 8px; padding: 0 17px 17px; }
 .profile-dialog footer button { padding: 9px 13px; border-radius: 10px; font-size: .55rem; font-weight: 700; }
 .dialog-cancel { border: 1px solid rgba(93, 143, 196, .16); color: #91a4bb; background: transparent; }

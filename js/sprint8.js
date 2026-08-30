@@ -271,6 +271,19 @@ document.addEventListener("DOMContentLoaded", () => {
     renderManagement();
     notify("Benutzerverwaltung wurde lokal aktualisiert.");
   });
+  document.addEventListener("timeflow:account-name-change", (event) => {
+    if (session?.user?.role !== "Administrator") return;
+    const name = String(event.detail?.name || "").trim();
+    if (!name) return;
+    const user = users.find((entry) => entry.id === session.user.id);
+    if (user) {
+      user.name = name;
+      user.initials = name.split(/\s+/).slice(0, 2).map((part) => part[0]?.toUpperCase() || "").join("");
+      session.user = user;
+      saveUsers();
+      storageSet(SESSION_KEY, JSON.stringify({ userId: user.id, signedInAt: new Date().toISOString() }));
+    }
+  });
   managementDialog.addEventListener("click", (event) => { if (event.target === managementDialog) window.TimeFlowPlatform.dialog.close(managementDialog); });
 
   resolveSession();
