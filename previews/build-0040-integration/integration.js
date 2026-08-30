@@ -183,12 +183,120 @@ document.addEventListener("DOMContentLoaded", () => {
       <i class="fa-solid fa-chevron-right"></i>
     </button>`);
 
+  const privateScheduleKey = "timeflow-private-schedule-v1";
+  const schedulePage = document.getElementById("schedulePage");
+  const scheduleTabs = schedulePage?.querySelector(".schedule-tabs");
+  const privateSchedulePanel = document.createElement("section");
+  privateSchedulePanel.className = "private-schedule-panel";
+  privateSchedulePanel.innerHTML = `
+    <header><div><small>PRIVAT / EINZELNUTZUNG</small><h2>Mein eigener Dienstplan</h2><p>Plane, bearbeite oder entferne deine Einsätze direkt auf diesem Gerät.</p></div><button type="button" data-add-private-shift><i class="fa-solid fa-plus"></i><span>Einsatz hinzufügen</span></button></header>
+    <div class="private-shift-list" data-private-shift-list></div>`;
+  scheduleTabs?.insertAdjacentElement("afterend", privateSchedulePanel);
+  document.body.insertAdjacentHTML("beforeend", `
+    <dialog class="operations-modal private-shift-dialog" id="privateShiftDialog" aria-labelledby="privateShiftTitle">
+      <header><div><small>PRIVATER DIENSTPLAN</small><h2 id="privateShiftTitle">Einsatz eintragen</h2><p>Die Angaben werden ausschließlich auf diesem Gerät gespeichert.</p></div><button type="button" data-close-private-shift aria-label="Schließen"><i class="fa-solid fa-xmark"></i></button></header>
+      <form class="private-shift-form" id="privateShiftForm">
+        <input type="hidden" name="id">
+        <label><span>Bezeichnung</span><input name="title" maxlength="40" value="Arbeit" required></label>
+        <label><span>Datum</span><input name="date" type="date" required></label>
+        <div><label><span>Beginn</span><input name="start" type="time" value="08:00" required></label><label><span>Ende</span><input name="end" type="time" value="16:30" required></label></div>
+        <label><span>Pause</span><select name="break"><option value="0">Keine Pause</option><option value="15">15 Minuten</option><option value="30" selected>30 Minuten</option><option value="45">45 Minuten</option><option value="60">60 Minuten</option></select></label>
+        <label><span>Notiz (optional)</span><textarea name="note" maxlength="160" rows="3" placeholder="Zum Beispiel Arbeitsort oder Aufgabe"></textarea></label>
+        <footer><button type="button" data-close-private-shift>Abbrechen</button><button class="clock-confirm-submit" type="submit"><i class="fa-solid fa-check"></i> Einsatz speichern</button></footer>
+      </form>
+    </dialog>`);
+  const privateShiftDialog = document.getElementById("privateShiftDialog");
+  const privateShiftForm = document.getElementById("privateShiftForm");
+
+  function readPrivateShifts() {
+    try {
+      const value = JSON.parse(window.TimeFlowPlatform.storage.getItem(privateScheduleKey) || "[]");
+      return Array.isArray(value) ? value : [];
+    } catch { return []; }
+  }
+  function writePrivateShifts(shifts) {
+    window.TimeFlowPlatform.storage.setItem(privateScheduleKey, JSON.stringify(shifts));
+  }
+  function privateShiftDuration(entry) {
+    const [startHour, startMinute] = entry.start.split(":").map(Number);
+    const [endHour, endMinute] = entry.end.split(":").map(Number);
+    const minutes = Math.max(0, endHour * 60 + endMinute - startHour * 60 - startMinute - Number(entry.break || 0));
+    return `${Math.floor(minutes / 60)} h ${String(minutes % 60).padStart(2, "0")} min`;
+  }
+  function displayPrivateDate(value) {
+    return new Date(`${value}T12:00:00`).toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" });
+  }
+  function escapePrivateText(value) {
+    return String(value).replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
+  }
+  function renderPrivateShifts() {
+    const list = privateSchedulePanel.querySelector("[data-private-shift-list]");
+    const shifts = readPrivateShifts().sort((a, b) => `${a.date}${a.start}`.localeCompare(`${b.date}${b.start}`));
+    if (!shifts.length) {
+      list.innerHTML = '<p class="private-shift-empty"><i class="fa-regular fa-calendar-plus"></i><span><strong>Noch keine eigenen Einsätze</strong><small>Füge deinen ersten Dienst hinzu, um deinen persönlichen Plan aufzubauen.</small></span></p>';
+    } else {
+      list.innerHTML = shifts.map((entry) => `<article data-private-shift-id="${escapePrivateText(entry.id)}"><span class="private-shift-date"><small>${displayPrivateDate(entry.date)}</small><strong>${escapePrivateText(entry.start)} – ${escapePrivateText(entry.end)}</strong></span><span><small>${escapePrivateText(entry.title)}</small><strong>${privateShiftDuration(entry)}</strong>${entry.note ? `<em>${escapePrivateText(entry.note)}</em>` : ""}</span><div><button type="button" data-edit-private-shift="${escapePrivateText(entry.id)}" aria-label="Einsatz bearbeiten"><i class="fa-solid fa-pen"></i></button><button type="button" data-delete-private-shift="${escapePrivateText(entry.id)}" aria-label="Einsatz entfernen"><i class="fa-regular fa-trash-can"></i></button></div></article>`).join("");
+    }
+    const todayKey = new Date().toLocaleDateString("sv-SE");
+    const upcoming = shifts.find((entry) => entry.date >= todayKey);
+    const nextCard = document.querySelectorAll(".shift-card")[1];
+    const isPrivate = document.documentElement.classList.contains("timeflow-private-mode") || document.body.dataset.appMode === "private";
+    if (isPrivate && upcoming && nextCard) {
+      nextCard.querySelector("p").textContent = displayPrivateDate(upcoming.date);
+      nextCard.querySelector("strong").textContent = `${upcoming.start} – ${upcoming.end}`;
+      nextCard.querySelector("span").textContent = upcoming.title;
+    }
+  }
+  function openPrivateShift(entry = null) {
+    privateShiftForm.reset();
+    privateShiftForm.elements.id.value = entry?.id || "";
+    privateShiftForm.elements.title.value = entry?.title || "Arbeit";
+    privateShiftForm.elements.date.value = entry?.date || new Date().toLocaleDateString("sv-SE");
+    privateShiftForm.elements.start.value = entry?.start || "08:00";
+    privateShiftForm.elements.end.value = entry?.end || "16:30";
+    privateShiftForm.elements.break.value = String(entry?.break ?? 30);
+    privateShiftForm.elements.note.value = entry?.note || "";
+    privateShiftDialog.querySelector("h2").textContent = entry ? "Einsatz bearbeiten" : "Einsatz eintragen";
+    window.TimeFlowPlatform.dialog.open(privateShiftDialog);
+  }
+  privateSchedulePanel.querySelector("[data-add-private-shift]")?.addEventListener("click", () => openPrivateShift());
+  privateSchedulePanel.addEventListener("click", (event) => {
+    const edit = event.target.closest("[data-edit-private-shift]");
+    const remove = event.target.closest("[data-delete-private-shift]");
+    if (edit) openPrivateShift(readPrivateShifts().find((entry) => entry.id === edit.dataset.editPrivateShift));
+    if (remove) {
+      writePrivateShifts(readPrivateShifts().filter((entry) => entry.id !== remove.dataset.deletePrivateShift));
+      renderPrivateShifts();
+    }
+  });
+  privateShiftDialog.querySelectorAll("[data-close-private-shift]").forEach((button) => button.addEventListener("click", () => window.TimeFlowPlatform.dialog.close(privateShiftDialog)));
+  privateShiftDialog.addEventListener("click", (event) => { if (event.target === privateShiftDialog) window.TimeFlowPlatform.dialog.close(privateShiftDialog); });
+  privateShiftForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const data = new FormData(privateShiftForm);
+    if (data.get("end") <= data.get("start")) {
+      document.getElementById("toast").textContent = "Das Dienstende muss nach dem Beginn liegen.";
+      document.getElementById("toast").classList.add("is-visible");
+      return;
+    }
+    const shifts = readPrivateShifts();
+    const entry = { id: data.get("id") || `shift-${Date.now()}`, title: data.get("title").trim(), date: data.get("date"), start: data.get("start"), end: data.get("end"), break: Number(data.get("break")), note: data.get("note").trim() };
+    const existing = shifts.findIndex((item) => item.id === entry.id);
+    if (existing >= 0) shifts[existing] = entry; else shifts.push(entry);
+    writePrivateShifts(shifts);
+    renderPrivateShifts();
+    window.TimeFlowPlatform.dialog.close(privateShiftDialog);
+  });
+  renderPrivateShifts();
+
   // Der Home-Screen bleibt auf Zeit und die nächste Schicht fokussiert.
   // Planung und Unterlagen werden nur über Schnellzugriff geöffnet.
   function applyPrivateHomeMode() {
     let savedMode = null;
     try { savedMode = JSON.parse(window.TimeFlowPlatform.storage.getItem("timeflow-settings-v1") || "{}").appMode; } catch { /* Fallback auf die sichtbare App-Klasse */ }
     const isPrivate = savedMode === "private" || document.documentElement.classList.contains("timeflow-private-mode");
+    privateSchedulePanel.toggleAttribute("hidden", !isPrivate);
+    if (isPrivate) renderPrivateShifts();
     dashboard.querySelectorAll(".team-card, .approval-card").forEach((card) => card.toggleAttribute("hidden", isPrivate));
     quickAccessModal?.querySelectorAll('[data-quick-action="documents"], [data-quick-action="availability"]')
       .forEach((button) => button.toggleAttribute("hidden", isPrivate));
