@@ -11,6 +11,7 @@
 .restore-summary dd { color: #d6e4f4; font-weight: 700; text-align: right; }
 .restore-warning { display: flex; gap: 7px; margin-top: 12px; padding: 9px; border: 1px solid rgba(222, 162, 67, .15); border-radius: 9px; color: #d9b478 !important; background: rgba(177, 109, 22, .08); text-align: left; }
 .release-readiness-card { margin-top: 10px; padding: 13px; border: 1px solid rgba(79, 153, 235, .18); border-radius: 17px; background: radial-gradient(circle at 100% 0, rgba(42, 108, 214, .15), transparent 38%), linear-gradient(120deg, rgba(3, 35, 69, .86), rgba(5, 47, 80, .7)); }
+.settings-layout > .release-readiness-card { grid-column: 1 / -1; margin-top: 0; }
 .release-readiness-card > header { display: grid; grid-template-columns: 43px 1fr auto; gap: 11px; align-items: center; }
 .release-readiness-card > header > span { display: grid; place-items: center; width: 43px; height: 43px; border-radius: 14px; color: #78a8ff; background: rgba(52, 111, 226, .15); }
 .release-readiness-card header div { min-width: 0; }

@@ -43,7 +43,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="app-status-list">
             <div><span><i class="fa-solid fa-wifi"></i><strong>Verbindung</strong></span><em id="onlineStatus">Online</em></div>
             <div><span><i class="fa-solid fa-shield-halved"></i><strong>Offline-Modus</strong></span><em id="offlineStatus">Wird geprüft</em></div>
-            <div><span><i class="fa-solid fa-code-branch"></i><strong>Installierte Version</strong></span><em>Version 1.0.1 · 0019</em></div>
+            <div><span><i class="fa-solid fa-code-branch"></i><strong>Installierte Version</strong></span><em>Version 1.0.1 · 0038</em></div>
           </div>
           <button class="settings-primary-button" type="button" data-check-update><i class="fa-solid fa-rotate"></i><span><strong>Auf Updates prüfen</strong><small>Letzte Prüfung: noch nicht geprüft</small></span></button>
         </section>
@@ -58,7 +58,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </section>
       </div>
 
-      <section class="settings-about"><span><i class="fa-solid fa-fingerprint"></i></span><div><strong>TimeFlow PWA</strong><p>Sprint 12 · Version 1.0.1 · Build 0019</p></div><em>Made for better workdays</em></section>
+      <section class="settings-about"><span><i class="fa-solid fa-fingerprint"></i></span><div><strong>TimeFlow PWA</strong><p>Sprint 12 · Version 1.0.1 · Build 0038</p></div><em>Made for better workdays</em></section>
 
       <dialog class="settings-dialog" id="settingsResetDialog" aria-labelledby="settingsResetTitle">
         <div class="settings-dialog-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>

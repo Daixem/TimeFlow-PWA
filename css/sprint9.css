@@ -1,4 +1,5 @@
 .cloud-sync-card { display: grid; grid-template-columns: 43px minmax(0, 1fr) auto auto; gap: 11px; align-items: center; margin-top: 10px; padding: 12px 13px; border: 1px solid rgba(83, 145, 222, .17); border-radius: 16px; background: linear-gradient(115deg, rgba(3, 33, 66, .82), rgba(4, 40, 75, .68)); }
+.settings-layout > .cloud-sync-card { grid-column: 1 / -1; margin-top: 0; }
 .cloud-sync-icon { display: grid; place-items: center; width: 43px; height: 43px; border-radius: 14px; color: #78a8ff; background: rgba(52, 111, 226, .14); }
 .cloud-sync-copy { display: grid; gap: 2px; min-width: 0; }
 .cloud-sync-copy small { color: #6d88a6; font-size: .43rem; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; }

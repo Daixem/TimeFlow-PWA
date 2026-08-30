@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
   ]);
   const appSettingsCard = settingsPage.querySelector('[aria-labelledby="appSettingsTitle"]');
   const dataSettingsCard = settingsPage.querySelector('[aria-labelledby="dataSettingsTitle"]');
-  const cloudCard = profilePage.querySelector(".cloud-sync-card");
+  const cloudCard = settingsPage.querySelector(".cloud-sync-card");
 
   appSettingsCard?.querySelector(".app-status-list")?.insertAdjacentHTML("beforeend", `
     <div><span><i class="fa-solid fa-mobile-screen-button"></i><strong>Installation</strong></span><em id="installStatus">Wird geprüft</em></div>
@@ -52,8 +52,7 @@ document.addEventListener("DOMContentLoaded", () => {
     </dialog>
   `);
 
-  const readinessAnchor = cloudCard || profilePage.querySelector(".session-card") || profilePage.querySelector(".profile-hero");
-  readinessAnchor?.insertAdjacentHTML("afterend", `
+  settingsPage.querySelector(".settings-layout")?.insertAdjacentHTML("beforeend", `
     <section class="release-readiness-card" aria-labelledby="releaseReadinessTitle">
       <header><span><i class="fa-solid fa-shield-heart"></i></span><div><small>Sprint 10 · Alpha 1.0</small><h2 id="releaseReadinessTitle">TimeFlow ist startklar</h2><p id="releaseReadinessCopy">App, Offline-Modus und Datensicherheit werden geprüft.</p></div><strong id="releaseReadinessScore">0/4</strong></header>
       <div class="release-readiness-grid">
@@ -268,7 +267,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function readinessItem(name, ready, detail) {
-    const item = profilePage.querySelector(`[data-readiness="${name}"]`);
+    const item = settingsPage.querySelector(`[data-readiness="${name}"]`);
     if (!item) return false;
     item.classList.toggle("is-ready", ready);
     item.querySelector("small").textContent = detail;
@@ -301,7 +300,7 @@ document.addEventListener("DOMContentLoaded", () => {
   restoreDialog.querySelector("[data-close-restore]").addEventListener("click", () => window.TimeFlowPlatform.dialog.close(restoreDialog));
   confirmRestore.addEventListener("click", restoreBackup);
   restoreDialog.addEventListener("click", (event) => { if (event.target === restoreDialog) window.TimeFlowPlatform.dialog.close(restoreDialog); });
-  profilePage.querySelector("[data-open-readiness-settings]")?.addEventListener("click", () => document.dispatchEvent(new CustomEvent("timeflow:open-settings")));
+  settingsPage.querySelector("[data-open-readiness-settings]")?.addEventListener("click", () => document.dispatchEvent(new CustomEvent("timeflow:open-settings")));
   const scheduleNav = document.querySelector('[data-target="schedule"]');
   const currentWeekTab = document.querySelector('#schedulePage [data-view="week"]');
   scheduleNav?.addEventListener("click", () => {

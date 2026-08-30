@@ -322,3 +322,4 @@
 - Build 0035 entfernt im Privatmodus den gesamten organisatorischen Schnellaktionsbereich mit Urlaub, Krankheit, Verspätung und Schichttausch. Im Teammodus bleiben diese Aktionen verfügbar.
 - Build 0036 schützt Ein- und Ausstempeln durch eine zweite Bestätigung mit Aktion und aktueller Uhrzeit. Erst die ausdrückliche Bestätigung verändert die laufende Zeiterfassung.
 - Build 0037 ersetzt den automatischen Profilbildzuschnitt durch einen interaktiven Editor. Gerätekompatible Bildformate bis 20 MB können ausgewählt, im runden Rahmen verschoben und stufenlos gezoomt werden.
+- Build 0038 vereinfacht das Profil auf Identität, Arbeitszeitkonto und Statistik. Synchronisierung, Gerätecheck, Datenschutz und Versionsinformationen befinden sich jetzt ausschließlich in den Einstellungen.

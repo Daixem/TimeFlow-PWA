@@ -103,11 +103,6 @@ document.addEventListener("DOMContentLoaded", () => {
       <section class="profile-details-grid">
         <article class="profile-menu-card">
           <button class="profile-menu-link" type="button" data-open-settings><span class="menu-icon settings"><i class="fa-solid fa-sliders"></i></span><span><strong>Einstellungen</strong><small>Benachrichtigungen, Zeiterfassung und Daten</small></span><i class="fa-solid fa-chevron-right"></i></button>
-          <details id="privacySection">
-            <summary><span class="menu-icon privacy"><i class="fa-solid fa-shield-halved"></i></span><span><strong>Datenschutz</strong><small>Lokale Daten und Berechtigungen</small></span><i class="fa-solid fa-chevron-down"></i></summary>
-            <div class="detail-content privacy-copy"><p>Profil und Einstellungen werden in der privaten Site mit deinem Konto synchronisiert. Chats und sensible Schnellaktionen bleiben lokal.</p><button type="button" data-clear-profile><i class="fa-solid fa-rotate-left"></i> Lokale Profildaten zurücksetzen</button></div>
-          </details>
-          <div class="version-row"><span class="menu-icon version"><i class="fa-solid fa-mobile-screen"></i></span><span><strong>TimeFlow PWA</strong><small>Version 1.0.1 · Build 0019</small></span><em>Stabil</em></div>
         </article>
       </section>
 
@@ -418,14 +413,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   profileDialog.addEventListener("click", (event) => {
     if (event.target === profileDialog) window.TimeFlowPlatform.dialog.close(profileDialog);
-  });
-
-  document.querySelector("[data-clear-profile]").addEventListener("click", () => {
-    window.TimeFlowPlatform.storage.removeItem(PROFILE_STORAGE_KEY);
-    profile = { ...defaultProfile };
-    renderProfile();
-    document.dispatchEvent(new CustomEvent("timeflow:profile-updated", { detail: { ...profile } }));
-    notify("Lokale Profildaten wurden zurückgesetzt.");
   });
 
   renderProfile();

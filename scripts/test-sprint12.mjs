@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 
 const requiredSnippets = new Map([
-  ["index.html", ["css/compat.css?v=0037", "css/sprint12.css?v=0037", "js/platform.js?v=0037", "js/shell.js?v=0037", "js/sprint12.js?v=0037", "sw.js?v=0037", "personal-update-list", "data-personal-message", "team-update-list", "team-update-status", "month-open-statistics", "homeMonthLabel"]],
-  ["sw.js", ["timeflow-v38", "relativePath.startsWith(\"api/\")", "response.type === \"opaque\"", "js/platform.js?v=0037", "js/shell.js?v=0037", "css/compat.css?v=0037", "js/sprint12.js?v=0037"]],
+  ["index.html", ["css/compat.css?v=0038", "css/sprint12.css?v=0038", "js/platform.js?v=0038", "js/shell.js?v=0038", "js/sprint12.js?v=0038", "sw.js?v=0038", "personal-update-list", "data-personal-message", "team-update-list", "team-update-status", "month-open-statistics", "homeMonthLabel"]],
+  ["sw.js", ["timeflow-v39", "relativePath.startsWith(\"api/\")", "response.type === \"opaque\"", "js/platform.js?v=0038", "js/shell.js?v=0038", "css/compat.css?v=0038", "js/sprint12.js?v=0038"]],
   ["js/platform.js", ["tf-platform-", "createStorage", "visualViewport", "openDialog", "data-timeflow-platform"]],
   ["css/compat.css", ["--tf-viewport-height", "pointer: coarse", "orientation: landscape", "forced-colors: active"]],
   ["css/sprint12.css", [".header .notification-btn", ".notification-badge", "focus-visible"]],
@@ -13,8 +13,8 @@ const requiredSnippets = new Map([
   ["js/script.js", ["&& !saved.isWorking", "timeflow:device-resumed", "Number.isNaN(start.valueOf())", "timeflow:open-home-detail", "requestClockConfirmation", "clockConfirmDialog", "data-confirm-clock"]],
   ["js/sprint11.js", ["data-select-mode=\"private\"", "data-select-mode=\"team\"", "writeSettings", "pointerup", "timeflow:open-mode-selection", "quickActionsCard.hidden = isPrivate"]],
   ["js/sprint4.js", ["profile-details-grid", "profile-menu-card", "data-edit-profile", "profilePhotoInput", "loadCropPhoto", "profileCropZoom", "pointermove", "applyCrop", "canvas.toDataURL", "avatar: pendingAvatar"]],
-  ["js/sprint9.js", ["timeflow:sync-ready", "cache: \"no-store\""]],
-  ["js/sprint10.js", ["function safeBackupPayload", "RESTORE_EXCLUDED_KEYS", "function refreshCurrentSchedule"]]
+  ["js/sprint9.js", ["timeflow:sync-ready", "cache: \"no-store\"", "#settingsPage .settings-layout", "settingsLayout.insertAdjacentHTML"]],
+  ["js/sprint10.js", ["function safeBackupPayload", "RESTORE_EXCLUDED_KEYS", "function refreshCurrentSchedule", "settingsPage.querySelector(\".settings-layout\")", "settingsPage.querySelector(`[data-readiness="]]
 ]);
 
 for (const [file, snippets] of requiredSnippets) {
@@ -24,7 +24,8 @@ for (const [file, snippets] of requiredSnippets) {
   }
 }
 
-if ((await readFile("js/sprint4.js", "utf8")).includes("profile-info-card")) {
+const profileScript = await readFile("js/sprint4.js", "utf8");
+if (["profile-info-card", "privacySection", "version-row"].some((snippet) => profileScript.includes(snippet))) {
   throw new Error("Die entfernte doppelte Profilübersicht ist noch vorhanden.");
 }
 
@@ -47,7 +48,7 @@ const worker = (await import("../dist/server/index.js")).default;
 const home = await worker.fetch(new Request("https://timeflow.test/"), {});
 const missing = await worker.fetch(new Request("https://timeflow.test/nicht-vorhanden"), {});
 const unauthenticatedSync = await worker.fetch(new Request("https://timeflow.test/api/sync"), {});
-if (home.status !== 200 || !(await home.text()).includes("js/platform.js?v=0037")) {
+if (home.status !== 200 || !(await home.text()).includes("js/platform.js?v=0038")) {
   throw new Error("Der Sites-Build enthält Sprint 12 nicht vollständig.");
 }
 if (missing.status !== 404) throw new Error("Unbekannte Dateien liefern keinen korrekten 404-Status.");

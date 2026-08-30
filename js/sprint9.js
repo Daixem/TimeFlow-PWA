@@ -4,9 +4,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const SYNC_KEYS = ["timeflow-profile-v1", "timeflow-settings-v1", "timeflow-profile-preferences-v1"];
   const META_KEY = "timeflow-sync-meta-v1";
   const sessionCard = document.querySelector(".session-card");
-  if (!sessionCard) return;
+  const settingsLayout = document.querySelector("#settingsPage .settings-layout");
+  if (!sessionCard || !settingsLayout) return;
 
-  sessionCard.insertAdjacentHTML("afterend", `
+  settingsLayout.insertAdjacentHTML("beforeend", `
     <section class="cloud-sync-card" aria-labelledby="cloudSyncTitle">
       <span class="cloud-sync-icon"><i class="fa-solid fa-cloud-arrow-up"></i></span>
       <div class="cloud-sync-copy"><small>Sprint 9 · Datensynchronisierung</small><strong id="cloudSyncTitle">Synchronisierung wird vorbereitet</strong><p id="cloudSyncDescription">Profildaten und Einstellungen werden geprüft.</p></div>
