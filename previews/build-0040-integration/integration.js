@@ -95,6 +95,10 @@ document.addEventListener("DOMContentLoaded", () => {
   // Persönliche Hinweise gehören künftig in das zentrale Postfach.
   const forYou = dashboard.querySelector(".for-you-card");
   forYou?.remove();
+
+  // Team-Neuigkeiten liegen im zentralen Postfach bzw. Chat. Dadurch bleibt
+  // Home auch im Teammodus auf Zeit und die nächste Schicht fokussiert.
+  dashboard.querySelector(".team-card")?.remove();
   document.body.insertAdjacentHTML("beforeend", `
     <dialog class="operations-modal" id="operationsModal">
       <header><div><small>KONZEPT · ZENTRALES POSTFACH</small><h2>Mitteilungen & Aufgaben</h2><p>Dienstplan, Zeiterfassung, Dokumente und Team-News werden getrennt priorisiert.</p></div><button type="button" data-close-operations aria-label="Schließen"><i class="fa-solid fa-xmark"></i></button></header>
