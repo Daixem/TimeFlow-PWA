@@ -136,6 +136,9 @@ späteren Backend-Sprint umgesetzt.
 ## Vorgemerkt – echte Benutzerkonten und Anmeldung
 
 - [ ] Registrierung mit E-Mail-Adresse und Passwort
+- [ ] Alternative Anmeldung über Google und Apple
+- [ ] Erweiterbare OAuth-/OpenID-Connect-Anbindung für weitere vertrauenswürdige Anbieter
+- [ ] Mehrere Anmeldearten sicher mit demselben TimeFlow-Konto verknüpfen
 - [ ] Anmeldung und sichere Abmeldung mit eigenen TimeFlow-Zugangsdaten
 - [ ] E-Mail-Adresse bestätigen
 - [ ] Passwort vergessen und sicher zurücksetzen
