@@ -90,22 +90,10 @@ document.addEventListener("DOMContentLoaded", () => {
       .forEach((button) => button.toggleAttribute("hidden", isPrivate));
   }
 
-  // „Für dich“ bleibt ein ruhiger Informationsbereich. Die Einträge öffnen
-  // keine leere Detailansicht und blockieren dadurch keine Schnellaktionen.
+  // Der bisherige Bereich „Für dich“ wird im Konzept vollständig entfernt:
+  // Persönliche Hinweise gehören künftig in das zentrale Postfach.
   const forYou = dashboard.querySelector(".for-you-card");
-  if (forYou) {
-    const heading = forYou.querySelector(".section-heading h2");
-    const copy = forYou.querySelector(".section-heading p");
-    if (heading) heading.textContent = "Persönliche Infos";
-    if (copy) copy.textContent = "Wichtige Hinweise zu deinem Arbeitsalltag";
-    forYou.querySelectorAll(".personal-update").forEach((item) => {
-      item.setAttribute("aria-label", `${item.innerText.trim()} · reine Information`);
-      item.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-      }, true);
-    });
-  }
+  forYou?.remove();
   document.body.insertAdjacentHTML("beforeend", `
     <dialog class="operations-modal" id="operationsModal">
       <header><div><small>KONZEPT · ZENTRALES POSTFACH</small><h2>Mitteilungen & Aufgaben</h2><p>Dienstplan, Zeiterfassung, Dokumente und Team-News werden getrennt priorisiert.</p></div><button type="button" data-close-operations aria-label="Schließen"><i class="fa-solid fa-xmark"></i></button></header>
