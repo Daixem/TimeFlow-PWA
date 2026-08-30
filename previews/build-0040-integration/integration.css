@@ -101,6 +101,9 @@
 .home-clock-summary b { overflow: hidden; color: #eaf2fc; font-size: .46rem; text-overflow: ellipsis; white-space: nowrap; }
 .home-clock-summary small { color: #7289a4; font-size: .34rem; }
 .bottom-nav { display: none !important; }
+body > dialog { position: fixed; inset: auto; top: 50%; left: 50%; max-width: calc(100vw - 24px); max-height: calc(100dvh - 24px); margin: 0; transform: translate(-50%, -50%); }
+body > dialog[open] { display: block; }
+.clock-confirm-dialog, .operations-modal, .profile-dialog, .user-management-dialog, .home-detail-dialog { width: min(94vw, 850px); }
 .quick-access-nav { position: fixed; z-index: 8500; left: 50%; bottom: max(14px, env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(4, 1fr); width: min(94vw, 500px); padding: 7px; transform: translateX(-50%); border: 1px solid rgba(93, 150, 228, .28); border-radius: 22px; background: rgba(3, 24, 50, .94); box-shadow: 0 18px 50px rgba(0, 3, 16, .48); backdrop-filter: blur(18px); }
 .quick-access-nav button { position: relative; display: grid; gap: 3px; justify-items: center; min-height: 45px; padding: 7px 5px; border: 0; border-radius: 14px; color: #8da1b8; background: transparent; font: 700 .4rem Inter, sans-serif; }
 .quick-access-nav button i { font-size: .85rem; font-style: normal; }
