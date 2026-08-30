@@ -51,6 +51,16 @@ body[data-app-mode="private"] .workflow-team-only { display: none !important; }
 .account-summary small { color: #738ba6; font-size: .36rem; }
 .account-summary strong { font-size: .6rem; }
 .account-summary .positive { color: #62dcb0; }
+.month-account-summary { display: grid; grid-template-columns: minmax(150px, 1.4fr) repeat(3, minmax(80px, 1fr)) 18px; gap: 10px; align-items: center; width: calc(100% - 28px); margin: 12px 14px 0; padding: 11px; border: 1px solid rgba(88, 142, 214, .16); border-radius: 12px; color: #e8f1fc; background: rgba(4, 35, 69, .62); text-align: left; }
+.month-account-summary > span { display: grid; gap: 3px; min-width: 0; }
+.month-account-summary > span + span { padding-left: 10px; border-left: 1px solid rgba(88, 142, 214, .14); }
+.month-account-summary small { color: #758da7; font-size: .34rem; font-weight: 750; letter-spacing: .04em; }
+.month-account-summary strong { overflow: hidden; font-size: .48rem; text-overflow: ellipsis; white-space: nowrap; }
+.month-account-summary .positive { color: #62dcb0; }
+.month-account-summary .month-account-title { grid-template-columns: 30px 1fr; align-items: center; }
+.month-account-title > i { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; color: #82adff; background: rgba(50, 108, 219, .14); }
+.month-account-title > span { display: grid; gap: 3px; }
+.month-account-summary > i:last-child { color: #7391b3; font-size: .55rem; }
 .concept-links { display: grid; gap: 7px; margin-top: 12px; }
 .concept-links button { display: grid; grid-template-columns: 30px 1fr auto; gap: 8px; align-items: center; width: 100%; padding: 8px; border: 1px solid rgba(88, 142, 214, .13); border-radius: 10px; color: #e7f0fa; background: rgba(4, 35, 69, .58); text-align: left; }
 .concept-links i { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 9px; color: #83adff; background: rgba(50, 108, 219, .14); font-size: .55rem; }
@@ -126,7 +136,7 @@ body > dialog[open] { display: block; }
 .quick-access-menu small { color: #758ea8; font-size: .38rem; }
 .quick-access-menu strong { font-size: .5rem; }
 .quick-access-menu em { color: #6d8cae; font-size: .8rem; font-style: normal; }
-@media (max-width: 700px) { .integration-ribbon { top: 5px; } .integration-ribbon span { display: none; } .operations-pulse, .workflow-concept { grid-template-columns: 1fr; } .operations-item { min-height: 52px; } .workflow-detail-grid { grid-template-columns: 1fr; } }
+@media (max-width: 700px) { .integration-ribbon { top: 5px; } .integration-ribbon span { display: none; } .operations-pulse, .workflow-concept { grid-template-columns: 1fr; } .operations-item { min-height: 52px; } .workflow-detail-grid { grid-template-columns: 1fr; } .month-account-summary { grid-template-columns: 1fr 1fr 1fr 16px; } .month-account-summary .month-account-title { grid-column: 1 / -1; padding-bottom: 8px; border-bottom: 1px solid rgba(88, 142, 214, .14); } .month-account-summary > span:nth-child(2) { padding-left: 0; border-left: 0; } }
 @media (min-width: 680px) { .dashboard > .stamp-card { width: 148px; min-height: 148px; } .dashboard > .home-clock-details { max-width: 760px; justify-self: center; width: 100%; } .dashboard > .operations-hub, .dashboard > .workflow-concept { width: min(100%, 900px); justify-self: center; } }
 @media (max-width: 430px) { .dashboard > .stamp-card { width: 122px; min-height: 122px; } .dashboard > .stamp-card .stamp-left strong { font-size: .67rem; } .home-clock-summary { grid-template-columns: 1fr; } .home-clock-summary span { grid-template-columns: 27px 1fr; } .home-clock-timeline span { padding: 8px 6px; } .workflow-card, .operations-hub, .home-clock-details { border-radius: 14px; } }
 @media (orientation: landscape) and (max-height: 600px) { .dashboard > .stamp-card { width: 108px; min-height: 108px; } .dashboard > .stamp-card .stamp-icon { width: 34px; height: 34px; } .dashboard > .stamp-card .stamp-left #clockHint { display: none; } .quick-access-nav { bottom: 7px; } }

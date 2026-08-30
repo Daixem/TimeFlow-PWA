@@ -173,18 +173,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const shiftGrid = dashboard.querySelector(".shift-grid");
   if (clockDetails && shiftGrid) clockDetails.insertAdjacentElement("afterend", shiftGrid);
 
-  const workflow = document.createElement("section");
-  workflow.className = "workflow-concept";
-  workflow.innerHTML = `
-    <article class="workflow-card">
-      <div class="workflow-card-head"><div><small>ZEITEN · TRANSPARENT GETRENNT</small><h2>Arbeitszeitkonto</h2></div><button type="button" data-open-workflow="times">Monatsarchiv</button></div>
-      <div class="account-summary"><span><small>BESTÄTIGT</small><strong>95:02 h</strong></span><span><small>IN PRÜFUNG</small><strong>08:15 h</strong></span><span><small>ZEITKONTO</small><strong class="positive">+18:08 h</strong></span></div>
-    </article>
-    <article class="workflow-card workflow-team-only">
-      <div class="workflow-card-head"><div><small>TEAMMODUS · ORGANISATION</small><h2>Planung & Unterlagen</h2></div></div>
-      <div class="concept-links"><button type="button" data-open-workflow="documents"><i class="fa-regular fa-file-lines"></i><span><small>1 UNTERSCHRIFT AUSSTEHEND</small><strong>Dokumente</strong></span><em>›</em></button><button type="button" data-open-workflow="availability"><i class="fa-regular fa-heart"></i><span><small>SEPTEMBER</small><strong>Wunschzeiten</strong></span><em>›</em></button></div>
-    </article>`;
-  (shiftGrid || clockDetails)?.insertAdjacentElement("afterend", workflow);
+  const monthStats = dashboard.querySelector(".month-card .month-stats");
+  monthStats?.insertAdjacentHTML("afterend", `
+    <button class="month-account-summary" type="button" data-open-workflow="times" aria-label="Arbeitszeitkonto und Monatsarchiv öffnen">
+      <span class="month-account-title"><i class="fa-solid fa-wallet"></i><span><small>ARBEITSZEITKONTO</small><strong>Monatsstand</strong></span></span>
+      <span><small>BESTÄTIGT</small><strong>95:02 h</strong></span>
+      <span><small>IN PRÜFUNG</small><strong>08:15 h</strong></span>
+      <span><small>ZEITKONTO</small><strong class="positive">+18:08 h</strong></span>
+      <i class="fa-solid fa-chevron-right"></i>
+    </button>`);
 
   // Der Home-Screen bleibt auf Zeit und die nächste Schicht fokussiert.
   // Planung und Unterlagen werden nur über Schnellzugriff geöffnet.
@@ -192,8 +189,6 @@ document.addEventListener("DOMContentLoaded", () => {
     let savedMode = null;
     try { savedMode = JSON.parse(window.TimeFlowPlatform.storage.getItem("timeflow-settings-v1") || "{}").appMode; } catch { /* Fallback auf die sichtbare App-Klasse */ }
     const isPrivate = savedMode === "private" || document.documentElement.classList.contains("timeflow-private-mode");
-    workflow.classList.toggle("is-private", isPrivate);
-    workflow.querySelector(".workflow-team-only")?.remove();
     dashboard.querySelectorAll(".team-card, .approval-card").forEach((card) => card.toggleAttribute("hidden", isPrivate));
     quickAccessModal?.querySelectorAll('[data-quick-action="documents"], [data-quick-action="availability"]')
       .forEach((button) => button.toggleAttribute("hidden", isPrivate));
