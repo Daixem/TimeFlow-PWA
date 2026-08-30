@@ -114,3 +114,16 @@
 .header .notification-btn { border: 1px solid rgba(72, 132, 218, .24); color: #8fb7ff; background: linear-gradient(145deg, rgba(13, 58, 112, .9), rgba(4, 35, 72, .92)); box-shadow: inset 0 1px 0 rgba(150, 195, 255, .08), 0 8px 20px rgba(0, 24, 63, .2); transition: color .18s, border-color .18s, background .18s, transform .18s; }
 .header .notification-btn:hover, .header .notification-btn:focus-visible { border-color: rgba(91, 155, 248, .48); outline: 0; color: #d6e6ff; background: linear-gradient(145deg, rgba(24, 80, 153, .95), rgba(7, 45, 91, .96)); transform: translateY(-1px); }
 .header .notification-btn .notification-badge { border-color: #06254a; background: linear-gradient(135deg, #f14d61, #c5263d); box-shadow: 0 4px 12px rgba(193, 30, 54, .35); }
+
+.clock-confirm-dialog { width: min(92vw, 410px); padding: 22px; border: 1px solid rgba(82, 145, 224, .25); border-radius: 22px; color: #edf5ff; background: #062545; box-shadow: 0 32px 100px rgba(0, 6, 18, .72); text-align: center; }
+.clock-confirm-dialog::backdrop { background: rgba(0, 9, 23, .82); backdrop-filter: blur(6px); }
+.clock-confirm-icon { display: grid; place-items: center; width: 54px; height: 54px; margin: 0 auto 11px; border-radius: 17px; color: #8fb6ff; background: rgba(47, 105, 211, .15); font-size: 1rem; }
+.clock-confirm-dialog > small { color: #719ce6; font-size: .43rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.clock-confirm-dialog h2 { margin-top: 4px; color: white; font-size: .86rem; }
+.clock-confirm-dialog > p { margin: 7px auto 0; max-width: 310px; color: #8499b0; font-size: .49rem; line-height: 1.5; }
+.clock-confirm-dialog > div { display: flex; align-items: center; justify-content: space-between; margin-top: 15px; padding: 11px 12px; border: 1px solid rgba(89, 140, 198, .13); border-radius: 11px; background: rgba(5, 34, 67, .7); }
+.clock-confirm-dialog > div span { color: #7890a9; font-size: .46rem; }
+.clock-confirm-dialog > div strong { color: #eaf3ff; font-size: .68rem; }
+.clock-confirm-dialog footer { display: grid; grid-template-columns: 1fr 1.35fr; gap: 8px; margin-top: 15px; }
+.clock-confirm-dialog footer button { min-height: 40px; border: 1px solid rgba(83, 137, 199, .17); border-radius: 11px; color: #9eb5cd; background: rgba(12, 49, 86, .72); font-size: .46rem; font-weight: 750; }
+.clock-confirm-dialog footer .clock-confirm-submit { border: 0; color: white; background: linear-gradient(135deg, #347aff, #174db9); }

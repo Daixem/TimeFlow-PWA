@@ -82,8 +82,6 @@ function updateDateTime() {
   if (homeMonthLabel) homeMonthLabel.textContent = now.toLocaleDateString("de-DE", { month: "long", year: "numeric" });
   elements.currentDate.textContent = now.toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
   elements.currentTime.textContent = now.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-  const monthButton = document.querySelector(".month-card .month-header button");
-  if (monthButton) monthButton.innerHTML = `${now.toLocaleDateString("de-DE", { month: "long", year: "numeric" })} <i class="fa-solid fa-chevron-right"></i>`;
   const workdayNear = (direction) => {
     const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     do { date.setDate(date.getDate() + direction); } while ([0, 6].includes(date.getDay()));
@@ -122,6 +120,19 @@ function clockOut() { state.isWorking = false; state.workEnd = new Date(); saveW
 function startTimer() { stopTimer(); workTimer = window.setInterval(updateWorkUi, 1000); }
 function stopTimer() { if (workTimer) window.clearInterval(workTimer); workTimer = undefined; }
 function showToast(message) { elements.toast.textContent = message; elements.toast.classList.add("is-visible"); window.clearTimeout(showToast.timer); showToast.timer = window.setTimeout(() => elements.toast.classList.remove("is-visible"), 3200); }
+function requestClockConfirmation() {
+  const dialog = document.getElementById("clockConfirmDialog");
+  if (!dialog) return;
+  const action = state.isWorking ? "Ausstempeln" : "Einstempeln";
+  dialog.querySelector("[data-clock-confirm-title]").textContent = `${action} bestätigen`;
+  dialog.querySelector("[data-clock-confirm-copy]").textContent = state.isWorking
+    ? "Möchtest du deinen laufenden Arbeitstag jetzt wirklich beenden?"
+    : "Möchtest du deinen Arbeitstag jetzt wirklich starten?";
+  dialog.querySelector("[data-clock-confirm-time]").textContent = new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+  const confirm = dialog.querySelector("[data-confirm-clock]");
+  confirm.innerHTML = `<i class="fa-solid ${state.isWorking ? "fa-right-from-bracket" : "fa-right-to-bracket"}"></i> Jetzt ${action.toLowerCase()}`;
+  window.TimeFlowPlatform.dialog.open(dialog);
+}
 function navigate(target) {
   document.querySelectorAll(".nav-item").forEach((item) => { const active = item.dataset.target === target; item.classList.toggle("active", active); item.toggleAttribute("aria-current", active); });
   if (target === "home") window.scrollTo({ top: 0, behavior: "smooth" });
@@ -130,6 +141,22 @@ function navigate(target) {
   else showToast(`${({ profile: "Profil" })[target]} folgt in einem nächsten Sprint.`);
 }
 function initialise() {
+  document.body.insertAdjacentHTML("beforeend", `
+    <dialog class="clock-confirm-dialog" id="clockConfirmDialog" aria-labelledby="clockConfirmTitle">
+      <span class="clock-confirm-icon"><i class="fa-solid fa-stopwatch"></i></span>
+      <small>Sicherheitsabfrage</small><h2 id="clockConfirmTitle" data-clock-confirm-title>Stempelvorgang bestätigen</h2>
+      <p data-clock-confirm-copy>Bitte bestätige die gewünschte Aktion.</p>
+      <div><span>Aktuelle Uhrzeit</span><strong data-clock-confirm-time>--:--</strong></div>
+      <footer><button type="button" data-cancel-clock>Abbrechen</button><button class="clock-confirm-submit" type="button" data-confirm-clock>Bestätigen</button></footer>
+    </dialog>
+  `);
+  const clockConfirmDialog = document.getElementById("clockConfirmDialog");
+  clockConfirmDialog.querySelector("[data-cancel-clock]").addEventListener("click", () => window.TimeFlowPlatform.dialog.close(clockConfirmDialog));
+  clockConfirmDialog.querySelector("[data-confirm-clock]").addEventListener("click", () => {
+    window.TimeFlowPlatform.dialog.close(clockConfirmDialog);
+    if (state.isWorking) clockOut(); else clockIn();
+  });
+  clockConfirmDialog.addEventListener("click", (event) => { if (event.target === clockConfirmDialog) window.TimeFlowPlatform.dialog.close(clockConfirmDialog); });
   loadWorkday(); updateDateTime();
   const day = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
   elements.dailyQuote.textContent = quotes[day % quotes.length];
@@ -176,7 +203,7 @@ function initialise() {
   window.setInterval(updateDateTime, 1000);
 }
 document.addEventListener("DOMContentLoaded", initialise);
-document.addEventListener("timeflow:toggle-clock", () => state.isWorking ? clockOut() : clockIn());
+document.addEventListener("timeflow:toggle-clock", requestClockConfirmation);
 document.addEventListener("timeflow:settings-updated", updateWorkUi);
 document.addEventListener("timeflow:device-resumed", () => { loadWorkday(); updateDateTime(); updateWorkUi(); if (state.isWorking) startTimer(); });
 
