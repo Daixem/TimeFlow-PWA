@@ -83,7 +83,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Im Privatmodus gibt es keine Organisationsunterlagen oder Wunschzeiten.
   // Der Test-Build folgt der bereits gespeicherten Moduswahl sofort.
   function applyPrivateHomeMode() {
-    const isPrivate = document.documentElement.classList.contains("timeflow-private-mode");
+    let savedMode = null;
+    try { savedMode = JSON.parse(window.TimeFlowPlatform.storage.getItem("timeflow-settings-v1") || "{}").appMode; } catch { /* Fallback auf die sichtbare App-Klasse */ }
+    const isPrivate = savedMode === "private" || document.documentElement.classList.contains("timeflow-private-mode");
     workflow.classList.toggle("is-private", isPrivate);
     workflow.querySelector(".workflow-team-only")?.toggleAttribute("hidden", isPrivate);
     dashboard.querySelectorAll(".team-card, .approval-card").forEach((card) => card.toggleAttribute("hidden", isPrivate));
