@@ -159,3 +159,15 @@ späteren Backend-Sprint umgesetzt.
 - [ ] Passwörter ausschließlich serverseitig gehasht speichern
 - [ ] Geschützte Sitzungen, Anmeldebegrenzung und Schutz vor unbefugten Versuchen
 - [ ] Demo-Anmeldung der öffentlichen Vorschau später durch echte Konten ergänzen
+
+## Vorgemerkt – „Für dich“ als persönlicher Posteingang
+
+- [ ] Alle den Nutzer direkt betreffenden Ereignisse gebündelt anzeigen
+- [ ] Dienstplan erstellt, geändert oder kurzfristig aktualisiert
+- [ ] Urlaubsantrag genehmigt, abgelehnt oder zur Rückfrage zurückgegeben
+- [ ] Schichttausch angefragt, angenommen, abgelehnt oder freigegeben
+- [ ] Hinweise zu Überstunden, Pausen, fehlenden Stempelungen und Zeitkorrekturen
+- [ ] Persönliche Erinnerungen und betriebliche Mitteilungen mit Nutzerbezug
+- [ ] Gelesen-/Ungelesen-Status, Zeitstempel, Filter und Ereignisverlauf
+- [ ] Reine Informationen öffnen nur eine Detailansicht; neue Vorgänge werden ausschließlich über Schnellaktionen erstellt
+- [ ] Team-Update bleibt für allgemeine Teamereignisse wie Geburtstage, Jubiläen und Abteilungsnachrichten getrennt
