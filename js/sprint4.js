@@ -116,7 +116,13 @@ document.addEventListener("DOMContentLoaded", () => {
           <header><div><small>Persönliche Daten</small><h2 id="profileDialogTitle">Profil bearbeiten</h2></div><button type="button" data-close-profile-dialog aria-label="Schließen"><i class="fa-solid fa-xmark"></i></button></header>
           <section class="profile-photo-editor" aria-labelledby="profilePhotoTitle">
             <span class="profile-photo-preview"><img id="profilePhotoPreview" alt="Vorschau des Profilbilds" hidden><b id="profilePhotoInitials">MM</b></span>
-            <div><strong id="profilePhotoTitle">Profilbild</strong><small>JPG, PNG oder WebP · wird für TimeFlow optimiert</small><span><label><i class="fa-solid fa-camera"></i> Bild auswählen<input id="profilePhotoInput" type="file" accept="image/jpeg,image/png,image/webp"></label><button type="button" data-remove-profile-photo><i class="fa-regular fa-trash-can"></i> Entfernen</button></span></div>
+            <div><strong id="profilePhotoTitle">Profilbild</strong><small>Alle vom Gerät unterstützten Bilder · Ausschnitt frei wählbar</small><span><button type="button" data-select-profile-photo><i class="fa-solid fa-camera"></i> Bild auswählen</button><input id="profilePhotoInput" type="file" accept="image/*,.heic,.heif" hidden><button type="button" data-remove-profile-photo><i class="fa-regular fa-trash-can"></i> Entfernen</button></span></div>
+          </section>
+          <section class="profile-crop-editor" id="profileCropEditor" hidden aria-label="Bildausschnitt festlegen">
+            <div class="profile-crop-viewport" id="profileCropViewport"><img id="profileCropImage" alt="Gewählter Bildausschnitt" draggable="false"><i></i></div>
+            <label><span><i class="fa-solid fa-magnifying-glass-minus"></i> Zoom <i class="fa-solid fa-magnifying-glass-plus"></i></span><input id="profileCropZoom" type="range" min="1" max="3" step="0.01" value="1"></label>
+            <p><i class="fa-solid fa-up-down-left-right"></i> Bild mit Maus oder Finger verschieben und mit dem Regler zoomen.</p>
+            <div><button type="button" data-cancel-profile-crop>Verwerfen</button><button type="button" data-apply-profile-crop><i class="fa-solid fa-crop-simple"></i> Ausschnitt übernehmen</button></div>
           </section>
           <div class="profile-form-grid">
             <label><span>Name</span><input name="name" autocomplete="name" required maxlength="50"></label>
@@ -163,8 +169,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const photoInput = document.getElementById("profilePhotoInput");
   const photoPreview = document.getElementById("profilePhotoPreview");
   const photoInitials = document.getElementById("profilePhotoInitials");
+  const cropEditor = document.getElementById("profileCropEditor");
+  const cropViewport = document.getElementById("profileCropViewport");
+  const cropImage = document.getElementById("profileCropImage");
+  const cropZoom = document.getElementById("profileCropZoom");
   let profile = loadJson(PROFILE_STORAGE_KEY, defaultProfile);
   let pendingAvatar = profile.avatar || null;
+  let cropState = null;
 
   function loadJson(key, fallback) {
     try {
@@ -203,28 +214,70 @@ document.addEventListener("DOMContentLoaded", () => {
     photoInitials.textContent = value;
   }
 
-  function optimizePhoto(file) {
+  function loadCropPhoto(file) {
     return new Promise((resolve, reject) => {
-      if (!file.type.startsWith("image/")) { reject(new Error("type")); return; }
-      if (file.size > 5 * 1024 * 1024) { reject(new Error("size")); return; }
+      if (!file.type.startsWith("image/") && !/\.(heic|heif)$/i.test(file.name)) { reject(new Error("type")); return; }
+      if (file.size > 20 * 1024 * 1024) { reject(new Error("size")); return; }
       const reader = new FileReader();
       reader.onerror = () => reject(new Error("read"));
       reader.onload = () => {
         const image = new Image();
         image.onerror = () => reject(new Error("image"));
         image.onload = () => {
-          const size = Math.min(image.naturalWidth, image.naturalHeight);
-          const canvas = document.createElement("canvas");
-          canvas.width = 512; canvas.height = 512;
-          const context = canvas.getContext("2d");
-          if (!context) { reject(new Error("canvas")); return; }
-          context.drawImage(image, (image.naturalWidth - size) / 2, (image.naturalHeight - size) / 2, size, size, 0, 0, 512, 512);
-          resolve(canvas.toDataURL("image/jpeg", .84));
+          cropImage.src = String(reader.result);
+          cropState = { width: image.naturalWidth, height: image.naturalHeight, zoom: 1, x: 0, y: 0 };
+          cropZoom.value = "1";
+          cropEditor.hidden = false;
+          window.requestAnimationFrame(() => { resetCropPosition(); renderCrop(); });
+          resolve();
         };
         image.src = String(reader.result);
       };
       reader.readAsDataURL(file);
     });
+  }
+
+  function cropMetrics() {
+    const size = cropViewport.clientWidth || 220;
+    const base = Math.max(size / cropState.width, size / cropState.height);
+    return { size, scale: base * cropState.zoom, width: cropState.width * base * cropState.zoom, height: cropState.height * base * cropState.zoom };
+  }
+
+  function clampCrop() {
+    if (!cropState) return;
+    const metrics = cropMetrics();
+    cropState.x = Math.min(0, Math.max(metrics.size - metrics.width, cropState.x));
+    cropState.y = Math.min(0, Math.max(metrics.size - metrics.height, cropState.y));
+  }
+
+  function resetCropPosition() {
+    const metrics = cropMetrics();
+    cropState.x = (metrics.size - metrics.width) / 2;
+    cropState.y = (metrics.size - metrics.height) / 2;
+  }
+
+  function renderCrop() {
+    if (!cropState) return;
+    clampCrop();
+    const metrics = cropMetrics();
+    cropImage.style.width = `${metrics.width}px`;
+    cropImage.style.height = `${metrics.height}px`;
+    cropImage.style.transform = `translate(${cropState.x}px, ${cropState.y}px)`;
+  }
+
+  function applyCrop() {
+    if (!cropState) return;
+    const metrics = cropMetrics();
+    const canvas = document.createElement("canvas");
+    canvas.width = 512; canvas.height = 512;
+    const context = canvas.getContext("2d");
+    if (!context) return;
+    const factor = 512 / metrics.size;
+    context.drawImage(cropImage, cropState.x * factor, cropState.y * factor, metrics.width * factor, metrics.height * factor);
+    pendingAvatar = canvas.toDataURL("image/jpeg", .86);
+    cropEditor.hidden = true;
+    cropState = null;
+    renderPhotoPreview();
   }
 
   function renderStatistics(periodKey) {
@@ -285,6 +338,8 @@ document.addEventListener("DOMContentLoaded", () => {
     profileForm.elements.phone.value = profile.phone;
     pendingAvatar = profile.avatar || null;
     photoInput.value = "";
+    cropEditor.hidden = true;
+    cropState = null;
     renderPhotoPreview();
     window.TimeFlowPlatform.dialog.open(profileDialog);
   }
@@ -301,14 +356,43 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelectorAll("[data-stat-period]").forEach((button) => button.addEventListener("click", () => renderStatistics(button.dataset.statPeriod)));
   document.querySelectorAll("[data-edit-profile]").forEach((button) => button.addEventListener("click", openProfileDialog));
   document.querySelectorAll("[data-close-profile-dialog]").forEach((button) => button.addEventListener("click", () => window.TimeFlowPlatform.dialog.close(profileDialog)));
+  document.querySelector("[data-select-profile-photo]").addEventListener("click", () => photoInput.click());
   photoInput.addEventListener("change", async () => {
     const file = photoInput.files?.[0];
     if (!file) return;
-    try { pendingAvatar = await optimizePhoto(file); renderPhotoPreview(); }
-    catch (error) { notify(error.message === "size" ? "Das Profilbild darf höchstens 5 MB groß sein." : "Dieses Bild konnte nicht verarbeitet werden."); }
+    try { await loadCropPhoto(file); }
+    catch (error) { notify(error.message === "size" ? "Das Profilbild darf höchstens 20 MB groß sein." : "Dieses Bildformat kann dein Browser nicht öffnen."); }
   });
+  cropZoom.addEventListener("input", () => {
+    if (!cropState) return;
+    const before = cropMetrics();
+    const centerX = (before.size / 2 - cropState.x) / before.width;
+    const centerY = (before.size / 2 - cropState.y) / before.height;
+    cropState.zoom = Number(cropZoom.value);
+    const after = cropMetrics();
+    cropState.x = after.size / 2 - centerX * after.width;
+    cropState.y = after.size / 2 - centerY * after.height;
+    renderCrop();
+  });
+  let drag = null;
+  cropViewport.addEventListener("pointerdown", (event) => {
+    if (!cropState) return;
+    drag = { pointerId: event.pointerId, x: event.clientX, y: event.clientY, startX: cropState.x, startY: cropState.y };
+    cropViewport.setPointerCapture?.(event.pointerId);
+  });
+  cropViewport.addEventListener("pointermove", (event) => {
+    if (!cropState || !drag || drag.pointerId !== event.pointerId) return;
+    cropState.x = drag.startX + event.clientX - drag.x;
+    cropState.y = drag.startY + event.clientY - drag.y;
+    renderCrop();
+  });
+  const endCropDrag = (event) => { if (drag?.pointerId === event.pointerId) drag = null; };
+  cropViewport.addEventListener("pointerup", endCropDrag);
+  cropViewport.addEventListener("pointercancel", endCropDrag);
+  document.querySelector("[data-cancel-profile-crop]").addEventListener("click", () => { cropEditor.hidden = true; cropState = null; photoInput.value = ""; });
+  document.querySelector("[data-apply-profile-crop]").addEventListener("click", applyCrop);
   profileForm.elements.name.addEventListener("input", renderPhotoPreview);
-  document.querySelector("[data-remove-profile-photo]").addEventListener("click", () => { pendingAvatar = null; photoInput.value = ""; renderPhotoPreview(); });
+  document.querySelector("[data-remove-profile-photo]").addEventListener("click", () => { pendingAvatar = null; cropEditor.hidden = true; cropState = null; photoInput.value = ""; renderPhotoPreview(); });
   document.querySelector("[data-open-schedule]").addEventListener("click", () => document.querySelector('[data-target="schedule"]')?.click());
   document.querySelectorAll("[data-open-settings]").forEach((button) => button.addEventListener("click", () => {
     document.dispatchEvent(new CustomEvent("timeflow:open-settings"));

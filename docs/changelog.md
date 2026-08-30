@@ -321,3 +321,4 @@
 - Build 0034 ergänzt die Profilbearbeitung um Auswahl, optimierte Vorschau und Entfernung eines eigenen Profilbilds. Das Bild erscheint auf Home und im Profil und wird lokal gespeichert.
 - Build 0035 entfernt im Privatmodus den gesamten organisatorischen Schnellaktionsbereich mit Urlaub, Krankheit, Verspätung und Schichttausch. Im Teammodus bleiben diese Aktionen verfügbar.
 - Build 0036 schützt Ein- und Ausstempeln durch eine zweite Bestätigung mit Aktion und aktueller Uhrzeit. Erst die ausdrückliche Bestätigung verändert die laufende Zeiterfassung.
+- Build 0037 ersetzt den automatischen Profilbildzuschnitt durch einen interaktiven Editor. Gerätekompatible Bildformate bis 20 MB können ausgewählt, im runden Rahmen verschoben und stufenlos gezoomt werden.
