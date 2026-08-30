@@ -73,6 +73,15 @@
 .availability-days small { color: #7891ad; font-size: .32rem; }
 .clock-page { display: none !important; }
 .dashboard > .overview-card { display: none !important; }
+.dashboard > .home-clock-details, .dashboard > .operations-hub, .dashboard > .workflow-concept { grid-column: 1 / -1; min-width: 0; }
+.dashboard > .stamp-card { justify-self: center; width: 136px; min-height: 136px; padding: 14px; border-radius: 50%; flex-direction: column; justify-content: center; gap: 6px; text-align: center; background: radial-gradient(circle at 35% 25%, #4d8dff, #1851c5 66%, #0d388d); box-shadow: 0 0 0 9px rgba(47, 112, 240, .08), 0 15px 36px rgba(16, 69, 180, .38); }
+.dashboard > .stamp-card.is-working { background: radial-gradient(circle at 35% 25%, #45da8a, #1bae61 66%, #118044); box-shadow: 0 0 0 9px rgba(43, 202, 114, .08), 0 15px 36px rgba(9, 133, 67, .34); }
+.dashboard > .stamp-card .stamp-left { flex-direction: column; gap: 6px; }
+.dashboard > .stamp-card .stamp-icon { width: 42px; height: 42px; font-size: 1rem; }
+.dashboard > .stamp-card .stamp-left strong { font-size: .73rem; }
+.dashboard > .stamp-card .stamp-left #clockHint { display: block; max-width: 102px; margin: 0; color: rgba(236, 245, 255, .75); font-size: .38rem; line-height: 1.25; }
+.dashboard > .stamp-card .stamp-arrow { display: none; }
+.dashboard > .approval-card, .dashboard > .top-grid, .dashboard > .for-you-card, .dashboard > .team-card, .dashboard > .month-card, .dashboard > .shift-grid { min-width: 0; }
 .home-clock-details { display: grid; gap: 9px; margin-top: 10px; padding: 13px; border: 1px solid rgba(83, 139, 209, .17); border-radius: 17px; background: rgba(3, 29, 59, .74); }
 .home-clock-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .home-clock-head > div { display: grid; gap: 3px; }
@@ -107,3 +116,6 @@
 .quick-access-menu strong { font-size: .5rem; }
 .quick-access-menu em { color: #6d8cae; font-size: .8rem; font-style: normal; }
 @media (max-width: 700px) { .integration-ribbon { top: 5px; } .integration-ribbon span { display: none; } .operations-pulse, .workflow-concept { grid-template-columns: 1fr; } .operations-item { min-height: 52px; } .workflow-detail-grid { grid-template-columns: 1fr; } }
+@media (min-width: 680px) { .dashboard > .stamp-card { width: 148px; min-height: 148px; } .dashboard > .home-clock-details { max-width: 760px; justify-self: center; width: 100%; } .dashboard > .operations-hub, .dashboard > .workflow-concept { width: min(100%, 900px); justify-self: center; } }
+@media (max-width: 430px) { .dashboard > .stamp-card { width: 122px; min-height: 122px; } .dashboard > .stamp-card .stamp-left strong { font-size: .67rem; } .home-clock-summary { grid-template-columns: 1fr; } .home-clock-summary span { grid-template-columns: 27px 1fr; } .home-clock-timeline span { padding: 8px 6px; } .workflow-card, .operations-hub, .home-clock-details { border-radius: 14px; } }
+@media (orientation: landscape) and (max-height: 600px) { .dashboard > .stamp-card { width: 108px; min-height: 108px; } .dashboard > .stamp-card .stamp-icon { width: 34px; height: 34px; } .dashboard > .stamp-card .stamp-left #clockHint { display: none; } .quick-access-nav { bottom: 7px; } }
