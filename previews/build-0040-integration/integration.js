@@ -1,7 +1,7 @@
 "use strict";
 
 document.addEventListener("DOMContentLoaded", () => {
-  document.body.insertAdjacentHTML("afterbegin", '<div class="integration-ribbon"><strong>Build-0040-Integration</strong><span>Nur Vorschau · Original bleibt unverändert</span></div>');
+  document.body.insertAdjacentHTML("afterbegin", '<div class="integration-ribbon"><strong>TIMEFLOW TEST-BUILD</strong><span>Konzeptversion · Original-Build 0040 bleibt unverändert</span></div>');
   document.body.insertAdjacentHTML("beforeend", `
     <nav class="quick-access-nav" aria-label="Hauptnavigation der Konzeptvorschau">
       <button class="active" type="button" data-quick-target="home"><i class="fa-solid fa-house"></i><span>Home</span></button>
