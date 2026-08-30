@@ -70,11 +70,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const workflow = document.createElement("section");
   workflow.className = "workflow-concept";
   workflow.innerHTML = `
-    <article class="workflow-card workflow-team-only">
+    <article class="workflow-card">
       <div class="workflow-card-head"><div><small>ZEITEN · TRANSPARENT GETRENNT</small><h2>Arbeitszeitkonto</h2></div><button type="button" data-open-workflow="times">Monatsarchiv</button></div>
       <div class="account-summary"><span><small>BESTÄTIGT</small><strong>95:02 h</strong></span><span><small>IN PRÜFUNG</small><strong>08:15 h</strong></span><span><small>ZEITKONTO</small><strong class="positive">+18:08 h</strong></span></div>
     </article>
-    <article class="workflow-card">
+    <article class="workflow-card workflow-team-only">
       <div class="workflow-card-head"><div><small>TEAMMODUS · ORGANISATION</small><h2>Planung & Unterlagen</h2></div></div>
       <div class="concept-links"><button type="button" data-open-workflow="documents"><i class="fa-regular fa-file-lines"></i><span><small>1 UNTERSCHRIFT AUSSTEHEND</small><strong>Dokumente</strong></span><em>›</em></button><button type="button" data-open-workflow="availability"><i class="fa-regular fa-heart"></i><span><small>SEPTEMBER</small><strong>Wunschzeiten</strong></span><em>›</em></button></div>
     </article>`;
