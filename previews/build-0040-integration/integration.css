@@ -72,6 +72,7 @@
 .availability-days span { display: grid; gap: 4px; padding: 9px 4px; border: 1px solid rgba(88, 142, 214, .14); border-radius: 10px; color: #dce9f8; background: rgba(4, 35, 69, .58); font-size: .4rem; text-align: center; }
 .availability-days small { color: #7891ad; font-size: .32rem; }
 .clock-page { display: none !important; }
+.dashboard > .overview-card { display: none !important; }
 .home-clock-details { display: grid; gap: 9px; margin-top: 10px; padding: 13px; border: 1px solid rgba(83, 139, 209, .17); border-radius: 17px; background: rgba(3, 29, 59, .74); }
 .home-clock-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .home-clock-head > div { display: grid; gap: 3px; }
