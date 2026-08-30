@@ -1,10 +1,11 @@
 import { readFile } from "node:fs/promises";
 
 const requiredSnippets = new Map([
-  ["index.html", ["css/compat.css?v=0032", "css/sprint12.css?v=0032", "js/platform.js?v=0032", "js/shell.js?v=0032", "js/sprint12.js?v=0032", "sw.js?v=0032", "personal-update-list", "data-personal-message", "team-update-list", "team-update-status", "month-open-statistics", "homeMonthLabel"]],
-  ["sw.js", ["timeflow-v33", "relativePath.startsWith(\"api/\")", "response.type === \"opaque\"", "js/platform.js?v=0032", "js/shell.js?v=0032", "css/compat.css?v=0032", "js/sprint12.js?v=0032"]],
+  ["index.html", ["css/compat.css?v=0033", "css/sprint12.css?v=0033", "js/platform.js?v=0033", "js/shell.js?v=0033", "js/sprint12.js?v=0033", "sw.js?v=0033", "personal-update-list", "data-personal-message", "team-update-list", "team-update-status", "month-open-statistics", "homeMonthLabel"]],
+  ["sw.js", ["timeflow-v34", "relativePath.startsWith(\"api/\")", "response.type === \"opaque\"", "js/platform.js?v=0033", "js/shell.js?v=0033", "css/compat.css?v=0033", "js/sprint12.js?v=0033"]],
   ["js/platform.js", ["tf-platform-", "createStorage", "visualViewport", "openDialog", "data-timeflow-platform"]],
   ["css/compat.css", ["--tf-viewport-height", "pointer: coarse", "orientation: landscape", "forced-colors: active"]],
+  ["css/sprint12.css", [".header .notification-btn", ".notification-badge", "focus-visible"]],
   ["css/sprint6.css", ["@media (min-width: 680px)", ".quick-actions-card { grid-column: 1 / -1; }"]],
   ["js/shell.js", ["function repair", "data-timeflow-shell", "window.TimeFlowShell", "window.scrollTo(0, 0)"]],
   ["js/sprint8.js", ["authVisibilityFallback", "isStaticPreview", "AbortController", "storageGet"]],
@@ -46,7 +47,7 @@ const worker = (await import("../dist/server/index.js")).default;
 const home = await worker.fetch(new Request("https://timeflow.test/"), {});
 const missing = await worker.fetch(new Request("https://timeflow.test/nicht-vorhanden"), {});
 const unauthenticatedSync = await worker.fetch(new Request("https://timeflow.test/api/sync"), {});
-if (home.status !== 200 || !(await home.text()).includes("js/platform.js?v=0032")) {
+if (home.status !== 200 || !(await home.text()).includes("js/platform.js?v=0033")) {
   throw new Error("Der Sites-Build enthält Sprint 12 nicht vollständig.");
 }
 if (missing.status !== 404) throw new Error("Unbekannte Dateien liefern keinen korrekten 404-Status.");

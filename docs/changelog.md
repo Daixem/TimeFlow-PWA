@@ -317,3 +317,4 @@
 - Build 0030 verbindet die Monatsübersicht auf Home mit der ausführlichen Monatsstatistik im Profil und setzt die Monatsbezeichnung automatisch auf den aktuellen Kalendermonat.
 - Build 0031 entfernt die doppelte Profilbearbeitung. Persönliche Angaben werden nur noch im Profilkopf bearbeitet; der untere Bereich dient als reine Kontakt- und Beschäftigungsübersicht.
 - Build 0032 entfernt die untere Kontakt- und Beschäftigungsübersicht vollständig. Profilpflege findet ausschließlich im Profilkopf statt; Einstellungen und Datenschutz nutzen darunter die volle Breite.
+- Build 0033 passt die Benachrichtigungsglocke mit dunkelblauem Verlauf, blauem Rand und aktivem Fokuszustand an den Home-Screen an; der rote Hinweiszähler bleibt deutlich erkennbar.
