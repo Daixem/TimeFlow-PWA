@@ -109,6 +109,7 @@
 .profile-info-card header span { color: #6d829b; font-size: .48rem; text-transform: uppercase; }
 .profile-info-card h2 { margin-top: 3px; font-size: .78rem; }
 .profile-info-card header button { display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid var(--profile-line); border-radius: 10px; color: #7e9dc1; background: rgba(10, 43, 80, .7); }
+.profile-info-card header .profile-info-readonly { display: inline-flex; align-items: center; gap: 5px; padding: 5px 7px; border-radius: 999px; color: #7288a1; background: rgba(63, 100, 143, .1); font-size: .38rem; font-weight: 700; letter-spacing: 0; text-transform: none; white-space: nowrap; }
 .profile-info-card dl > div { display: grid; grid-template-columns: 125px 1fr; gap: 10px; padding: 8px 0; border-top: 1px solid rgba(91, 139, 190, .09); font-size: .56rem; }
 .profile-info-card dt { color: #71869f; }
 .profile-info-card dt i { width: 18px; color: #5f8fcf; }

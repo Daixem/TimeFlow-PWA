@@ -315,3 +315,4 @@
 - Build 0028 gliedert auch „Team-Update“ in eigenständige Einträge mit Anlass, Person, Termin und Status – entsprechend der optimierten „Für dich“-Übersicht.
 - Build 0029 macht „Dein nächster Urlaub“ zu einer reinen vergrößerten Informationsansicht. Das Erstellen neuer Urlaubsanträge bleibt ausschließlich der Schnellaktion vorbehalten.
 - Build 0030 verbindet die Monatsübersicht auf Home mit der ausführlichen Monatsstatistik im Profil und setzt die Monatsbezeichnung automatisch auf den aktuellen Kalendermonat.
+- Build 0031 entfernt die doppelte Profilbearbeitung. Persönliche Angaben werden nur noch im Profilkopf bearbeitet; der untere Bereich dient als reine Kontakt- und Beschäftigungsübersicht.

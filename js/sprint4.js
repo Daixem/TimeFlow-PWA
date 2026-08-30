@@ -101,7 +101,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       <section class="profile-details-grid">
         <article class="profile-info-card">
-          <header><div><span>Persönlich</span><h2>Meine Daten</h2></div><button type="button" data-edit-profile aria-label="Persönliche Daten bearbeiten"><i class="fa-solid fa-pen"></i></button></header>
+          <header><div><span>Übersicht</span><h2>Kontakt &amp; Beschäftigung</h2></div><span class="profile-info-readonly"><i class="fa-solid fa-lock"></i> Im Profilkopf bearbeiten</span></header>
           <dl>
             <div><dt><i class="fa-regular fa-envelope"></i> E-Mail</dt><dd id="profileEmail">max.mustermann@timeflow.de</dd></div>
             <div><dt><i class="fa-solid fa-phone"></i> Telefon</dt><dd id="profilePhone">+49 170 1234567</dd></div>
