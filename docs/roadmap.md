@@ -160,6 +160,19 @@ späteren Backend-Sprint umgesetzt.
 - [ ] Geschützte Sitzungen, Anmeldebegrenzung und Schutz vor unbefugten Versuchen
 - [ ] Demo-Anmeldung der öffentlichen Vorschau später durch echte Konten ergänzen
 
+## Vorgemerkt – Organisationsbeitritt und Teammodus
+
+- [ ] Neue Benutzerkonten starten standardmäßig im Privatmodus
+- [ ] Teammodus im Produktivbetrieb nicht frei in den Einstellungen auswählbar machen
+- [ ] Teammodus erst nach Einladung oder bestätigter Zuordnung durch eine Organisation aktivieren
+- [ ] Einladung per sicherem Link, E-Mail oder einmaligem Organisationscode ermöglichen
+- [ ] Einladung zeigt Organisation, Standort, Abteilung und vorgesehene Rolle vor der Annahme
+- [ ] Nutzer muss den Beitritt ausdrücklich bestätigen
+- [ ] Rollen und Berechtigungen werden ausschließlich durch berechtigte Organisationsadministratoren vergeben
+- [ ] Austritt, Entfernung und Wechsel einer Organisation mit nachvollziehbarem Status abbilden
+- [ ] Beim Verlassen einer Organisation persönliche Zeitdaten erhalten und Teamdaten sauber trennen
+- [ ] Freie Auswahl zwischen Privat und Team nur in Demo- und Entwicklungsständen beibehalten
+
 ## Vorgemerkt – „Für dich“ als persönlicher Posteingang
 
 - [ ] Alle den Nutzer direkt betreffenden Ereignisse gebündelt anzeigen
