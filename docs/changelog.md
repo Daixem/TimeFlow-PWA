@@ -316,3 +316,4 @@
 - Build 0029 macht „Dein nächster Urlaub“ zu einer reinen vergrößerten Informationsansicht. Das Erstellen neuer Urlaubsanträge bleibt ausschließlich der Schnellaktion vorbehalten.
 - Build 0030 verbindet die Monatsübersicht auf Home mit der ausführlichen Monatsstatistik im Profil und setzt die Monatsbezeichnung automatisch auf den aktuellen Kalendermonat.
 - Build 0031 entfernt die doppelte Profilbearbeitung. Persönliche Angaben werden nur noch im Profilkopf bearbeitet; der untere Bereich dient als reine Kontakt- und Beschäftigungsübersicht.
+- Build 0032 entfernt die untere Kontakt- und Beschäftigungsübersicht vollständig. Profilpflege findet ausschließlich im Profilkopf statt; Einstellungen und Datenschutz nutzen darunter die volle Breite.

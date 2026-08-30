@@ -100,16 +100,6 @@ document.addEventListener("DOMContentLoaded", () => {
       </section>
 
       <section class="profile-details-grid">
-        <article class="profile-info-card">
-          <header><div><span>Übersicht</span><h2>Kontakt &amp; Beschäftigung</h2></div><span class="profile-info-readonly"><i class="fa-solid fa-lock"></i> Im Profilkopf bearbeiten</span></header>
-          <dl>
-            <div><dt><i class="fa-regular fa-envelope"></i> E-Mail</dt><dd id="profileEmail">max.mustermann@timeflow.de</dd></div>
-            <div><dt><i class="fa-solid fa-phone"></i> Telefon</dt><dd id="profilePhone">+49 170 1234567</dd></div>
-            <div><dt><i class="fa-solid fa-building"></i> Standort</dt><dd>Berlin Mitte</dd></div>
-            <div><dt><i class="fa-regular fa-calendar"></i> Eintritt</dt><dd>01. März 2022</dd></div>
-          </dl>
-        </article>
-
         <article class="profile-menu-card">
           <button class="profile-menu-link" type="button" data-open-settings><span class="menu-icon settings"><i class="fa-solid fa-sliders"></i></span><span><strong>Einstellungen</strong><small>Benachrichtigungen, Zeiterfassung und Daten</small></span><i class="fa-solid fa-chevron-right"></i></button>
           <details id="privacySection">
@@ -183,8 +173,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("profileName").textContent = profile.name;
     document.getElementById("profileRole").textContent = profile.role;
     document.getElementById("profileDepartment").textContent = profile.department;
-    document.getElementById("profileEmail").textContent = profile.email;
-    document.getElementById("profilePhone").textContent = profile.phone || "Nicht hinterlegt";
     document.getElementById("profileInitials").textContent = initials(profile.name);
     document.getElementById("userName").textContent = profile.name.split(/\s+/)[0] || "Max";
     document.querySelector(".profile-initials").textContent = initials(profile.name);
