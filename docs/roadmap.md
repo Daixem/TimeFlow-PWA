@@ -171,3 +171,14 @@ späteren Backend-Sprint umgesetzt.
 - [ ] Gelesen-/Ungelesen-Status, Zeitstempel, Filter und Ereignisverlauf
 - [ ] Reine Informationen öffnen nur eine Detailansicht; neue Vorgänge werden ausschließlich über Schnellaktionen erstellt
 - [ ] Team-Update bleibt für allgemeine Teamereignisse wie Geburtstage, Jubiläen und Abteilungsnachrichten getrennt
+
+## Vorgemerkt – „Team-Update“ als Veranstaltungs- und Informationsbereich
+
+- [ ] Nächste Veranstaltung mit Titel, Datum, Uhrzeit und Veranstaltungsort anzeigen
+- [ ] Firmenfeiern, Teamveranstaltungen, Schulungen, Meetings und Betriebsversammlungen ankündigen
+- [ ] Formulierungen wie „Die Firmenfeier findet am 18.12.2026 um 18:30 Uhr statt“ direkt in der Übersicht darstellen
+- [ ] Detailansicht mit Beschreibung, Ansprechpartner, Teilnahmehinweis und optionaler Zu-/Absage
+- [ ] Abteilungs- und Unternehmensmeldungen nach Relevanz und Zeitpunkt sortieren
+- [ ] Abgelaufene Veranstaltungen automatisch aus der Startansicht entfernen und im Verlauf archivieren
+- [ ] Geburtstage und Jubiläen als eigene Arten von Teamereignissen beibehalten
+- [ ] Keine Vermischung mit persönlichen Genehmigungen oder Dienstplanänderungen aus „Für dich“
