@@ -132,3 +132,13 @@ späteren Backend-Sprint umgesetzt.
 - [ ] Installationstest auf einem realen iPhone
 - [ ] Geräteübergreifender Synchronisationstest
 - [ ] Backup-Wiederherstellung mit einer echten Testdatei
+
+## Vorgemerkt – echte Benutzerkonten und Anmeldung
+
+- [ ] Registrierung mit E-Mail-Adresse und Passwort
+- [ ] Anmeldung und sichere Abmeldung mit eigenen TimeFlow-Zugangsdaten
+- [ ] E-Mail-Adresse bestätigen
+- [ ] Passwort vergessen und sicher zurücksetzen
+- [ ] Passwörter ausschließlich serverseitig gehasht speichern
+- [ ] Geschützte Sitzungen, Anmeldebegrenzung und Schutz vor unbefugten Versuchen
+- [ ] Demo-Anmeldung der öffentlichen Vorschau später durch echte Konten ergänzen
