@@ -136,7 +136,7 @@ function initialise() {
   let vacation = new Date(now.getFullYear(), now.getMonth(), 15);
   if (vacation <= now) vacation = new Date(now.getFullYear(), now.getMonth() + 1, 15);
   const days = Math.max(1, Math.ceil((vacation - now) / 86400000));
-  elements.vacationCountdown.textContent = days === 1 ? "ein Tag" : `${days} Tage`;
+  elements.vacationCountdown.textContent = days === 1 ? "1 Tag" : `${days} Tage`;
   updateWorkUi(); if (state.isWorking) startTimer();
   elements.clockButton.addEventListener("click", () => document.dispatchEvent(new CustomEvent("timeflow:open-clock")));
   document.querySelectorAll(".nav-item").forEach((item) => item.addEventListener("click", () => navigate(item.dataset.target)));

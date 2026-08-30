@@ -310,3 +310,4 @@
 - Build 0023 unterscheidet deshalb zuverlässig zwischen dauerhaftem Browserspeicher und dem sicheren Sitzungsspeicher-Fallback. Eine fehlgeschlagene Speicherplatzschätzung erzeugt keinen falschen Komplettfehler mehr.
 - Build 0024 ersetzt die pauschalen Weiterleitungen der Karten „Für dich“ und „Team-Update“ durch eigene Detailansichten. Urlaubsverlauf und Chat werden erst über eine ausdrücklich gewählte Folgeaktion geöffnet.
 - Build 0025 spannt die Schnellaktionen auf Desktop-Bildschirmen über die vollständige Dashboardbreite. Dadurch bleiben alle vier Bezeichnungen und Untertitel lesbar.
+- Build 0026 strukturiert „Für dich“ als persönliche Übersicht mit eindeutigen Kategorien, Datum, Freigabestatus und klar getrennten Detailaktionen.

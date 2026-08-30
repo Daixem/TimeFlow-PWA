@@ -54,3 +54,23 @@
 .home-detail-dialog > footer .home-detail-action { color: white; background: linear-gradient(135deg, #249d68, #16734c); }
 .home-detail-dialog.is-chat > footer .home-detail-action { background: linear-gradient(135deg, #8e50df, #6230ad); }
 @media (max-width: 520px) { .home-detail-dialog { width: calc(100vw - 24px); } .home-detail-dialog > header, .home-detail-content { padding-left: 14px; padding-right: 14px; } .home-detail-dialog > footer { padding: 12px 14px 15px; } }
+
+.for-you-card .section-heading { align-items: center; margin-bottom: 12px; }
+.for-you-card .section-heading > div { min-width: 0; }
+.for-you-card .section-heading h2 { line-height: 1.1; }
+.for-you-card .section-heading p { margin-top: 3px; color: #70889e; font-size: .43rem; }
+.for-you-card .count-badge { margin-left: auto; border-radius: 999px; }
+.personal-update-list { display: grid; gap: 7px; }
+.for-you-card .personal-update { grid-template-columns: 35px minmax(0, 1fr) auto; gap: 10px; min-height: 68px; padding: 10px; border: 1px solid rgba(92, 153, 191, .1); border-radius: 13px; background: rgba(5, 35, 67, .58); }
+.for-you-card .personal-update:hover { border-color: rgba(104, 211, 92, .25); background: rgba(8, 47, 79, .76); }
+.for-you-card .personal-update .row-icon { display: grid; place-items: center; width: 35px; height: 35px; border-radius: 11px; color: #75dc64; background: rgba(64, 174, 82, .13); font-size: .8rem; }
+.personal-update-copy { display: grid; gap: 3px; min-width: 0; }
+.personal-update-copy > small { color: #74d35f; font-size: .4rem; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.personal-update-copy > strong { overflow: hidden; color: #edf5fb; font-size: .58rem; text-overflow: ellipsis; white-space: nowrap; }
+.personal-update-copy > strong b { color: #8ae176; }
+.personal-update-copy > em { overflow: hidden; color: #71869c; font-size: .41rem; font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
+.personal-update-end { display: grid; grid-template-columns: auto 12px; gap: 8px; align-items: center; }
+.personal-status { padding: 4px 7px; border-radius: 999px; font-size: .36rem; font-weight: 800; white-space: nowrap; }
+.personal-status.is-planned { color: #81aaf1; background: rgba(48, 106, 207, .13); }
+.personal-status.is-approved { color: #71d89f; background: rgba(40, 153, 105, .13); }
+@media (max-width: 430px) { .for-you-card .personal-update { grid-template-columns: 32px minmax(0, 1fr) 12px; padding: 9px; } .for-you-card .personal-update .row-icon { width: 32px; height: 32px; } .personal-status { display: none; } .personal-update-end { grid-template-columns: 12px; } }

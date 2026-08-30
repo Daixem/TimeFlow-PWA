@@ -125,10 +125,9 @@ document.addEventListener("DOMContentLoaded", () => {
     textFor('[data-quick-action="sick"] strong', "Krankheit", "Krankmeldung");
     textFor('[data-quick-action="sick"] small', "Persönlich eintragen", "Abwesenheit melden");
 
-    const personalApprovalText = document.querySelector(".for-you-card .list-row:nth-of-type(2) span:nth-child(2)");
+    const personalApprovalText = document.querySelector("[data-personal-message]");
     if (personalApprovalText) {
-      if (!personalApprovalText.dataset.teamText) personalApprovalText.dataset.teamText = personalApprovalText.textContent.trim();
-      personalApprovalText.textContent = isPrivate ? "Dein Urlaub ist im persönlichen Kalender eingetragen." : personalApprovalText.dataset.teamText;
+      personalApprovalText.textContent = isPrivate ? "Im Kalender eingetragen" : "Genehmigt";
     }
 
     const identityMeta = document.querySelector(".profile-identity > p");
