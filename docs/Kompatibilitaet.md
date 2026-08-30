@@ -2,6 +2,8 @@
 
 Stand: Version 1.0.1, Build 0022
 
+Realer Gerätestatus: **iPhone und iPad erfolgreich abgenommen.**
+
 ## Unterstützte Plattformen
 
 | Geräteklasse | Betriebssystem | Browser / Nutzung | Zielstatus |

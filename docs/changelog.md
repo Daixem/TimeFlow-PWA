@@ -306,3 +306,4 @@
 - Build 0020: Der Start auf GitHub Pages überspringt den dort nicht vorhandenen Sitzungs-Endpunkt, begrenzt externe Sitzungsprüfungen auf drei Sekunden und zeigt die App spätestens nach vier Sekunden an. Dadurch bleibt die Tablet-Ansicht nicht mehr auf dem blauen Hintergrund hängen.
 - Build 0021: Die erste Auswahl zwischen Privat- und Teammodus reagiert zuverlässig auf iPad-Berührungen und führt auch bei eingeschränktem Browserspeicher in die App weiter.
 - Build 0022: Gemeinsame Plattformbasis für iOS, iPadOS, Android, Windows, macOS und Linux; fehlertoleranter Geräte- und Sitzungsspeicher, kompatible Dialoge, dynamische Viewport-Höhe, Touch-Ziele und plattformspezifische Installationshinweise.
+- Build 0022 wurde anschließend auf einem realen iPhone und iPad erfolgreich bestätigt.
