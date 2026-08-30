@@ -3,9 +3,8 @@
 document.addEventListener("DOMContentLoaded", () => {
   const SYNC_KEYS = ["timeflow-profile-v1", "timeflow-settings-v1", "timeflow-profile-preferences-v1"];
   const META_KEY = "timeflow-sync-meta-v1";
-  const sessionCard = document.querySelector(".session-card");
   const settingsLayout = document.querySelector("#settingsPage .settings-layout");
-  if (!sessionCard || !settingsLayout) return;
+  if (!settingsLayout) return;
 
   settingsLayout.insertAdjacentHTML("beforeend", `
     <section class="cloud-sync-card" aria-labelledby="cloudSyncTitle">

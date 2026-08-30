@@ -1,14 +1,14 @@
 import { readFile } from "node:fs/promises";
 
 const requiredSnippets = new Map([
-  ["index.html", ["css/compat.css?v=0038", "css/sprint12.css?v=0038", "js/platform.js?v=0038", "js/shell.js?v=0038", "js/sprint12.js?v=0038", "sw.js?v=0038", "personal-update-list", "data-personal-message", "team-update-list", "team-update-status", "month-open-statistics", "homeMonthLabel"]],
-  ["sw.js", ["timeflow-v39", "relativePath.startsWith(\"api/\")", "response.type === \"opaque\"", "js/platform.js?v=0038", "js/shell.js?v=0038", "css/compat.css?v=0038", "js/sprint12.js?v=0038"]],
+  ["index.html", ["css/compat.css?v=0039", "css/sprint12.css?v=0039", "js/platform.js?v=0039", "js/shell.js?v=0039", "js/sprint12.js?v=0039", "sw.js?v=0039", "personal-update-list", "data-personal-message", "team-update-list", "team-update-status", "month-open-statistics", "homeMonthLabel"]],
+  ["sw.js", ["timeflow-v40", "relativePath.startsWith(\"api/\")", "response.type === \"opaque\"", "js/platform.js?v=0039", "js/shell.js?v=0039", "css/compat.css?v=0039", "js/sprint12.js?v=0039"]],
   ["js/platform.js", ["tf-platform-", "createStorage", "visualViewport", "openDialog", "data-timeflow-platform"]],
   ["css/compat.css", ["--tf-viewport-height", "pointer: coarse", "orientation: landscape", "forced-colors: active"]],
   ["css/sprint12.css", [".header .notification-btn", ".notification-badge", "focus-visible"]],
   ["css/sprint6.css", ["@media (min-width: 680px)", ".quick-actions-card { grid-column: 1 / -1; }"]],
   ["js/shell.js", ["function repair", "data-timeflow-shell", "window.TimeFlowShell", "window.scrollTo(0, 0)"]],
-  ["js/sprint8.js", ["authVisibilityFallback", "isStaticPreview", "AbortController", "storageGet"]],
+  ["js/sprint8.js", ["authVisibilityFallback", "isStaticPreview", "AbortController", "storageGet", "profile-hero-actions", "sessionPermissionRole", "profile-signout-button"]],
   ["js/sprint12.js", ["Geräte- und PWA-Check", "timeflow-device-check-v1", "Sichere Ausführung", "Mobile Darstellung", "Datensicherung", "timeflow:device-resumed", "function enforcePageState", "dataset.timeflowPage", "homeDetailDialog", "action: null, event: \"info\"", "Im Chat gratulieren", "timeflow:open-mode-selection", "timeflow:open-month-statistics", "is-actionable"]],
   ["js/script.js", ["&& !saved.isWorking", "timeflow:device-resumed", "Number.isNaN(start.valueOf())", "timeflow:open-home-detail", "requestClockConfirmation", "clockConfirmDialog", "data-confirm-clock"]],
   ["js/sprint11.js", ["data-select-mode=\"private\"", "data-select-mode=\"team\"", "writeSettings", "pointerup", "timeflow:open-mode-selection", "quickActionsCard.hidden = isPrivate"]],
@@ -27,6 +27,16 @@ for (const [file, snippets] of requiredSnippets) {
 const profileScript = await readFile("js/sprint4.js", "utf8");
 if (["profile-info-card", "privacySection", "version-row"].some((snippet) => profileScript.includes(snippet))) {
   throw new Error("Die entfernte doppelte Profilübersicht ist noch vorhanden.");
+}
+
+const sessionScript = await readFile("js/sprint8.js", "utf8");
+if (sessionScript.includes('class="session-card"') || sessionScript.includes('insertAdjacentHTML("afterend"')) {
+  throw new Error("Das angemeldete Konto wird noch als separate Profilkarte ausgegeben.");
+}
+
+const syncScript = await readFile("js/sprint9.js", "utf8");
+if (syncScript.includes('querySelector(".session-card")')) {
+  throw new Error("Die Synchronisierung hängt noch von der entfernten Kontokarte ab.");
 }
 
 const packageJson = JSON.parse(await readFile("package.json", "utf8"));
@@ -48,7 +58,7 @@ const worker = (await import("../dist/server/index.js")).default;
 const home = await worker.fetch(new Request("https://timeflow.test/"), {});
 const missing = await worker.fetch(new Request("https://timeflow.test/nicht-vorhanden"), {});
 const unauthenticatedSync = await worker.fetch(new Request("https://timeflow.test/api/sync"), {});
-if (home.status !== 200 || !(await home.text()).includes("js/platform.js?v=0038")) {
+if (home.status !== 200 || !(await home.text()).includes("js/platform.js?v=0039")) {
   throw new Error("Der Sites-Build enthält Sprint 12 nicht vollständig.");
 }
 if (missing.status !== 404) throw new Error("Unbekannte Dateien liefern keinen korrekten 404-Status.");

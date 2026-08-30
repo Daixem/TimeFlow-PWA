@@ -46,15 +46,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const profileHero = document.querySelector(".profile-hero");
   if (profileHero) {
-    profileHero.insertAdjacentHTML("afterend", `
-      <section class="session-card" aria-labelledby="sessionCardTitle">
-        <span class="session-card-icon"><i class="fa-solid fa-id-badge"></i></span>
-        <div class="session-card-copy"><small>Angemeldetes Konto</small><strong id="sessionCardTitle">Sitzung wird geprüft …</strong><p id="sessionCardMeta">Bitte einen Moment warten.</p></div>
-        <span class="session-security-state" id="sessionSecurityState"><i class="fa-solid fa-shield-halved"></i> Geschützt</span>
-        <button type="button" data-manage-users><i class="fa-solid fa-users-gear"></i><span>Benutzer & Rollen</span></button>
-        <button class="session-signout" type="button" data-sign-out><i class="fa-solid fa-arrow-right-from-bracket"></i><span>Abmelden</span></button>
-      </section>
-    `);
+    const editProfileButton = profileHero.querySelector(".edit-profile-button");
+    const actions = document.createElement("div");
+    actions.className = "profile-hero-actions";
+    actions.innerHTML = `
+      <button class="profile-permission-button" type="button" data-manage-users aria-label="Benutzer und Rollen verwalten">
+        <span class="profile-permission-icon" id="sessionSecurityState"><i class="fa-solid fa-shield-halved"></i></span>
+        <span><small>Berechtigung</small><strong id="sessionPermissionRole">Wird geprüft …</strong><em id="sessionAccountMeta">Angemeldetes Konto</em></span>
+      </button>
+      <button class="profile-signout-button" type="button" data-sign-out><i class="fa-solid fa-arrow-right-from-bracket"></i><span>Abmelden</span></button>
+    `;
+    profileHero.append(actions);
+    if (editProfileButton) actions.append(editProfileButton);
   }
 
   const gate = document.getElementById("authGate");
@@ -142,17 +145,17 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderSessionCard() {
-    const title = document.getElementById("sessionCardTitle");
-    const meta = document.getElementById("sessionCardMeta");
+    const role = document.getElementById("sessionPermissionRole");
+    const meta = document.getElementById("sessionAccountMeta");
     const security = document.getElementById("sessionSecurityState");
-    if (!title || !session) return;
-    title.textContent = session.user.name || session.user.email || "TimeFlow-Benutzer";
+    if (!role || !session) return;
+    role.textContent = session.user.role || (session.source === "platform" ? "Kontoinhaber" : "Mitarbeiter");
     meta.textContent = session.source === "platform"
-      ? `${session.user.email || "Verifiziertes Konto"} · Private Site-Anmeldung`
-      : `${session.user.role} · ${session.user.email} · Demo-Sitzung`;
+      ? `${session.user.email || "Verifiziertes Konto"} · Site-verifiziert`
+      : `${session.user.email || session.user.name || "Demo-Konto"} · Demo`;
     security.innerHTML = session.source === "platform"
-      ? '<i class="fa-solid fa-shield-halved"></i> Site-verifiziert'
-      : '<i class="fa-solid fa-flask"></i> Demo-Modus';
+      ? '<i class="fa-solid fa-shield-halved"></i>'
+      : '<i class="fa-solid fa-flask"></i>';
     security.classList.toggle("is-demo", session.source !== "platform");
   }
 

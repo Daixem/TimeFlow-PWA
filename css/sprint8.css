@@ -29,16 +29,16 @@ html.timeflow-auth-locked body > .app { display: none; }
 .auth-security-note > span { display: grid; gap: 3px; }
 .auth-security-note strong { font-size: .5rem; }
 .auth-security-note small { color: #718d8b; font-size: .43rem; line-height: 1.4; }
-.session-card { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto auto auto; gap: 11px; align-items: center; margin-top: 11px; padding: 12px 13px; border: 1px solid rgba(81, 142, 221, .17); border-radius: 16px; background: rgba(3, 31, 62, .72); }
-.session-card-icon { display: grid; place-items: center; width: 42px; height: 42px; border-radius: 13px; color: #78a8ff; background: rgba(52, 111, 226, .14); }
-.session-card-copy { display: grid; gap: 2px; min-width: 0; }
-.session-card-copy small { color: #67809d; font-size: .44rem; text-transform: uppercase; letter-spacing: .07em; }
-.session-card-copy strong { overflow: hidden; color: #e7f0fa; font-size: .58rem; text-overflow: ellipsis; white-space: nowrap; }
-.session-card-copy p { overflow: hidden; color: #748aa2; font-size: .43rem; text-overflow: ellipsis; white-space: nowrap; }
-.session-security-state { display: inline-flex; align-items: center; gap: 6px; padding: 7px 9px; border-radius: 9px; color: #61d7ae; background: rgba(35, 145, 105, .1); font-size: .43rem; font-weight: 750; white-space: nowrap; }
-.session-security-state.is-demo { color: #ffc16a; background: rgba(184, 118, 24, .1); }
-.session-card > button { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 8px 10px; border: 1px solid rgba(82, 139, 211, .16); border-radius: 10px; color: #a9c6ef; background: rgba(15, 56, 103, .55); font-size: .45rem; font-weight: 700; }
-.session-card > button.session-signout { color: #e4939a; background: rgba(132, 45, 55, .09); }
+.profile-hero-actions { position: relative; z-index: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 7px; width: min(100%, 300px); }
+.profile-permission-button { grid-column: 1 / -1; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 9px; align-items: center; min-height: 51px; padding: 8px 10px; border: 1px solid rgba(96, 157, 230, .23); border-radius: 12px; color: #dce9f8; background: rgba(8, 43, 84, .76); text-align: left; }
+.profile-permission-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: #61d7ae; background: rgba(35, 145, 105, .12); }
+.profile-permission-icon.is-demo { color: #ffc16a; background: rgba(184, 118, 24, .12); }
+.profile-permission-button > span:last-child { display: grid; gap: 1px; min-width: 0; }
+.profile-permission-button small { color: #7390b1; font-size: .42rem; font-weight: 750; letter-spacing: .06em; text-transform: uppercase; }
+.profile-permission-button strong { overflow: hidden; font-size: .57rem; text-overflow: ellipsis; white-space: nowrap; }
+.profile-permission-button em { overflow: hidden; color: #7990aa; font-size: .39rem; font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
+.profile-signout-button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 35px; padding: 8px 10px; border: 1px solid rgba(209, 99, 111, .2); border-radius: 11px; color: #efa0a8; background: rgba(132, 45, 55, .11); font-size: .47rem; font-weight: 700; }
+.profile-hero-actions .edit-profile-button { justify-content: center; min-height: 35px; padding: 8px 10px; }
 .user-management-dialog { width: min(94vw, 650px); max-height: min(90vh, 780px); padding: 0; overflow: auto; border: 1px solid rgba(94, 150, 213, .22); border-radius: 23px; color: #eaf2fb; background: #052440; box-shadow: 0 34px 105px rgba(0, 6, 18, .7); }
 .user-management-dialog::backdrop { background: rgba(0, 8, 21, .8); backdrop-filter: blur(7px); }
 .user-management-dialog > section > header { display: grid; grid-template-columns: 47px 1fr 33px; gap: 12px; align-items: start; padding: 18px; border-bottom: 1px solid rgba(91, 139, 190, .12); background: radial-gradient(circle at 12% 0, rgba(55, 123, 242, .18), transparent 38%); }
@@ -73,10 +73,8 @@ html.timeflow-auth-locked body > .app { display: none; }
 .user-management-dialog footer p { color: #647b95; font-size: .42rem; }
 .user-management-dialog footer button { padding: 8px 10px; border: 1px solid rgba(82, 139, 211, .16); border-radius: 9px; color: #9bb8df; background: rgba(15, 56, 103, .55); font-size: .44rem; white-space: nowrap; }
 @media (max-width: 760px) {
-  .session-card { grid-template-columns: 40px 1fr auto; }
-  .session-security-state { grid-column: 2; justify-self: start; }
-  .session-card > button[data-manage-users] { grid-column: 3; grid-row: 1; }
-  .session-card > button.session-signout { grid-column: 3; grid-row: 2; }
+  .profile-hero-actions { grid-column: 1 / -1; width: 100%; grid-template-columns: minmax(0, 1fr) auto auto; }
+  .profile-permission-button { grid-column: auto; }
   .user-management-list article { grid-template-columns: 40px 1fr; }
   .user-management-list label { grid-column: 2; }
   .managed-user-toggle { justify-items: start; grid-template-columns: auto auto; align-items: center; justify-content: start; }
@@ -84,11 +82,8 @@ html.timeflow-auth-locked body > .app { display: none; }
 @media (max-width: 520px) {
   .auth-gate { padding: 10px; }
   .auth-gate-card { border-radius: 21px; }
-  .session-card { grid-template-columns: 38px 1fr; }
-  .session-security-state { grid-column: 2; }
-  .session-card > button { grid-row: auto; }
-  .session-card > button[data-manage-users] { grid-column: 1 / -1; justify-content: center; }
-  .session-card > button.session-signout { grid-column: 1 / -1; justify-content: center; }
+  .profile-hero-actions { grid-template-columns: 1fr 1fr; }
+  .profile-permission-button { grid-column: 1 / -1; }
   .user-management-dialog { width: calc(100vw - 18px); max-height: calc(100dvh - 20px); }
   .user-management-summary strong { font-size: .52rem; }
   .user-management-dialog footer { align-items: flex-start; flex-direction: column; }
