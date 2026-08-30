@@ -32,6 +32,8 @@ jobs:
           mkdir -p _site
           cp index.html manifest.webmanifest sw.js _site/
           cp -R assets css js _site/
+          mkdir -p _site/previews/operations-concept
+          cp previews/operations-concept/index.html _site/previews/operations-concept/
           touch _site/.nojekyll
 
       - name: GitHub Pages vorbereiten
