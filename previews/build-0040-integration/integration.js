@@ -86,6 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const isPrivate = document.documentElement.classList.contains("timeflow-private-mode");
     workflow.classList.toggle("is-private", isPrivate);
     workflow.querySelector(".workflow-team-only")?.toggleAttribute("hidden", isPrivate);
+    dashboard.querySelectorAll(".team-card, .approval-card").forEach((card) => card.toggleAttribute("hidden", isPrivate));
     quickAccessModal?.querySelectorAll('[data-quick-action="documents"], [data-quick-action="availability"]')
       .forEach((button) => button.toggleAttribute("hidden", isPrivate));
   }
