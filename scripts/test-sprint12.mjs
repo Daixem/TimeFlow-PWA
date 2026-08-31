@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 
 const requiredSnippets = new Map([
-  ["index.html", ["css/compat.css?v=0040", "css/sprint12.css?v=0040", "css/private-home.css?v=0040-home1", "js/platform.js?v=0040", "js/shell.js?v=0040", "js/sprint12.js?v=0040", "js/private-home.js?v=0040-home6", "sw.js?v=0040-plan7", "personal-update-list", "data-personal-message", "team-update-list", "team-update-status", "month-open-statistics", "homeMonthLabel"]],
-  ["sw.js", ["timeflow-v49-private-plan-clean", "relativePath.startsWith(\"api/\")", "response.type === \"opaque\"", "js/platform.js?v=0040", "js/shell.js?v=0040", "css/compat.css?v=0040", "js/sprint12.js?v=0040", "js/private-home.js?v=0040-home1", "js/private-schedule-import.js?v=0040-plan7"]],
+  ["index.html", ["css/compat.css?v=0040", "css/sprint12.css?v=0040", "css/private-home.css?v=0040-home1", "js/platform.js?v=0040", "js/shell.js?v=0040", "js/sprint12.js?v=0040", "js/private-home.js?v=0040-home7", "sw.js?v=0040-plan8", "personal-update-list", "data-personal-message", "team-update-list", "team-update-status", "month-open-statistics", "homeMonthLabel"]],
+  ["sw.js", ["timeflow-v50-private-plan-multi", "relativePath.startsWith(\"api/\")", "response.type === \"opaque\"", "js/platform.js?v=0040", "js/shell.js?v=0040", "css/compat.css?v=0040", "js/sprint12.js?v=0040", "js/private-home.js?v=0040-home1", "js/private-schedule-import.js?v=0040-plan8"]],
   ["js/platform.js", ["tf-platform-", "createStorage", "visualViewport", "openDialog", "data-timeflow-platform"]],
   ["css/compat.css", ["--tf-viewport-height", "pointer: coarse", "orientation: landscape", "forced-colors: active"]],
   ["css/sprint12.css", [".header .notification-btn", ".notification-badge", "focus-visible"]],

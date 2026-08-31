@@ -3,33 +3,33 @@
 if (!document.querySelector('link[data-private-schedule-import]')) {
   const importStyle = document.createElement("link");
   importStyle.rel = "stylesheet";
-  importStyle.href = "css/private-schedule-import.css?v=0040-plan7";
+  importStyle.href = "css/private-schedule-import.css?v=0040-plan8";
   importStyle.dataset.privateScheduleImport = "true";
   document.head.append(importStyle);
   const savedStyle = document.createElement("link");
   savedStyle.rel = "stylesheet";
-  savedStyle.href = "css/private-schedule-saved.css?v=0040-plan7";
+  savedStyle.href = "css/private-schedule-saved.css?v=0040-plan8";
   savedStyle.dataset.privateScheduleImport = "saved";
   document.head.append(savedStyle);
   const correctionStyle = document.createElement("link");
   correctionStyle.rel = "stylesheet";
-  correctionStyle.href = "css/private-schedule-corrections.css?v=0040-plan7";
+  correctionStyle.href = "css/private-schedule-corrections.css?v=0040-plan8";
   correctionStyle.dataset.privateScheduleImport = "corrections";
   document.head.append(correctionStyle);
   const learningStyle = document.createElement("link");
   learningStyle.rel = "stylesheet";
-  learningStyle.href = "css/private-schedule-learning.css?v=0040-plan7";
+  learningStyle.href = "css/private-schedule-learning.css?v=0040-plan8";
   learningStyle.dataset.privateScheduleImport = "learning";
   document.head.append(learningStyle);
   const privateViewStyle = document.createElement("link");
   privateViewStyle.rel = "stylesheet";
-  privateViewStyle.href = "css/private-schedule-private-view.css?v=0040-plan7";
+  privateViewStyle.href = "css/private-schedule-private-view.css?v=0040-plan8";
   privateViewStyle.dataset.privateScheduleImport = "private-view";
   document.head.append(privateViewStyle);
 }
 if (!document.querySelector('script[data-private-schedule-import]')) {
   const importScript = document.createElement("script");
-  importScript.src = "js/private-schedule-import.js?v=0040-plan7";
+  importScript.src = "js/private-schedule-import.js?v=0040-plan8";
   importScript.dataset.privateScheduleImport = "true";
   document.head.append(importScript);
 }
