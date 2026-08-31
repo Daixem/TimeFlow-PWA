@@ -36,16 +36,50 @@
       }
       else if (pendingWeekday && /^\d{1,2}$/.test(line)) { const day = Number(line); pendingDate = inferredDate(day, range && day < Number(range[1]) ? endMonth : startMonth); }
       if (weekdayOnly) pendingWeekday = weekdayOnly[1].slice(0, 2).toLowerCase();
-      const normalizedTimeLine = line.replace(/\b([0-2]?\d)([0-5]\d)\b/g, "$1:$2").replace(/\b([0-2]?\d)\s*(?:Uhr|h)\b/gi, "$1:00");
-      const times = [...normalizedTimeLine.matchAll(/(?:^|\D)([0-2]?\d)[:.]([0-5]\d)(?=\D|$)/g)].map((match) => `${match[1].padStart(2, "0")}:${match[2]}`);
+      const normalizedTimeLine = line.replace(/\b([0-2]?\d)([0-5]\d)\s*(?:-|bis)\s*([0-2]?\d)([0-5]\d)\b/gi, "$1:$2 - $3:$4").replace(/\b([0-2]?\d)\s*(?:Uhr|h)\b/gi, "$1:00");
+      let timeOnlyLine = normalizedTimeLine.replace(/\b20\d{2}[-/.]\d{1,2}[-/.]\d{1,2}\b/g, " ").replace(/\b\d{1,2}[.\/-]\d{1,2}[.\/-]\d{2,4}\b/g, " ");
+      const rawTimeCount = [...timeOnlyLine.matchAll(/(?:^|\D)([0-2]?\d)[:.]([0-5]\d)(?=\D|$)/g)].length;
+      if (rawTimeCount < 2) timeOnlyLine = timeOnlyLine.replace(/\b(\d{1,2})[.\/-](\d{1,2})[.]?(?=\s|$)/g, (full, _day, month) => Number(month) <= 12 ? " " : full);
+      const times = [...timeOnlyLine.matchAll(/(?:^|\D)([0-2]?\d)[:.]([0-5]\d)(?=\D|$)/g)].map((match) => `${match[1].padStart(2, "0")}:${match[2]}`);
       if (pendingDate && times.length > 1) {
         result.push({ id: `import-${Date.now()}-${result.length}`, date: pendingDate, start: times[0], end: times[1], break: 30, title: /früh/i.test(line) ? "Frühschicht" : /spät/i.test(line) ? "Spätschicht" : /nacht/i.test(line) ? "Nachtschicht" : "Arbeit", note: "Aus Dienstplan-Screenshot erkannt" });
+        pendingDate = "";
+      } else if (pendingDate && /(?:^|\s)(?:A|F|frei)(?:\s|$)/i.test(line)) {
+        result.push({ id: `import-${Date.now()}-${result.length}`, date: pendingDate, start: "", end: "", break: 0, title: "Frei", note: `Freier Tag (${line.trim()}) aus Dienstplan erkannt` });
         pendingDate = "";
       }
     });
     return result;
   };
+  const parseLayout = (data, imageWidth) => {
+    const words = [];
+    const visit = (node) => {
+      if (!node || typeof node !== "object") return;
+      if (typeof node.text === "string" && node.bbox && !node.words && !node.lines && !node.paragraphs && !node.blocks) words.push(node);
+      ["blocks", "paragraphs", "lines", "words"].forEach((key) => Array.isArray(node[key]) && node[key].forEach(visit));
+    };
+    visit({ blocks: data.blocks || [] });
+    if (!words.length) return [];
+    const allText = words.map((word) => word.text).join(" ").replace(/[–—]/g, "-");
+    const range = allText.match(/(\d{1,2})[.]?(\d{2})\s*-\s*(\d{1,2})[.]?(\d{2})/);
+    const now = new Date(); const startMonth = Number(range?.[2] || now.getMonth() + 1); const endMonth = Number(range?.[4] || startMonth); const startDay = Number(range?.[1] || 1);
+    const dayRows = words.filter((word) => /^(Mo|Di|Mi|Do|Fr|Sa|So)[.,]?$/i.test(word.text) && word.bbox.x0 < imageWidth * .24).map((weekday) => {
+      const middle = (weekday.bbox.y0 + weekday.bbox.y1) / 2;
+      const dayWord = words.filter((word) => /^\d{1,2}$/.test(word.text) && word.bbox.x0 < imageWidth * .24).sort((a, b) => Math.abs(((a.bbox.y0 + a.bbox.y1) / 2) - middle) - Math.abs(((b.bbox.y0 + b.bbox.y1) / 2) - middle))[0];
+      return dayWord && Math.abs(((dayWord.bbox.y0 + dayWord.bbox.y1) / 2) - middle) < Math.max(70, imageWidth * .055) ? { weekday: weekday.text, day: Number(dayWord.text), y: (middle + (dayWord.bbox.y0 + dayWord.bbox.y1) / 2) / 2 } : null;
+    }).filter(Boolean).sort((a, b) => a.y - b.y);
+    return dayRows.map((row, index) => {
+      const previousY = index ? (dayRows[index - 1].y + row.y) / 2 : row.y - (dayRows[index + 1]?.y - row.y || 100) / 2;
+      const nextY = index < dayRows.length - 1 ? (row.y + dayRows[index + 1].y) / 2 : row.y + (row.y - dayRows[index - 1]?.y || 100) / 2;
+      const band = words.filter((word) => { const y = (word.bbox.y0 + word.bbox.y1) / 2; return y >= previousY && y < nextY && word.bbox.x0 >= imageWidth * .18; }).sort((a, b) => a.bbox.x0 - b.bbox.x0).map((word) => word.text).join(" ").replace(/[–—]/g, "-").replace(/\b([0-2]?\d)([0-5]\d)\b/g, "$1:$2");
+      const times = [...band.matchAll(/(?:^|\D)([0-2]?\d)[:.]([0-5]\d)(?=\D|$)/g)].map((match) => `${match[1].padStart(2, "0")}:${match[2]}`);
+      const month = range && row.day < startDay ? endMonth : startMonth; const year = month < startMonth && endMonth < startMonth ? now.getFullYear() + 1 : now.getFullYear();
+      const free = times.length < 2;
+      return { id: `import-${Date.now()}-${index}`, date: `${year}-${String(month).padStart(2, "0")}-${String(row.day).padStart(2, "0")}`, start: free ? "" : times[0], end: free ? "" : times[1], break: free ? 0 : 30, title: free ? "Frei" : /früh/i.test(band) ? "Frühschicht" : /spät/i.test(band) ? "Spätschicht" : /nacht/i.test(band) ? "Nachtschicht" : "Arbeit", note: free ? "Freier Tag aus Dienstplan erkannt" : "Aus Dienstplan-Screenshot erkannt" };
+    });
+  };
   window.TimeFlowPrivateScheduleParser = parse;
+  window.TimeFlowPrivateScheduleLayoutParser = parseLayout;
   async function pdfText(file) {
     const pdfjs = await import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs");
     pdfjs.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
@@ -69,8 +103,10 @@
     const invert = brightness / (pixels.data.length / 4) < 128;
     for (let index = 0; index < pixels.data.length; index += 4) { let gray = .299 * pixels.data[index] + .587 * pixels.data[index + 1] + .114 * pixels.data[index + 2]; if (invert) gray = 255 - gray; gray = gray > 155 ? 255 : gray < 80 ? 0 : gray; pixels.data[index] = pixels.data[index + 1] = pixels.data[index + 2] = gray; }
     context.putImageData(pixels, 0, 0);
-    const result = await api.recognize(canvas, "deu", { logger: (message) => { if (message.status === "recognizing text") status.textContent = `Texterkennung: ${Math.round((message.progress || 0) * 100)} %`; } });
-    return result.data.text;
+    const worker = await api.createWorker("deu", 1, { logger: (message) => { if (message.status === "recognizing text") status.textContent = `Texterkennung: ${Math.round((message.progress || 0) * 100)} %`; } });
+    const result = await worker.recognize(canvas, {}, { blocks: true });
+    await worker.terminate();
+    return { text: result.data.text, layoutEntries: parseLayout(result.data, canvas.width) };
   }
   function install() {
     const tabs = document.querySelector("#schedulePage .schedule-tabs");
@@ -83,22 +119,22 @@
     const dialog = document.getElementById("privateImportDialog"); const input = panel.querySelector("[data-plan-file]"); const status = dialog.querySelector("[data-import-status]"); const preview = dialog.querySelector("[data-import-preview]"); const savedList = panel.querySelector("[data-imported-shifts]"); const consent = dialog.querySelector("[data-import-consent]"); const commit = dialog.querySelector("[data-commit-import]"); let entries = [];
     const renderSaved = () => {
       const shifts = read().sort((a, b) => `${a.date}${a.start}`.localeCompare(`${b.date}${b.start}`));
-      savedList.innerHTML = shifts.length ? shifts.map((entry) => `<article><span><small>${new Date(`${entry.date}T12:00:00`).toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" })}</small><strong>${entry.start} – ${entry.end}</strong></span><span><small>${entry.title || "Arbeit"}</small><strong>${Number(entry.break || 0)} Min. Pause</strong></span></article>`).join("") : '<p class="private-import-empty">Noch keine eigenen Einsätze gespeichert.</p>';
-      const today = new Date().toLocaleDateString("sv-SE"); const next = shifts.find((entry) => entry.date >= today); const card = document.querySelectorAll(".shift-card")[1];
+      savedList.innerHTML = shifts.length ? shifts.map((entry) => `<article><span><small>${new Date(`${entry.date}T12:00:00`).toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" })}</small><strong>${/^frei$/i.test(entry.title) ? "Frei" : `${entry.start} – ${entry.end}`}</strong></span><span><small>${entry.title || "Arbeit"}</small><strong>${/^frei$/i.test(entry.title) ? "Kein Einsatz" : `${Number(entry.break || 0)} Min. Pause`}</strong></span></article>`).join("") : '<p class="private-import-empty">Noch keine eigenen Einsätze gespeichert.</p>';
+      const today = new Date().toLocaleDateString("sv-SE"); const next = shifts.find((entry) => entry.date >= today && !/^frei$/i.test(entry.title)); const card = document.querySelectorAll(".shift-card")[1];
       if (next && card && privateMode()) { card.querySelector("p").textContent = new Date(`${next.date}T12:00:00`).toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" }); card.querySelector("strong").textContent = `${next.start} – ${next.end}`; card.querySelector("span").textContent = next.title || "Arbeit"; }
     };
     const render = () => { preview.innerHTML = entries.length ? entries.map((entry, index) => `<article><label class="import-title">Schicht<input type="text" maxlength="40" data-i="${index}" data-field="title" value="${entry.title || "Arbeit"}"></label><label>Datum<input type="date" data-i="${index}" data-field="date" value="${entry.date}"></label><label>Beginn<input type="time" data-i="${index}" data-field="start" value="${entry.start}"></label><label>Ende<input type="time" data-i="${index}" data-field="end" value="${entry.end}"></label><label>Pause<select data-i="${index}" data-field="break"><option value="0"${Number(entry.break) === 0 ? " selected" : ""}>Keine</option><option value="15"${Number(entry.break) === 15 ? " selected" : ""}>15 Min.</option><option value="30"${Number(entry.break) === 30 ? " selected" : ""}>30 Min.</option><option value="45"${Number(entry.break) === 45 ? " selected" : ""}>45 Min.</option><option value="60"${Number(entry.break) === 60 ? " selected" : ""}>60 Min.</option></select></label><button type="button" data-remove="${index}" aria-label="Entfernen"><i class="fa-regular fa-trash-can"></i></button></article>`).join("") : '<p class="private-import-empty">Keine vollständigen Schichten erkannt. Ergänze einen Einsatz oder wähle eine besser lesbare Datei.</p>'; consent.checked = false; commit.disabled = true; };
     panel.querySelector("[data-pick-plan]").addEventListener("click", () => input.click());
     input.addEventListener("change", async () => {
       const file = input.files?.[0]; if (!file) return; entries = []; render(); status.textContent = `${file.name} wird geprüft …`; platform().dialog.open(dialog);
-      try { let text = file.type.startsWith("image/") ? await imageText(file, status) : file.type === "application/pdf" || /\.pdf$/i.test(file.name) ? await pdfText(file) : await file.text(); if (/\.json$/i.test(file.name)) { try { const json = JSON.parse(text); const list = Array.isArray(json) ? json : json.shifts; if (Array.isArray(list)) entries = list.map((item, index) => ({ id: `import-${Date.now()}-${index}`, date: item.date, start: item.start, end: item.end, break: Number(item.break ?? 30), title: item.title || "Arbeit", note: "Aus Datei importiert" })).filter((item) => item.date && item.start && item.end); } catch (_error) { entries = []; } } if (!entries.length) entries = parse(text); status.textContent = entries.length ? `${entries.length} mögliche Einsätze erkannt. Bitte jeden Eintrag kontrollieren.` : "Keine vollständigen Einsätze erkannt."; } catch (_error) { status.textContent = "Diese Datei konnte auf dem Gerät nicht automatisch gelesen werden."; }
+      try { const imageResult = file.type.startsWith("image/") ? await imageText(file, status) : null; let text = imageResult?.text ?? (file.type === "application/pdf" || /\.pdf$/i.test(file.name) ? await pdfText(file) : await file.text()); if (imageResult?.layoutEntries?.length) entries = imageResult.layoutEntries; if (/\.json$/i.test(file.name)) { try { const json = JSON.parse(text); const list = Array.isArray(json) ? json : json.shifts; if (Array.isArray(list)) entries = list.map((item, index) => ({ id: `import-${Date.now()}-${index}`, date: item.date, start: item.start || "", end: item.end || "", break: Number(item.break ?? 30), title: item.title || "Arbeit", note: "Aus Datei importiert" })).filter((item) => item.date); } catch (_error) { entries = []; } } if (!entries.length) entries = parse(text); status.textContent = entries.length ? `${entries.length} Tage erkannt. Bitte Arbeits- und freie Tage kontrollieren.` : "Keine vollständigen Einsätze erkannt."; } catch (_error) { status.textContent = "Diese Datei konnte auf dem Gerät nicht automatisch gelesen werden."; }
       render(); input.value = "";
     });
     preview.addEventListener("input", (event) => { const entry = entries[Number(event.target.dataset.i)]; if (entry && event.target.dataset.field) entry[event.target.dataset.field] = event.target.value; consent.checked = false; commit.disabled = true; });
     preview.addEventListener("change", (event) => { const entry = entries[Number(event.target.dataset.i)]; if (entry && event.target.dataset.field) entry[event.target.dataset.field] = event.target.dataset.field === "break" ? Number(event.target.value) : event.target.value; consent.checked = false; commit.disabled = true; });
     preview.addEventListener("click", (event) => { const button = event.target.closest("[data-remove]"); if (button) { entries.splice(Number(button.dataset.remove), 1); render(); } });
     dialog.querySelector("[data-add-import-row]").addEventListener("click", () => { entries.push({ id: `import-${Date.now()}-${entries.length}`, date: new Date().toLocaleDateString("sv-SE"), start: "08:00", end: "16:30", break: 30, title: "Arbeit", note: "In Import-Vorschau ergänzt" }); render(); });
-    consent.addEventListener("change", () => { commit.disabled = !consent.checked || !entries.length || entries.some((entry) => !entry.date || !entry.start || !entry.end || entry.end <= entry.start); });
+    consent.addEventListener("change", () => { commit.disabled = !consent.checked || !entries.length || entries.some((entry) => !entry.date || (!/^frei$/i.test(entry.title) && (!entry.start || !entry.end || entry.end <= entry.start))); });
     dialog.querySelectorAll("[data-close-import]").forEach((button) => button.addEventListener("click", () => platform().dialog.close(dialog)));
     dialog.querySelector("form").addEventListener("submit", (event) => { event.preventDefault(); if (commit.disabled) return; platform().storage.setItem(KEY, JSON.stringify(read().concat(entries))); platform().dialog.close(dialog); renderSaved(); document.dispatchEvent(new CustomEvent("timeflow:private-schedule-updated")); const toast = document.getElementById("toast"); toast.textContent = `${entries.length} Einsätze wurden übernommen.`; toast.classList.add("is-visible"); });
     const updateMode = () => { panel.hidden = !privateMode(); if (privateMode()) renderSaved(); }; updateMode(); new MutationObserver(updateMode).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });

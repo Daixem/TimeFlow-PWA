@@ -10,4 +10,11 @@ if (weekly.length !== 4) throw new Error(`Wochenplan: 4 Schichten erwartet, ${we
 if (weekly[0].date.slice(5) !== "09-01" || weekly[0].start !== "07:30" || weekly[0].end !== "15:00") throw new Error("Wochenplan: Datum oder Zeit falsch erkannt.");
 const table = parse("01.09.2026 | Frühschicht | 08:00 - 16:30\n2026-09-02 Spätschicht 12:00 bis 20:30");
 if (table.length !== 2 || table[1].title !== "Spätschicht") throw new Error("Tabellenplan: Datum, Zeiten oder Schichtart falsch erkannt.");
+const freeMarkers = parse("03.09.2026 F\n04.09.2026 A\n05.09.2026 frei");
+if (freeMarkers.length !== 3 || freeMarkers.some((entry) => entry.title !== "Frei" || entry.start || entry.end)) throw new Error("Freie Tage: leeres Zeitfeld, A, F oder Frei werden nicht korrekt behandelt.");
+const layout = context.window.TimeFlowPrivateScheduleLayoutParser;
+const word = (text, x, y) => ({ text, bbox: { x0: x, y0: y, x1: x + 45, y1: y + 24 } });
+const positioned = { blocks: [{ paragraphs: [{ lines: [{ words: [word("31.08", 400, 20), word("-", 460, 20), word("06.09", 500, 20)] }, { words: [word("Mo", 20, 100), word("31", 25, 130)] }, { words: [word("Di", 20, 220), word("1", 25, 250), word("07:30", 250, 240), word("-", 310, 240), word("15:00", 340, 240)] }, { words: [word("Mi", 20, 340), word("2", 25, 370), word("07:30", 250, 360), word("15:00", 340, 360)] }, { words: [word("Sa", 20, 460), word("5", 25, 490)] }] }] }] };
+const positionedResult = layout(positioned, 600);
+if (positionedResult.length !== 4 || positionedResult[0].title !== "Frei" || positionedResult[1].date.slice(5) !== "09-01" || positionedResult[1].start !== "07:30" || positionedResult[3].title !== "Frei") throw new Error("Bildlayout: freie Tage oder zeilenweise Zeiten wurden falsch zugeordnet.");
 console.log("Privater Dienstplan-Import: Wochen-, Tabellen-, Datums- und Zeitformate werden erkannt.");
