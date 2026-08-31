@@ -4,6 +4,14 @@
   const platform = () => window.TimeFlowPlatform;
   const privateMode = () => document.documentElement.classList.contains("timeflow-private-mode") || document.body.dataset.appMode === "private";
   const read = () => { try { const value = JSON.parse(platform().storage.getItem(KEY) || "[]"); return Array.isArray(value) ? value : []; } catch (_error) { return []; } };
+  const userKey = () => {
+    try { const session = JSON.parse(platform().storage.getItem("timeflow-session-v1") || "{}"); if (session.userId) return session.userId; } catch (_error) { /* Profil als Ersatz */ }
+    try { const profile = JSON.parse(platform().storage.getItem("timeflow-profile-v1") || "{}"); if (profile.email) return String(profile.email).trim().toLowerCase(); } catch (_error) { /* Lokales Profil */ }
+    return "local-private-user";
+  };
+  const learningKey = () => `timeflow-private-schedule-learning-v1:${userKey()}`;
+  const readLearning = () => { try { const value = JSON.parse(platform().storage.getItem(learningKey()) || "{}"); return value && typeof value === "object" ? value : {}; } catch (_error) { return {}; } };
+  const writeLearning = (value) => platform().storage.setItem(learningKey(), JSON.stringify(value));
   const dateValue = (text) => { const match = String(text).match(/(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})/); if (!match) return ""; return `${match[3].length === 2 ? "20" + match[3] : match[3]}-${match[2].padStart(2, "0")}-${match[1].padStart(2, "0")}`; };
   const parse = (text) => {
     const source = String(text).replace(/[–—]/g, "-").replace(/\r/g, "\n");
@@ -45,7 +53,8 @@
         result.push({ id: `import-${Date.now()}-${result.length}`, date: pendingDate, start: times[0], end: times[1], break: 30, title: /früh/i.test(line) ? "Frühschicht" : /spät/i.test(line) ? "Spätschicht" : /nacht/i.test(line) ? "Nachtschicht" : "Arbeit", note: "Aus Dienstplan-Screenshot erkannt" });
         pendingDate = "";
       } else if (pendingDate && /(?:^|\s)(?:A|F|frei)(?:\s|$)/i.test(line)) {
-        result.push({ id: `import-${Date.now()}-${result.length}`, date: pendingDate, start: "", end: "", break: 0, title: "Frei", note: `Freier Tag (${line.trim()}) aus Dienstplan erkannt` });
+        const marker = line.match(/(?:^|\s)(A|F|frei)(?:\s|$)/i)?.[1]?.toUpperCase() || "FREI";
+        result.push({ id: `import-${Date.now()}-${result.length}`, date: pendingDate, start: "", end: "", break: 0, title: readLearning()[marker] || "Frei", sourceMarker: marker, note: `Freier Tag (${line.trim()}) aus Dienstplan erkannt` });
         pendingDate = "";
       }
     });
@@ -75,7 +84,11 @@
       const times = [...band.matchAll(/(?:^|\D)([0-2]?\d)[:.]([0-5]\d)(?=\D|$)/g)].map((match) => `${match[1].padStart(2, "0")}:${match[2]}`);
       const month = range && row.day < startDay ? endMonth : startMonth; const year = month < startMonth && endMonth < startMonth ? now.getFullYear() + 1 : now.getFullYear();
       const free = times.length < 2;
-      return { id: `import-${Date.now()}-${index}`, date: `${year}-${String(month).padStart(2, "0")}-${String(row.day).padStart(2, "0")}`, start: free ? "" : times[0], end: free ? "" : times[1], break: free ? 0 : 30, title: free ? "Frei" : /früh/i.test(band) ? "Frühschicht" : /spät/i.test(band) ? "Spätschicht" : /nacht/i.test(band) ? "Nachtschicht" : "Arbeit", note: free ? "Freier Tag aus Dienstplan erkannt" : "Aus Dienstplan-Screenshot erkannt" };
+      const rawMarker = band.trim().replace(/^[\s|:;,-]+|[\s|:;,-]+$/g, "");
+      const marker = rawMarker ? rawMarker.toUpperCase().slice(0, 30) : "__EMPTY__";
+      const learnedTitle = readLearning()[marker];
+      const knownFree = marker === "__EMPTY__" || /^(A|F|FREI|OFF|—|-)$/i.test(marker);
+      return { id: `import-${Date.now()}-${index}`, date: `${year}-${String(month).padStart(2, "0")}-${String(row.day).padStart(2, "0")}`, start: free ? "" : times[0], end: free ? "" : times[1], break: free ? 0 : 30, title: free ? learnedTitle || (knownFree ? "Frei" : `Prüfen: ${rawMarker}`) : /früh/i.test(band) ? "Frühschicht" : /spät/i.test(band) ? "Spätschicht" : /nacht/i.test(band) ? "Nachtschicht" : "Arbeit", sourceMarker: free ? marker : "", note: free ? `${learnedTitle ? "Persönlich gelernt" : "Aus Dienstplan erkannt"}: ${rawMarker || "leeres Feld"}` : "Aus Dienstplan-Screenshot erkannt" };
     });
   };
   window.TimeFlowPrivateScheduleParser = parse;
@@ -113,10 +126,11 @@
     if (!tabs || document.querySelector(".private-import-panel")) return;
     const panel = document.createElement("section");
     panel.className = "private-import-panel";
-    panel.innerHTML = `<header><div><small>PRIVAT / EINZELNUTZUNG</small><h2>Mein eigener Dienstplan</h2><p>Einsätze aus Dateien erkennen und nach deiner Freigabe übernehmen.</p></div><button type="button" data-pick-plan><i class="fa-solid fa-file-arrow-up"></i> Dienstplan hochladen</button></header><input hidden type="file" data-plan-file accept="image/*,.pdf,.csv,.txt,.json,.ics,application/pdf,text/csv,text/plain,application/json,text/calendar"><p class="private-import-note"><i class="fa-solid fa-shield-halved"></i> Auswählen allein ändert nichts. Die Übernahme erfolgt erst nach deiner ausdrücklichen Zustimmung.</p><div class="private-imported-shifts" data-imported-shifts></div>`;
+    panel.innerHTML = `<header><div><small>PRIVAT / EINZELNUTZUNG</small><h2>Mein eigener Dienstplan</h2><p>Einsätze aus Dateien erkennen und nach deiner Freigabe übernehmen.</p></div><button type="button" data-pick-plan><i class="fa-solid fa-file-arrow-up"></i> Dienstplan hochladen</button></header><input hidden type="file" data-plan-file accept="image/*,.pdf,.csv,.txt,.json,.ics,application/pdf,text/csv,text/plain,application/json,text/calendar"><p class="private-import-note"><i class="fa-solid fa-shield-halved"></i> Auswählen allein ändert nichts. Die Übernahme erfolgt erst nach deiner ausdrücklichen Zustimmung.</p><p class="private-learning-note" data-learning-note></p><div class="private-imported-shifts" data-imported-shifts></div>`;
     tabs.insertAdjacentElement("afterend", panel);
     document.body.insertAdjacentHTML("beforeend", `<dialog class="private-import-dialog" id="privateImportDialog"><header><div><small>IMPORT-VORSCHAU</small><h2>Erkannte Einsätze prüfen und korrigieren</h2><p data-import-status>Die Datei wird analysiert.</p></div><button type="button" data-close-import aria-label="Schließen"><i class="fa-solid fa-xmark"></i></button></header><form><div class="private-import-toolbar"><span>Jeder Wert kann vor der Übernahme geändert werden.</span><button type="button" data-add-import-row><i class="fa-solid fa-plus"></i> Fehlenden Einsatz ergänzen</button></div><div class="private-import-preview" data-import-preview></div><label class="private-import-consent"><input type="checkbox" data-import-consent><span>Ich habe alle Einträge geprüft und stimme der Übernahme in meinen privaten Dienstplan zu.</span></label><footer><button type="button" data-close-import>Abbrechen</button><button type="submit" data-commit-import disabled><i class="fa-solid fa-check"></i> Verbindlich übernehmen</button></footer></form></dialog>`);
-    const dialog = document.getElementById("privateImportDialog"); const input = panel.querySelector("[data-plan-file]"); const status = dialog.querySelector("[data-import-status]"); const preview = dialog.querySelector("[data-import-preview]"); const savedList = panel.querySelector("[data-imported-shifts]"); const consent = dialog.querySelector("[data-import-consent]"); const commit = dialog.querySelector("[data-commit-import]"); let entries = [];
+    const dialog = document.getElementById("privateImportDialog"); const input = panel.querySelector("[data-plan-file]"); const status = dialog.querySelector("[data-import-status]"); const preview = dialog.querySelector("[data-import-preview]"); const savedList = panel.querySelector("[data-imported-shifts]"); const learningNote = panel.querySelector("[data-learning-note]"); const consent = dialog.querySelector("[data-import-consent]"); const commit = dialog.querySelector("[data-commit-import]"); let entries = [];
+    const renderLearning = () => { const learned = Object.entries(readLearning()).filter(([marker]) => marker !== "__EMPTY__"); learningNote.innerHTML = learned.length ? `<i class="fa-solid fa-brain"></i> Persönlich gelernt: ${learned.map(([marker, title]) => `${marker} = ${title}`).join(" · ")}` : '<i class="fa-solid fa-brain"></i> TimeFlow lernt deine Dienstplan-Kürzel nach einer geprüften Übernahme.'; };
     const renderSaved = () => {
       const shifts = read().sort((a, b) => `${a.date}${a.start}`.localeCompare(`${b.date}${b.start}`));
       savedList.innerHTML = shifts.length ? shifts.map((entry) => `<article><span><small>${new Date(`${entry.date}T12:00:00`).toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit", year: "numeric" })}</small><strong>${/^frei$/i.test(entry.title) ? "Frei" : `${entry.start} – ${entry.end}`}</strong></span><span><small>${entry.title || "Arbeit"}</small><strong>${/^frei$/i.test(entry.title) ? "Kein Einsatz" : `${Number(entry.break || 0)} Min. Pause`}</strong></span></article>`).join("") : '<p class="private-import-empty">Noch keine eigenen Einsätze gespeichert.</p>';
@@ -136,8 +150,8 @@
     dialog.querySelector("[data-add-import-row]").addEventListener("click", () => { entries.push({ id: `import-${Date.now()}-${entries.length}`, date: new Date().toLocaleDateString("sv-SE"), start: "08:00", end: "16:30", break: 30, title: "Arbeit", note: "In Import-Vorschau ergänzt" }); render(); });
     consent.addEventListener("change", () => { commit.disabled = !consent.checked || !entries.length || entries.some((entry) => !entry.date || (!/^frei$/i.test(entry.title) && (!entry.start || !entry.end || entry.end <= entry.start))); });
     dialog.querySelectorAll("[data-close-import]").forEach((button) => button.addEventListener("click", () => platform().dialog.close(dialog)));
-    dialog.querySelector("form").addEventListener("submit", (event) => { event.preventDefault(); if (commit.disabled) return; platform().storage.setItem(KEY, JSON.stringify(read().concat(entries))); platform().dialog.close(dialog); renderSaved(); document.dispatchEvent(new CustomEvent("timeflow:private-schedule-updated")); const toast = document.getElementById("toast"); toast.textContent = `${entries.length} Einsätze wurden übernommen.`; toast.classList.add("is-visible"); });
-    const updateMode = () => { panel.hidden = !privateMode(); if (privateMode()) renderSaved(); }; updateMode(); new MutationObserver(updateMode).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    dialog.querySelector("form").addEventListener("submit", (event) => { event.preventDefault(); if (commit.disabled) return; const learned = readLearning(); entries.filter((entry) => entry.sourceMarker).forEach((entry) => { learned[entry.sourceMarker] = entry.title.trim(); }); writeLearning(learned); platform().storage.setItem(KEY, JSON.stringify(read().concat(entries))); platform().dialog.close(dialog); renderLearning(); renderSaved(); document.dispatchEvent(new CustomEvent("timeflow:private-schedule-updated")); const toast = document.getElementById("toast"); toast.textContent = `${entries.length} Tage wurden übernommen. Persönliche Kürzel wurden gelernt.`; toast.classList.add("is-visible"); });
+    const updateMode = () => { panel.hidden = !privateMode(); if (privateMode()) { renderLearning(); renderSaved(); } }; updateMode(); new MutationObserver(updateMode).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", install);
   else install();

@@ -2,7 +2,9 @@ import { readFile } from "node:fs/promises";
 import vm from "node:vm";
 
 const code = await readFile(new URL("../js/private-schedule-import.js", import.meta.url), "utf8");
-const context = { window: {}, document: { readyState: "loading", addEventListener() {} }, console, Date, JSON, String, Number, Array, Math };
+const memory = new Map();
+const storage = { getItem: (key) => memory.has(key) ? memory.get(key) : null, setItem: (key, value) => memory.set(key, String(value)) };
+const context = { window: { TimeFlowPlatform: { storage } }, document: { readyState: "loading", addEventListener() {} }, console, Date, JSON, String, Number, Array, Math };
 vm.runInNewContext(code, context);
 const parse = context.window.TimeFlowPrivateScheduleParser;
 const weekly = parse("Woche 31.08 - 06.09\nMo 31\n-\nDi 1\nHotel Rezeption\n07:30 - 15:00\nMi 2\n07.30 – 15.00\nDo 3\n0730 bis 1500\nFr 4\n7 Uhr - 15 Uhr");
@@ -16,5 +18,5 @@ const layout = context.window.TimeFlowPrivateScheduleLayoutParser;
 const word = (text, x, y) => ({ text, bbox: { x0: x, y0: y, x1: x + 45, y1: y + 24 } });
 const positioned = { blocks: [{ paragraphs: [{ lines: [{ words: [word("31.08", 400, 20), word("-", 460, 20), word("06.09", 500, 20)] }, { words: [word("Mo", 20, 100), word("31", 25, 130)] }, { words: [word("Di", 20, 220), word("1", 25, 250), word("07:30", 250, 240), word("-", 310, 240), word("15:00", 340, 240)] }, { words: [word("Mi", 20, 340), word("2", 25, 370), word("07:30", 250, 360), word("15:00", 340, 360)] }, { words: [word("Sa", 20, 460), word("5", 25, 490)] }] }] }] };
 const positionedResult = layout(positioned, 600);
-if (positionedResult.length !== 4 || positionedResult[0].title !== "Frei" || positionedResult[1].date.slice(5) !== "09-01" || positionedResult[1].start !== "07:30" || positionedResult[3].title !== "Frei") throw new Error("Bildlayout: freie Tage oder zeilenweise Zeiten wurden falsch zugeordnet.");
+if (positionedResult.length !== 4 || positionedResult[0].title !== "Frei" || positionedResult[0].sourceMarker !== "__EMPTY__" || positionedResult[1].date.slice(5) !== "09-01" || positionedResult[1].start !== "07:30" || positionedResult[3].title !== "Frei") throw new Error("Bildlayout: freie Tage oder zeilenweise Zeiten wurden falsch zugeordnet.");
 console.log("Privater Dienstplan-Import: Wochen-, Tabellen-, Datums- und Zeitformate werden erkannt.");
