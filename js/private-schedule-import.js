@@ -16,7 +16,7 @@
   const parse = (text) => {
     const source = String(text).replace(/[–—]/g, "-").replace(/\r/g, "\n");
     const lines = source.split(/\n|;/).map((line) => line.replace(/\s+/g, " ").trim()).filter(Boolean);
-    const range = source.match(/(\d{1,2})[.]?(\d{2})\s*-\s*(\d{1,2})[.]?(\d{2})/);
+    const range = source.match(/(\d{1,2})[.]?(\d{2})[.]?\s*-\s*(\d{1,2})[.]?(\d{2})[.]?/);
     const now = new Date();
     const startMonth = Number(range?.[2] || now.getMonth() + 1);
     const endMonth = Number(range?.[4] || startMonth);
@@ -70,13 +70,29 @@
     visit({ blocks: data.blocks || [] });
     if (!words.length) return [];
     const allText = words.map((word) => word.text).join(" ").replace(/[–—]/g, "-");
-    const range = allText.match(/(\d{1,2})[.]?(\d{2})\s*-\s*(\d{1,2})[.]?(\d{2})/);
+    const range = allText.match(/(\d{1,2})[.]?(\d{2})[.]?\s*-\s*(\d{1,2})[.]?(\d{2})[.]?/);
     const now = new Date(); const startMonth = Number(range?.[2] || now.getMonth() + 1); const endMonth = Number(range?.[4] || startMonth); const startDay = Number(range?.[1] || 1);
-    const dayRows = words.filter((word) => /^(Mo|Di|Mi|Do|Fr|Sa|So)[.,]?$/i.test(word.text) && word.bbox.x0 < imageWidth * .24).map((weekday) => {
+    const detectedDayRows = words.filter((word) => /^(Mo|Di|Mi|Do|Fr|Sa|So)[.,]?$/i.test(word.text) && word.bbox.x0 < imageWidth * .24).map((weekday) => {
       const middle = (weekday.bbox.y0 + weekday.bbox.y1) / 2;
       const dayWord = words.filter((word) => /^\d{1,2}$/.test(word.text) && word.bbox.x0 < imageWidth * .24).sort((a, b) => Math.abs(((a.bbox.y0 + a.bbox.y1) / 2) - middle) - Math.abs(((b.bbox.y0 + b.bbox.y1) / 2) - middle))[0];
       return dayWord && Math.abs(((dayWord.bbox.y0 + dayWord.bbox.y1) / 2) - middle) < Math.max(70, imageWidth * .055) ? { weekday: weekday.text, day: Number(dayWord.text), y: (middle + (dayWord.bbox.y0 + dayWord.bbox.y1) / 2) / 2 } : null;
     }).filter(Boolean).sort((a, b) => a.y - b.y);
+    let dayRows = detectedDayRows.reduce((unique, row) => {
+      const duplicate = unique.find((entry) => entry.day === row.day && Math.abs(entry.y - row.y) < Math.max(90, imageWidth * .07));
+      if (!duplicate) unique.push(row);
+      else duplicate.y = (duplicate.y + row.y) / 2;
+      return unique;
+    }, []).sort((a, b) => a.y - b.y);
+    if (range && dayRows.length >= 2 && dayRows.length < 7) {
+      const expectedDays = [];
+      const rangeStart = new Date(Date.UTC(now.getFullYear(), startMonth - 1, startDay));
+      for (let offset = 0; offset < 7; offset += 1) { const date = new Date(rangeStart); date.setUTCDate(rangeStart.getUTCDate() + offset); expectedDays.push({ day: date.getUTCDate(), month: date.getUTCMonth() + 1, index: offset }); }
+      const matched = expectedDays.map((expected) => ({ expected, found: dayRows.find((row) => row.day === expected.day) })).filter((item) => item.found);
+      const first = matched[0]; const last = matched[matched.length - 1];
+      const step = last.expected.index !== first.expected.index ? (last.found.y - first.found.y) / (last.expected.index - first.expected.index) : 100;
+      const origin = matched.reduce((sum, item) => sum + item.found.y - item.expected.index * step, 0) / matched.length;
+      dayRows = expectedDays.map((expected) => dayRows.find((row) => row.day === expected.day) || { weekday: "", day: expected.day, y: origin + expected.index * step, inferred: true }).sort((a, b) => a.y - b.y);
+    }
     return dayRows.map((row, index) => {
       const previousY = index ? (dayRows[index - 1].y + row.y) / 2 : row.y - (dayRows[index + 1]?.y - row.y || 100) / 2;
       const nextY = index < dayRows.length - 1 ? (row.y + dayRows[index + 1].y) / 2 : row.y + (row.y - dayRows[index - 1]?.y || 100) / 2;
@@ -117,9 +133,16 @@
     for (let index = 0; index < pixels.data.length; index += 4) { let gray = .299 * pixels.data[index] + .587 * pixels.data[index + 1] + .114 * pixels.data[index + 2]; if (invert) gray = 255 - gray; gray = gray > 155 ? 255 : gray < 80 ? 0 : gray; pixels.data[index] = pixels.data[index + 1] = pixels.data[index + 2] = gray; }
     context.putImageData(pixels, 0, 0);
     const worker = await api.createWorker("deu", 1, { logger: (message) => { if (message.status === "recognizing text") status.textContent = `Texterkennung: ${Math.round((message.progress || 0) * 100)} %`; } });
+    await worker.setParameters({ tessedit_pageseg_mode: "11", preserve_interword_spaces: "1" });
     const result = await worker.recognize(canvas, {}, { blocks: true });
+    status.textContent = "Wochentage und Datumswerte werden gezielt zugeordnet …";
+    const dayCanvas = document.createElement("canvas"); dayCanvas.width = Math.max(180, Math.round(canvas.width * .3)); dayCanvas.height = canvas.height;
+    dayCanvas.getContext("2d").drawImage(canvas, 0, 0, dayCanvas.width, dayCanvas.height, 0, 0, dayCanvas.width, dayCanvas.height);
+    await worker.setParameters({ tessedit_pageseg_mode: "6", preserve_interword_spaces: "1" });
+    const dayResult = await worker.recognize(dayCanvas, {}, { blocks: true });
     await worker.terminate();
-    return { text: result.data.text, layoutEntries: parseLayout(result.data, canvas.width) };
+    const combinedData = { blocks: [...(result.data.blocks || []), ...(dayResult.data.blocks || [])] };
+    return { text: `${result.data.text}\n${dayResult.data.text}`, layoutEntries: parseLayout(combinedData, canvas.width) };
   }
   function install() {
     const tabs = document.querySelector("#schedulePage .schedule-tabs");
