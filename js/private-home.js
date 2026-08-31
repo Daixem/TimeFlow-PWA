@@ -11,6 +11,11 @@ if (!document.querySelector('link[data-private-schedule-import]')) {
   savedStyle.href = "css/private-schedule-saved.css?v=0040-plan1";
   savedStyle.dataset.privateScheduleImport = "saved";
   document.head.append(savedStyle);
+  const correctionStyle = document.createElement("link");
+  correctionStyle.rel = "stylesheet";
+  correctionStyle.href = "css/private-schedule-corrections.css?v=0040-plan2";
+  correctionStyle.dataset.privateScheduleImport = "corrections";
+  document.head.append(correctionStyle);
 }
 if (!document.querySelector('script[data-private-schedule-import]')) {
   const importScript = document.createElement("script");
