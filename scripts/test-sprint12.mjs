@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 
 const requiredSnippets = new Map([
-  ["index.html", ["css/compat.css?v=0040", "css/sprint12.css?v=0040", "js/platform.js?v=0040", "js/shell.js?v=0040", "js/sprint12.js?v=0040", "sw.js?v=0040", "personal-update-list", "data-personal-message", "team-update-list", "team-update-status", "month-open-statistics", "homeMonthLabel"]],
-  ["sw.js", ["timeflow-v41", "relativePath.startsWith(\"api/\")", "response.type === \"opaque\"", "js/platform.js?v=0040", "js/shell.js?v=0040", "css/compat.css?v=0040", "js/sprint12.js?v=0040"]],
+  ["index.html", ["css/compat.css?v=0040", "css/sprint12.css?v=0040", "css/private-home.css?v=0040-home1", "js/platform.js?v=0040", "js/shell.js?v=0040", "js/sprint12.js?v=0040", "js/private-home.js?v=0040-home1", "sw.js?v=0040-home1", "personal-update-list", "data-personal-message", "team-update-list", "team-update-status", "month-open-statistics", "homeMonthLabel"]],
+  ["sw.js", ["timeflow-v42-private-home", "relativePath.startsWith(\"api/\")", "response.type === \"opaque\"", "js/platform.js?v=0040", "js/shell.js?v=0040", "css/compat.css?v=0040", "js/sprint12.js?v=0040", "js/private-home.js?v=0040-home1"]],
   ["js/platform.js", ["tf-platform-", "createStorage", "visualViewport", "openDialog", "data-timeflow-platform"]],
   ["css/compat.css", ["--tf-viewport-height", "pointer: coarse", "orientation: landscape", "forced-colors: active"]],
   ["css/sprint12.css", [".header .notification-btn", ".notification-badge", "focus-visible"]],

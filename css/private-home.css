@@ -1,0 +1,115 @@
+/* Offizieller Privat-Home-Screen auf Basis der geprüften Build-0040-Vorschau. */
+.private-home-clock,
+.private-home-account,
+.private-quick-nav { display: none; }
+
+.timeflow-private-mode .for-you-card,
+.timeflow-private-mode .overview-card { display: none !important; }
+
+.timeflow-private-mode .dashboard > .stamp-card {
+  grid-column: 1 / -1;
+  justify-self: center;
+  width: 138px;
+  min-height: 138px;
+  margin-inline: auto;
+  padding: 14px;
+  border-radius: 50%;
+  flex-direction: column;
+  justify-content: center;
+  gap: 7px;
+  text-align: center;
+  background: radial-gradient(circle at 35% 25%, #4d8dff, #1851c5 66%, #0d388d);
+  box-shadow: 0 0 0 9px rgba(47,112,240,.08), 0 15px 36px rgba(16,69,180,.38);
+}
+.timeflow-private-mode .dashboard > .stamp-card.is-working { background: radial-gradient(circle at 35% 25%, #45da8a, #1bae61 66%, #118044); }
+.timeflow-private-mode .stamp-card .stamp-left { flex-direction: column; gap: 6px; }
+.timeflow-private-mode .stamp-card .stamp-icon { width: 44px; height: 44px; font-size: 1rem; }
+.timeflow-private-mode .stamp-card .stamp-left strong { font-size: .9rem; }
+.timeflow-private-mode .stamp-card #clockHint { display: block; max-width: 106px; margin: 0; color: rgba(236,245,255,.78); font-size: .68rem; line-height: 1.3; }
+.timeflow-private-mode .stamp-card .stamp-arrow { display: none; }
+
+.timeflow-private-mode .private-home-clock { display: grid; grid-column: 1 / -1; gap: 11px; width: min(100%, 900px); justify-self: center; padding: 16px; border: 1px solid rgba(83,139,209,.18); border-radius: 18px; background: rgba(3,29,59,.78); }
+.private-home-clock header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.private-home-clock header > div { display: grid; gap: 4px; }
+.private-home-clock small { color: #8299b5; font-size: clamp(.66rem,1.1vw,.74rem); font-weight: 750; letter-spacing: .04em; }
+.private-home-clock header small { color: #70a0e3; font-weight: 800; letter-spacing: .08em; }
+.private-home-clock header strong { font-size: clamp(.95rem,1.5vw,1.08rem); }
+.private-home-clock header > span { padding: 6px 8px; border-radius: 8px; color: #6edcab; background: rgba(42,172,107,.12); font-size: .7rem; font-weight: 750; }
+.private-home-timeline { display: grid; grid-template-columns: repeat(3,1fr); overflow: hidden; border: 1px solid rgba(88,142,214,.14); border-radius: 12px; }
+.private-home-timeline > span { display: grid; gap: 4px; padding: 11px; background: rgba(4,35,69,.55); }
+.private-home-timeline > span + span { border-left: 1px solid rgba(88,142,214,.14); }
+.private-home-timeline strong { font-size: clamp(.82rem,1.3vw,.95rem); }
+.private-home-summary { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+.private-home-summary > span { display: grid; grid-template-columns: 34px 1fr; gap: 8px; align-items: center; min-width: 0; padding: 9px; border: 1px solid rgba(88,142,214,.13); border-radius: 11px; background: rgba(4,35,69,.48); }
+.private-home-summary i { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 9px; color: #82adff; background: rgba(50,108,219,.14); }
+.private-home-summary span:nth-child(2) i { color: #ffbd61; background: rgba(195,126,32,.14); }
+.private-home-summary span:nth-child(3) i { color: #62dcb0; background: rgba(42,172,107,.14); }
+.private-home-summary span > span { display: grid; gap: 3px; min-width: 0; }
+.private-home-summary b { overflow: hidden; font-size: clamp(.78rem,1.2vw,.9rem); text-overflow: ellipsis; white-space: nowrap; }
+
+.timeflow-private-mode .dashboard > .shift-grid,
+.timeflow-private-mode .dashboard > .month-card { grid-column: 1 / -1; width: min(100%, 980px); justify-self: center; }
+
+.timeflow-private-mode .private-home-account { position: relative; display: grid; grid-template-columns: minmax(150px,1.35fr) repeat(3,minmax(80px,1fr)) 18px; gap: 10px; align-items: center; width: 100%; margin-top: 13px; padding: 12px; border: 1px solid rgba(88,142,214,.16); border-radius: 12px; color: #e8f1fc; background: rgba(4,35,69,.62); text-align: left; }
+.private-home-account > span { display: grid; gap: 3px; min-width: 0; }
+.private-home-account > span + span { padding-left: 10px; border-left: 1px solid rgba(88,142,214,.14); }
+.private-home-account-title { grid-template-columns: 32px 1fr; align-items: center; }
+.private-home-account-title > i { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 9px; color: #82adff; background: rgba(50,108,219,.14); }
+.private-home-account-title > span { display: grid; gap: 3px; }
+.private-home-account small { color: #8198b3; font-size: clamp(.64rem,1vw,.72rem); font-weight: 750; }
+.private-home-account strong { overflow: hidden; font-size: clamp(.78rem,1.2vw,.9rem); text-overflow: ellipsis; white-space: nowrap; }
+.private-home-account .positive { color: #62dcb0; }
+.private-home-account > i:last-child { color: #7391b3; }
+
+.timeflow-private-mode .bottom-nav { display: none !important; }
+.timeflow-private-mode .private-quick-nav { position: fixed; z-index: 8500; left: 50%; bottom: max(14px,env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(4,1fr); width: min(94vw,500px); padding: 7px; transform: translateX(-50%); border: 1px solid rgba(93,150,228,.28); border-radius: 22px; background: rgba(3,24,50,.95); box-shadow: 0 18px 50px rgba(0,3,16,.48); backdrop-filter: blur(18px); }
+.private-quick-nav button { display: grid; gap: 4px; justify-items: center; min-height: 48px; padding: 7px 5px; border: 0; border-radius: 14px; color: #91a6bd; background: transparent; font: 700 .68rem Inter,sans-serif; }
+.private-quick-nav button i { font-size: 1rem; }
+.private-quick-nav button.active { color: #7eacff; background: rgba(47,105,207,.17); }
+.private-quick-nav .private-quick-main { margin-top: -24px; min-height: 66px; color: white; }
+.private-quick-nav .private-quick-main i { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 17px; background: linear-gradient(145deg,#4384ff,#1c4fb9); box-shadow: 0 10px 27px rgba(27,76,179,.44); }
+
+.private-home-dialog { width: min(94vw,620px); padding: 0; border: 1px solid rgba(96,151,225,.28); border-radius: 22px; color: #ecf4ff; background: #052443; box-shadow: 0 38px 100px rgba(0,4,18,.72); }
+.private-home-dialog::backdrop { background: rgba(0,8,22,.76); backdrop-filter: blur(8px); }
+.private-home-dialog > header { display: flex; justify-content: space-between; gap: 14px; padding: 18px; border-bottom: 1px solid rgba(92,144,214,.14); }
+.private-home-dialog h2 { margin: 4px 0; font-size: 1.15rem; }
+.private-home-dialog header small { color: #78a6e8; font-size: .68rem; font-weight: 800; letter-spacing: .08em; }
+.private-home-dialog header p { margin: 0; color: #93a7bd; font-size: .76rem; }
+.private-home-dialog header button { width: 36px; height: 36px; border: 0; border-radius: 10px; color: #adc0d5; background: rgba(13,54,101,.75); }
+.private-home-dialog section { display: grid; gap: 8px; padding: 15px; }
+.private-home-dialog section button { display: grid; grid-template-columns: 38px 1fr auto; gap: 10px; align-items: center; padding: 12px; border: 1px solid rgba(88,142,214,.15); border-radius: 12px; color: #e9f2fc; background: rgba(4,35,69,.65); text-align: left; }
+.private-home-dialog section button > i:first-child { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 11px; color: #83adff; background: rgba(50,108,219,.14); }
+.private-home-dialog section span { display: grid; gap: 3px; }
+.private-home-dialog section small { color: #8299b3; font-size: .66rem; }
+.private-home-dialog section strong { font-size: .84rem; }
+
+@media (min-width:1100px) {
+  .timeflow-private-mode .dashboard { gap: 20px; }
+  .timeflow-private-mode .private-home-clock,
+  .timeflow-private-mode .dashboard > .shift-grid,
+  .timeflow-private-mode .dashboard > .month-card { width: min(100%,980px); }
+}
+@media (max-width:599px) {
+  .timeflow-private-mode .header { align-items: flex-start; gap: 10px; }
+  .timeflow-private-mode .header-left { flex: 1 1 auto; min-width: 0; }
+  .timeflow-private-mode .header-left h1 { font-size: clamp(1.12rem,6vw,1.35rem); white-space: normal; overflow-wrap: anywhere; }
+  .timeflow-private-mode .header-right { flex: 0 0 auto; gap: 7px; }
+  .timeflow-private-mode .top-grid { grid-template-columns: 1fr; }
+  .timeflow-private-mode .info-card { border-right: 0 !important; border-bottom: 1px solid rgba(84,131,181,.18) !important; }
+  .timeflow-private-mode .motivation-card p { padding-left: 0; padding-right: 24px; font-size: .91rem; }
+  .private-home-timeline { grid-template-columns: 1fr 1fr; }
+  .private-home-timeline > span:last-child { grid-column: 1 / -1; border-top: 1px solid rgba(88,142,214,.14); border-left: 0; }
+  .private-home-summary { grid-template-columns: 1fr; }
+  .timeflow-private-mode .month-stats { grid-template-columns: 1fr 1fr; gap: 12px 0; }
+  .timeflow-private-mode .month-stats > div:nth-child(2) { border-right: 0; }
+  .timeflow-private-mode .month-stats > div:nth-child(3),
+  .timeflow-private-mode .month-stats > div:nth-child(4) { padding-top: 10px; border-top: 1px solid rgba(84,131,181,.14); }
+  .timeflow-private-mode .private-home-account { grid-template-columns: 1fr 1fr; }
+  .private-home-account-title { grid-column: 1 / -1; padding-bottom: 8px; border-bottom: 1px solid rgba(88,142,214,.14); }
+  .private-home-account > span:nth-child(2) { padding-left: 0; border-left: 0; }
+  .private-home-account > span:nth-child(4) { padding-top: 8px; padding-left: 0; border-top: 1px solid rgba(88,142,214,.14); border-left: 0; }
+  .private-home-account > i:last-child { position: absolute; right: 14px; }
+}
+@media (max-width:380px) {
+  .timeflow-private-mode .shift-grid { grid-template-columns: 1fr; }
+}
