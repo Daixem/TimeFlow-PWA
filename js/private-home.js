@@ -1,5 +1,24 @@
 "use strict";
 
+if (!document.querySelector('link[data-private-schedule-import]')) {
+  const importStyle = document.createElement("link");
+  importStyle.rel = "stylesheet";
+  importStyle.href = "css/private-schedule-import.css?v=0040-plan1";
+  importStyle.dataset.privateScheduleImport = "true";
+  document.head.append(importStyle);
+  const savedStyle = document.createElement("link");
+  savedStyle.rel = "stylesheet";
+  savedStyle.href = "css/private-schedule-saved.css?v=0040-plan1";
+  savedStyle.dataset.privateScheduleImport = "saved";
+  document.head.append(savedStyle);
+}
+if (!document.querySelector('script[data-private-schedule-import]')) {
+  const importScript = document.createElement("script");
+  importScript.src = "js/private-schedule-import.js?v=0040-plan1";
+  importScript.dataset.privateScheduleImport = "true";
+  document.head.append(importScript);
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const dashboard = document.getElementById("dashboard");
   const clockButton = document.getElementById("clockButton");
