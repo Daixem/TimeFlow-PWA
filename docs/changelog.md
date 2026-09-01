@@ -6,6 +6,7 @@
 
 - Privater Dienstplan ohne Demo-Einsätze, mit Dateiimport, Korrektur und manueller Eingabe
 - Arbeitszeitkonto aus echten Stempelungen sowie manuellen Plus-/Minuskorrekturen
+- Monatliche Sollstunden in den Arbeitszeiteinstellungen und automatischer Monatsvergleich
 - Optionaler Pausenstatus mit Start und Ende während einer laufenden Stempelung
 - Export des persönlichen Arbeitszeitkontos als CSV und druckbares PDF
 - Kontosynchronisierung für Profil, Einstellungen, Dienstplan, Lernwerte, Stempelstatus und Arbeitszeitkonto

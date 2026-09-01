@@ -32,6 +32,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <header><span class="settings-card-icon mint"><i class="fa-solid fa-stopwatch"></i></span><div><small>Zeiterfassung</small><h2 id="timeSettingsTitle">Arbeitszeit</h2></div></header>
           <div class="settings-list">
             <label class="settings-select"><span><strong>Tägliches Arbeitsziel</strong><small>Berechnet Fortschritt und Überstunden</small></span><select data-setting="dailyTargetMinutes"><option value="360">6 Stunden</option><option value="450">7,5 Stunden</option><option value="480">8 Stunden</option><option value="600">10 Stunden</option></select></label>
+            <label class="settings-select"><span><strong>Monatliche Sollstunden</strong><small>Grundlage für dein monatliches Plus oder Minus</small></span><span class="settings-hours-input"><input type="number" inputmode="decimal" min="0" max="744" step="0.25" data-setting="monthlyTargetHours" aria-label="Monatliche Sollstunden"><b>Stunden</b></span></label>
             <label class="settings-select"><span><strong>Automatische Pause</strong><small>Nach 6 Stunden Arbeitszeit</small></span><select data-setting="autoBreakMinutes"><option value="0">Deaktiviert</option><option value="30">30 Minuten</option><option value="45">45 Minuten</option><option value="60">60 Minuten</option></select></label>
             <label class="settings-toggle"><span><strong>Animationen reduzieren</strong><small>Ruhigere Übergänge in der gesamten App</small></span><input type="checkbox" data-setting="reducedMotion"><i aria-hidden="true"></i></label>
           </div>
@@ -76,6 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
     chatAlerts: true,
     approvalAlerts: true,
     dailyTargetMinutes: 480,
+    monthlyTargetHours: 160,
     autoBreakMinutes: 30,
     autoBreakAfterMinutes: 360,
     reducedMotion: false

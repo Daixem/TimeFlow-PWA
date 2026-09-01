@@ -116,3 +116,4 @@
   .settings-about { grid-template-columns: auto 1fr; }
   .settings-about em { grid-column: 2; }
 }
+.settings-hours-input{display:flex;align-items:center;gap:8px;min-width:150px}.settings-hours-input input{width:92px;min-height:42px;padding:8px 10px;border:1px solid rgba(86,146,219,.3);border-radius:11px;color:#eaf4ff;background:#0a315c;font:inherit;font-weight:750;text-align:right}.settings-hours-input b{color:#91a8c2;font-size:.72rem}@media(max-width:520px){.settings-hours-input{width:100%;justify-content:flex-end}}
