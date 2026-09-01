@@ -35,7 +35,7 @@
 .private-home-clock header small { color: #70a0e3; font-weight: 800; letter-spacing: .08em; }
 .private-home-clock header strong { font-size: clamp(.95rem,1.5vw,1.08rem); }
 .private-home-clock header > span { padding: 6px 8px; border-radius: 8px; color: #6edcab; background: rgba(42,172,107,.12); font-size: .7rem; font-weight: 750; }
-.private-home-timeline { display: grid; grid-template-columns: repeat(3,1fr); overflow: hidden; border: 1px solid rgba(88,142,214,.14); border-radius: 12px; }
+.private-home-timeline { display: grid; grid-template-columns: repeat(2,1fr); overflow: hidden; border: 1px solid rgba(88,142,214,.14); border-radius: 12px; }
 .private-home-timeline > span { display: grid; gap: 4px; padding: 11px; background: rgba(4,35,69,.55); }
 .private-home-timeline > span + span { border-left: 1px solid rgba(88,142,214,.14); }
 .private-home-timeline strong { font-size: clamp(.82rem,1.3vw,.95rem); }
@@ -98,7 +98,6 @@
   .timeflow-private-mode .info-card { border-right: 0 !important; border-bottom: 1px solid rgba(84,131,181,.18) !important; }
   .timeflow-private-mode .motivation-card p { padding-left: 0; padding-right: 24px; font-size: .91rem; }
   .private-home-timeline { grid-template-columns: 1fr 1fr; }
-  .private-home-timeline > span:last-child { grid-column: 1 / -1; border-top: 1px solid rgba(88,142,214,.14); border-left: 0; }
   .private-home-summary { grid-template-columns: 1fr; }
   .timeflow-private-mode .month-stats { grid-template-columns: 1fr 1fr; gap: 12px 0; }
   .timeflow-private-mode .month-stats > div:nth-child(2) { border-right: 0; }

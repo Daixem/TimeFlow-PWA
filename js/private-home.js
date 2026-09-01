@@ -3,32 +3,32 @@
 if (!document.querySelector('link[data-private-schedule-import]')) {
   const importStyle = document.createElement("link");
   importStyle.rel = "stylesheet";
-  importStyle.href = "css/private-schedule-import.css?v=0040-plan14";
+  importStyle.href = "css/private-schedule-import.css?v=0040-plan15";
   importStyle.dataset.privateScheduleImport = "true";
   document.head.append(importStyle);
   const savedStyle = document.createElement("link");
   savedStyle.rel = "stylesheet";
-  savedStyle.href = "css/private-schedule-saved.css?v=0040-plan14";
+  savedStyle.href = "css/private-schedule-saved.css?v=0040-plan15";
   savedStyle.dataset.privateScheduleImport = "saved";
   document.head.append(savedStyle);
   const correctionStyle = document.createElement("link");
   correctionStyle.rel = "stylesheet";
-  correctionStyle.href = "css/private-schedule-corrections.css?v=0040-plan14";
+  correctionStyle.href = "css/private-schedule-corrections.css?v=0040-plan15";
   correctionStyle.dataset.privateScheduleImport = "corrections";
   document.head.append(correctionStyle);
   const learningStyle = document.createElement("link");
   learningStyle.rel = "stylesheet";
-  learningStyle.href = "css/private-schedule-learning.css?v=0040-plan14";
+  learningStyle.href = "css/private-schedule-learning.css?v=0040-plan15";
   learningStyle.dataset.privateScheduleImport = "learning";
   document.head.append(learningStyle);
   const privateViewStyle = document.createElement("link");
   privateViewStyle.rel = "stylesheet";
-  privateViewStyle.href = "css/private-schedule-private-view.css?v=0040-plan14";
+  privateViewStyle.href = "css/private-schedule-private-view.css?v=0040-plan15";
   privateViewStyle.dataset.privateScheduleImport = "private-view";
   document.head.append(privateViewStyle);
   const manualStyle = document.createElement("link");
   manualStyle.rel = "stylesheet";
-  manualStyle.href = "css/private-schedule-manual.css?v=0040-plan14";
+  manualStyle.href = "css/private-schedule-manual.css?v=0040-plan15";
   manualStyle.dataset.privateScheduleImport = "manual";
   document.head.append(manualStyle);
   const notificationStyle = document.createElement("link");
@@ -50,7 +50,7 @@ if (!document.querySelector('script[data-private-clean]')) {
 }
 if (!document.querySelector('script[data-private-schedule-import]')) {
   const importScript = document.createElement("script");
-  importScript.src = "js/private-schedule-import.js?v=0040-plan14";
+  importScript.src = "js/private-schedule-import.js?v=0040-plan15";
   importScript.dataset.privateScheduleImport = "true";
   document.head.append(importScript);
 }
@@ -68,7 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
   clockButton.insertAdjacentHTML("afterend", `
     <section class="private-home-clock" aria-label="Arbeitszeitdetails für heute">
       <header><div><small>HEUTE IM ÜBERBLICK · ZEITERFASSUNG</small><strong>Deine heutige Schicht</strong></div><span id="privateHomeState">Bereit</span></header>
-      <div class="private-home-timeline"><span><small>BEGONNEN</small><strong id="privateHomeStart">--:--</strong></span><span><small>PAUSE</small><strong id="privateHomeBreak">30 Min.</strong></span><span><small>GEPLANT BIS</small><strong id="privateHomePlannedEnd">--:--</strong></span></div>
+      <div class="private-home-timeline"><span><small>BEGONNEN</small><strong id="privateHomeStart">--:--</strong></span><span><small>GEPLANT BIS</small><strong id="privateHomePlannedEnd">--:--</strong></span></div>
       <div class="private-home-summary"><span><i class="fa-solid fa-hourglass-half"></i><span><small>NETTOZEIT</small><b id="privateHomeNet">0 h 0 min</b></span></span><span><i class="fa-solid fa-mug-hot"></i><span><small>PAUSE</small><b id="privateHomeBreakUsed">0 min</b></span></span><span><i class="fa-solid fa-bullseye"></i><span><small>TAGESZIEL</small><b id="privateHomeTarget">8 h 0 min</b></span></span></div>
     </section>`);
   const privateClock = dashboard.querySelector(".private-home-clock");
@@ -114,7 +114,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const usedBreak = gross >= breakAfter ? breakLength : 0;
     const net = Math.max(0, gross - usedBreak);
     document.getElementById("privateHomeStart").textContent = start ? start.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) : "--:--";
-    document.getElementById("privateHomeBreak").textContent = `${breakLength} Min.`;
     document.getElementById("privateHomeBreakUsed").textContent = `${usedBreak} min`;
     document.getElementById("privateHomeNet").textContent = formatMinutes(net);
     document.getElementById("privateHomeTarget").textContent = formatMinutes(target);
