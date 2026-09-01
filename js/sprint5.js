@@ -23,6 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <header><span class="settings-card-icon blue"><i class="fa-regular fa-bell"></i></span><div><small>Kommunikation</small><h2 id="notificationSettingsTitle">Benachrichtigungen</h2></div></header>
           <div class="settings-list">
             <label class="settings-toggle"><span><strong>Dienstplan-Erinnerungen</strong><small>Vor Beginn deiner nächsten Schicht</small></span><input type="checkbox" data-setting="shiftReminders"><i aria-hidden="true"></i></label>
+            <label class="settings-toggle"><span><strong>Ausstempeln-Erinnerung</strong><small>Warnt bei ungewöhnlich langer oder überzogener Stempelung</small></span><input type="checkbox" data-setting="forgottenClockOut"><i aria-hidden="true"></i></label>
             <label class="settings-toggle"><span><strong>Chat-Nachrichten</strong><small>Neue Nachrichten aus deinem Team</small></span><input type="checkbox" data-setting="chatAlerts"><i aria-hidden="true"></i></label>
             <label class="settings-toggle"><span><strong>Freigaben und Anträge</strong><small>Statusänderungen direkt anzeigen</small></span><input type="checkbox" data-setting="approvalAlerts"><i aria-hidden="true"></i></label>
           </div>
@@ -54,6 +55,8 @@ document.addEventListener("DOMContentLoaded", () => {
           <p class="settings-card-copy">In der privaten Site werden Profil und Einstellungen geschützt synchronisiert. Chats, Zeiterfassung und sensible Schnellaktionen bleiben lokal in diesem Browser.</p>
           <div class="data-actions">
             <button type="button" data-export-data><span class="data-action-icon"><i class="fa-solid fa-file-arrow-down"></i></span><span><strong>Datensicherung erstellen</strong><small>Alle lokalen TimeFlow-Daten als JSON</small></span><i class="fa-solid fa-chevron-right"></i></button>
+            <button type="button" data-delete-cloud><span class="data-action-icon"><i class="fa-solid fa-cloud-arrow-down"></i></span><span><strong>Cloud-Daten löschen</strong><small>Synchronisierte TimeFlow-Daten und Teamzuordnung entfernen</small></span><i class="fa-solid fa-chevron-right"></i></button>
+            <button type="button" data-beta-privacy><span class="data-action-icon"><i class="fa-solid fa-shield-halved"></i></span><span><strong>Beta & Datenschutz</strong><small>Gespeicherte Daten, Grenzen und Einwilligung ansehen</small></span><i class="fa-solid fa-chevron-right"></i></button>
             <button class="danger" type="button" data-open-reset><span class="data-action-icon"><i class="fa-solid fa-trash-can"></i></span><span><strong>Lokale Daten löschen</strong><small>TimeFlow auf diesem Gerät zurücksetzen</small></span><i class="fa-solid fa-chevron-right"></i></button>
           </div>
         </section>
@@ -71,9 +74,11 @@ document.addEventListener("DOMContentLoaded", () => {
   `);
 
   const SETTINGS_KEY = "timeflow-settings-v1";
+  const MONTHLY_TARGETS_KEY = "timeflow-monthly-targets-v1";
   const LEGACY_PREFERENCES_KEY = "timeflow-profile-preferences-v1";
   const defaults = {
     shiftReminders: true,
+    forgottenClockOut: true,
     chatAlerts: true,
     approvalAlerts: true,
     dailyTargetMinutes: 480,
@@ -104,6 +109,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function saveSettings() {
     window.TimeFlowPlatform.storage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    const month = new Date().toLocaleDateString("sv-SE").slice(0, 7);
+    const targets = parseStored(MONTHLY_TARGETS_KEY);
+    targets[month] = Number(settings.monthlyTargetHours || 0);
+    window.TimeFlowPlatform.storage.setItem(MONTHLY_TARGETS_KEY, JSON.stringify(targets));
     window.TimeFlowPlatform.storage.setItem(LEGACY_PREFERENCES_KEY, JSON.stringify({ shiftReminders: settings.shiftReminders, chatAlerts: settings.chatAlerts }));
     applyPreferences();
     document.dispatchEvent(new CustomEvent("timeflow:settings-updated", { detail: { ...settings } }));
@@ -203,6 +212,7 @@ document.addEventListener("DOMContentLoaded", () => {
   page.querySelector("[data-settings-back]").addEventListener("click", () => document.dispatchEvent(new CustomEvent("timeflow:open-profile")));
   page.querySelector("[data-check-update]").addEventListener("click", (event) => checkForUpdate(event.currentTarget));
   page.querySelector("[data-export-data]").addEventListener("click", exportData);
+  page.querySelector("[data-delete-cloud]").addEventListener("click", async (event) => { if (!window.confirm("Synchronisierte TimeFlow-Daten und eine mögliche Teamzuordnung wirklich löschen? Lokale Daten bleiben zunächst erhalten.")) return; const button = event.currentTarget; button.disabled = true; try { const response = await fetch(new URL("api/account-data", document.baseURI), { method: "DELETE", headers: { Accept: "application/json" } }); if (!response.ok) throw new Error("delete_failed"); notify("Deine synchronisierten TimeFlow-Daten wurden gelöscht."); } catch { notify("Cloud-Daten konnten hier nicht gelöscht werden. Nutze dafür die geschützte Beta."); } finally { button.disabled = false; } });
   page.querySelector("[data-open-reset]").addEventListener("click", () => window.TimeFlowPlatform.dialog.open(resetDialog));
   page.querySelector("[data-close-reset]").addEventListener("click", () => window.TimeFlowPlatform.dialog.close(resetDialog));
   page.querySelector("[data-confirm-reset]").addEventListener("click", () => {

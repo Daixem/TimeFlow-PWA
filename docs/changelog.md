@@ -12,6 +12,10 @@
 - Kontosynchronisierung für Profil, Einstellungen, Dienstplan, Lernwerte, Stempelstatus und Arbeitszeitkonto
 - Teammodus standardmäßig gesperrt und ausschließlich nach serverseitig geprüfter Unternehmenseinladung verfügbar
 - Unternehmenseinladungen werden erst nach ausdrücklicher Zustimmung angenommen
+- Monatsarchiv mit je Monat gespeichertem Sollwert
+- Korrektur und Löschung fehlerhafter Arbeitszeiten mit Änderungsverlauf
+- Erinnerungen an bevorstehende Schichten und möglicherweise vergessenes Ausstempeln
+- Beta-Einwilligung, Cloud-Datenlöschung und erweiterte Importmarker einschließlich Urlaub, Krankheit und Nachtschicht
 
 ### Bewusste Beta-Grenzen
 

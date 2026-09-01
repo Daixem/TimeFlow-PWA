@@ -42,7 +42,7 @@ for (const file of files) {
 }
 
 const worker = `const FILES = ${JSON.stringify(payload)};
-const SYNC_KEYS = ["timeflow-profile-v1", "timeflow-settings-v1", "timeflow-profile-preferences-v1", "timeflow-private-schedule-v1", "timeflow-private-schedule-learning-v1", "timeflow-private-account-v1", "timeflow-workday-v2", "timeflow-notifications-v1", "timeflow-quick-actions-v1"];
+const SYNC_KEYS = ["timeflow-profile-v1", "timeflow-settings-v1", "timeflow-profile-preferences-v1", "timeflow-private-schedule-v1", "timeflow-private-schedule-learning-v1", "timeflow-private-account-v1", "timeflow-worktime-audit-v1", "timeflow-monthly-targets-v1", "timeflow-beta-consent-v1", "timeflow-workday-v2", "timeflow-notifications-v1", "timeflow-quick-actions-v1"];
 
 function decode(value) {
   const binary = atob(value);
@@ -112,6 +112,19 @@ async function handleTeamAccess(request, env, url) {
   return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "GET, POST" });
 }
 
+async function handleAccountData(request, env, url) {
+  const user = authenticatedUser(request);
+  if (!user.authenticated || !user.id) return jsonResponse({ error: "authentication_required" }, 401);
+  if (request.method !== "DELETE") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "DELETE" });
+  const origin = request.headers.get("Origin");
+  if (origin && origin !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
+  if (!env?.DB) return jsonResponse({ error: "storage_unavailable" }, 503);
+  await ensureSyncTable(env.DB); await ensureTeamTables(env.DB);
+  await env.DB.prepare("DELETE FROM timeflow_user_sync WHERE user_id = ?").bind(user.id).run();
+  await env.DB.prepare("DELETE FROM timeflow_organization_members WHERE user_id = ?").bind(user.id).run();
+  return jsonResponse({ deleted: true });
+}
+
 async function handleSync(request, env, url) {
   const user = authenticatedUser(request);
   if (!user.authenticated || !user.id) return jsonResponse({ error: "authentication_required" }, 401);
@@ -157,6 +170,7 @@ export default {
     }
     if (url.pathname === "/api/sync") return handleSync(request, env, url);
     if (url.pathname === "/api/team-access") return handleTeamAccess(request, env, url);
+    if (url.pathname === "/api/account-data") return handleAccountData(request, env, url);
     let path;
     try {
       path = decodeURIComponent(url.pathname).replace(/^\\/+/, "") || "index.html";
