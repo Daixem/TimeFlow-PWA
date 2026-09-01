@@ -19,7 +19,34 @@
     const access = await request("api/beta/access");
     if (access.response.ok && access.result.allowed) { unlock(access.result); return; }
     if (access.response.status === 401) { title.textContent = "Anmelden, um fortzufahren"; copy.textContent = token ? "Dieser persönliche Einladungslink wird nach der Anmeldung an dein Konto gebunden." : "Für TimeFlow benötigst du einen persönlichen Einladungslink."; const returnTo = `${location.pathname}${location.search}`; action.innerHTML = `<a href="/signin-with-chatgpt?return_to=${encodeURIComponent(returnTo)}" target="_top"><i class="fa-solid fa-right-to-bracket"></i> Sicher anmelden</a>`; return; }
-    if (token) { const invitation = await request(`api/beta/invite?token=${encodeURIComponent(token)}`); if (invitation.response.ok && invitation.result.valid) { title.textContent = "Persönliche Einladung"; copy.innerHTML = `Die Einladung <strong>${escapeHtml(invitation.result.invitation.label)}</strong> kann jetzt einmalig mit deinem Konto verbunden werden.`; action.innerHTML = `<button type="button" data-claim-beta><i class="fa-solid fa-check"></i> Einladung annehmen</button>`; action.querySelector("button").addEventListener("click", async () => { const claimed = await request(`api/beta/invite?token=${encodeURIComponent(token)}`, { method: "POST", body: "{}" }); if (claimed.response.ok) { history.replaceState({}, "", location.pathname); location.reload(); } }); return; } }
+    if (token) {
+      const invitation = await request(`api/beta/invite?token=${encodeURIComponent(token)}`);
+      if (invitation.response.ok && invitation.result.valid) {
+        const label = escapeHtml(invitation.result.invitation.label);
+        let claiming = false;
+        const claimInvitation = async () => {
+          if (claiming) return;
+          claiming = true;
+          title.textContent = "Einladung wird aktiviert";
+          copy.innerHTML = `Die Einladung <strong>${label}</strong> wird jetzt sicher mit deinem Konto verbunden.`;
+          action.innerHTML = `<span class="beta-claim-progress" role="status"><i class="fa-solid fa-spinner fa-spin"></i> Zugang wird eingerichtet …</span>`;
+          try {
+            const claimed = await request(`api/beta/invite?token=${encodeURIComponent(token)}`, { method: "POST", body: "{}" });
+            if (!claimed.response.ok) throw new Error(claimed.result.error || `HTTP ${claimed.response.status}`);
+            history.replaceState({}, "", location.pathname);
+            location.reload();
+          } catch (error) {
+            claiming = false;
+            title.textContent = "Verbindung nicht abgeschlossen";
+            copy.textContent = "Die Einladung konnte noch nicht übernommen werden. Bitte prüfe die Internetverbindung und versuche es erneut.";
+            action.innerHTML = `<button type="button" data-claim-beta><i class="fa-solid fa-rotate-right"></i> Erneut versuchen</button><small class="beta-claim-error">${escapeHtml(error.message)}</small>`;
+            action.querySelector("button").addEventListener("click", claimInvitation, { once: true });
+          }
+        };
+        await claimInvitation();
+        return;
+      }
+    }
     title.textContent = "Kein Beta-Zugang"; copy.textContent = "Dieser Link ist ungültig, abgelaufen oder wurde bereits verwendet. Bitte fordere einen neuen persönlichen Link an.";
   });
 }());
