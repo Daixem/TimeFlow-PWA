@@ -3,32 +3,32 @@
 if (!document.querySelector('link[data-private-schedule-import]')) {
   const importStyle = document.createElement("link");
   importStyle.rel = "stylesheet";
-  importStyle.href = "css/private-schedule-import.css?v=0040-plan15";
+  importStyle.href = "css/private-schedule-import.css?v=0040-plan16";
   importStyle.dataset.privateScheduleImport = "true";
   document.head.append(importStyle);
   const savedStyle = document.createElement("link");
   savedStyle.rel = "stylesheet";
-  savedStyle.href = "css/private-schedule-saved.css?v=0040-plan15";
+  savedStyle.href = "css/private-schedule-saved.css?v=0040-plan16";
   savedStyle.dataset.privateScheduleImport = "saved";
   document.head.append(savedStyle);
   const correctionStyle = document.createElement("link");
   correctionStyle.rel = "stylesheet";
-  correctionStyle.href = "css/private-schedule-corrections.css?v=0040-plan15";
+  correctionStyle.href = "css/private-schedule-corrections.css?v=0040-plan16";
   correctionStyle.dataset.privateScheduleImport = "corrections";
   document.head.append(correctionStyle);
   const learningStyle = document.createElement("link");
   learningStyle.rel = "stylesheet";
-  learningStyle.href = "css/private-schedule-learning.css?v=0040-plan15";
+  learningStyle.href = "css/private-schedule-learning.css?v=0040-plan16";
   learningStyle.dataset.privateScheduleImport = "learning";
   document.head.append(learningStyle);
   const privateViewStyle = document.createElement("link");
   privateViewStyle.rel = "stylesheet";
-  privateViewStyle.href = "css/private-schedule-private-view.css?v=0040-plan15";
+  privateViewStyle.href = "css/private-schedule-private-view.css?v=0040-plan16";
   privateViewStyle.dataset.privateScheduleImport = "private-view";
   document.head.append(privateViewStyle);
   const manualStyle = document.createElement("link");
   manualStyle.rel = "stylesheet";
-  manualStyle.href = "css/private-schedule-manual.css?v=0040-plan15";
+  manualStyle.href = "css/private-schedule-manual.css?v=0040-plan16";
   manualStyle.dataset.privateScheduleImport = "manual";
   document.head.append(manualStyle);
   const notificationStyle = document.createElement("link");
@@ -41,6 +41,11 @@ if (!document.querySelector('link[data-private-schedule-import]')) {
   cleanStyle.href = "css/private-clean.css?v=0040-private2";
   cleanStyle.dataset.privateScheduleImport = "clean";
   document.head.append(cleanStyle);
+  const accountStyle = document.createElement("link");
+  accountStyle.rel = "stylesheet";
+  accountStyle.href = "css/private-account.css?v=0040-account1";
+  accountStyle.dataset.privateScheduleImport = "account";
+  document.head.append(accountStyle);
 }
 if (!document.querySelector('script[data-private-clean]')) {
   const cleanScript = document.createElement("script");
@@ -48,9 +53,15 @@ if (!document.querySelector('script[data-private-clean]')) {
   cleanScript.dataset.privateClean = "true";
   document.head.append(cleanScript);
 }
+if (!document.querySelector('script[data-private-account]')) {
+  const accountScript = document.createElement("script");
+  accountScript.src = "js/private-account.js?v=0040-account1";
+  accountScript.dataset.privateAccount = "true";
+  document.head.append(accountScript);
+}
 if (!document.querySelector('script[data-private-schedule-import]')) {
   const importScript = document.createElement("script");
-  importScript.src = "js/private-schedule-import.js?v=0040-plan15";
+  importScript.src = "js/private-schedule-import.js?v=0040-plan16";
   importScript.dataset.privateScheduleImport = "true";
   document.head.append(importScript);
 }
@@ -76,9 +87,9 @@ document.addEventListener("DOMContentLoaded", () => {
   monthCard.querySelector(".month-stats")?.insertAdjacentHTML("afterend", `
     <button class="private-home-account" type="button" aria-label="Arbeitszeitkonto in der ausführlichen Statistik öffnen">
       <span class="private-home-account-title"><i class="fa-solid fa-wallet"></i><span><small>ARBEITSZEITKONTO</small><strong>Aktueller Stand</strong></span></span>
-      <span><small>ERFASST HEUTE</small><strong id="privateAccountCaptured">0 h 0 min</strong></span>
-      <span><small>IN PRÜFUNG</small><strong>0 h 0 min</strong></span>
-      <span><small>ÜBERSTUNDEN</small><strong class="positive" id="privateAccountOvertime">0 h 0 min</strong></span>
+      <span><small>ERFASST</small><strong id="privateAccountCaptured">0 h 0 min</strong></span>
+      <span><small>MANUELL</small><strong id="privateAccountManual">0 h 0 min</strong></span>
+      <span><small>SALDO</small><strong class="positive" id="privateAccountBalance">0 h 0 min</strong></span>
       <i class="fa-solid fa-chevron-right"></i>
     </button>`);
 
@@ -117,8 +128,6 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("privateHomeBreakUsed").textContent = `${usedBreak} min`;
     document.getElementById("privateHomeNet").textContent = formatMinutes(net);
     document.getElementById("privateHomeTarget").textContent = formatMinutes(target);
-    document.getElementById("privateAccountCaptured").textContent = formatMinutes(net);
-    document.getElementById("privateAccountOvertime").textContent = formatMinutes(Math.max(0, net - target));
     document.getElementById("privateHomeState").textContent = workday?.isWorking ? "Im Dienst" : start ? "Dienst beendet" : "Bereit";
     const nextShift = document.querySelectorAll(".shift-card")[1]?.querySelector("strong")?.textContent.match(/(\d{2}:\d{2})\s*[–-]\s*(\d{2}:\d{2})/);
     document.getElementById("privateHomePlannedEnd").textContent = nextShift?.[2] || "--:--";
@@ -145,7 +154,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (button.dataset.privateAction === "account") monthCard.querySelector('[data-action="month"]')?.click();
     if (button.dataset.privateAction === "settings") document.dispatchEvent(new CustomEvent("timeflow:open-settings"));
   }));
-  monthCard.querySelector(".private-home-account")?.addEventListener("click", () => monthCard.querySelector('[data-action="month"]')?.click());
+  monthCard.querySelector(".private-home-account")?.addEventListener("click", () => document.dispatchEvent(new CustomEvent("timeflow:open-private-account")));
 
   renderPrivateClock();
   applyPrivateHome();
