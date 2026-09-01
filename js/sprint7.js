@@ -23,6 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <strong id="notificationUnreadLabel">Aktuell</strong>
           <button type="button" data-mark-notifications-read><i class="fa-regular fa-circle-check"></i> Alle gelesen</button>
         </div>
+        <div class="notification-filters" role="group" aria-label="Mitteilungen filtern"><button type="button" data-notification-filter="all" aria-pressed="true">Alle</button><button type="button" data-notification-filter="worktime" aria-pressed="false">Arbeitszeit</button><button type="button" data-notification-filter="schedule" aria-pressed="false">Dienstplan</button><button type="button" data-notification-filter="system" aria-pressed="false">System</button></div>
         <div class="notification-list" id="notificationList"></div>
         <footer><button type="button" data-test-notification><i class="fa-solid fa-paper-plane"></i> Testbenachrichtigung</button><small>Lokale Vorschau · Serverseitige Pushs folgen mit dem Backend</small></footer>
       </section>
@@ -34,21 +35,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const unreadLabel = document.getElementById("notificationUnreadLabel");
   const permissionText = document.getElementById("notificationPermissionText");
   const permissionCard = document.getElementById("notificationPermissionCard");
+  let activeFilter = "all";
   let entries = loadEntries();
 
   function seedEntries() {
-    const now = Date.now();
-    return [
-      { id: "approval-1", type: "approval", title: "3 offene Freigaben", body: "Deine Anträge und Vorgänge warten auf eine Rückmeldung.", createdAt: new Date(now - 8 * 60000).toISOString(), read: false, action: "history" },
-      { id: "schedule-1", type: "schedule", title: "Nächste Schicht bestätigt", body: "Frühschicht morgen von 07:30 bis 15:00 Uhr.", createdAt: new Date(now - 42 * 60000).toISOString(), read: false, action: "schedule" },
-      { id: "chat-1", type: "chat", title: "Team Restaurant", body: "Anna hat eine neue Nachricht im Teamchat gesendet.", createdAt: new Date(now - 95 * 60000).toISOString(), read: false, action: "chat" }
-    ];
+    return [];
   }
 
   function loadEntries() {
     try {
       const stored = JSON.parse(window.TimeFlowPlatform.storage.getItem(STORAGE_KEY));
-      return Array.isArray(stored) && stored.length ? stored : seedEntries();
+      return Array.isArray(stored) ? stored : seedEntries();
     } catch {
       return seedEntries();
     }
@@ -85,13 +82,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderEntries() {
     list.replaceChildren();
-    if (!entries.length) {
+    const visibleEntries = activeFilter === "all" ? entries : entries.filter((entry) => (entry.category || entry.type) === activeFilter);
+    if (!visibleEntries.length) {
       const empty = document.createElement("div");
       empty.className = "notification-empty";
       empty.innerHTML = '<i class="fa-regular fa-bell-slash"></i><strong>Hier ist alles ruhig</strong><p>Neue Hinweise erscheinen automatisch an dieser Stelle.</p>';
       list.append(empty);
     } else {
-      entries.forEach((entry) => {
+      visibleEntries.forEach((entry) => {
         const item = document.createElement("button");
         item.type = "button";
         item.className = `notification-item ${entry.type}${entry.read ? " is-read" : ""}`;
@@ -192,9 +190,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function addEntry(detail = {}) {
+    const existing = detail.id ? entries.find((item) => item.id === detail.id) : null;
+    if (existing) {
+      existing.type = detail.type || existing.type; existing.category = detail.category || existing.category; existing.title = detail.title || existing.title; existing.body = detail.body || existing.body; existing.action = detail.action || existing.action;
+      saveEntries(); renderEntries(); return;
+    }
     const entry = {
-      id: window.crypto?.randomUUID?.() || `notification-${Date.now()}`,
+      id: detail.id || window.crypto?.randomUUID?.() || `notification-${Date.now()}`,
       type: detail.type || "system",
+      category: detail.category || detail.type || "system",
       title: detail.title || "TimeFlow",
       body: detail.body || "Es gibt eine neue Information für dich.",
       createdAt: new Date().toISOString(),
@@ -244,6 +248,11 @@ document.addEventListener("DOMContentLoaded", () => {
     renderEntries();
     toast("Alle Benachrichtigungen wurden als gelesen markiert.");
   });
+  center.querySelectorAll("[data-notification-filter]").forEach((button) => button.addEventListener("click", () => {
+    activeFilter = button.dataset.notificationFilter;
+    center.querySelectorAll("[data-notification-filter]").forEach((item) => item.setAttribute("aria-pressed", String(item === button)));
+    renderEntries();
+  }));
   center.querySelector("[data-close-notifications]").addEventListener("click", () => window.TimeFlowPlatform.dialog.close(center));
   center.addEventListener("click", (event) => {
     if (event.target === center) window.TimeFlowPlatform.dialog.close(center);
@@ -252,6 +261,10 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   document.addEventListener("timeflow:open-notifications", openCenter);
   document.addEventListener("timeflow:create-notification", (event) => addEntry(event.detail));
+  document.addEventListener("timeflow:replace-notifications", (event) => {
+    entries = Array.isArray(event.detail) ? event.detail : [];
+    saveEntries(); renderEntries();
+  });
 
   const settingsList = document.querySelector('[aria-labelledby="notificationSettingsTitle"] .settings-list');
   if (settingsList) {
