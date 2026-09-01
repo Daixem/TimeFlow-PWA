@@ -16,6 +16,7 @@
 - Korrektur und Löschung fehlerhafter Arbeitszeiten mit Änderungsverlauf
 - Erinnerungen an bevorstehende Schichten und möglicherweise vergessenes Ausstempeln
 - Beta-Einwilligung, Cloud-Datenlöschung und erweiterte Importmarker einschließlich Urlaub, Krankheit und Nachtschicht
+- Pro Person erzeugbare WhatsApp-Einladungslinks mit Ablaufzeit, einmaliger Kontobindung und verpflichtender Anmeldung
 
 ### Bewusste Beta-Grenzen
 

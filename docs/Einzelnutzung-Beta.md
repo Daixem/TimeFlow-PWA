@@ -15,6 +15,8 @@
 - Geschützte Kontosynchronisierung, Datensicherung und Löschung synchronisierter App-Daten
 - Schicht- und Ausstempelerinnerungen bei aktiver oder erneut geöffneter PWA
 - Teammodus ausschließlich nach serverseitig geprüfter Unternehmenseinladung
+- Persönliche, einmal verwendbare und zeitlich begrenzte Beta-Einladungslinks
+- Verpflichtende Anmeldung vor der Bindung eines Einladungslinks an das persönliche Konto
 
 ## Bewusste technische Grenzen der Testphase
 
