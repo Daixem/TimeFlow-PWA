@@ -9,6 +9,7 @@ const settings = await readFile(new URL("../js/sprint5.js", import.meta.url), "u
 const reminders = await readFile(new URL("../js/private-reminders.js", import.meta.url), "utf8");
 const privacy = await readFile(new URL("../js/private-beta-legal.js", import.meta.url), "utf8");
 const betaAccess = await readFile(new URL("../js/private-beta-access.js", import.meta.url), "utf8");
+const index = await readFile(new URL("../index.html", import.meta.url), "utf8");
 
 for (const marker of ["/api/team-access", "valid_invitation_required", "timeflow_organization_members", "timeflow_organization_invites"]) if (!worker.includes(marker)) throw new Error(`Team-API fehlt: ${marker}`);
 for (const marker of ["teamAccessAllowed", "Nur nach Einladung eines Unternehmens", "loadTeamAccess", 'saveMode("private", false)']) if (!mode.includes(marker)) throw new Error(`Team-Sperre fehlt: ${marker}`);
@@ -21,4 +22,5 @@ for (const marker of ["Dein Einsatz beginnt bald", "Ausstempeln prüfen", "showN
 for (const marker of ["Beta-Hinweise & Datenschutz", "timeflow-beta-consent-v1", "Importierte Dienstpläne und Berechnungen müssen kontrolliert werden"]) if (!privacy.includes(marker)) throw new Error(`Beta-Einwilligung fehlt: ${marker}`);
 for (const marker of ["timeflow_beta_invites", "token_hash", "crypto.randomUUID", "invitation_already_claimed", "TIMEFLOW_BETA_ADMIN_USER_ID", "beta_access_required"]) if (!worker.includes(marker)) throw new Error(`Persönliche Einladung fehlt: ${marker}`);
 for (const marker of ["signin-with-chatgpt", "Einladungslink erstellen", "navigator.share", "api/beta/invite", "api/beta/access"]) if (!betaAccess.includes(marker)) throw new Error(`Einladungsoberfläche fehlt: ${marker}`);
+for (const marker of ["private-beta-access.css?v=0040-invite2", "defer src=\"js/private-beta-access.js?v=0040-invite2\"", "data-beta-access=\"true\""]) if (!index.includes(marker)) throw new Error(`Einladungsstartseite fehlt: ${marker}`);
 console.log("Einzel-Beta: Cloud-Daten, Exporte und einladungspflichtiger Teamzugriff sind abgesichert.");
