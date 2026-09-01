@@ -130,7 +130,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const settings = readSettings();
     const elapsedSeconds = start && end ? Math.max(0, Math.floor((end - start) / 1000)) : 0;
     const grossMinutes = Math.floor(elapsedSeconds / 60);
-    const breakMinutes = grossMinutes >= settings.autoBreakAfterMinutes ? settings.autoBreakMinutes : 0;
+    const runningPause = saved.isPaused && saved.pauseStartedAt ? Math.max(0, now - new Date(saved.pauseStartedAt)) : 0;
+    const breakMinutes = saved.hasManualPause ? Math.floor((Number(saved.pauseAccumulatedMs || 0) + runningPause) / 60000) : grossMinutes >= settings.autoBreakAfterMinutes ? settings.autoBreakMinutes : 0;
     const netMinutes = Math.max(0, grossMinutes - breakMinutes);
     const progress = Math.min(100, Math.round((netMinutes / settings.dailyTargetMinutes) * 100));
 
@@ -144,7 +145,7 @@ document.addEventListener("DOMContentLoaded", () => {
     elements.target.textContent = formatMinutes(settings.dailyTargetMinutes);
     elements.elapsedHint.textContent = saved.isWorking ? `${progress} % deines Tagesziels` : start ? `Beendet um ${formatTime(end)}` : "Noch nicht gestartet";
     elements.state.classList.toggle("is-working", Boolean(saved.isWorking));
-    elements.state.querySelector("span").textContent = saved.isWorking ? "Im Dienst" : start ? "Dienst beendet" : "Nicht im Dienst";
+    elements.state.querySelector("span").textContent = saved.isPaused ? "In Pause" : saved.isWorking ? "Im Dienst" : start ? "Dienst beendet" : "Nicht im Dienst";
     elements.action.classList.toggle("is-working", Boolean(saved.isWorking));
     elements.action.setAttribute("aria-pressed", String(Boolean(saved.isWorking)));
     elements.actionIcon.className = `fa-solid ${saved.isWorking ? "fa-right-from-bracket" : "fa-right-to-bracket"}`;

@@ -8,6 +8,6 @@
     "start": "node server.mjs",
     "check": "node scripts/check.mjs",
     "build": "node scripts/build-sites.mjs",
-    "test": "node scripts/check.mjs && node scripts/test-platform.mjs && node scripts/build-sites.mjs && node scripts/test-sprint12.mjs"
+    "test": "node scripts/check.mjs && node scripts/test-platform.mjs && node scripts/build-sites.mjs && node scripts/test-sprint12.mjs && node scripts/test-private-account.mjs && node scripts/test-private-beta.mjs"
   }
 }

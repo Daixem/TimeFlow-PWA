@@ -47,3 +47,4 @@
   .timeflow-private-mode .session-card { grid-template-columns: 38px 1fr; }
 }
 .quick-actions-card[hidden] { display: none !important; }
+.mode-choice-grid button.is-locked,.mode-settings-options button.is-locked{opacity:.62;cursor:not-allowed}.mode-choice-grid button.is-locked em{background:rgba(255,190,80,.14);color:#ffc96b}

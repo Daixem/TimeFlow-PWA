@@ -1,7 +1,7 @@
 "use strict";
 
 document.addEventListener("DOMContentLoaded", () => {
-  const SYNC_KEYS = ["timeflow-profile-v1", "timeflow-settings-v1", "timeflow-profile-preferences-v1"];
+  const SYNC_KEYS = ["timeflow-profile-v1", "timeflow-settings-v1", "timeflow-profile-preferences-v1", "timeflow-private-schedule-v1", "timeflow-private-schedule-learning-v1", "timeflow-private-account-v1", "timeflow-workday-v2", "timeflow-notifications-v1", "timeflow-quick-actions-v1"];
   const META_KEY = "timeflow-sync-meta-v1";
   const settingsLayout = document.querySelector("#settingsPage .settings-layout");
   if (!settingsLayout) return;
@@ -33,7 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const snapshot = {};
     SYNC_KEYS.forEach((key) => {
       const value = parseJson(window.TimeFlowPlatform.storage.getItem(key));
-      if (value && typeof value === "object" && !Array.isArray(value)) snapshot[key] = value;
+      if (value && typeof value === "object") snapshot[key] = value;
     });
     return snapshot;
   }
@@ -42,7 +42,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!snapshot || typeof snapshot !== "object") return;
     SYNC_KEYS.forEach((key) => {
       const value = snapshot[key];
-      if (value && typeof value === "object" && !Array.isArray(value)) window.TimeFlowPlatform.storage.setItem(key, JSON.stringify(value));
+      if (value && typeof value === "object") window.TimeFlowPlatform.storage.setItem(key, JSON.stringify(value));
       else window.TimeFlowPlatform.storage.removeItem(key);
     });
   }
@@ -165,6 +165,9 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   document.addEventListener("timeflow:settings-updated", scheduleUpload);
   document.addEventListener("timeflow:profile-updated", scheduleUpload);
+  document.addEventListener("timeflow:private-account-updated", scheduleUpload);
+  document.addEventListener("timeflow:private-schedule-updated", scheduleUpload);
+  document.addEventListener("timeflow:workday-updated", scheduleUpload);
   syncButton.addEventListener("click", () => upload(true));
   window.addEventListener("online", () => platformSession ? initialSync() : undefined);
   window.addEventListener("offline", () => renderStatus("error", "Offline – lokale Daten aktiv", "Änderungen bleiben auf diesem Gerät und können später synchronisiert werden.", "Offline"));

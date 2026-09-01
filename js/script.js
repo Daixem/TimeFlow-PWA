@@ -16,7 +16,7 @@ const elements = {
   vacationCountdown: $("vacationCountdown"), teamNews: $("teamNews"), toast: $("toast")
 };
 
-let state = { isWorking: false, workStart: null, workEnd: null };
+let state = { isWorking: false, workStart: null, workEnd: null, isPaused: false, pauseStartedAt: null, pauseAccumulatedMs: 0, hasManualPause: false };
 let workTimer;
 
 const quotes = [
@@ -54,6 +54,8 @@ function timeSettings() {
   }
 }
 function breakMinutes() {
+  const runningPause = state.isPaused && state.pauseStartedAt ? Math.max(0, new Date() - state.pauseStartedAt) : 0;
+  if (state.hasManualPause) return Math.floor((Number(state.pauseAccumulatedMs || 0) + runningPause) / 60000);
   const settings = timeSettings();
   return elapsedMinutes() >= settings.autoBreakAfterMinutes ? settings.autoBreakMinutes : 0;
 }
@@ -72,7 +74,7 @@ function loadWorkday() {
     // Eine aktive Schicht darf beim Tageswechsel oder nach dem Wiederöffnen der
     // PWA nicht verloren gehen. Abgeschlossene Vortage werden weiterhin entfernt.
     if (dateKey(start) !== dateKey(now) && !saved.isWorking) { window.TimeFlowPlatform.storage.removeItem(STORAGE_KEY); return; }
-    state = { isWorking: Boolean(saved.isWorking), workStart: start, workEnd: saved.workEnd ? new Date(saved.workEnd) : null };
+    state = { isWorking: Boolean(saved.isWorking), workStart: start, workEnd: saved.workEnd ? new Date(saved.workEnd) : null, isPaused: Boolean(saved.isPaused), pauseStartedAt: saved.pauseStartedAt ? new Date(saved.pauseStartedAt) : null, pauseAccumulatedMs: Number(saved.pauseAccumulatedMs || 0), hasManualPause: Boolean(saved.hasManualPause) };
   } catch { window.TimeFlowPlatform.storage.removeItem(STORAGE_KEY); }
 }
 
@@ -115,8 +117,9 @@ function updateWorkUi() {
   elements.progressLabel.textContent = percentage >= 100 ? "Ziel erreicht" : "Tagesziel";
   document.dispatchEvent(new CustomEvent("timeflow:workday-updated"));
 }
-function clockIn() { state = { isWorking: true, workStart: new Date(), workEnd: null }; saveWorkday(); startTimer(); updateWorkUi(); showToast("Du bist eingestempelt."); }
-function clockOut() { state.isWorking = false; state.workEnd = new Date(); saveWorkday(); stopTimer(); updateWorkUi(); showToast("Du bist ausgestempelt."); }
+function clockIn() { state = { isWorking: true, workStart: new Date(), workEnd: null, isPaused: false, pauseStartedAt: null, pauseAccumulatedMs: 0, hasManualPause: false }; saveWorkday(); startTimer(); updateWorkUi(); showToast("Du bist eingestempelt."); }
+function clockOut() { if (state.isPaused && state.pauseStartedAt) state.pauseAccumulatedMs += new Date() - state.pauseStartedAt; state.isPaused = false; state.pauseStartedAt = null; state.isWorking = false; state.workEnd = new Date(); saveWorkday(); stopTimer(); updateWorkUi(); showToast("Du bist ausgestempelt."); }
+function togglePause() { if (!state.isWorking) return; if (state.isPaused) { state.pauseAccumulatedMs += new Date() - state.pauseStartedAt; state.pauseStartedAt = null; state.isPaused = false; showToast("Pause beendet."); } else { state.isPaused = true; state.hasManualPause = true; state.pauseStartedAt = new Date(); showToast("Pause gestartet."); } saveWorkday(); updateWorkUi(); }
 function startTimer() { stopTimer(); workTimer = window.setInterval(updateWorkUi, 1000); }
 function stopTimer() { if (workTimer) window.clearInterval(workTimer); workTimer = undefined; }
 function showToast(message) { elements.toast.textContent = message; elements.toast.classList.add("is-visible"); window.clearTimeout(showToast.timer); showToast.timer = window.setTimeout(() => elements.toast.classList.remove("is-visible"), 3200); }
@@ -169,6 +172,7 @@ function initialise() {
   updateWorkUi(); if (state.isWorking) startTimer();
   elements.clockButton.addEventListener("click", () => document.dispatchEvent(new CustomEvent("timeflow:open-clock")));
   document.querySelectorAll(".nav-item").forEach((item) => item.addEventListener("click", () => navigate(item.dataset.target)));
+  document.addEventListener("timeflow:toggle-pause", togglePause);
   document.querySelectorAll("[data-action]").forEach((button) => button.addEventListener("click", () => {
     if (button.dataset.action === "team") {
       document.dispatchEvent(new CustomEvent("timeflow:open-chat"));

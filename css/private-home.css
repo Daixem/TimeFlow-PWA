@@ -112,3 +112,4 @@
 @media (max-width:380px) {
   .timeflow-private-mode .shift-grid { grid-template-columns: 1fr; }
 }
+.private-pause-button{justify-self:center;min-width:180px;min-height:44px;border:1px solid rgba(255,188,90,.28);border-radius:999px;background:rgba(255,169,55,.12);color:#ffc36d;font:inherit;font-weight:800}.private-pause-button.is-paused{background:#1d65ce;color:#fff;border-color:#4f91ef}

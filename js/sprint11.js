@@ -46,6 +46,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const notificationList = document.getElementById("notificationList");
   let runtimeSettings = {};
   let modeSelectionLocked = false;
+  let teamAccessAllowed = false;
+
+  function updateTeamAccess(access = {}) {
+    teamAccessAllowed = Boolean(access.allowed);
+    document.querySelectorAll('[data-select-mode="team"], [data-mode-setting="team"]').forEach((button) => {
+      button.disabled = !teamAccessAllowed;
+      button.classList.toggle("is-locked", !teamAccessAllowed);
+      button.setAttribute("aria-disabled", String(!teamAccessAllowed));
+      const copy = button.querySelector("small");
+      if (copy && !teamAccessAllowed) copy.textContent = access.invitation ? `Einladung von ${access.invitation.name} annehmen` : "Nur nach Einladung eines Unternehmens";
+    });
+    if (!teamAccessAllowed && currentMode() === "team") saveMode("private", false);
+  }
 
   function readSettings() {
     try {
@@ -158,6 +171,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function saveMode(mode, announce = true) {
     if (mode !== "private" && mode !== "team") return;
+    if (mode === "team" && !teamAccessAllowed) {
+      const toast = document.getElementById("toast");
+      if (toast) { toast.textContent = "Der Teammodus wird erst nach einer Unternehmenseinladung freigeschaltet."; toast.classList.add("is-visible"); window.setTimeout(() => toast.classList.remove("is-visible"), 3600); }
+      return;
+    }
     const settings = readSettings();
     settings.appMode = mode;
     writeSettings(settings);
@@ -190,6 +208,29 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   dialog.addEventListener("cancel", (event) => event.preventDefault());
   settingsPage.querySelectorAll("[data-mode-setting]").forEach((button) => button.addEventListener("click", () => saveMode(button.dataset.modeSetting)));
+  document.addEventListener("timeflow:team-access", (event) => updateTeamAccess(event.detail || {}));
+  updateTeamAccess(window.TimeFlowTeamAccess || {});
+
+  async function loadTeamAccess() {
+    try {
+      const response = await fetch(new URL("api/team-access", document.baseURI), { cache: "no-store", headers: { Accept: "application/json" } });
+      if (!response.ok) return updateTeamAccess({ allowed: false });
+      const access = await response.json();
+      window.TimeFlowTeamAccess = access;
+      updateTeamAccess(access);
+      if (access.invitation) {
+        const teamButton = settingsPage.querySelector('[data-mode-setting="team"]');
+        teamButton.disabled = false;
+        teamButton.onclick = async (event) => {
+          event.preventDefault(); event.stopImmediatePropagation();
+          if (!window.confirm(`Einladung von ${access.invitation.name} annehmen und Teammodus freischalten?`)) return;
+          const accepted = await fetch(new URL("api/team-access", document.baseURI), { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ action: "accept", invitationId: access.invitation.id }) });
+          if (accepted.ok) { updateTeamAccess(await accepted.json()); saveMode("team"); }
+        };
+      }
+    } catch { updateTeamAccess({ allowed: false }); }
+  }
+  document.addEventListener("timeflow:session-ready", (event) => event.detail?.source === "platform" ? loadTeamAccess() : updateTeamAccess({ allowed: false }));
   document.addEventListener("timeflow:session-ready", (event) => {
     const mode = currentMode();
     if (mode) applyMode(mode);

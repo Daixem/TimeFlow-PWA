@@ -1,5 +1,24 @@
 # Changelog
 
+## Build 0040 – Einzel-Beta-Kandidat
+
+### Abgeschlossen
+
+- Privater Dienstplan ohne Demo-Einsätze, mit Dateiimport, Korrektur und manueller Eingabe
+- Arbeitszeitkonto aus echten Stempelungen sowie manuellen Plus-/Minuskorrekturen
+- Optionaler Pausenstatus mit Start und Ende während einer laufenden Stempelung
+- Export des persönlichen Arbeitszeitkontos als CSV und druckbares PDF
+- Kontosynchronisierung für Profil, Einstellungen, Dienstplan, Lernwerte, Stempelstatus und Arbeitszeitkonto
+- Teammodus standardmäßig gesperrt und ausschließlich nach serverseitig geprüfter Unternehmenseinladung verfügbar
+- Unternehmenseinladungen werden erst nach ausdrücklicher Zustimmung angenommen
+
+### Bewusste Beta-Grenzen
+
+- Erinnerungen bei vollständig geschlossener PWA benötigen noch einen Push-Dienst
+- Google-/Apple-Anmeldung und eigene Biometrie werden nicht simuliert; die geschützte Beta nutzt die Anmeldung der Hosting-Plattform
+
+---
+
 ## Alpha 0.1
 ### Hinzugefügt
 - Erstes GitHub-Projekt erstellt

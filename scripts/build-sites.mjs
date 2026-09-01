@@ -42,7 +42,7 @@ for (const file of files) {
 }
 
 const worker = `const FILES = ${JSON.stringify(payload)};
-const SYNC_KEYS = ["timeflow-profile-v1", "timeflow-settings-v1", "timeflow-profile-preferences-v1"];
+const SYNC_KEYS = ["timeflow-profile-v1", "timeflow-settings-v1", "timeflow-profile-preferences-v1", "timeflow-private-schedule-v1", "timeflow-private-schedule-learning-v1", "timeflow-private-account-v1", "timeflow-workday-v2", "timeflow-notifications-v1", "timeflow-quick-actions-v1"];
 
 function decode(value) {
   const binary = atob(value);
@@ -80,9 +80,36 @@ function validatedSnapshot(value) {
   const snapshot = {};
   for (const key of SYNC_KEYS) {
     const item = value[key];
-    if (item && typeof item === "object" && !Array.isArray(item)) snapshot[key] = item;
+    if (item && typeof item === "object") snapshot[key] = item;
   }
   return snapshot;
+}
+
+async function ensureTeamTables(database) {
+  await database.prepare("CREATE TABLE IF NOT EXISTS timeflow_organizations (id TEXT PRIMARY KEY NOT NULL, name TEXT NOT NULL, created_by TEXT NOT NULL, created_at TEXT NOT NULL)").run();
+  await database.prepare("CREATE TABLE IF NOT EXISTS timeflow_organization_invites (id TEXT PRIMARY KEY NOT NULL, organization_id TEXT NOT NULL, email TEXT NOT NULL, role TEXT NOT NULL DEFAULT 'member', status TEXT NOT NULL DEFAULT 'pending', created_at TEXT NOT NULL, accepted_at TEXT)").run();
+  await database.prepare("CREATE TABLE IF NOT EXISTS timeflow_organization_members (organization_id TEXT NOT NULL, user_id TEXT NOT NULL, role TEXT NOT NULL DEFAULT 'member', joined_at TEXT NOT NULL, PRIMARY KEY (organization_id, user_id))").run();
+}
+
+async function handleTeamAccess(request, env, url) {
+  const user = authenticatedUser(request);
+  if (!user.authenticated || !user.id) return jsonResponse({ error: "authentication_required" }, 401);
+  if (!env?.DB) return jsonResponse({ error: "storage_unavailable" }, 503);
+  await ensureTeamTables(env.DB);
+  const member = await env.DB.prepare("SELECT m.organization_id, m.role, o.name FROM timeflow_organization_members m JOIN timeflow_organizations o ON o.id = m.organization_id WHERE m.user_id = ? LIMIT 1").bind(user.id).first();
+  const invite = user.email ? await env.DB.prepare("SELECT i.id, i.organization_id, i.role, o.name FROM timeflow_organization_invites i JOIN timeflow_organizations o ON o.id = i.organization_id WHERE lower(i.email) = lower(?) AND i.status = 'pending' ORDER BY i.created_at DESC LIMIT 1").bind(user.email).first() : null;
+  if (request.method === "GET") return jsonResponse({ allowed: Boolean(member), membership: member || null, invitation: invite || null });
+  if (request.method === "POST") {
+    const origin = request.headers.get("Origin");
+    if (origin && origin !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
+    let body; try { body = await request.json(); } catch { return jsonResponse({ error: "invalid_json" }, 400); }
+    if (body?.action !== "accept" || !invite || body.invitationId !== invite.id) return jsonResponse({ error: "valid_invitation_required" }, 403);
+    const joinedAt = new Date().toISOString();
+    await env.DB.prepare("INSERT OR IGNORE INTO timeflow_organization_members (organization_id, user_id, role, joined_at) VALUES (?, ?, ?, ?)").bind(invite.organization_id, user.id, invite.role, joinedAt).run();
+    await env.DB.prepare("UPDATE timeflow_organization_invites SET status = 'accepted', accepted_at = ? WHERE id = ? AND status = 'pending'").bind(joinedAt, invite.id).run();
+    return jsonResponse({ allowed: true, membership: { organization_id: invite.organization_id, role: invite.role, name: invite.name }, invitation: null });
+  }
+  return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "GET, POST" });
 }
 
 async function handleSync(request, env, url) {
@@ -129,6 +156,7 @@ export default {
       return jsonResponse({ authenticated: user.authenticated, user: user.authenticated ? { id: user.id, email: user.email, name: user.name } : null });
     }
     if (url.pathname === "/api/sync") return handleSync(request, env, url);
+    if (url.pathname === "/api/team-access") return handleTeamAccess(request, env, url);
     let path;
     try {
       path = decodeURIComponent(url.pathname).replace(/^\\/+/, "") || "index.html";
