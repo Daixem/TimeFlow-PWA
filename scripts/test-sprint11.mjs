@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 
 const requiredSnippets = new Map([
-  ["index.html", ["css/sprint11.css?v=0040", "js/sprint11.js?v=0040", "sw.js?v=0040-beta12"]],
-  ["sw.js", ["timeflow-v79-complete-i18n-controls", "css/sprint11.css?v=0040", "js/sprint11.js?v=0040"]],
+  ["index.html", ["css/sprint11.css?v=0040", "js/sprint11.js?v=0040", "sw.js?v=0040-beta13"]],
+  ["sw.js", ["timeflow-v80-private-i18n", "css/sprint11.css?v=0040", "js/sprint11.js?v=0040"]],
   ["js/sprint11.js", ["data-select-mode=\"private\"", "data-select-mode=\"team\"", "timeflow-private-mode", "timeflow:mode-changed"]],
   ["js/sprint9.js", ["function markReady()", "timeflow:sync-ready"]],
   ["js/sprint6.js", ["function privateMode()", "Persönlich erfasst", "action.makeMessage && !privateMode()"]],
