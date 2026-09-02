@@ -1,5 +1,5 @@
 .release-readiness-card .device-check-button { color: #dbe9ff; border-color: rgba(82, 143, 220, .28); background: linear-gradient(135deg, rgba(25, 94, 189, .46), rgba(14, 61, 126, .5)); }
-.device-check-dialog { width: min(92vw, 520px); max-height: min(86vh, 720px); padding: 18px; overflow: auto; }
+.device-check-dialog { width: min(92vw, 520px); max-height: min(calc(var(--tf-viewport-height) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 20px), 720px); padding: 18px; overflow: auto; }
 .device-check-dialog > header { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 11px; align-items: center; text-align: left; }
 .device-check-dialog > header > span { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; color: #79aaff; background: rgba(48, 111, 217, .14); }
 .device-check-dialog > header div { min-width: 0; }
@@ -29,11 +29,19 @@
 .device-check-dialog > footer .device-check-repeat { color: white; background: linear-gradient(135deg, #1768df, #0845aa); }
 @keyframes device-check-spin { to { transform: rotate(360deg); } }
 @media (max-width: 520px) {
-  .device-check-dialog { width: calc(100vw - 24px); padding: 15px 12px; }
+  .device-check-dialog { width: calc(100vw - max(24px, env(safe-area-inset-left) + env(safe-area-inset-right) + 16px)); padding: 15px 12px; }
   .device-check-dialog > header { grid-template-columns: 39px 1fr auto; }
   .device-check-dialog > header > span { width: 39px; height: 39px; }
   .device-check-list li { grid-template-columns: 29px minmax(0, 1fr) auto; padding: 8px; }
   .device-check-list li > span { width: 29px; height: 29px; }
+}
+@media (max-width: 520px) {
+  .device-check-dialog > header small { font-size: .58rem; }
+  .device-check-dialog > header h2 { font-size: .9rem; }
+  .device-check-dialog > header p { font-size: .58rem; }
+  .device-check-list li strong { font-size: .64rem; }
+  .device-check-list li small { font-size: .54rem; }
+  .device-check-list li em, .device-check-dialog > footer button { font-size: .58rem; }
 }
 @media (prefers-reduced-motion: reduce) { .device-check-progress i { transition: none; } .device-check-list li.is-running i { animation: none; } }
 

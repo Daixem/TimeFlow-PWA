@@ -1,4 +1,7 @@
 .cloud-sync-card { display: grid; grid-template-columns: 43px minmax(0, 1fr) auto auto; gap: 11px; align-items: center; margin-top: 10px; padding: 12px 13px; border: 1px solid rgba(83, 145, 222, .17); border-radius: 16px; background: linear-gradient(115deg, rgba(3, 33, 66, .82), rgba(4, 40, 75, .68)); }
+.cloud-sync-card { overflow-anchor: none; }
+.cloud-sync-copy { min-height: 38px; align-content: center; }
+.cloud-sync-state { min-width: 72px; justify-content: center; }
 .settings-layout > .cloud-sync-card { grid-column: 1 / -1; margin-top: 0; }
 .cloud-sync-icon { display: grid; place-items: center; width: 43px; height: 43px; border-radius: 14px; color: #78a8ff; background: rgba(52, 111, 226, .14); }
 .cloud-sync-copy { display: grid; gap: 2px; min-width: 0; }
@@ -27,7 +30,7 @@
   .cloud-sync-card > button { grid-column: 3; grid-row: 1 / span 2; }
 }
 @media (max-width: 520px) {
-  .cloud-sync-card { grid-template-columns: 39px 1fr; }
+  .cloud-sync-card { grid-template-columns: 39px minmax(0, 1fr); min-height: 178px; align-content: center; }
   .cloud-sync-state { grid-column: 2; }
   .cloud-sync-card > button { grid-column: 1 / -1; grid-row: auto; justify-content: center; }
 }

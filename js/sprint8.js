@@ -220,7 +220,7 @@ document.addEventListener("DOMContentLoaded", () => {
           const data = await response.json();
           if (data.authenticated && data.user) {
             authMode = "platform";
-            session = { source: "platform", user: data.user };
+            session = { source: "platform", user: { ...data.user, role: window.TimeFlowBetaAccess?.admin ? "Administrator" : data.user.role } };
             showApp();
             return;
           }
@@ -245,6 +245,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (button) signInDemo(button.dataset.demoLogin);
   });
   document.querySelector("[data-manage-users]")?.addEventListener("click", openManagement);
+  document.addEventListener("timeflow:beta-access-ready", (event) => {
+    if (!event.detail?.admin || !session?.user) return;
+    session.user.role = "Administrator";
+    renderSessionCard();
+    document.dispatchEvent(new CustomEvent("timeflow:session-ready", { detail: session }));
+  });
   document.querySelector("[data-sign-out]")?.addEventListener("click", () => {
     if (authMode === "platform") {
       window.location.assign("/signout-with-chatgpt?return_to=/");

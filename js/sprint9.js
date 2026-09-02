@@ -24,6 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let platformSession = false;
   let ready = false;
   let syncing = false;
+  let queuedWorkdaySnapshot = window.TimeFlowPlatform.storage.getItem("timeflow-workday-v2") || "";
 
   function parseJson(value, fallback = null) {
     try { return JSON.parse(value) ?? fallback; } catch { return fallback; }
@@ -148,6 +149,15 @@ document.addEventListener("DOMContentLoaded", () => {
     scheduleUpload.timer = window.setTimeout(() => upload(false), 900);
   }
 
+  function scheduleWorkdayUpload() {
+    const current = window.TimeFlowPlatform.storage.getItem("timeflow-workday-v2") || "";
+    // The running clock emits a UI update every second. Only persist when the
+    // stored workday itself changed (clock-in/out or pause), never on timer ticks.
+    if (current === queuedWorkdaySnapshot) return;
+    queuedWorkdaySnapshot = current;
+    scheduleUpload();
+  }
+
   function markReady() {
     ready = true;
     document.dispatchEvent(new CustomEvent("timeflow:sync-ready", { detail: { platformSession } }));
@@ -167,7 +177,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("timeflow:profile-updated", scheduleUpload);
   document.addEventListener("timeflow:private-account-updated", scheduleUpload);
   document.addEventListener("timeflow:private-schedule-updated", scheduleUpload);
-  document.addEventListener("timeflow:workday-updated", scheduleUpload);
+  document.addEventListener("timeflow:workday-updated", scheduleWorkdayUpload);
   syncButton.addEventListener("click", () => upload(true));
   window.addEventListener("online", () => platformSession ? initialSync() : undefined);
   window.addEventListener("offline", () => renderStatus("error", "Offline – lokale Daten aktiv", "Änderungen bleiben auf diesem Gerät und können später synchronisiert werden.", "Offline"));
