@@ -1,0 +1,18 @@
+import vm from "node:vm";
+import { readFile } from "node:fs/promises";
+const source = await readFile(new URL("../js/work-protection.js", import.meta.url), "utf8");
+const document = { addEventListener() {}, querySelectorAll() { return []; } };
+const localStorage = { getItem() { return null; }, setItem() {} };
+const window = { TimeFlowPlatform: { storage: localStorage } };
+vm.runInNewContext(source, { window, localStorage, document, Date, Set, Map, JSON, Number, String, Math });
+const { checks, nationwideHoliday } = window.TimeFlowWorkProtection;
+const shift = (date, start = "07:00", end = "17:30", pause = 30) => ({ date, start, end, break: pause, title: "Arbeit" });
+const adult = checks([shift("2026-09-01", "07:00", "18:00", 30)], "1990-01-01");
+if (!adult.some((x) => x.includes("10 Stunden")) || !adult.some((x) => x.includes("45 Minuten Pause"))) throw new Error("Erwachsenen-Grenzen werden nicht erkannt.");
+const minor = checks([shift("2026-09-01", "05:00", "14:00", 20)], "2010-01-01", { fullTimeSchool: true });
+for (const marker of ["vollzeitschulpflichtige", "Zeitfensters", "60 Minuten Pause"]) if (!minor.some((x) => x.includes(marker))) throw new Error(`Jugendschutz fehlt: ${marker}`);
+const week = ["2026-08-31","2026-09-01","2026-09-02","2026-09-03","2026-09-04","2026-09-05"].map((d) => shift(d,"08:00","14:00",30));
+const weekWarnings = checks(week, "2010-01-01", { otherEmployerWeeklyHours: 10 });
+for (const marker of ["40 Stunden", "fünf Arbeitstage", "weiterer Arbeitgeber"]) if (!weekWarnings.some((x) => x.includes(marker))) throw new Error(`Wochenprüfung fehlt: ${marker}`);
+if (!nationwideHoliday("2026-12-25") || nationwideHoliday("2026-09-02")) throw new Error("Feiertagsprüfung fehlerhaft.");
+console.log("Arbeits- und Jugendschutz: Kernregeln werden geprüft.");
