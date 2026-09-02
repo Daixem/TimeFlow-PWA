@@ -4,6 +4,8 @@ const css = await readFile(new URL("../css/settings-organization.css", import.me
 const options = await readFile(new URL("../css/personalization-options.css", import.meta.url), "utf8");
 const fontOptions = await readFile(new URL("../css/font-language-options.css", import.meta.url), "utf8");
 const personalization = await readFile(new URL("../js/private-beta-personalization.js", import.meta.url), "utf8");
+const localization = await readFile(new URL("../js/ui-localization.js", import.meta.url), "utf8");
+const adaptive = await readFile(new URL("../css/adaptive-ui-fixes.css", import.meta.url), "utf8");
 const index = await readFile(new URL("../index.html", import.meta.url), "utf8");
 for (const marker of ["data-language-select", "Deutsch", "English", "Français", "Español", "Italiano", "Nederlands", "Polski", "Türkçe", "applyLanguage", "Darstellung & Sprache", "Arbeitszeit & Schutz", "App & Updates", "cloud-sync-card", "release-readiness-card", "settings-hero", "aria-expanded", "MutationObserver"]) if (!script.includes(marker)) throw new Error(`Einstellungsorganisation fehlt: ${marker}`);
 for (const marker of ["settings-accordion-body", "settings-chevron", "profile-language-select", "max-width:430px"]) if (!css.includes(marker)) throw new Error(`Darstellung der Einstellungen fehlt: ${marker}`);
@@ -12,5 +14,7 @@ for (const marker of ["graphite", "forest", "sunset", "rose", "light", "arial", 
 for (const marker of ["Русский", "Українська", "Dansk", "Svenska", "العربية الفصحى", "ar-EG", "ar-AE", "ar-MA", 'dir = language.startsWith("ar")']) if (!script.includes(marker)) throw new Error(`Sprachoption fehlt: ${marker}`);
 for (const marker of ['data-tf-font="segoe"', 'data-tf-font="aptos"', 'data-tf-font="calibri"', 'data-tf-font="cambria"', 'data-tf-font="times"', 'html[dir="rtl"]']) if (!fontOptions.includes(marker)) throw new Error(`Schrift- oder RTL-Regel fehlt: ${marker}`);
 for (const marker of ["Segoe UI", "Aptos", "Calibri", "Cambria", "Times New Roman", "Century Gothic"]) if (!personalization.includes(marker)) throw new Error(`Word-Schrift fehlt: ${marker}`);
-for (const marker of ["css/settings-organization.css?v=0040-settings2", "js/settings-organization.js?v=0040-settings3", "sw.js?v=0040-beta11"]) if (!index.includes(marker)) throw new Error(`Asset fehlt: ${marker}`);
+for (const marker of ["Support & Feedback", "Letzter Einsatz", "Nächster Einsatz", "Arbeits- & Jugendschutz", "MutationObserver", 'lang.startsWith("ar")']) if (!localization.includes(marker)) throw new Error(`Vollständige UI-Lokalisierung fehlt: ${marker}`);
+for (const marker of ["safe-area-inset-top", ".shift-card>i", "--tf-glass-strong", "select,input,textarea"]) if (!adaptive.includes(marker)) throw new Error(`Adaptive Darstellung fehlt: ${marker}`);
+for (const marker of ["css/settings-organization.css?v=0040-settings2", "js/settings-organization.js?v=0040-settings3", "css/adaptive-ui-fixes.css?v=0040-adaptive1", "js/ui-localization.js?v=0040-i18n1", "sw.js?v=0040-beta12"]) if (!index.includes(marker)) throw new Error(`Asset fehlt: ${marker}`);
 console.log("Profil-Sprache und aufklappbare Einstellungsgruppen sind verbunden.");
