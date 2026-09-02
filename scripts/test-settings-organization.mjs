@@ -12,5 +12,5 @@ for (const marker of ["graphite", "forest", "sunset", "rose", "light", "arial", 
 for (const marker of ["Русский", "Українська", "Dansk", "Svenska", "العربية الفصحى", "ar-EG", "ar-AE", "ar-MA", 'dir = language.startsWith("ar")']) if (!script.includes(marker)) throw new Error(`Sprachoption fehlt: ${marker}`);
 for (const marker of ['data-tf-font="segoe"', 'data-tf-font="aptos"', 'data-tf-font="calibri"', 'data-tf-font="cambria"', 'data-tf-font="times"', 'html[dir="rtl"]']) if (!fontOptions.includes(marker)) throw new Error(`Schrift- oder RTL-Regel fehlt: ${marker}`);
 for (const marker of ["Segoe UI", "Aptos", "Calibri", "Cambria", "Times New Roman", "Century Gothic"]) if (!personalization.includes(marker)) throw new Error(`Word-Schrift fehlt: ${marker}`);
-for (const marker of ["css/settings-organization.css?v=0040-settings2", "js/settings-organization.js?v=0040-settings3", "sw.js?v=0040-beta10"]) if (!index.includes(marker)) throw new Error(`Asset fehlt: ${marker}`);
+for (const marker of ["css/settings-organization.css?v=0040-settings2", "js/settings-organization.js?v=0040-settings3", "sw.js?v=0040-beta11"]) if (!index.includes(marker)) throw new Error(`Asset fehlt: ${marker}`);
 console.log("Profil-Sprache und aufklappbare Einstellungsgruppen sind verbunden.");

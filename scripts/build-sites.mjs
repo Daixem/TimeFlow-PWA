@@ -97,6 +97,12 @@ async function ensureBetaTables(database) {
   await database.prepare("CREATE TABLE IF NOT EXISTS timeflow_beta_access (user_id TEXT PRIMARY KEY NOT NULL, invite_id TEXT, granted_at TEXT NOT NULL, revoked_at TEXT)").run();
 }
 
+async function ensureSupportTables(database) {
+  await database.prepare("CREATE TABLE IF NOT EXISTS timeflow_support_tickets (id TEXT PRIMARY KEY NOT NULL, user_id TEXT NOT NULL, user_email TEXT, user_name TEXT, category TEXT NOT NULL, area TEXT NOT NULL, urgency TEXT NOT NULL, description TEXT NOT NULL, screenshot_data TEXT, device_json TEXT, status TEXT NOT NULL DEFAULT 'received', created_at TEXT NOT NULL, updated_at TEXT NOT NULL)").run();
+  await database.prepare("CREATE INDEX IF NOT EXISTS idx_timeflow_support_user_updated ON timeflow_support_tickets(user_id, updated_at DESC)").run();
+  await database.prepare("CREATE TABLE IF NOT EXISTS timeflow_support_messages (id TEXT PRIMARY KEY NOT NULL, ticket_id TEXT NOT NULL, author_id TEXT NOT NULL, author_role TEXT NOT NULL, message TEXT NOT NULL, created_at TEXT NOT NULL)").run();
+}
+
 const betaAdmin = (user, env) => Boolean(user?.id && env?.TIMEFLOW_BETA_ADMIN_USER_ID && user.id === env.TIMEFLOW_BETA_ADMIN_USER_ID);
 async function tokenHash(token) { const bytes = new TextEncoder().encode(token); const digest = await crypto.subtle.digest("SHA-256", bytes); return [...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, "0")).join(""); }
 function randomToken() { const bytes = new Uint8Array(24); crypto.getRandomValues(bytes); let token = btoa(String.fromCharCode(...bytes)).split("+").join("-").split("/").join("_"); while (token.endsWith("=")) token = token.slice(0, -1); return token; }
@@ -176,10 +182,67 @@ async function handleAccountData(request, env, url) {
   const origin = request.headers.get("Origin");
   if (origin && origin !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
   if (!env?.DB) return jsonResponse({ error: "storage_unavailable" }, 503);
-  await ensureSyncTable(env.DB); await ensureTeamTables(env.DB);
+  await ensureSyncTable(env.DB); await ensureTeamTables(env.DB); await ensureSupportTables(env.DB);
+  const tickets = await env.DB.prepare("SELECT id FROM timeflow_support_tickets WHERE user_id = ?").bind(user.id).all();
+  for (const ticket of tickets?.results || []) await env.DB.prepare("DELETE FROM timeflow_support_messages WHERE ticket_id = ?").bind(ticket.id).run();
+  await env.DB.prepare("DELETE FROM timeflow_support_tickets WHERE user_id = ?").bind(user.id).run();
   await env.DB.prepare("DELETE FROM timeflow_user_sync WHERE user_id = ?").bind(user.id).run();
   await env.DB.prepare("DELETE FROM timeflow_organization_members WHERE user_id = ?").bind(user.id).run();
   return jsonResponse({ deleted: true });
+}
+
+async function supportTicketWithMessages(database, ticket) {
+  const messages = await database.prepare("SELECT id, author_role, message, created_at FROM timeflow_support_messages WHERE ticket_id = ? ORDER BY created_at ASC").bind(ticket.id).all();
+  return { ...ticket, messages: messages?.results || [] };
+}
+
+async function handleSupport(request, env, url) {
+  const user = authenticatedUser(request);
+  if (!user.authenticated || !user.id) return jsonResponse({ error: "authentication_required" }, 401);
+  const access = await betaAccess(user, env); if (!access.allowed) return jsonResponse({ error: "beta_access_required" }, 403);
+  if (!env?.DB) return jsonResponse({ error: "storage_unavailable" }, 503); await ensureSupportTables(env.DB);
+  if (request.method === "GET") {
+    const screenshotId = String(url.searchParams.get("screenshot") || "");
+    if (screenshotId) {
+      const ticket = await env.DB.prepare("SELECT user_id, screenshot_data FROM timeflow_support_tickets WHERE id = ?").bind(screenshotId).first();
+      if (!ticket || (!access.admin && ticket.user_id !== user.id)) return jsonResponse({ error: "ticket_not_found" }, 404);
+      if (!ticket.screenshot_data) return jsonResponse({ error: "screenshot_not_found" }, 404);
+      return jsonResponse({ screenshot: ticket.screenshot_data });
+    }
+    const adminView = access.admin && url.searchParams.get("admin") === "1";
+    const rows = adminView
+      ? await env.DB.prepare("SELECT id, user_id, user_email, user_name, category, area, urgency, description, device_json, status, created_at, updated_at, CASE WHEN screenshot_data IS NULL THEN 0 ELSE 1 END AS has_screenshot FROM timeflow_support_tickets ORDER BY updated_at DESC LIMIT 100").all()
+      : await env.DB.prepare("SELECT id, user_id, user_email, user_name, category, area, urgency, description, device_json, status, created_at, updated_at, CASE WHEN screenshot_data IS NULL THEN 0 ELSE 1 END AS has_screenshot FROM timeflow_support_tickets WHERE user_id = ? ORDER BY updated_at DESC LIMIT 100").bind(user.id).all();
+    const tickets = []; for (const row of rows?.results || []) tickets.push(await supportTicketWithMessages(env.DB, row));
+    return jsonResponse({ tickets, admin: access.admin });
+  }
+  if (request.method !== "POST") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "GET, POST" });
+  const origin = request.headers.get("Origin"); if (origin && origin !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
+  if (Number(request.headers.get("Content-Length") || 0) > 950000) return jsonResponse({ error: "payload_too_large" }, 413);
+  let body; try { body = await request.json(); } catch { return jsonResponse({ error: "invalid_json" }, 400); }
+  const action = String(body?.action || "create"); const now = new Date().toISOString();
+  if (action === "create") {
+    const category = String(body?.category || "").slice(0, 30), area = String(body?.area || "").trim().slice(0, 80), urgency = String(body?.urgency || "normal").slice(0, 20), description = String(body?.description || "").trim().slice(0, 5000);
+    const screenshot = String(body?.screenshot || ""); const device = body?.includeDevice && body?.device && typeof body.device === "object" ? JSON.stringify(body.device).slice(0, 3000) : null;
+    if (!category || !area || description.length < 10) return jsonResponse({ error: "required_fields_missing" }, 400);
+    if (screenshot && (!screenshot.startsWith("data:image/jpeg;base64,") || screenshot.length > 750000)) return jsonResponse({ error: "invalid_screenshot" }, 400);
+    const recent = await env.DB.prepare("SELECT description, created_at FROM timeflow_support_tickets WHERE user_id = ? ORDER BY created_at DESC LIMIT 1").bind(user.id).first();
+    if (recent && Date.now() - new Date(recent.created_at).getTime() < 15000) return jsonResponse({ error: "please_wait_before_resubmitting" }, 429);
+    if (recent && recent.description === description && Date.now() - new Date(recent.created_at).getTime() < 300000) return jsonResponse({ error: "duplicate_ticket" }, 409);
+    const id = crypto.randomUUID(); await env.DB.prepare("INSERT INTO timeflow_support_tickets (id, user_id, user_email, user_name, category, area, urgency, description, screenshot_data, device_json, status, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'received', ?, ?)").bind(id, user.id, user.email || null, user.name || null, category, area, urgency, description, screenshot || null, device, now, now).run();
+    return jsonResponse({ ticket: await supportTicketWithMessages(env.DB, await env.DB.prepare("SELECT * FROM timeflow_support_tickets WHERE id = ?").bind(id).first()) }, 201);
+  }
+  const ticketId = String(body?.ticketId || ""); const ticket = await env.DB.prepare("SELECT * FROM timeflow_support_tickets WHERE id = ?").bind(ticketId).first();
+  if (!ticket || (!access.admin && ticket.user_id !== user.id)) return jsonResponse({ error: "ticket_not_found" }, 404);
+  if (action === "reply") {
+    const message = String(body?.message || "").trim().slice(0, 3000); if (!message) return jsonResponse({ error: "message_required" }, 400);
+    await env.DB.prepare("INSERT INTO timeflow_support_messages (id, ticket_id, author_id, author_role, message, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(crypto.randomUUID(), ticketId, user.id, access.admin ? "admin" : "user", message, now).run();
+    await env.DB.prepare("UPDATE timeflow_support_tickets SET updated_at = ? WHERE id = ?").bind(now, ticketId).run();
+  } else if (action === "status" && access.admin) {
+    const status = String(body?.status || ""); if (!["received", "reviewing", "planned", "resolved"].includes(status)) return jsonResponse({ error: "invalid_status" }, 400);
+    await env.DB.prepare("UPDATE timeflow_support_tickets SET status = ?, updated_at = ? WHERE id = ?").bind(status, now, ticketId).run();
+  } else return jsonResponse({ error: "action_not_allowed" }, 403);
+  return jsonResponse({ ticket: await supportTicketWithMessages(env.DB, await env.DB.prepare("SELECT * FROM timeflow_support_tickets WHERE id = ?").bind(ticketId).first()) });
 }
 
 async function handleSync(request, env, url) {
@@ -232,6 +295,7 @@ export default {
     if (url.pathname === "/api/beta/access") return handleBetaAccess(request, env);
     if (url.pathname === "/api/beta/invite") return handleBetaInvite(request, env, url);
     if (url.pathname === "/api/beta/invites") return handleBetaInvites(request, env, url);
+    if (url.pathname === "/api/support") return handleSupport(request, env, url);
     let path;
     try {
       path = decodeURIComponent(url.pathname).replace(/^\\/+/, "") || "index.html";
