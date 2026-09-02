@@ -2,6 +2,7 @@
 
 document.addEventListener("DOMContentLoaded", () => {
   const STORAGE_KEY = "timeflow-notifications-v1";
+  const READ_KEY = "timeflow-notification-read-v1";
   const notificationButton = document.querySelector('[data-action="notifications"]');
   const notificationBadge = notificationButton?.querySelector(".notification-badge");
   if (!notificationButton || !notificationBadge) return;
@@ -37,6 +38,17 @@ document.addEventListener("DOMContentLoaded", () => {
   const permissionCard = document.getElementById("notificationPermissionCard");
   let activeFilter = "all";
   let entries = loadEntries();
+
+  function loadReadReceipts() {
+    try { return JSON.parse(window.TimeFlowPlatform.storage.getItem(READ_KEY)) || {}; } catch { return {}; }
+  }
+
+  function rememberRead(ids) {
+    const receipts = loadReadReceipts();
+    ids.forEach((id) => { if (id) receipts[id] = new Date().toISOString(); });
+    const recent = Object.entries(receipts).sort((a, b) => String(b[1]).localeCompare(String(a[1]))).slice(0, 500);
+    window.TimeFlowPlatform.storage.setItem(READ_KEY, JSON.stringify(Object.fromEntries(recent)));
+  }
 
   function seedEntries() {
     return [];
@@ -226,6 +238,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const entry = entries.find((item) => item.id === id);
     if (!entry) return;
     entry.read = true;
+    rememberRead([entry.id]);
     saveEntries();
     renderEntries();
     window.TimeFlowPlatform.dialog.close(center);
@@ -244,6 +257,7 @@ document.addEventListener("DOMContentLoaded", () => {
   center.querySelector("[data-test-notification]").addEventListener("click", sendTestNotification);
   center.querySelector("[data-mark-notifications-read]").addEventListener("click", () => {
     entries.forEach((entry) => { entry.read = true; });
+    rememberRead(entries.map((entry) => entry.id));
     saveEntries();
     renderEntries();
     toast("Alle Benachrichtigungen wurden als gelesen markiert.");
@@ -262,7 +276,12 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("timeflow:open-notifications", openCenter);
   document.addEventListener("timeflow:create-notification", (event) => addEntry(event.detail));
   document.addEventListener("timeflow:replace-notifications", (event) => {
-    entries = Array.isArray(event.detail) ? event.detail : [];
+    const previous = new Map(entries.map((entry) => [entry.id, Boolean(entry.read)]));
+    const receipts = loadReadReceipts();
+    entries = (Array.isArray(event.detail) ? event.detail : []).map((entry) => ({
+      ...entry,
+      read: Boolean(entry.read || previous.get(entry.id) || receipts[entry.id])
+    }));
     saveEntries(); renderEntries();
   });
 
