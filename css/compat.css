@@ -3,7 +3,12 @@
 html, body { min-height: 100%; }
 body, .app { min-height: var(--tf-viewport-height); }
 body { width: 100%; overflow-x: hidden; }
-.app { min-width: 0; }
+.app { min-width: 0; padding-top: max(28px, calc(env(safe-area-inset-top) + 16px)); }
+
+/* iOS reports the notch inset outside standalone mode as well. Keep every page's
+   first interactive control below the status/browser bar. */
+html.tf-platform-ios .app,
+html.tf-platform-ipados .app { padding-top: max(44px, calc(env(safe-area-inset-top) + 18px)); }
 button, input, select, textarea { font: inherit; }
 button { min-width: 0; }
 dialog {
