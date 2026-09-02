@@ -34,11 +34,53 @@ const extra={
 "Ausführliche Statistik":["Detailed statistics","Statistiques détaillées","Estadísticas detalladas","Statistiche dettagliate","Gedetailleerde statistieken","Szczegółowe statystyki","Ayrıntılı istatistikler","Подробная статистика","Докладна статистика","Detaljeret statistik","Detaljerad statistik","إحصاءات مفصلة"],
 "Sprache der Benutzeroberfläche":["Interface language","Langue de l’interface","Idioma de la interfaz","Lingua dell’interfaccia","Interfacetaal","Język interfejsu","Arayüz dili","Язык интерфейса","Мова інтерфейсу","Grænsefladesprog","Gränssnittsspråk","لغة الواجهة"],"Sprache wählen":["Choose language","Choisir la langue","Elegir idioma","Scegli lingua","Taal kiezen","Wybierz język","Dil seçin","Выберите язык","Виберіть мову","Vælg sprog","Välj språk","اختر اللغة"]};
 Object.entries(extra).forEach(([key,values])=>{source.push(key);["en","fr","es","it","nl","pl","tr","ru","uk","da","sv","ar"].forEach((code,index)=>packs[code].push(values[index]))});
-const originals=new WeakMap,attributeOriginals=new WeakMap,attributes=["aria-label","title","placeholder","alt"];
+
+// Text created by dialogs and feature modules is translated here as well.  Keeping
+// these phrases in the central catalogue prevents every renderer from having to
+// know about the selected UI language.
+const english={
+"Abbrechen":"Cancel","Aktiv":"Active","Alle":"All","Anmelden":"Sign in","App installieren":"Install app","App-Status wird geprüft":"Checking app status","Arbeitszeit läuft":"Work timer running","Arbeitszeit starten":"Start work","Arbeitszeit beenden":"End work","Arbeitsbeginn":"Start of work","Arbeitsende":"End of work","Arbeitszeit":"Working time","Auswählen":"Select","Bearbeiten":"Edit","Benutzer":"User","Bestätigen":"Confirm","Bitte warten":"Please wait","Datei auswählen":"Choose file","Dienst beendet":"Shift ended","Dienstplan":"Schedule","Dienstplan übernommen":"Schedule imported","Einsatz hinzufügen":"Add shift","Eintrag löschen":"Delete entry","Erneut versuchen":"Try again","Fehlenden Einsatz ergänzen":"Add missing shift","Freie Tage":"Days off","Gerätecheck starten":"Run device check","Heute":"Today","Hinzufügen":"Add","Im Dienst":"On duty","Importiert":"Imported","Importieren":"Import","Import-Vorschau":"Import preview","Installation":"Installation","Keine":"None","Keine Daten":"No data","Keine ungelesenen Benachrichtigungen":"No unread notifications","Lädt":"Loading","Läuft":"Running","Löschen":"Delete","Minuten":"Minutes","Monat auswählen":"Choose month","Neue Arbeitszeit starten":"Start new work period","Neue Meldung":"New report","Nicht angegeben":"Not specified","Nicht unterstützt":"Not supported","Nicht verfügbar":"Not available","Noch nicht aktiviert":"Not enabled yet","Noch nicht bereit":"Not ready yet","Noch nicht gestartet":"Not started yet","Noch nicht synchronisiert":"Not synchronized yet","Nur lokal verfügbar":"Only available locally","Öffnen":"Open","Pausen":"Breaks","Persönlich eintragen":"Add personally","Persönlich erfasst":"Added personally","Persönliche Hinweise":"Personal notifications","Persönliche Notiz":"Personal note","Privates Profil":"Private profile","Profil öffnen":"Open profile","Prüfung":"Check","Prüfung läuft …":"Checking …","Schicht":"Shift","Schicht bestätigen":"Confirm shift","Schnellzugriff":"Quick access","Speichern":"Save","Stunden":"Hours","Synchronisieren":"Synchronize","Tage":"Days","TimeFlow installieren":"Install TimeFlow","Übernehmen":"Import","Verbindlich übernehmen":"Confirm import","Verspätung melden":"Report delay","Wird geprüft":"Checking","Weiter":"Continue","Wiederherstellen":"Restore","Zum Startbildschirm hinzufügen":"Add to home screen","Zurück":"Back",
+"Arbeitszeit, Dienstplan und System – nur aus deinen tatsächlichen Daten.":"Working time, schedule and system — based only on your actual data.","Aus kleinen Schritten entstehen große Erfolge.":"Great achievements grow from small steps.","Benachrichtigungen funktionieren auf diesem Gerät.":"Notifications work on this device.","Benachrichtigungen wurden noch nicht aktiviert.":"Notifications have not been enabled yet.","Dein Profil und deine Einstellungen werden sicher gespeichert.":"Your profile and settings are stored securely.","Dein Profil wurde lokal gespeichert.":"Your profile was saved locally.","Dein persönlicher Arbeitstag im Überblick.":"Your personal workday at a glance.","Deine persönlichen Einstellungen und lokalen Daten.":"Your personal settings and local data.","Die Datei konnte nicht gelesen werden.":"The file could not be read.","Die Datei wurde geprüft und kann kontrolliert wiederhergestellt werden.":"The file was checked and can now be restored safely.","Die Datensicherung ist zu groß.":"The backup is too large.","Diese Ansicht folgt in einem nächsten Sprint.":"This view will be added in a future release.","Diese Schicht ist bereits bestätigt.":"This shift has already been confirmed.","Erfasse deine Abwesenheit ausschließlich für deine persönliche Arbeitszeitübersicht.":"Record your absence only for your personal working-time overview.","Erfolg entsteht nicht durch Perfektion, sondern durch Beständigkeit.":"Success comes from consistency, not perfection.","Heute ist die beste Gelegenheit, etwas Großartiges zu schaffen.":"Today is the best opportunity to achieve something great.","Heute stehen keine persönlichen Erinnerungen oder offenen Aufgaben an.":"There are no personal reminders or open tasks today.","Jeder kleine Fortschritt bringt dich deinem Ziel näher.":"Every small step brings you closer to your goal.","Keine allgemeinen Grenzwerte auffällig.":"No general limits appear unusual.","Keine vollständigen Schichten erkannt.":"No complete shifts detected.","Meldung wurde im Teamchat gespeichert.":"The report was saved in the team chat.","Noch keine Meldungen vorhanden.":"No reports yet.","Noch kein eigener Dienstplan übernommen.":"No personal schedule has been imported yet.","TimeFlow arbeitet lokal. Änderungen werden auf diesem Gerät gespeichert.":"TimeFlow works locally. Changes are saved on this device.","Vielen Dank für die Rückmeldung.":"Thank you for your feedback.","Änderungen bleiben auf diesem Gerät und können später synchronisiert werden.":"Changes remain on this device and can be synchronized later."
+};
+Object.entries(english).forEach(([key,value])=>{const index=source.indexOf(key);if(index<0){source.push(key);Object.keys(packs).forEach(code=>packs[code].push(code==="en"?value:key))}else packs.en[index]=value});
+
+const originals=new WeakMap,attributeOriginals=new WeakMap;
+const attributes=["aria-label","aria-description","title","placeholder","alt"];
+const controls="button,input[type=button],input[type=submit],input[type=reset]";
 function language(){try{return JSON.parse(window.TimeFlowPlatform.storage.getItem(KEY)||"{}").language||"de"}catch{return"de"}}
-function translated(value,pack){const trim=value.trim(),index=source.indexOf(trim);return index<0?value:value.replace(trim,pack[index]||trim)}
-function apply(root=document.body){const lang=language(),code=lang.startsWith("ar")?"ar":lang,pack=packs[code]||source;document.documentElement.lang=lang;document.documentElement.dir=code==="ar"?"rtl":"ltr";
-  const element=root.nodeType===1?root:root.parentElement;if(element){[element,...element.querySelectorAll("*")].forEach(node=>{let saved=attributeOriginals.get(node);if(!saved){saved={};attributes.forEach(name=>{if(node.hasAttribute(name))saved[name]=node.getAttribute(name)});attributeOriginals.set(node,saved)}attributes.forEach(name=>{if(saved[name]!=null)node.setAttribute(name,translated(saved[name],pack))})})}
-  const walker=document.createTreeWalker(root.nodeType===3?root.parentElement:root,NodeFilter.SHOW_TEXT);let node;while(node=walker.nextNode()){if(!node.parentElement||node.parentElement.closest("script,style,option")||!node.nodeValue.trim())continue;if(!originals.has(node))originals.set(node,node.nodeValue);const value=translated(originals.get(node),pack);if(node.nodeValue!==value)node.nodeValue=value}}
-document.addEventListener("DOMContentLoaded",()=>{apply();new MutationObserver(records=>records.forEach(record=>{if(record.type==="characterData")apply(record.target);else record.addedNodes.forEach(node=>{if(node.nodeType===1||node.nodeType===3)apply(node)})})).observe(document.body,{childList:true,subtree:true,characterData:true})});document.addEventListener("timeflow:settings-updated",()=>apply());
+function dictionary(pack){return source.map((key,index)=>[key,pack[index]||key]).sort((a,b)=>b[0].length-a[0].length)}
+function isKnownRendering(original,value){return Object.values(packs).some(pack=>translated(original,dictionary(pack))===value)}
+function translated(value,entries){
+  if(!value||typeof value!=="string")return value;
+  const trim=value.trim(),exact=entries.find(([key])=>key===trim);
+  if(exact)return value.replace(trim,exact[1]);
+  // Dynamic labels contain dates, durations and user names. Translate their known
+  // phrases without touching those values.
+  return entries.reduce((text,[key,replacement])=>key.length<4||key===replacement?text:text.replaceAll(key,replacement),value);
+}
+function remember(node,map,key,value){let saved=map.get(node);if(!saved){saved={};map.set(node,saved)}if(saved[key]===undefined)saved[key]=value;return saved[key]}
+function apply(root=document.body){
+  if(!root)return;const lang=language(),code=lang.startsWith("ar")?"ar":lang,pack=packs[code]||source,entries=dictionary(pack);
+  document.documentElement.lang=lang;document.documentElement.dir=code==="ar"?"rtl":"ltr";
+  const base=root.nodeType===1?root:root.parentElement;if(!base)return;
+  [base,...base.querySelectorAll("*")].forEach(node=>{
+    attributes.forEach(name=>{if(node.hasAttribute(name)){const original=remember(node,attributeOriginals,name,node.getAttribute(name));node.setAttribute(name,translated(original,entries))}});
+    if(node.matches?.(controls)&&node.value){const original=remember(node,attributeOriginals,"value",node.value);node.value=translated(original,entries)}
+  });
+  const walker=document.createTreeWalker(base,NodeFilter.SHOW_TEXT);let node;
+  while(node=walker.nextNode()){
+    if(!node.parentElement||node.parentElement.closest("script,style")||!node.nodeValue.trim())continue;
+    let original=originals.get(node);
+    // Renderers reuse existing nodes. A mutation that is neither the remembered
+    // source nor its translation is new application content and becomes the new source.
+    if(original===undefined){original=node.nodeValue;originals.set(node,original)}
+    else if(node.nodeValue!==original&&!isKnownRendering(original,node.nodeValue)){original=node.nodeValue;originals.set(node,original)}
+    const value=translated(original,entries);if(node.nodeValue!==value)node.nodeValue=value;
+  }
+}
+function safelyApply(root){apply(root)}
+document.addEventListener("DOMContentLoaded",()=>{safelyApply();new MutationObserver(records=>records.forEach(record=>{if(record.type==="characterData")safelyApply(record.target);else record.addedNodes.forEach(node=>{if(node.nodeType===1||node.nodeType===3)safelyApply(node)});if(record.type==="attributes")safelyApply(record.target)})).observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:[...attributes,"value"]})});
+document.addEventListener("timeflow:settings-updated",()=>safelyApply());
+document.addEventListener("timeflow:language-changed",()=>safelyApply());
+window.TimeFlowLocalization={apply:safelyApply,translate(value,lang=language()){const code=lang.startsWith("ar")?"ar":lang;return translated(value,dictionary(packs[code]||source))}};
 }());
