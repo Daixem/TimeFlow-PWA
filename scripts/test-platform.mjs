@@ -4,6 +4,7 @@ const index = await readFile("index.html", "utf8");
 const manifest = JSON.parse(await readFile("manifest.webmanifest", "utf8"));
 const worker = await readFile("sw.js", "utf8");
 const compatibility = await readFile("css/compat.css", "utf8");
+for (const marker of ["safe-area-inset-top", "tf-platform-ios", "tf-platform-ipados"]) if (!compatibility.includes(marker)) throw new Error(`iOS-Sicherheitsabstand fehlt: ${marker}`);
 const platform = await readFile("js/platform.js", "utf8");
 
 if (index.indexOf("js/platform.js?v=0040") < 0 || index.indexOf("js/platform.js?v=0040") > index.indexOf("js/script.js?v=0040")) {

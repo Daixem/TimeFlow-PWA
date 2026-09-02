@@ -2,10 +2,26 @@
   --tf-glass: rgba(4, 35, 70, .78);
   --tf-glass-strong: rgba(5, 43, 83, .9);
   --tf-glass-border: rgba(102, 164, 235, .22);
+  --tf-accent: #3a86ff;
+  --tf-control: #082e58;
 }
-html[data-tf-background="ocean"] { --tf-glass: rgba(6, 62, 105, .66); --tf-glass-strong: rgba(7, 72, 119, .82); --tf-glass-border: rgba(112, 200, 255, .28); }
-html[data-tf-background="teal"] { --tf-glass: rgba(2, 66, 68, .66); --tf-glass-strong: rgba(3, 78, 78, .82); --tf-glass-border: rgba(91, 222, 197, .27); }
-html[data-tf-background="violet"] { --tf-glass: rgba(42, 31, 91, .68); --tf-glass-strong: rgba(52, 39, 111, .84); --tf-glass-border: rgba(174, 139, 255, .28); }
+html[data-tf-background="ocean"] { --tf-glass: rgba(6, 62, 105, .66); --tf-glass-strong: rgba(7, 72, 119, .82); --tf-glass-border: rgba(112, 200, 255, .28); --tf-accent:#2398df; --tf-control:#075080; }
+html[data-tf-background="teal"] { --tf-glass: rgba(2, 66, 68, .66); --tf-glass-strong: rgba(3, 78, 78, .82); --tf-glass-border: rgba(91, 222, 197, .27); --tf-accent:#159f91; --tf-control:#075b5b; }
+html[data-tf-background="violet"] { --tf-glass: rgba(42, 31, 91, .68); --tf-glass-strong: rgba(52, 39, 111, .84); --tf-glass-border: rgba(174, 139, 255, .28); --tf-accent:#7959d9; --tf-control:#352873; }
+html[data-tf-background="graphite"] { --tf-accent:#71859b; --tf-control:#283542; }
+html[data-tf-background="forest"] { --tf-accent:#318c67; --tf-control:#164c3d; }
+html[data-tf-background="sunset"] { --tf-accent:#c1694c; --tf-control:#663b3e; }
+html[data-tf-background="rose"] { --tf-accent:#b75f91; --tf-control:#633453; }
+html[data-tf-background="light"] { --tf-accent:#2875bb; --tf-control:#e4f2ff; }
+
+.timeflow-private-mode :is(select,input,textarea),
+.timeflow-private-mode :is(.settings-select,.profile-language-select) select {
+  border-color: var(--tf-glass-border) !important;
+  background-color: var(--tf-control) !important;
+  accent-color: var(--tf-accent);
+}
+.timeflow-private-mode :is(button.active,[aria-selected="true"],form > button) { background-color: var(--tf-accent) !important; }
+html[data-tf-background="light"] .timeflow-private-mode :is(select,input,textarea) { color:#092746 !important; }
 
 .timeflow-private-mode :is(.card,.list-card,.shift-card,.private-home-clock,.profile-hero,.profile-menu-card,.settings-card,.cloud-sync-card,.release-readiness-card,.private-import-panel,.private-account-dialog,dialog) {
   border-color: var(--tf-glass-border) !important;
