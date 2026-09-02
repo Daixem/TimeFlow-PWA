@@ -40,6 +40,7 @@
     const root = document.documentElement;
     const scale = Math.min(1.3, Math.max(1, Number(settings.fontScale || 1.1)));
     root.style.setProperty("--tf-font-scale", String(scale));
+    root.dataset.tfFontSize = scale >= 1.2 ? "expanded" : scale >= 1.1 ? "large" : "normal";
     root.dataset.tfFont = ["inter", "system", "serif"].includes(settings.fontFamily) ? settings.fontFamily : "inter";
     root.dataset.tfBackground = ["midnight", "ocean", "teal", "violet"].includes(settings.appBackground) ? settings.appBackground : "midnight";
   }
@@ -102,20 +103,25 @@
 
   function installSetup() {
     const settings = read(SETTINGS_KEY);
-    const alreadyConfigured = read(SETUP_KEY, null)?.completed || (Number(settings.monthlyTargetHours) > 0 && Number.isFinite(Number(settings.annualVacationDays)));
+    const profile = read("timeflow-profile-v1");
+    const birthDate = String(profile.birthDate || settings.birthDate || "");
+    const alreadyConfigured = read(SETUP_KEY, null)?.completed && /^\d{4}-\d{2}-\d{2}$/.test(birthDate);
     if (alreadyConfigured || document.getElementById("privateInitialSetup")) return;
     document.body.insertAdjacentHTML("beforeend", `
       <dialog class="private-initial-setup" id="privateInitialSetup" aria-labelledby="privateInitialSetupTitle">
-        <form method="dialog"><span class="setup-icon"><i class="fa-solid fa-user-clock"></i></span><small>ERSTEINRICHTUNG</small><h2 id="privateInitialSetupTitle">Deine Grundlage für TimeFlow</h2><p>Trage einmal deine vertraglichen Monatsstunden und deinen Jahresurlaub ein. Beides kannst du später jederzeit in den Einstellungen ändern.</p><label>Monatliche Sollstunden<span><input name="monthlyTargetHours" type="number" inputmode="decimal" min="0.25" max="744" step="0.25" required><b>Stunden</b></span></label><label>Verfügbare Urlaubstage pro Jahr<span><input name="annualVacationDays" type="number" inputmode="numeric" min="0" max="366" step="1" required><b>Tage</b></span></label><button type="submit"><i class="fa-solid fa-check"></i> Angaben speichern und starten</button><em>Diese Werte werden nur für deine persönlichen Berechnungen verwendet.</em></form>
+        <form method="dialog"><span class="setup-icon"><i class="fa-solid fa-user-clock"></i></span><small>ERSTEINRICHTUNG</small><h2 id="privateInitialSetupTitle">Deine Grundlage für TimeFlow</h2><p>Trage deine Vertragswerte und dein Geburtsdatum ein. TimeFlow nutzt das Alter für Hinweise zu Arbeitszeit, Pausen und Ruhezeiten.</p><label>Geburtsdatum<span><input name="birthDate" type="date" autocomplete="bday" max="${new Date().toLocaleDateString("sv-SE")}" required></span></label><label>Monatliche Sollstunden<span><input name="monthlyTargetHours" type="number" inputmode="decimal" min="0.25" max="744" step="0.25" required><b>Stunden</b></span></label><label>Verfügbare Urlaubstage pro Jahr<span><input name="annualVacationDays" type="number" inputmode="numeric" min="0" max="366" step="1" required><b>Tage</b></span></label><button type="submit"><i class="fa-solid fa-check"></i> Angaben speichern und starten</button><em>Die Prüfung liefert Hinweise und ersetzt keine rechtliche Beratung oder betriebliche Einzelfallprüfung.</em></form>
       </dialog>`);
     const dialog = document.getElementById("privateInitialSetup");
     const form = dialog.querySelector("form");
     form.elements.monthlyTargetHours.value = Number(settings.monthlyTargetHours || 160);
     form.elements.annualVacationDays.value = Number(settings.annualVacationDays || 0);
+    form.elements.birthDate.value = birthDate;
     form.addEventListener("submit", (event) => {
       event.preventDefault();
       if (!form.reportValidity()) return;
-      saveSettings({ monthlyTargetHours: Number(form.elements.monthlyTargetHours.value), annualVacationDays: Math.round(Number(form.elements.annualVacationDays.value)), fontScale: Number(settings.fontScale || 1.1) });
+      const savedBirthDate = String(form.elements.birthDate.value);
+      write("timeflow-profile-v1", { ...profile, birthDate: savedBirthDate });
+      saveSettings({ birthDate: savedBirthDate, monthlyTargetHours: Number(form.elements.monthlyTargetHours.value), annualVacationDays: Math.round(Number(form.elements.annualVacationDays.value)), fontScale: Number(settings.fontScale || 1.1) });
       write(SETUP_KEY, { completed: true, completedAt: new Date().toISOString() });
       window.TimeFlowPlatform.dialog.close(dialog);
       installSettings();
@@ -134,7 +140,7 @@
     applyRoleVisibility(access);
     applyPersonalization();
     installSettings();
-    if (verified && !access.admin) installSetup();
+    if (verified) installSetup();
   }
 
   document.addEventListener("DOMContentLoaded", () => initialize(window.TimeFlowBetaAccess || {}, Boolean(window.TimeFlowBetaAccess)));

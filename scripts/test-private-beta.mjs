@@ -13,7 +13,10 @@ const index = await readFile(new URL("../index.html", import.meta.url), "utf8");
 const personalization = await readFile(new URL("../js/private-beta-personalization.js", import.meta.url), "utf8");
 const personalizationCss = await readFile(new URL("../css/private-beta-personalization.css", import.meta.url), "utf8");
 const privateHome = await readFile(new URL("../js/private-home.js", import.meta.url), "utf8");
+const profileScript = await readFile(new URL("../js/sprint4.js", import.meta.url), "utf8");
 const serviceWorker = await readFile(new URL("../sw.js", import.meta.url), "utf8");
+const protection = await readFile(new URL("../js/work-protection.js", import.meta.url), "utf8");
+const theme = await readFile(new URL("../css/theme-personalization.css", import.meta.url), "utf8");
 
 for (const marker of ["/api/team-access", "valid_invitation_required", "timeflow_organization_members", "timeflow_organization_invites"]) if (!worker.includes(marker)) throw new Error(`Team-API fehlt: ${marker}`);
 for (const marker of ["teamAccessAllowed", "Nur nach Einladung eines Unternehmens", "loadTeamAccess", 'saveMode("private", false)']) if (!mode.includes(marker)) throw new Error(`Team-Sperre fehlt: ${marker}`);
@@ -29,9 +32,13 @@ for (const marker of ["timeflow_beta_invites", "token_hash", "crypto.randomUUID"
 for (const marker of ["signin-with-chatgpt", "Einladungslink erstellen", "navigator.share", "api/beta/invite", "api/beta/access", "Einladung wird aktiviert", "claimInvitation", "Erneut versuchen"]) if (!betaAccess.includes(marker)) throw new Error(`Einladungsoberfläche fehlt: ${marker}`);
 for (const marker of ["private-beta-access.css?v=0040-invite4", "defer src=\"js/private-beta-access.js?v=0040-invite4\"", "data-beta-access=\"true\""]) if (!index.includes(marker)) throw new Error(`Einladungsstartseite fehlt: ${marker}`);
 if (betaAccess.includes("window.scrollTo")) throw new Error("Die Anmeldung erzwingt noch einen Sprung an den Seitenanfang.");
-for (const marker of ["private-beta-personalization.css?v=0040-beta1", "private-beta-personalization.js?v=0040-beta1", "sw.js?v=0040-beta4"]) if (!index.includes(marker)) throw new Error(`Beta-Erweiterung fehlt: ${marker}`);
+for (const marker of ["private-beta-personalization.css?v=0040-beta2", "private-beta-personalization.js?v=0040-beta2", "sw.js?v=0040-beta5"]) if (!index.includes(marker)) throw new Error(`Beta-Erweiterung fehlt: ${marker}`);
 for (const marker of ["js/sprint8.js?v=0040-admin2", "js/sprint9.js?v=0040-scroll2", "css/compat.css?v=0040-mobile2"]) if (!index.includes(marker)) throw new Error(`Hotfix-Asset fehlt: ${marker}`);
 for (const marker of ["Monatliche Sollstunden", "Verfügbare Urlaubstage pro Jahr", "annualVacationDays", "fontScale", "fontFamily", "appBackground", "timeflow-private-setup-v1", "timeflow-beta-admin"]) if (!personalization.includes(marker)) throw new Error(`Ersteinrichtung oder Personalisierung fehlt: ${marker}`);
+for (const marker of ["birthDate", "autocomplete=\"bday\"", "dataset.tfFontSize", "if (verified) installSetup()"] ) if (!personalization.includes(marker) && !profileScript.includes(marker)) throw new Error(`Geburtsdatum oder adaptive Schrift fehlt: ${marker}`);
+for (const marker of ["--tf-glass", "backdrop-filter", "data-tf-font-size=\"expanded\"", ".profile-settings-shortcut"]) if (!theme.includes(marker)) throw new Error(`Adaptives Farbschema fehlt: ${marker}`);
+for (const marker of ["Arbeits- und Jugendschutz", "net > 600", "net > 480", "requiredPause", "minimum = minor ? 720 : 660", "branchenspezifische Ausnahme"]) if (!protection.includes(marker)) throw new Error(`Arbeitszeitschutz fehlt: ${marker}`);
+for (const marker of ["css/theme-personalization.css?v=0040-theme1", "js/work-protection.js?v=0040-legal1", "js/sprint4.js?v=0040-profile2"]) if (!index.includes(marker) || !serviceWorker.includes(marker)) throw new Error(`Neues Profil-Asset fehlt: ${marker}`);
 for (const marker of ["position:fixed!important", "timeflow-beta-user [data-manage-users]", "--tf-font-scale", "timeflow-private-mode .private-home-account{display:none"]) if (!personalizationCss.includes(marker)) throw new Error(`Darstellungsregel fehlt: ${marker}`);
 if (!privateHome.includes('document.dispatchEvent(new CustomEvent("timeflow:open-private-account"))') || privateHome.includes('monthCard.querySelector(".month-stats")?.insertAdjacentHTML("afterend"')) throw new Error("Arbeitszeitkonto ist nicht ausschließlich im Schnellzugriff erreichbar.");
 if (serviceWorker.includes("self.skipWaiting()") || serviceWorker.includes("self.clients.claim()")) throw new Error("Beta-Updates können noch eine laufende Sitzung unterbrechen.");

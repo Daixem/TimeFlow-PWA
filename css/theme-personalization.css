@@ -1,0 +1,40 @@
+:root {
+  --tf-glass: rgba(4, 35, 70, .78);
+  --tf-glass-strong: rgba(5, 43, 83, .9);
+  --tf-glass-border: rgba(102, 164, 235, .22);
+}
+html[data-tf-background="ocean"] { --tf-glass: rgba(6, 62, 105, .66); --tf-glass-strong: rgba(7, 72, 119, .82); --tf-glass-border: rgba(112, 200, 255, .28); }
+html[data-tf-background="teal"] { --tf-glass: rgba(2, 66, 68, .66); --tf-glass-strong: rgba(3, 78, 78, .82); --tf-glass-border: rgba(91, 222, 197, .27); }
+html[data-tf-background="violet"] { --tf-glass: rgba(42, 31, 91, .68); --tf-glass-strong: rgba(52, 39, 111, .84); --tf-glass-border: rgba(174, 139, 255, .28); }
+
+.timeflow-private-mode :is(.card,.list-card,.shift-card,.private-home-clock,.profile-hero,.profile-menu-card,.settings-card,.cloud-sync-card,.release-readiness-card,.private-import-panel,.private-account-dialog,dialog) {
+  border-color: var(--tf-glass-border) !important;
+  background-color: var(--tf-glass) !important;
+  background-image: linear-gradient(135deg, rgba(255,255,255,.045), rgba(255,255,255,.008)) !important;
+  backdrop-filter: blur(18px) saturate(120%);
+  -webkit-backdrop-filter: blur(18px) saturate(120%);
+}
+.timeflow-private-mode :is(.profile-hero,.settings-card,.private-home-clock) { background-color: var(--tf-glass-strong) !important; }
+
+html[data-tf-font-size="expanded"] .timeflow-private-mode :is(.profile-hero,.cloud-sync-card,.private-home-summary,.settings-list>label,.week-row) {
+  grid-template-columns: 1fr !important;
+  height: auto !important;
+  min-height: 0 !important;
+}
+html[data-tf-font-size="expanded"] .timeflow-private-mode :is(.profile-identity h2,.cloud-sync-copy strong,.cloud-sync-copy p,.week-row strong) {
+  overflow: visible;
+  white-space: normal;
+  text-overflow: clip;
+}
+html[data-tf-font-size="expanded"] .timeflow-private-mode .profile-avatar-large { justify-self: start; }
+html[data-tf-font-size="expanded"] .timeflow-private-mode .edit-profile-button { grid-column: 1; width: 100%; }
+html[data-tf-font-size="expanded"] .timeflow-private-mode .private-home-summary { gap: 10px; }
+html[data-tf-font-size="expanded"] .timeflow-private-mode .private-home-summary > span { width: 100%; }
+
+.timeflow-private-mode .profile-settings-shortcut { display: none !important; }
+.work-protection-card { margin-top: 14px; padding: 14px; border: 1px solid var(--tf-glass-border); border-radius: 16px; background: var(--tf-glass); }
+.work-protection-card h3 { margin: 0 0 5px; font-size: .9rem; }
+.work-protection-card > p { margin: 0; color: #91a9c4; font-size: .72rem; line-height: 1.45; }
+.work-protection-card ul { display: grid; gap: 7px; margin: 12px 0 0; padding: 0; list-style: none; }
+.work-protection-card li { padding: 9px 10px; border-radius: 10px; color: #efc377; background: rgba(166,105,19,.14); font-size: .72rem; line-height: 1.4; }
+.work-protection-card .is-clear { color: #6edbb3; background: rgba(31,142,103,.13); }

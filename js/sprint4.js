@@ -12,13 +12,10 @@ document.addEventListener("DOMContentLoaded", () => {
           <h1 id="profileTitle">Mein Profil</h1>
           <p>Deine Arbeit. Deine Entwicklung. Alles im Blick.</p>
         </div>
-        <button class="profile-settings-shortcut" type="button" data-open-settings aria-label="Einstellungen öffnen">
-          <i class="fa-solid fa-sliders"></i>
-        </button>
       </header>
 
       <section class="profile-hero" aria-labelledby="profileName">
-        <button class="profile-avatar-large" type="button" data-edit-profile aria-label="Profil bearbeiten">
+        <button class="profile-avatar-large" type="button" data-edit-avatar aria-label="Profilbild ändern">
           <img id="profileAvatarImage" alt="" hidden>
           <span id="profileInitials">MM</span>
           <i class="fa-solid fa-pen"></i>
@@ -124,6 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <label><span>Rolle</span><input name="role" required maxlength="40"></label>
             <label><span>Abteilung</span><input name="department" required maxlength="40"></label>
             <label><span>E-Mail</span><input name="email" type="email" autocomplete="email" required></label>
+            <label><span>Geburtsdatum</span><input name="birthDate" type="date" autocomplete="bday" required></label>
             <label><span>Telefon</span><input name="phone" type="tel" autocomplete="tel" maxlength="30"></label>
           </div>
           <footer><button type="button" class="dialog-cancel" data-close-profile-dialog>Abbrechen</button><button type="submit" class="dialog-save"><i class="fa-solid fa-check"></i> Speichern</button></footer>
@@ -138,6 +136,7 @@ document.addEventListener("DOMContentLoaded", () => {
     role: "Servicemitarbeiter",
     department: "Restaurant",
     email: "max.mustermann@timeflow.de",
+    birthDate: "",
     phone: "+49 170 1234567",
     avatar: null
   };
@@ -337,6 +336,7 @@ document.addEventListener("DOMContentLoaded", () => {
     profileForm.elements.role.value = profile.role;
     profileForm.elements.department.value = profile.department;
     profileForm.elements.email.value = profile.email;
+    profileForm.elements.birthDate.value = profile.birthDate || "";
     profileForm.elements.phone.value = profile.phone;
     pendingAvatar = profile.avatar || null;
     photoInput.value = "";
@@ -357,6 +357,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.querySelectorAll("[data-stat-period]").forEach((button) => button.addEventListener("click", () => renderStatistics(button.dataset.statPeriod)));
   document.querySelectorAll("[data-edit-profile]").forEach((button) => button.addEventListener("click", openProfileDialog));
+  document.querySelector("[data-edit-avatar]")?.addEventListener("click", () => { openProfileDialog(); photoInput.click(); });
   document.querySelectorAll("[data-close-profile-dialog]").forEach((button) => button.addEventListener("click", () => window.TimeFlowPlatform.dialog.close(profileDialog)));
   document.querySelector("[data-select-profile-photo]").addEventListener("click", () => photoInput.click());
   photoInput.addEventListener("change", async () => {
@@ -410,6 +411,7 @@ document.addEventListener("DOMContentLoaded", () => {
       role: String(values.get("role")).trim(),
       department: String(values.get("department")).trim(),
       email: String(values.get("email")).trim(),
+      birthDate: String(values.get("birthDate")).trim(),
       phone: String(values.get("phone")).trim(),
       avatar: pendingAvatar
     };
