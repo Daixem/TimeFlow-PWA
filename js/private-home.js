@@ -1,8 +1,8 @@
 "use strict";
 
 if (!document.querySelector('script[data-beta-access]')) {
-  const accessStyle = document.createElement("link"); accessStyle.rel = "stylesheet"; accessStyle.href = "css/private-beta-access.css?v=0040-invite3"; document.head.append(accessStyle);
-  const accessScript = document.createElement("script"); accessScript.src = "js/private-beta-access.js?v=0040-invite3"; accessScript.dataset.betaAccess = "true"; document.head.append(accessScript);
+  const accessStyle = document.createElement("link"); accessStyle.rel = "stylesheet"; accessStyle.href = "css/private-beta-access.css?v=0040-invite4"; document.head.append(accessStyle);
+  const accessScript = document.createElement("script"); accessScript.src = "js/private-beta-access.js?v=0040-invite4"; accessScript.dataset.betaAccess = "true"; document.head.append(accessScript);
 }
 
 if (!document.querySelector('link[data-private-schedule-import]')) {
