@@ -23,13 +23,34 @@
     "ar-MA": { profile: "ملفي الشخصي", profileCopy: "إعداداتك الشخصية وبياناتك المحلية.", settings: "الإعدادات", settingsCopy: "الإشعارات وساعات العمل والبيانات", home: "الرئيسية", schedule: "جداول العمل", quick: "وصول سريع", language: "العربية المغربية" }
   };
   const languageOptions = '<option value="de">Deutsch</option><option value="en">English</option><option value="fr">Français</option><option value="es">Español</option><option value="it">Italiano</option><option value="nl">Nederlands</option><option value="pl">Polski</option><option value="tr">Türkçe</option><option value="ru">Русский</option><option value="uk">Українська</option><option value="da">Dansk</option><option value="sv">Svenska</option><option value="ar">العربية الفصحى</option><option value="ar-EG">العربية المصرية</option><option value="ar-AE">العربية الخليجية</option><option value="ar-MA">العربية المغربية</option>';
+  const shellWords = {
+    de: ["Guten Morgen", "Schön, dass du da bist.", "Letzter Einsatz", "Nächster Einsatz", "Stunden", "Uhr", "Zeiten", "Stempeln", "Chat"],
+    en: ["Good morning", "Nice to see you.", "Last shift", "Next shift", "Hours", "Time", "Times", "Clock in", "Chat"],
+    fr: ["Bonjour", "Ravi de vous revoir.", "Dernier service", "Prochain service", "Heures", "Heure", "Horaires", "Pointer", "Discussion"],
+    es: ["Buenos días", "Nos alegra verte.", "Último turno", "Próximo turno", "Horas", "Hora", "Horarios", "Fichar", "Chat"],
+    it: ["Buongiorno", "È bello rivederti.", "Ultimo turno", "Prossimo turno", "Ore", "Ora", "Orari", "Timbra", "Chat"],
+    nl: ["Goedemorgen", "Fijn dat je er bent.", "Laatste dienst", "Volgende dienst", "Uren", "Tijd", "Tijden", "Klokken", "Chat"],
+    pl: ["Dzień dobry", "Miło Cię widzieć.", "Ostatnia zmiana", "Następna zmiana", "Godziny", "Czas", "Czas pracy", "Odbij kartę", "Czat"],
+    tr: ["Günaydın", "Seni görmek güzel.", "Son vardiya", "Sonraki vardiya", "Saat", "Zaman", "Saatler", "Giriş yap", "Sohbet"],
+    ru: ["Доброе утро", "Рады вас видеть.", "Последняя смена", "Следующая смена", "Часы", "Время", "Учёт времени", "Отметиться", "Чат"],
+    uk: ["Доброго ранку", "Раді вас бачити.", "Остання зміна", "Наступна зміна", "Години", "Час", "Облік часу", "Відмітитися", "Чат"],
+    da: ["Godmorgen", "Dejligt at se dig.", "Seneste vagt", "Næste vagt", "Timer", "Tid", "Tider", "Stempl ind", "Chat"],
+    sv: ["God morgon", "Trevligt att se dig.", "Senaste pass", "Nästa pass", "Timmar", "Tid", "Tider", "Stämpla", "Chatt"],
+    ar: ["صباح الخير", "سعداء برؤيتك.", "آخر وردية", "الوردية التالية", "ساعات", "الوقت", "الأوقات", "تسجيل الدوام", "الدردشة"]
+  };
   function applyLanguage(language = read().language || "de") {
     const t = words[language] || words.de; document.documentElement.lang = language; document.documentElement.dir = language.startsWith("ar") ? "rtl" : "ltr";
     const set = (selector, value) => { const node = document.querySelector(selector); if (node) node.textContent = value; };
     set("#profileTitle", t.profile); set("#profilePage .profile-page-header p", t.profileCopy);
     set("#profilePage [data-open-settings] strong", t.settings); set("#profilePage [data-open-settings] small", t.settingsCopy);
     set('[data-target="home"] .nav-text', t.home); set('[data-target="schedule"] .nav-text', t.schedule); set('[data-target="profile"] .nav-text', t.profile); set('[data-target="quick"] .nav-text', t.quick);
+    const shell = shellWords[language] || (language.startsWith("ar") ? shellWords.ar : shellWords.de);
+    set("#greeting", shell[0]); set(".header .subtitle", shell[1]);
+    document.querySelectorAll(".shift-grid .shift-card").forEach((card, index) => { const values = index ? [shell[3], shell[5]] : [shell[2], shell[4]]; const heading = card.querySelector("h2"); const unit = card.querySelector("span"); if (heading) heading.textContent = values[0]; if (unit) unit.textContent = values[1]; });
+    set('[data-target="schedule"] .nav-text', shell[6]); set('[data-target="clock"] .nav-text', shell[7]); set('[data-target="chat"] .nav-text', shell[8]);
+    document.title = `TimeFlow – ${t.home}`;
     document.querySelectorAll("[data-language-select]").forEach((select) => { select.value = language; });
+    document.dispatchEvent(new CustomEvent("timeflow:language-changed", { detail: { language } }));
   }
   function languageControl() {
     const details = document.querySelector("#profilePage .profile-details-grid");
