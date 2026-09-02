@@ -1,13 +1,13 @@
 import { readFile } from "node:fs/promises";
 
 const requiredSnippets = new Map([
-  ["index.html", ["css/compat.css?v=0040", "css/sprint12.css?v=0040", "css/private-home.css?v=0040-home2", "js/platform.js?v=0040", "js/shell.js?v=0040", "js/sprint12.js?v=0040", "js/private-home.js?v=0040-home19", "sw.js?v=0040-beta1", "personal-update-list", "data-personal-message", "team-update-list", "team-update-status", "month-open-statistics", "homeMonthLabel"]],
-  ["sw.js", ["timeflow-v66-preserve-scroll", "relativePath.startsWith(\"api/\")", "response.type === \"opaque\"", "js/platform.js?v=0040", "js/shell.js?v=0040", "css/compat.css?v=0040", "js/sprint12.js?v=0040", "js/private-home.js?v=0040-home19", "js/private-schedule-import.js?v=0040-invite1"]],
+  ["index.html", ["css/compat.css?v=0040", "css/sprint12.css?v=0040", "css/private-home.css?v=0040-home2", "js/platform.js?v=0040", "js/shell.js?v=0040-scroll1", "js/sprint12.js?v=0040-scroll1", "js/private-home.js?v=0040-home19", "sw.js?v=0040-beta2", "personal-update-list", "data-personal-message", "team-update-list", "team-update-status", "month-open-statistics", "homeMonthLabel"]],
+  ["sw.js", ["timeflow-v67-stable-running-scroll", "relativePath.startsWith(\"api/\")", "response.type === \"opaque\"", "js/platform.js?v=0040", "js/shell.js?v=0040-scroll1", "css/compat.css?v=0040", "js/sprint12.js?v=0040-scroll1", "js/private-home.js?v=0040-home19", "js/private-schedule-import.js?v=0040-invite1"]],
   ["js/platform.js", ["tf-platform-", "createStorage", "visualViewport", "openDialog", "data-timeflow-platform"]],
   ["css/compat.css", ["--tf-viewport-height", "pointer: coarse", "orientation: landscape", "forced-colors: active"]],
   ["css/sprint12.css", [".header .notification-btn", ".notification-badge", "focus-visible"]],
   ["css/sprint6.css", ["@media (min-width: 680px)", ".quick-actions-card { grid-column: 1 / -1; }"]],
-  ["js/shell.js", ["function repair", "data-timeflow-shell", "window.TimeFlowShell", "window.scrollTo(0, 0)"]],
+  ["js/shell.js", ["function repair", "data-timeflow-shell", "window.TimeFlowShell", "must never move the user's current reading position"]],
   ["js/sprint8.js", ["authVisibilityFallback", "isStaticPreview", "AbortController", "storageGet", "profile-hero-actions", "sessionPermissionRole", "profile-signout-button"]],
   ["js/sprint12.js", ["Geräte- und PWA-Check", "timeflow-device-check-v1", "Sichere Ausführung", "Mobile Darstellung", "Datensicherung", "timeflow:device-resumed", "function enforcePageState", "dataset.timeflowPage", "homeDetailDialog", "action: null, event: \"info\"", "Im Chat gratulieren", "timeflow:open-mode-selection", "timeflow:open-month-statistics", "is-actionable"]],
   ["js/script.js", ["&& !saved.isWorking", "timeflow:device-resumed", "Number.isNaN(start.valueOf())", "timeflow:open-home-detail", "requestClockConfirmation", "clockConfirmDialog", "data-confirm-clock"]],
@@ -48,6 +48,14 @@ if (manifest.display !== "standalone" || manifest.icons?.length < 3 || manifest.
 }
 
 const serviceWorker = await readFile("sw.js", "utf8");
+const shellSource = await readFile("js/shell.js", "utf8");
+const sprint12Source = await readFile("js/sprint12.js", "utf8");
+if (shellSource.includes("window.scrollTo(0, 0)")) {
+  throw new Error("Die Shell-Reparatur darf die Scrollposition nicht veraendern.");
+}
+if (sprint12Source.includes('window.scrollTo({ top: 0, left: 0, behavior: "auto" })')) {
+  throw new Error("Der Seitenabgleich darf die Scrollposition nicht veraendern.");
+}
 const apiBypass = serviceWorker.indexOf('relativePath.startsWith("api/")');
 const firstRespondWith = serviceWorker.indexOf("event.respondWith");
 if (apiBypass < 0 || firstRespondWith < 0 || apiBypass > firstRespondWith) {

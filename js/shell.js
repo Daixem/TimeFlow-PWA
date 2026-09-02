@@ -76,7 +76,8 @@
 
     document.documentElement.setAttribute("data-timeflow-page", page);
     document.documentElement.setAttribute("data-timeflow-shell", "0040");
-    window.scrollTo(0, 0);
+    // A shell repair may run after visibility changes or recoverable script errors.
+    // It must never move the user's current reading position.
   }
 
   function scheduleRepair(page) {

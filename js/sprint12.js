@@ -109,7 +109,8 @@ document.addEventListener("DOMContentLoaded", () => {
       else item.removeAttribute("aria-current");
     });
     document.documentElement.dataset.timeflowPage = page;
-    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    // State reconciliation also runs when the app resumes. Preserve the user's
+    // scroll position; deliberate navigation owns any requested scrolling.
   }
 
   function settlePageState(page) {
