@@ -6,8 +6,15 @@
   const save = (patch) => { const settings = { ...read(), ...patch }; storage().setItem(KEY, JSON.stringify(settings)); document.dispatchEvent(new CustomEvent("timeflow:settings-updated", { detail: settings })); };
   const words = {
     de: { profile: "Mein Profil", profileCopy: "Deine persönlichen Einstellungen und lokalen Daten.", settings: "Einstellungen", settingsCopy: "Benachrichtigungen, Zeiterfassung und Daten", home: "Home", schedule: "Dienstpläne", quick: "Schnellzugriff", language: "Sprache" },
-    en: { profile: "My profile", profileCopy: "Your personal settings and local data.", settings: "Settings", settingsCopy: "Notifications, time tracking and data", home: "Home", schedule: "Schedules", quick: "Quick access", language: "Language" }
+    en: { profile: "My profile", profileCopy: "Your personal settings and local data.", settings: "Settings", settingsCopy: "Notifications, time tracking and data", home: "Home", schedule: "Schedules", quick: "Quick access", language: "Language" },
+    fr: { profile: "Mon profil", profileCopy: "Vos paramètres personnels et données locales.", settings: "Paramètres", settingsCopy: "Notifications, temps de travail et données", home: "Accueil", schedule: "Plannings", quick: "Accès rapide", language: "Langue" },
+    es: { profile: "Mi perfil", profileCopy: "Tus ajustes personales y datos locales.", settings: "Ajustes", settingsCopy: "Notificaciones, jornada y datos", home: "Inicio", schedule: "Horarios", quick: "Acceso rápido", language: "Idioma" },
+    it: { profile: "Il mio profilo", profileCopy: "Impostazioni personali e dati locali.", settings: "Impostazioni", settingsCopy: "Notifiche, orario e dati", home: "Home", schedule: "Turni", quick: "Accesso rapido", language: "Lingua" },
+    nl: { profile: "Mijn profiel", profileCopy: "Je persoonlijke instellingen en lokale gegevens.", settings: "Instellingen", settingsCopy: "Meldingen, werktijd en gegevens", home: "Home", schedule: "Roosters", quick: "Snelmenu", language: "Taal" },
+    pl: { profile: "Mój profil", profileCopy: "Ustawienia osobiste i dane lokalne.", settings: "Ustawienia", settingsCopy: "Powiadomienia, czas pracy i dane", home: "Start", schedule: "Grafiki", quick: "Szybki dostęp", language: "Język" },
+    tr: { profile: "Profilim", profileCopy: "Kişisel ayarlarınız ve yerel verileriniz.", settings: "Ayarlar", settingsCopy: "Bildirimler, çalışma süresi ve veriler", home: "Ana sayfa", schedule: "Vardiyalar", quick: "Hızlı erişim", language: "Dil" }
   };
+  const languageOptions = '<option value="de">Deutsch</option><option value="en">English</option><option value="fr">Français</option><option value="es">Español</option><option value="it">Italiano</option><option value="nl">Nederlands</option><option value="pl">Polski</option><option value="tr">Türkçe</option>';
   function applyLanguage(language = read().language || "de") {
     const t = words[language] || words.de; document.documentElement.lang = language;
     const set = (selector, value) => { const node = document.querySelector(selector); if (node) node.textContent = value; };
@@ -18,9 +25,9 @@
   }
   function languageControl() {
     const details = document.querySelector("#profilePage .profile-details-grid");
-    if (details && !details.querySelector(".profile-language-card")) details.insertAdjacentHTML("afterbegin", `<article class="profile-menu-card profile-language-card"><label class="profile-language-select"><span class="menu-icon settings"><i class="fa-solid fa-language"></i></span><span><strong>Sprache</strong><small>Sprache der Benutzeroberfläche</small></span><select data-language-select aria-label="Sprache wählen"><option value="de">Deutsch</option><option value="en">English</option></select></label></article>`);
+    if (details && !details.querySelector(".profile-language-card")) details.insertAdjacentHTML("afterbegin", `<article class="profile-menu-card profile-language-card"><label class="profile-language-select"><span class="menu-icon settings"><i class="fa-solid fa-language"></i></span><span><strong>Sprache</strong><small>Sprache der Benutzeroberfläche</small></span><select data-language-select aria-label="Sprache wählen">${languageOptions}</select></label></article>`);
     const personal = document.querySelector(".personalization-settings-card .settings-list");
-    if (personal && !personal.querySelector("[data-language-select]")) personal.insertAdjacentHTML("afterbegin", `<label class="settings-select"><span><strong>Sprache</strong><small>Sprache der Benutzeroberfläche</small></span><select data-language-select><option value="de">Deutsch</option><option value="en">English</option></select></label>`);
+    if (personal && !personal.querySelector("[data-language-select]")) personal.insertAdjacentHTML("afterbegin", `<label class="settings-select"><span><strong>Sprache</strong><small>Sprache der Benutzeroberfläche</small></span><select data-language-select>${languageOptions}</select></label>`);
     document.querySelectorAll("[data-language-select]").forEach((select) => { if (select.dataset.bound) return; select.dataset.bound = "true"; select.addEventListener("change", () => { save({ language: select.value }); applyLanguage(select.value); }); });
     applyLanguage();
   }
@@ -29,7 +36,17 @@
     if (card.matches('[aria-labelledby="timeSettingsTitle"],.legal-settings-card')) return "work";
     if (card.matches('[aria-labelledby="notificationSettingsTitle"]')) return "communication";
     if (card.matches('[aria-labelledby="dataSettingsTitle"]')) return "privacy";
+    if (card.matches(".cloud-sync-card,.release-readiness-card")) return "system";
     return "system";
+  }
+  function normalizeSpecialCards(layout) {
+    document.querySelector("#settingsPage > .settings-hero")?.remove();
+    const cloud = layout.querySelector(":scope > .cloud-sync-card");
+    if (cloud && !cloud.querySelector(":scope > header")) {
+      const header = document.createElement("header");
+      [cloud.querySelector(":scope > .cloud-sync-icon"), cloud.querySelector(":scope > .cloud-sync-copy"), cloud.querySelector(":scope > .cloud-sync-state")].filter(Boolean).forEach((node) => header.append(node));
+      cloud.prepend(header);
+    }
   }
   function makeAccordion(card) {
     if (card.dataset.accordionReady) return; const header = card.querySelector(":scope > header"); if (!header) return;
@@ -40,14 +57,14 @@
     header.addEventListener("click", toggle); header.addEventListener("keydown", (event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); toggle(); } }); card.dataset.accordionReady = "true";
   }
   function organize() {
-    const layout = document.querySelector("#settingsPage .settings-layout"); if (!layout) return;
-    const cards = [...layout.children].filter((node) => node.matches?.(".settings-card")); if (!cards.length) return;
+    const layout = document.querySelector("#settingsPage .settings-layout"); if (!layout) return; normalizeSpecialCards(layout);
+    const cards = [...layout.children].filter((node) => node.matches?.(".settings-card,.cloud-sync-card,.release-readiness-card")); if (!cards.length) return;
     layout.querySelectorAll(":scope > .settings-group-title").forEach((node) => node.remove());
     const groups = [{ id: "appearance", title: "Darstellung & Sprache" }, { id: "work", title: "Arbeitszeit & Schutz" }, { id: "communication", title: "Benachrichtigungen" }, { id: "system", title: "App & Updates" }, { id: "privacy", title: "Daten & Datenschutz" }];
     groups.forEach((group) => { const members = cards.filter((card) => groupFor(card) === group.id); if (!members.length) return; const title = document.createElement("h2"); title.className = "settings-group-title"; title.textContent = group.title; layout.append(title); members.forEach((card) => { card.dataset.settingsGroup = group.id; layout.append(card); makeAccordion(card); }); });
     languageControl();
   }
   let timer; const schedule = () => { clearTimeout(timer); timer = setTimeout(organize, 60); };
-  document.addEventListener("DOMContentLoaded", () => { organize(); const layout = document.querySelector("#settingsPage .settings-layout"); if (layout) new MutationObserver((records) => { if (records.some((record) => [...record.addedNodes].some((node) => node.matches?.(".settings-card:not([data-accordion-ready])")))) schedule(); }).observe(layout, { childList: true }); });
+  document.addEventListener("DOMContentLoaded", () => { organize(); const layout = document.querySelector("#settingsPage .settings-layout"); if (layout) new MutationObserver((records) => { if (records.some((record) => [...record.addedNodes].some((node) => node.matches?.(".settings-card:not([data-accordion-ready]),.cloud-sync-card:not([data-accordion-ready]),.release-readiness-card:not([data-accordion-ready])")))) schedule(); }).observe(layout, { childList: true }); });
   document.addEventListener("timeflow:settings-updated", () => applyLanguage());
 }());

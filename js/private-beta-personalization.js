@@ -41,8 +41,8 @@
     const scale = Math.min(1.3, Math.max(1, Number(settings.fontScale || 1.1)));
     root.style.setProperty("--tf-font-scale", String(scale));
     root.dataset.tfFontSize = scale >= 1.2 ? "expanded" : scale >= 1.1 ? "large" : "normal";
-    root.dataset.tfFont = ["inter", "system", "serif"].includes(settings.fontFamily) ? settings.fontFamily : "inter";
-    root.dataset.tfBackground = ["midnight", "ocean", "teal", "violet"].includes(settings.appBackground) ? settings.appBackground : "midnight";
+    root.dataset.tfFont = ["inter", "system", "serif", "arial", "rounded", "mono"].includes(settings.fontFamily) ? settings.fontFamily : "inter";
+    root.dataset.tfBackground = ["midnight", "ocean", "teal", "violet", "graphite", "forest", "sunset", "rose", "light"].includes(settings.appBackground) ? settings.appBackground : "midnight";
   }
 
   function notify(message) {
@@ -79,8 +79,8 @@
       <section class="settings-card personalization-settings-card" aria-labelledby="personalizationTitle">
         <header><span class="settings-card-icon violet"><i class="fa-solid fa-palette"></i></span><div><small>Darstellung</small><h2 id="personalizationTitle">Persönliches Erscheinungsbild</h2></div></header>
         <div class="settings-list">
-          <label class="settings-select"><span><strong>Hintergrund</strong><small>Farbstimmung der gesamten App</small></span><select data-personal-setting="appBackground"><option value="midnight">Mitternacht</option><option value="ocean">Ozeanblau</option><option value="teal">Petrol</option><option value="violet">Violett</option></select></label>
-          <label class="settings-select"><span><strong>Schriftart</strong><small>Für alle Ansichten</small></span><select data-personal-setting="fontFamily"><option value="inter">Inter</option><option value="system">Systemschrift</option><option value="serif">Serif</option></select></label>
+          <label class="settings-select"><span><strong>Hintergrund</strong><small>Farbstimmung der gesamten App</small></span><select data-personal-setting="appBackground"><option value="midnight">Mitternacht</option><option value="ocean">Ozeanblau</option><option value="teal">Petrol</option><option value="violet">Violett</option><option value="graphite">Graphit</option><option value="forest">Waldgrün</option><option value="sunset">Sonnenuntergang</option><option value="rose">Rosé</option><option value="light">Hell</option></select></label>
+          <label class="settings-select"><span><strong>Schriftart</strong><small>Für alle Ansichten</small></span><select data-personal-setting="fontFamily"><option value="inter">Inter</option><option value="system">Systemschrift</option><option value="arial">Arial</option><option value="rounded">Abgerundet</option><option value="serif">Serif</option><option value="mono">Monospace</option></select></label>
           <label class="settings-select"><span><strong>Schriftgröße</strong><small>Auch für Karten und Dialoge</small></span><select data-personal-setting="fontScale"><option value="1">Normal</option><option value="1.1">Groß</option><option value="1.2">Sehr groß</option><option value="1.3">Maximal</option></select></label>
         </div>
       </section>`);
