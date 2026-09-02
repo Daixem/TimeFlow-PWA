@@ -194,8 +194,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const registration = await navigator.serviceWorker?.getRegistration();
       if (registration) await registration.update();
       const checkedAt = new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
-      label.textContent = `Zuletzt geprüft um ${checkedAt} Uhr`;
-      notify("TimeFlow ist auf dem aktuellen Stand.");
+      if (registration?.waiting) {
+        label.textContent = `Update bereit · geprüft um ${checkedAt} Uhr`;
+        notify("Das Update wird beim nächsten vollständigen Start aktiviert. Deine laufende Nutzung bleibt unberührt.");
+      } else {
+        label.textContent = `Zuletzt geprüft um ${checkedAt} Uhr`;
+        notify("TimeFlow ist auf dem aktuellen Stand.");
+      }
     } catch {
       label.textContent = "Prüfung derzeit nicht möglich";
       notify("Das Update konnte gerade nicht geprüft werden.");

@@ -10,6 +10,10 @@ const reminders = await readFile(new URL("../js/private-reminders.js", import.me
 const privacy = await readFile(new URL("../js/private-beta-legal.js", import.meta.url), "utf8");
 const betaAccess = await readFile(new URL("../js/private-beta-access.js", import.meta.url), "utf8");
 const index = await readFile(new URL("../index.html", import.meta.url), "utf8");
+const personalization = await readFile(new URL("../js/private-beta-personalization.js", import.meta.url), "utf8");
+const personalizationCss = await readFile(new URL("../css/private-beta-personalization.css", import.meta.url), "utf8");
+const privateHome = await readFile(new URL("../js/private-home.js", import.meta.url), "utf8");
+const serviceWorker = await readFile(new URL("../sw.js", import.meta.url), "utf8");
 
 for (const marker of ["/api/team-access", "valid_invitation_required", "timeflow_organization_members", "timeflow_organization_invites"]) if (!worker.includes(marker)) throw new Error(`Team-API fehlt: ${marker}`);
 for (const marker of ["teamAccessAllowed", "Nur nach Einladung eines Unternehmens", "loadTeamAccess", 'saveMode("private", false)']) if (!mode.includes(marker)) throw new Error(`Team-Sperre fehlt: ${marker}`);
@@ -23,4 +27,9 @@ for (const marker of ["Beta-Hinweise & Datenschutz", "timeflow-beta-consent-v1",
 for (const marker of ["timeflow_beta_invites", "token_hash", "crypto.randomUUID", "invitation_already_claimed", "TIMEFLOW_BETA_ADMIN_USER_ID", "beta_access_required"]) if (!worker.includes(marker)) throw new Error(`Persönliche Einladung fehlt: ${marker}`);
 for (const marker of ["signin-with-chatgpt", "Einladungslink erstellen", "navigator.share", "api/beta/invite", "api/beta/access", "Einladung wird aktiviert", "claimInvitation", "Erneut versuchen"]) if (!betaAccess.includes(marker)) throw new Error(`Einladungsoberfläche fehlt: ${marker}`);
 for (const marker of ["private-beta-access.css?v=0040-invite3", "defer src=\"js/private-beta-access.js?v=0040-invite3\"", "data-beta-access=\"true\""]) if (!index.includes(marker)) throw new Error(`Einladungsstartseite fehlt: ${marker}`);
+for (const marker of ["private-beta-personalization.css?v=0040-beta1", "private-beta-personalization.js?v=0040-beta1", "sw.js?v=0040-beta1"]) if (!index.includes(marker)) throw new Error(`Beta-Erweiterung fehlt: ${marker}`);
+for (const marker of ["Monatliche Sollstunden", "Verfügbare Urlaubstage pro Jahr", "annualVacationDays", "fontScale", "fontFamily", "appBackground", "timeflow-private-setup-v1", "timeflow-beta-admin"]) if (!personalization.includes(marker)) throw new Error(`Ersteinrichtung oder Personalisierung fehlt: ${marker}`);
+for (const marker of ["position:fixed!important", "timeflow-beta-user [data-manage-users]", "--tf-font-scale", "timeflow-private-mode .private-home-account{display:none"]) if (!personalizationCss.includes(marker)) throw new Error(`Darstellungsregel fehlt: ${marker}`);
+if (!privateHome.includes('document.dispatchEvent(new CustomEvent("timeflow:open-private-account"))') || privateHome.includes('monthCard.querySelector(".month-stats")?.insertAdjacentHTML("afterend"')) throw new Error("Arbeitszeitkonto ist nicht ausschließlich im Schnellzugriff erreichbar.");
+if (serviceWorker.includes("self.skipWaiting()") || serviceWorker.includes("self.clients.claim()")) throw new Error("Beta-Updates können noch eine laufende Sitzung unterbrechen.");
 console.log("Einzel-Beta: Cloud-Daten, Exporte und einladungspflichtiger Teamzugriff sind abgesichert.");

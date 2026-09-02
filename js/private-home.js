@@ -98,15 +98,6 @@ document.addEventListener("DOMContentLoaded", () => {
     </section>`);
   const privateClock = dashboard.querySelector(".private-home-clock");
 
-  monthCard.querySelector(".month-stats")?.insertAdjacentHTML("afterend", `
-    <button class="private-home-account" type="button" aria-label="Arbeitszeitkonto in der ausführlichen Statistik öffnen">
-      <span class="private-home-account-title"><i class="fa-solid fa-wallet"></i><span><small>ARBEITSZEITKONTO</small><strong>Aktueller Stand</strong></span></span>
-      <span><small>ERFASST</small><strong id="privateAccountCaptured">0 h 0 min</strong></span>
-      <span><small>MONATSSOLL</small><strong id="privateAccountManual">0 h 0 min</strong></span>
-      <span><small>SALDO</small><strong class="positive" id="privateAccountBalance">0 h 0 min</strong></span>
-      <i class="fa-solid fa-chevron-right"></i>
-    </button>`);
-
   document.body.insertAdjacentHTML("beforeend", `
     <nav class="private-quick-nav" aria-label="Navigation für die Einzelnutzung">
       <button class="active" type="button" data-private-target="home"><i class="fa-solid fa-house"></i><span>Home</span></button>
@@ -167,10 +158,9 @@ document.addEventListener("DOMContentLoaded", () => {
   quickDialog.querySelectorAll("[data-private-action]").forEach((button) => button.addEventListener("click", () => {
     window.TimeFlowPlatform.dialog.close(quickDialog);
     if (button.dataset.privateAction === "notifications") document.querySelector('[data-action="notifications"]')?.click();
-    if (button.dataset.privateAction === "account") monthCard.querySelector('[data-action="month"]')?.click();
+    if (button.dataset.privateAction === "account") document.dispatchEvent(new CustomEvent("timeflow:open-private-account"));
     if (button.dataset.privateAction === "settings") document.dispatchEvent(new CustomEvent("timeflow:open-settings"));
   }));
-  monthCard.querySelector(".private-home-account")?.addEventListener("click", () => document.dispatchEvent(new CustomEvent("timeflow:open-private-account")));
   privateClock.querySelector("[data-private-pause]")?.addEventListener("click", () => document.dispatchEvent(new CustomEvent("timeflow:toggle-pause")));
 
   renderPrivateClock();
