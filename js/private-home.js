@@ -8,7 +8,7 @@ if (!document.querySelector('script[data-beta-access]')) {
 if (!document.querySelector('link[data-private-schedule-import]')) {
   const importStyle = document.createElement("link");
   importStyle.rel = "stylesheet";
-  importStyle.href = "css/private-schedule-import.css?v=0040-invite1";
+  importStyle.href = "css/private-schedule-import.css?v=0040-files2";
   importStyle.dataset.privateScheduleImport = "true";
   document.head.append(importStyle);
   const savedStyle = document.createElement("link");
@@ -66,7 +66,7 @@ if (!document.querySelector('script[data-private-account]')) {
 }
 if (!document.querySelector('script[data-private-schedule-import]')) {
   const importScript = document.createElement("script");
-  importScript.src = "js/private-schedule-import.js?v=0040-invite1";
+  importScript.src = "js/private-schedule-import.js?v=0040-files2";
   importScript.dataset.privateScheduleImport = "true";
   document.head.append(importScript);
 }

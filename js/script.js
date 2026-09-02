@@ -89,11 +89,14 @@ function updateDateTime() {
     do { date.setDate(date.getDate() + direction); } while ([0, 6].includes(date.getDay()));
     return date;
   };
-  const shiftCards = document.querySelectorAll(".shift-card");
-  const previousWorkday = workdayNear(-1);
-  const nextWorkday = workdayNear(1);
-  if (shiftCards[0]) shiftCards[0].querySelector("p").textContent = previousWorkday.toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" });
-  if (shiftCards[1]) shiftCards[1].querySelector("p").textContent = nextWorkday.toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" });
+  const privateMode = document.documentElement.classList.contains("timeflow-private-mode") || document.body.dataset.appMode === "private";
+  if (!privateMode) {
+    const shiftCards = document.querySelectorAll(".shift-card");
+    const previousWorkday = workdayNear(-1);
+    const nextWorkday = workdayNear(1);
+    if (shiftCards[0]) shiftCards[0].querySelector("p").textContent = previousWorkday.toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" });
+    if (shiftCards[1]) shiftCards[1].querySelector("p").textContent = nextWorkday.toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" });
+  }
   const hour = now.getHours();
   elements.greeting.textContent = hour < 12 && hour >= 5 ? "Guten Morgen" : hour < 18 ? "Guten Tag" : "Guten Abend";
 }

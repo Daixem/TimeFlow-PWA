@@ -2,6 +2,9 @@ import { readFile } from "node:fs/promises";
 import vm from "node:vm";
 
 const code = await readFile(new URL("../js/private-schedule-import.js", import.meta.url), "utf8");
+for (const marker of ["multiple accept=", "application/pdf", "application/json", "async function readPlanFile", "json.schedule", "mehrere Dateien gleichzeitig möglich"]) {
+  if (!code.includes(marker)) throw new Error(`Mehrfach- oder Dateiformatimport fehlt: ${marker}`);
+}
 const memory = new Map();
 const storage = { getItem: (key) => memory.has(key) ? memory.get(key) : null, setItem: (key, value) => memory.set(key, String(value)) };
 const context = { window: { TimeFlowPlatform: { storage } }, document: { readyState: "loading", addEventListener() {} }, console, Date, JSON, String, Number, Array, Math };

@@ -164,7 +164,7 @@
     if (!tabs || document.querySelector(".private-import-panel")) return;
     const panel = document.createElement("section");
     panel.className = "private-import-panel";
-    panel.innerHTML = `<header><div><small>PRIVAT / EINZELNUTZUNG</small><h2>Mein eigener Dienstplan</h2><p>Lade einen oder mehrere Dienstpläne hoch oder trage deine Einsätze vollständig manuell ein.</p></div><div class="private-import-actions"><button type="button" data-pick-plan><i class="fa-solid fa-file-arrow-up"></i> Dienstplan hochladen</button><button type="button" data-manual-plan><i class="fa-solid fa-pen-to-square"></i> Manuell eintragen</button></div></header><input hidden type="file" data-plan-file accept="image/*,.pdf,.csv,.txt,.json,.ics,application/pdf,text/csv,text/plain,application/json,text/calendar"><p class="private-import-note"><i class="fa-solid fa-shield-halved"></i> Auswählen oder Eintragen allein ändert nichts. Die Übernahme erfolgt erst nach deiner ausdrücklichen Zustimmung.</p><p class="private-learning-note" data-learning-note></p>`;
+    panel.innerHTML = `<header><div><small>PRIVAT / EINZELNUTZUNG</small><h2>Mein eigener Dienstplan</h2><p>Lade einen oder mehrere Dienstpläne hoch oder trage deine Einsätze vollständig manuell ein.</p></div><div class="private-import-actions"><button type="button" data-pick-plan><i class="fa-solid fa-file-arrow-up"></i> Dienstplan hochladen</button><button type="button" data-manual-plan><i class="fa-solid fa-pen-to-square"></i> Manuell eintragen</button></div></header><input hidden type="file" data-plan-file multiple accept="image/*,.pdf,.csv,.txt,.json,.ics,application/pdf,text/csv,text/plain,application/json,text/calendar"><p class="private-import-formats"><i class="fa-solid fa-file-circle-check"></i> Bilder, Screenshots, PDF, JSON, CSV, TXT und ICS · mehrere Dateien gleichzeitig möglich</p><p class="private-import-note"><i class="fa-solid fa-shield-halved"></i> Auswählen oder Eintragen allein ändert nichts. Die Übernahme erfolgt erst nach deiner ausdrücklichen Zustimmung.</p><p class="private-learning-note" data-learning-note></p>`;
     tabs.insertAdjacentElement("afterend", panel);
     document.body.insertAdjacentHTML("beforeend", `<dialog class="private-import-dialog" id="privateImportDialog"><header><div><small>IMPORT-VORSCHAU</small><h2>Erkannte Einsätze prüfen und korrigieren</h2><p data-import-status>Die Datei wird analysiert.</p></div><button type="button" data-close-import aria-label="Schließen"><i class="fa-solid fa-xmark"></i></button></header><form><div class="private-import-toolbar"><span>Jeder Wert kann vor der Übernahme geändert werden.</span><button type="button" data-add-import-row><i class="fa-solid fa-plus"></i> Fehlenden Einsatz ergänzen</button></div><div class="private-import-preview" data-import-preview></div><label class="private-import-consent"><input type="checkbox" data-import-consent><span>Ich habe alle Einträge geprüft und stimme der Übernahme in meinen privaten Dienstplan zu.</span></label><footer><button type="button" data-close-import>Abbrechen</button><button type="submit" data-commit-import disabled><i class="fa-solid fa-check"></i> Verbindlich übernehmen</button></footer></form></dialog>`);
     const dialog = document.getElementById("privateImportDialog"); const input = panel.querySelector("[data-plan-file]"); const status = dialog.querySelector("[data-import-status]"); const preview = dialog.querySelector("[data-import-preview]"); const learningNote = panel.querySelector("[data-learning-note]"); const consent = dialog.querySelector("[data-import-consent]"); const commit = dialog.querySelector("[data-commit-import]"); let entries = [];
@@ -194,9 +194,31 @@
       render();
       platform().dialog.open(dialog);
     });
+    async function readPlanFile(file, fileIndex) {
+      status.textContent = `${file.name} wird geprüft …`;
+      const imageResult = file.type.startsWith("image/") ? await imageText(file, status) : null;
+      const text = imageResult?.text ?? (file.type === "application/pdf" || /\.pdf$/i.test(file.name) ? await pdfText(file) : await file.text());
+      let found = imageResult?.layoutEntries?.length ? imageResult.layoutEntries : [];
+      if (/\.json$/i.test(file.name) || file.type === "application/json") {
+        try {
+          const json = JSON.parse(text);
+          const list = Array.isArray(json) ? json : json.shifts || json.schedule || json.entries;
+          if (Array.isArray(list)) found = list.map((item, index) => ({ id: `import-${Date.now()}-${fileIndex}-${index}`, date: item.date || item.day, start: item.start || item.begin || "", end: item.end || item.finish || "", break: Number(item.break ?? item.pause ?? 30), title: item.title || item.shift || item.type || "Arbeit", note: `Aus ${file.name} importiert` })).filter((item) => item.date);
+        } catch (_error) { found = []; }
+      }
+      if (!found.length) found = parse(text);
+      return found.map((entry, index) => ({ ...entry, id: `import-${Date.now()}-${fileIndex}-${index}`, sourceFile: file.name }));
+    }
     input.addEventListener("change", async () => {
-      const file = input.files?.[0]; if (!file) return; entries = []; render(); status.textContent = `${file.name} wird geprüft …`; platform().dialog.open(dialog);
-      try { const imageResult = file.type.startsWith("image/") ? await imageText(file, status) : null; let text = imageResult?.text ?? (file.type === "application/pdf" || /\.pdf$/i.test(file.name) ? await pdfText(file) : await file.text()); if (imageResult?.layoutEntries?.length) entries = imageResult.layoutEntries; if (/\.json$/i.test(file.name)) { try { const json = JSON.parse(text); const list = Array.isArray(json) ? json : json.shifts; if (Array.isArray(list)) entries = list.map((item, index) => ({ id: `import-${Date.now()}-${index}`, date: item.date, start: item.start || "", end: item.end || "", break: Number(item.break ?? 30), title: item.title || "Arbeit", note: "Aus Datei importiert" })).filter((item) => item.date); } catch (_error) { entries = []; } } if (!entries.length) entries = parse(text); status.textContent = entries.length ? `${entries.length} Tage erkannt. Bitte Arbeits- und freie Tage kontrollieren.` : "Keine vollständigen Einsätze erkannt."; } catch (_error) { status.textContent = "Diese Datei konnte auf dem Gerät nicht automatisch gelesen werden."; }
+      const files = [...(input.files || [])]; if (!files.length) return; entries = []; render(); platform().dialog.open(dialog);
+      const failed = [];
+      for (let index = 0; index < files.length; index += 1) {
+        try { entries = mergeEntries(entries, await readPlanFile(files[index], index)); }
+        catch (_error) { failed.push(files[index].name); }
+      }
+      status.textContent = entries.length
+        ? `${entries.length} Tage aus ${files.length} Datei${files.length === 1 ? "" : "en"} erkannt. Bitte alle Angaben kontrollieren.${failed.length ? ` Nicht gelesen: ${failed.join(", ")}.` : ""}`
+        : "Keine vollständigen Einsätze erkannt. Die Angaben können unten manuell ergänzt werden.";
       render(); input.value = "";
     });
     preview.addEventListener("input", (event) => { const entry = entries[Number(event.target.dataset.i)]; if (entry && event.target.dataset.field) entry[event.target.dataset.field] = event.target.value; consent.checked = false; commit.disabled = true; });
