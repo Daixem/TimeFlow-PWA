@@ -57,3 +57,11 @@ const page = await readFile("index.html", "utf8");
 if (!page.includes('register("sw.js", { updateViaCache: "none" })') || /\?v=(?!__TIMEFLOW_BUILD__)[^"']+/.test(page + shell)) {
   throw new Error("Statische Asset- oder Service-Worker-Version gefunden.");
 }
+for (const marker of [
+  'new Request(url, { cache: "reload" })',
+  'fetch(event.request, { cache: "no-store" })',
+  'window.addEventListener("online", checkForUpdate)',
+  'window.setInterval(checkForUpdate, 5 * 60 * 1000)'
+]) {
+  if (!(page + shell).includes(marker)) throw new Error(`Update-Absicherung fehlt: ${marker}`);
+}

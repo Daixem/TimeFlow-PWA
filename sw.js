@@ -9,7 +9,10 @@ const APP_SHELL = [
 ];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
+  // `reload` is intentional: an HTTP cache (notably Safari's) must not seed a
+  // freshly versioned app cache with files from the preceding deployment.
+  const freshShell = APP_SHELL.map((url) => new Request(url, { cache: "reload" }));
+  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(freshShell)).then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", (event) => {
@@ -48,7 +51,7 @@ self.addEventListener("fetch", (event) => {
   }
 
   if (["script", "style", "manifest"].includes(event.request.destination)) {
-    event.respondWith(fetch(event.request, { cache: "no-cache" })
+    event.respondWith(fetch(event.request, { cache: "no-store" })
       .then((response) => cacheSuccessful(event.request, response))
       .catch(() => caches.match(event.request, { ignoreSearch: true })));
     return;
