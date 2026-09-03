@@ -1,0 +1,94 @@
+:root{
+  --tf-glass-panel:color-mix(in srgb,var(--tf-glass) 78%,transparent);
+  --tf-glass-inset:rgba(255,255,255,.035);
+  --tf-glass-separator:color-mix(in srgb,var(--tf-glass-border) 58%,transparent);
+  --tf-glass-shadow:0 18px 48px rgba(0,7,20,.24);
+}
+
+/* One coherent glass layer per window. Inner rows no longer introduce another
+   coloured card; structure comes from spacing and quiet separators. */
+.timeflow-private-mode :is(
+  .card,.list-card,.shift-card,.private-home-clock,.profile-hero,.profile-menu-card,
+  .settings-card,.cloud-sync-card,.release-readiness-card,.private-import-panel,
+  .private-account-dialog,.support-dialog,.notification-center,.home-detail-dialog,
+  .quick-action-dialog,.clock-confirm-dialog,.profile-dialog,.settings-dialog,
+  .device-check-dialog,.beta-privacy-dialog,.private-initial-setup,
+  .top-grid,.approval-card,.quick-actions-card
+){
+  border:1px solid var(--tf-glass-border)!important;
+  background:linear-gradient(145deg,rgba(255,255,255,.07),rgba(255,255,255,.018)),var(--tf-glass-panel)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),var(--tf-glass-shadow)!important;
+  backdrop-filter:blur(24px) saturate(135%)!important;
+  -webkit-backdrop-filter:blur(24px) saturate(135%)!important;
+}
+
+.timeflow-private-mode :is(
+  .settings-list>label,.settings-toggle,.settings-select,.support-consent,
+  .vacation-balance span,.app-status-list>div,.private-home-summary>span,
+  .private-account-summary span,.private-account-list article,.private-import-preview article,
+  .device-check-list li,.home-detail-content article,.support-ticket,.work-protection-card li,
+  .profile-permission-card,.profile-menu-link,.month-summary-item
+){
+  border-color:var(--tf-glass-separator)!important;
+  background:var(--tf-glass-inset)!important;
+  background-image:none!important;
+  box-shadow:none!important;
+}
+
+.timeflow-private-mode :is(
+  .top-grid>.card,.top-grid>.info-card,.top-grid>.motivation-card,
+  .list-row,.personal-update,.team-update,.week-row,
+  .settings-card>.settings-list,.profile-hero>.profile-identity,
+  .private-home-clock>.private-home-summary,.month-card>.month-values
+){
+  background:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+}
+.timeflow-private-mode .top-grid>.card{border:0!important;border-radius:0!important}
+.timeflow-private-mode .top-grid>.card+.card{border-inline-start:1px solid var(--tf-glass-separator)!important}
+.timeflow-private-mode :is(.list-row,.week-row)+:is(.list-row,.week-row){border-top-color:var(--tf-glass-separator)!important}
+
+.timeflow-private-mode :is(
+  dialog>header,.support-dialog>header,.support-dialog>nav,
+  .private-home-dialog>header,.private-import-dialog>header,
+  .profile-dialog>header,.quick-action-dialog form>header
+){
+  background:transparent!important;
+  background-image:none!important;
+  border-color:var(--tf-glass-separator)!important;
+}
+
+.timeflow-private-mode :is(input,select,textarea,.settings-hours-input,.profile-language-select select){
+  border-color:var(--tf-glass-separator)!important;
+  background:rgba(255,255,255,.045)!important;
+  background-image:none!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.035)!important;
+}
+
+.timeflow-private-mode :is(.private-quick-nav,.bottom-nav){
+  border-color:var(--tf-glass-border)!important;
+  background:color-mix(in srgb,var(--tf-glass-strong) 82%,transparent)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 18px 50px rgba(0,5,18,.32)!important;
+  backdrop-filter:blur(26px) saturate(140%)!important;
+  -webkit-backdrop-filter:blur(26px) saturate(140%)!important;
+}
+
+.timeflow-private-mode :is(button.active,[aria-selected="true"],form>button[type="submit"],.clock-confirm-submit){
+  background:linear-gradient(135deg,color-mix(in srgb,var(--tf-accent) 88%,white),var(--tf-accent))!important;
+}
+
+html[data-tf-background="light"] .timeflow-private-mode{
+  --tf-glass-inset:rgba(255,255,255,.28);
+  --tf-glass-shadow:0 16px 42px rgba(29,73,112,.14);
+}
+html[data-tf-background="light"] .timeflow-private-mode :is(input,select,textarea,.settings-hours-input){background:rgba(255,255,255,.4)!important}
+
+@media(max-width:600px){
+  :root{--tf-glass-shadow:0 12px 34px rgba(0,7,20,.22)}
+  .timeflow-private-mode :is(.card,.list-card,.shift-card,.settings-card,.profile-menu-card){backdrop-filter:blur(18px) saturate(125%)!important;-webkit-backdrop-filter:blur(18px) saturate(125%)!important}
+}
+
+@media(prefers-reduced-transparency:reduce){
+  .timeflow-private-mode :is(.card,.list-card,.shift-card,.settings-card,.profile-menu-card,dialog,.private-quick-nav){background:var(--tf-glass-strong)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+}
