@@ -1,83 +1,83 @@
 "use strict";
 
 if (!document.querySelector('script[data-beta-access]')) {
-  const accessStyle = document.createElement("link"); accessStyle.rel = "stylesheet"; accessStyle.href = "css/private-beta-access.css?v=0040-invite4"; document.head.append(accessStyle);
-  const accessScript = document.createElement("script"); accessScript.src = "js/private-beta-access.js?v=0040-invite4"; accessScript.dataset.betaAccess = "true"; document.head.append(accessScript);
+  const accessStyle = document.createElement("link"); accessStyle.rel = "stylesheet"; accessStyle.href = "css/private-beta-access.css?v=__TIMEFLOW_BUILD__"; document.head.append(accessStyle);
+  const accessScript = document.createElement("script"); accessScript.src = "js/private-beta-access.js?v=__TIMEFLOW_BUILD__"; accessScript.dataset.betaAccess = "true"; document.head.append(accessScript);
 }
 
 if (!document.querySelector('link[data-private-schedule-import]')) {
   const importStyle = document.createElement("link");
   importStyle.rel = "stylesheet";
-  importStyle.href = "css/private-schedule-import.css?v=0040-files2";
+  importStyle.href = "css/private-schedule-import.css?v=__TIMEFLOW_BUILD__";
   importStyle.dataset.privateScheduleImport = "true";
   document.head.append(importStyle);
   const savedStyle = document.createElement("link");
   savedStyle.rel = "stylesheet";
-  savedStyle.href = "css/private-schedule-saved.css?v=0040-invite1";
+  savedStyle.href = "css/private-schedule-saved.css?v=__TIMEFLOW_BUILD__";
   savedStyle.dataset.privateScheduleImport = "saved";
   document.head.append(savedStyle);
   const correctionStyle = document.createElement("link");
   correctionStyle.rel = "stylesheet";
-  correctionStyle.href = "css/private-schedule-corrections.css?v=0040-invite1";
+  correctionStyle.href = "css/private-schedule-corrections.css?v=__TIMEFLOW_BUILD__";
   correctionStyle.dataset.privateScheduleImport = "corrections";
   document.head.append(correctionStyle);
   const learningStyle = document.createElement("link");
   learningStyle.rel = "stylesheet";
-  learningStyle.href = "css/private-schedule-learning.css?v=0040-invite1";
+  learningStyle.href = "css/private-schedule-learning.css?v=__TIMEFLOW_BUILD__";
   learningStyle.dataset.privateScheduleImport = "learning";
   document.head.append(learningStyle);
   const privateViewStyle = document.createElement("link");
   privateViewStyle.rel = "stylesheet";
-  privateViewStyle.href = "css/private-schedule-private-view.css?v=0040-invite1";
+  privateViewStyle.href = "css/private-schedule-private-view.css?v=__TIMEFLOW_BUILD__";
   privateViewStyle.dataset.privateScheduleImport = "private-view";
   document.head.append(privateViewStyle);
   const manualStyle = document.createElement("link");
   manualStyle.rel = "stylesheet";
-  manualStyle.href = "css/private-schedule-manual.css?v=0040-invite1";
+  manualStyle.href = "css/private-schedule-manual.css?v=__TIMEFLOW_BUILD__";
   manualStyle.dataset.privateScheduleImport = "manual";
   document.head.append(manualStyle);
   const notificationStyle = document.createElement("link");
   notificationStyle.rel = "stylesheet";
-  notificationStyle.href = "css/private-notifications.css?v=0040-private2";
+  notificationStyle.href = "css/private-notifications.css?v=__TIMEFLOW_BUILD__";
   notificationStyle.dataset.privateScheduleImport = "notifications";
   document.head.append(notificationStyle);
   const cleanStyle = document.createElement("link");
   cleanStyle.rel = "stylesheet";
-  cleanStyle.href = "css/private-clean.css?v=0040-private2";
+  cleanStyle.href = "css/private-clean.css?v=__TIMEFLOW_BUILD__";
   cleanStyle.dataset.privateScheduleImport = "clean";
   document.head.append(cleanStyle);
   const accountStyle = document.createElement("link");
   accountStyle.rel = "stylesheet";
-  accountStyle.href = "css/private-account.css?v=0040-invite1";
+  accountStyle.href = "css/private-account.css?v=__TIMEFLOW_BUILD__";
   accountStyle.dataset.privateScheduleImport = "account";
   document.head.append(accountStyle);
 }
 if (!document.querySelector('script[data-private-clean]')) {
   const cleanScript = document.createElement("script");
-  cleanScript.src = "js/private-clean.js?v=0040-private2";
+  cleanScript.src = "js/private-clean.js?v=__TIMEFLOW_BUILD__";
   cleanScript.dataset.privateClean = "true";
   document.head.append(cleanScript);
 }
 if (!document.querySelector('script[data-private-account]')) {
   const accountScript = document.createElement("script");
-  accountScript.src = "js/private-account.js?v=0040-account2";
+  accountScript.src = "js/private-account.js?v=__TIMEFLOW_BUILD__";
   accountScript.dataset.privateAccount = "true";
   document.head.append(accountScript);
 }
 if (!document.querySelector('script[data-private-schedule-import]')) {
   const importScript = document.createElement("script");
-  importScript.src = "js/private-schedule-import.js?v=0040-files2";
+  importScript.src = "js/private-schedule-import.js?v=__TIMEFLOW_BUILD__";
   importScript.dataset.privateScheduleImport = "true";
   document.head.append(importScript);
 }
 if (!document.querySelector('script[data-private-reminders]')) {
   const reminderScript = document.createElement("script");
-  reminderScript.src = "js/private-reminders.js?v=0040-invite1";
+  reminderScript.src = "js/private-reminders.js?v=__TIMEFLOW_BUILD__";
   reminderScript.dataset.privateReminders = "true";
   document.head.append(reminderScript);
 }
 if (!document.querySelector('script[data-beta-legal]')) {
-  const legalScript = document.createElement("script"); legalScript.src = "js/private-beta-legal.js?v=0040-invite1"; legalScript.dataset.betaLegal = "true"; document.head.append(legalScript);
+  const legalScript = document.createElement("script"); legalScript.src = "js/private-beta-legal.js?v=__TIMEFLOW_BUILD__"; legalScript.dataset.betaLegal = "true"; document.head.append(legalScript);
 }
 
 document.addEventListener("DOMContentLoaded", () => {

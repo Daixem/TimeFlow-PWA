@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 
 const requiredSnippets = new Map([
-  ["index.html", ["css/sprint11.css?v=0040", "js/sprint11.js?v=0040", "sw.js?v=0040-beta14"]],
-  ["sw.js", ["timeflow-v81-beta-finish", "css/sprint11.css?v=0040", "js/sprint11.js?v=0040"]],
+  ["index.html", ["css/sprint11.css?v=__TIMEFLOW_BUILD__", "js/sprint11.js?v=__TIMEFLOW_BUILD__", "register(\"sw.js\""]],
+  ["sw.js", ["timeflow-", "css/sprint11.css?v=__TIMEFLOW_BUILD__", "js/sprint11.js?v=__TIMEFLOW_BUILD__"]],
   ["js/sprint11.js", ["data-select-mode=\"private\"", "data-select-mode=\"team\"", "timeflow-private-mode", "timeflow:mode-changed"]],
   ["js/sprint9.js", ["function markReady()", "timeflow:sync-ready"]],
   ["js/sprint6.js", ["function privateMode()", "Persönlich erfasst", "action.makeMessage && !privateMode()"]],
@@ -23,7 +23,7 @@ if (packageJson.version !== "1.0.1") throw new Error("Version 1.0.1 ist nicht ge
 const worker = (await import("../dist/server/index.js")).default;
 const home = await worker.fetch(new Request("https://timeflow.test/"), {});
 const unauthenticatedSync = await worker.fetch(new Request("https://timeflow.test/api/sync"), {});
-if (home.status !== 200 || !(await home.text()).includes("js/sprint11.js?v=0040")) {
+if (home.status !== 200 || !(await home.text()).includes("js/sprint11.js?v=")) {
   throw new Error("Der Sites-Build enthält Sprint 11 nicht vollständig.");
 }
 if (unauthenticatedSync.status !== 401) throw new Error("Die Synchronisierungs-API ist ohne Anmeldung nicht geschützt.");

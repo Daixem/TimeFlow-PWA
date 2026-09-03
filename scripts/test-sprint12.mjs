@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
 
 const requiredSnippets = new Map([
-  ["index.html", ["css/compat.css?v=0040-mobile2", "css/sprint12.css?v=0040-mobile2", "css/private-home.css?v=0040-home2", "js/platform.js?v=0040", "js/shell.js?v=0040-scroll1", "js/sprint12.js?v=0040-scroll1", "js/private-home.js?v=0040-home20", "sw.js?v=0040-beta14", "personal-update-list", "data-personal-message", "team-update-list", "team-update-status", "month-open-statistics", "homeMonthLabel"]],
-  ["sw.js", ["timeflow-v81-beta-finish", "relativePath.startsWith(\"api/\")", "response.type === \"opaque\"", "js/platform.js?v=0040", "js/shell.js?v=0040-scroll1", "css/compat.css?v=0040-mobile2", "js/sprint12.js?v=0040-scroll1", "js/private-home.js?v=0040-home20", "js/private-schedule-import.js?v=0040-files2"]],
+  ["index.html", ["css/compat.css?v=__TIMEFLOW_BUILD__", "css/sprint12.css?v=__TIMEFLOW_BUILD__", "css/private-home.css?v=__TIMEFLOW_BUILD__", "js/platform.js?v=__TIMEFLOW_BUILD__", "js/shell.js?v=__TIMEFLOW_BUILD__", "js/sprint12.js?v=__TIMEFLOW_BUILD__", "js/private-home.js?v=__TIMEFLOW_BUILD__", "register(\"sw.js\"", "personal-update-list", "data-personal-message", "team-update-list", "team-update-status", "month-open-statistics", "homeMonthLabel"]],
+  ["sw.js", ["timeflow-", "relativePath.startsWith(\"api/\")", "response.type === \"opaque\"", "js/platform.js?v=__TIMEFLOW_BUILD__", "js/shell.js?v=__TIMEFLOW_BUILD__", "css/compat.css?v=__TIMEFLOW_BUILD__", "js/sprint12.js?v=__TIMEFLOW_BUILD__", "js/private-home.js?v=__TIMEFLOW_BUILD__", "js/private-schedule-import.js?v=__TIMEFLOW_BUILD__"]],
   ["js/platform.js", ["tf-platform-", "createStorage", "visualViewport", "openDialog", "data-timeflow-platform"]],
   ["css/compat.css", ["--tf-viewport-height", "pointer: coarse", "orientation: landscape", "forced-colors: active"]],
   ["css/sprint12.css", [".header .notification-btn", ".notification-badge", "focus-visible"]],
@@ -66,7 +66,7 @@ const worker = (await import("../dist/server/index.js")).default;
 const home = await worker.fetch(new Request("https://timeflow.test/"), {});
 const missing = await worker.fetch(new Request("https://timeflow.test/nicht-vorhanden"), {});
 const unauthenticatedSync = await worker.fetch(new Request("https://timeflow.test/api/sync"), {});
-if (home.status !== 200 || !(await home.text()).includes("js/platform.js?v=0040")) {
+if (home.status !== 200 || !(await home.text()).includes("js/platform.js?v=")) {
   throw new Error("Der Sites-Build enthält Sprint 12 nicht vollständig.");
 }
 if (missing.status !== 404) throw new Error("Unbekannte Dateien liefern keinen korrekten 404-Status.");

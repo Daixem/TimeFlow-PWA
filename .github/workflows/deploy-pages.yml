@@ -26,13 +26,18 @@ jobs:
       - name: Projekt laden
         uses: actions/checkout@v4
 
-      - name: PWA-Paket vorbereiten
-        shell: bash
-        run: |
-          mkdir -p _site
-          cp index.html manifest.webmanifest sw.js _site/
-          cp -R assets css js _site/
-          touch _site/.nojekyll
+      - name: Node.js vorbereiten
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: PWA prüfen
+        run: npm test
+
+      - name: PWA-Paket mit Commit-Version vorbereiten
+        run: npm run build:pages
+        env:
+          GITHUB_SHA: ${{ github.sha }}
 
       - name: GitHub Pages vorbereiten
         uses: actions/configure-pages@v5
