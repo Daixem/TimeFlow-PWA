@@ -1,0 +1,74 @@
+:root{
+  --tf-safe-top:env(safe-area-inset-top,0px);
+  --tf-safe-right:env(safe-area-inset-right,0px);
+  --tf-safe-bottom:env(safe-area-inset-bottom,0px);
+  --tf-safe-left:env(safe-area-inset-left,0px);
+  --tf-screen-height:100vh;
+  --tf-page-inline:max(14px,calc(var(--tf-safe-left) + 10px));
+  --tf-nav-clearance:calc(106px + var(--tf-safe-bottom));
+}
+@supports(height:100svh){:root{--tf-screen-height:100svh}}
+@supports(height:100dvh){:root{--tf-screen-height:100dvh}}
+html,body{min-width:0;min-height:var(--tf-screen-height);overflow-x:hidden}
+body{padding-left:var(--tf-safe-left);padding-right:var(--tf-safe-right)}
+.app{
+  box-sizing:border-box;
+  width:100%;
+  min-height:var(--tf-screen-height);
+  padding-top:max(28px,calc(var(--tf-safe-top) + 18px))!important;
+  padding-right:var(--tf-page-inline)!important;
+  padding-bottom:var(--tf-nav-clearance)!important;
+  padding-left:var(--tf-page-inline)!important;
+}
+.private-quick-nav,.bottom-nav{
+  bottom:max(10px,calc(var(--tf-safe-bottom) + 8px))!important;
+  max-width:calc(100vw - var(--tf-safe-left) - var(--tf-safe-right) - 20px)!important;
+}
+dialog{
+  box-sizing:border-box!important;
+  width:min(var(--dialog-width,720px),calc(100vw - var(--tf-safe-left) - var(--tf-safe-right) - 24px))!important;
+  max-width:calc(100vw - var(--tf-safe-left) - var(--tf-safe-right) - 24px)!important;
+  max-height:calc(var(--tf-screen-height) - var(--tf-safe-top) - var(--tf-safe-bottom) - 24px)!important;
+  margin:auto!important;
+  overscroll-behavior:contain;
+  scroll-padding-top:calc(var(--tf-safe-top) + 12px);
+  scroll-padding-bottom:calc(var(--tf-safe-bottom) + 12px);
+}
+dialog[open]{position:fixed;inset:var(--tf-safe-top) var(--tf-safe-right) var(--tf-safe-bottom) var(--tf-safe-left)}
+dialog>header:first-child{padding-top:max(15px,calc(var(--tf-safe-top) * .18 + 12px))}
+:is(.card,.list-card,.shift-card,.settings-card,.profile-menu-card,.private-import-panel){min-width:0;overflow-wrap:anywhere}
+:is(.settings-list,.profile-details-grid,.private-import-preview,.monthly-grid)>*{min-width:0}
+button,input,select,textarea{max-width:100%}
+
+@media(max-width:600px){
+  :root{--tf-page-inline:max(12px,calc(var(--tf-safe-left) + 8px));--tf-nav-clearance:calc(104px + var(--tf-safe-bottom))}
+  .app{padding-top:max(44px,calc(var(--tf-safe-top) + 16px))!important}
+  .app-page{min-width:0}
+  .profile-page-header,.settings-page-header,.schedule-header{scroll-margin-top:calc(var(--tf-safe-top) + 12px)}
+  dialog{width:calc(100vw - var(--tf-safe-left) - var(--tf-safe-right) - 16px)!important;max-width:none!important;border-radius:clamp(14px,4vw,22px)!important}
+  dialog[open]{inset:max(6px,var(--tf-safe-top)) max(6px,var(--tf-safe-right)) max(6px,var(--tf-safe-bottom)) max(6px,var(--tf-safe-left))}
+  :is(.shift-grid,.month-summary-grid,.private-account-summary){grid-template-columns:minmax(0,1fr)!important}
+}
+
+@media(max-width:380px){
+  :root{--tf-page-inline:max(9px,calc(var(--tf-safe-left) + 6px))}
+  .private-quick-nav,.bottom-nav{width:calc(100vw - var(--tf-safe-left) - var(--tf-safe-right) - 12px)!important;padding-inline:4px!important}
+  .private-quick-nav button,.nav-item{min-width:0!important}
+  .nav-text{font-size:clamp(.58rem,2.8vw,.7rem)!important}
+  dialog{width:calc(100vw - var(--tf-safe-left) - var(--tf-safe-right) - 10px)!important}
+}
+
+@media(orientation:landscape) and (max-height:560px){
+  :root{--tf-nav-clearance:calc(82px + var(--tf-safe-bottom))}
+  .app{padding-top:max(14px,calc(var(--tf-safe-top) + 8px))!important;padding-left:max(18px,calc(var(--tf-safe-left) + 12px))!important;padding-right:max(18px,calc(var(--tf-safe-right) + 12px))!important}
+  dialog{max-height:calc(var(--tf-screen-height) - var(--tf-safe-top) - var(--tf-safe-bottom) - 12px)!important}
+}
+
+@media(min-width:768px){
+  :root{--tf-page-inline:max(24px,calc(var(--tf-safe-left) + 18px));--tf-nav-clearance:calc(118px + var(--tf-safe-bottom))}
+  .app{padding-top:max(34px,calc(var(--tf-safe-top) + 22px))!important}
+}
+
+@media(display-mode:standalone) and (max-width:600px){
+  .app{padding-top:max(54px,calc(var(--tf-safe-top) + 18px))!important}
+}
