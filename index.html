@@ -17,8 +17,10 @@ if ("serviceWorker" in navigator) {
     const registration = await navigator.serviceWorker.register("sw.js", { updateViaCache: "none" });
     const checkForUpdate = () => navigator.onLine && registration.update().catch(() => undefined);
     checkForUpdate();
+    window.addEventListener("online", checkForUpdate);
     window.addEventListener("pageshow", checkForUpdate);
     document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checkForUpdate(); });
+    window.setInterval(checkForUpdate, 5 * 60 * 1000);
   });
   navigator.serviceWorker.addEventListener("controllerchange", () => {
     if (!hadController) { hadController = true; return; }

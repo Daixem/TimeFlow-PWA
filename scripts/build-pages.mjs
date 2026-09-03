@@ -1,4 +1,4 @@
-import { cp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { execFileSync } from "node:child_process";
 
 const root = new URL("../", import.meta.url);
@@ -13,11 +13,17 @@ await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 for (const entry of entries) await cp(new URL(entry, root), new URL(entry, output), { recursive: true });
 
-for (const file of ["index.html", "sw.js", "js/private-home.js"]) {
-  const target = new URL(file, output);
-  const source = await readFile(target, "utf8");
-  await writeFile(target, source.replaceAll("__TIMEFLOW_BUILD__", build), "utf8");
+async function stampBuild(directory) {
+  for (const entry of await readdir(directory, { withFileTypes: true })) {
+    const target = new URL(`${entry.name}${entry.isDirectory() ? "/" : ""}`, directory);
+    if (entry.isDirectory()) await stampBuild(target);
+    else if (/\.(?:html|css|js|json|webmanifest|svg)$/.test(entry.name)) {
+      const source = await readFile(target, "utf8");
+      await writeFile(target, source.replaceAll("__TIMEFLOW_BUILD__", build), "utf8");
+    }
+  }
 }
+await stampBuild(output);
 await writeFile(new URL("version.json", output), `${JSON.stringify({ build })}\n`, "utf8");
 await writeFile(new URL(".nojekyll", output), "", "utf8");
 console.log(`GitHub-Pages-Build ${build} wurde erstellt.`);
