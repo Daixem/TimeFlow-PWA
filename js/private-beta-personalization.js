@@ -3,6 +3,8 @@
   const SETTINGS_KEY = "timeflow-settings-v1";
   const SETUP_KEY = "timeflow-private-setup-v1";
   const TARGETS_KEY = "timeflow-monthly-targets-v1";
+  const BACKGROUND_DB = "timeflow-personalization-v1";
+  const BACKGROUND_STORE = "assets";
   const storage = () => window.TimeFlowPlatform?.storage || { getItem: () => null, setItem: () => undefined };
 
   function read(key, fallback = {}) {
@@ -16,6 +18,83 @@
 
   function write(key, value) {
     storage().setItem(key, JSON.stringify(value));
+  }
+
+  function backgroundStore(mode = "readonly") {
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(BACKGROUND_DB, 1);
+      request.onupgradeneeded = () => request.result.createObjectStore(BACKGROUND_STORE);
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result.transaction(BACKGROUND_STORE, mode).objectStore(BACKGROUND_STORE));
+    });
+  }
+
+  async function getBackground() {
+    const store = await backgroundStore();
+    return new Promise((resolve, reject) => { const request = store.get("custom-background"); request.onsuccess = () => resolve(request.result || null); request.onerror = () => reject(request.error); });
+  }
+
+  async function setBackground(value) {
+    const store = await backgroundStore("readwrite");
+    return new Promise((resolve, reject) => { const request = value ? store.put(value, "custom-background") : store.delete("custom-background"); request.onsuccess = () => resolve(); request.onerror = () => reject(request.error); });
+  }
+
+  function applyCustomBackground(asset) {
+    const root = document.documentElement;
+    if (!asset?.dataUrl) {
+      delete root.dataset.tfCustomBackground;
+      ["--tf-custom-background-image", "--tf-custom-background-rgb", "--tf-custom-background-overlay"].forEach((name) => root.style.removeProperty(name));
+      return;
+    }
+    const rgb = Array.isArray(asset.rgb) ? asset.rgb : [12, 54, 88];
+    root.dataset.tfCustomBackground = "true";
+    root.style.setProperty("--tf-custom-background-image", `url("${asset.dataUrl}")`);
+    root.style.setProperty("--tf-custom-background-rgb", rgb.join(" "));
+    root.style.setProperty("--tf-custom-background-overlay", String(asset.luminance > 0.55 ? 0.62 : asset.luminance > 0.3 ? 0.48 : 0.34));
+  }
+
+  async function restoreCustomBackground() { try { applyCustomBackground(await getBackground()); } catch { applyCustomBackground(null); } }
+
+  function loadImage(file) {
+    return new Promise((resolve, reject) => { const image = new Image(); const url = URL.createObjectURL(file); image.onload = () => { URL.revokeObjectURL(url); resolve(image); }; image.onerror = () => { URL.revokeObjectURL(url); reject(new Error("invalid_image")); }; image.src = url; });
+  }
+
+  async function prepareBackground(file) {
+    if (!file?.type.startsWith("image/")) throw new Error("invalid_type");
+    if (file.size > 30 * 1024 * 1024) throw new Error("too_large");
+    const image = await loadImage(file);
+    const scale = Math.min(1, 1920 / Math.max(image.naturalWidth, image.naturalHeight));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale)); canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+    const context = canvas.getContext("2d", { alpha: false }); context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const sample = document.createElement("canvas"); sample.width = sample.height = 32;
+    const sampleContext = sample.getContext("2d", { willReadFrequently: true }); sampleContext.drawImage(canvas, 0, 0, 32, 32);
+    const pixels = sampleContext.getImageData(0, 0, 32, 32).data;
+    let red = 0, green = 0, blue = 0, count = 0;
+    for (let index = 0; index < pixels.length; index += 16) { red += pixels[index]; green += pixels[index + 1]; blue += pixels[index + 2]; count += 1; }
+    const rgb = [red, green, blue].map((value) => Math.round(value / count));
+    const luminance = (0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]) / 255;
+    return { dataUrl: canvas.toDataURL("image/jpeg", 0.84), rgb, luminance, updatedAt: new Date().toISOString() };
+  }
+
+  function updateBackgroundControls(active) {
+    document.querySelector("[data-custom-background-preview]")?.classList.toggle("has-image", active);
+    const remove = document.querySelector("[data-remove-custom-background]"); if (remove) remove.hidden = !active;
+  }
+
+  function installBackgroundPicker() {
+    const input = document.querySelector("[data-custom-background-input]");
+    if (!input || input.dataset.ready) return;
+    input.dataset.ready = "true";
+    getBackground().then((asset) => updateBackgroundControls(Boolean(asset?.dataUrl))).catch(() => updateBackgroundControls(false));
+    input.addEventListener("change", async () => {
+      const file = input.files?.[0]; if (!file) return;
+      const picker = input.closest(".custom-background-setting"); picker?.classList.add("is-processing");
+      try { const asset = await prepareBackground(file); await setBackground(asset); applyCustomBackground(asset); updateBackgroundControls(true); notify("Eigenes Hintergrundbild wurde gespeichert."); }
+      catch { notify("Dieses Bild konnte nicht verarbeitet werden."); }
+      finally { picker?.classList.remove("is-processing"); input.value = ""; }
+    });
+    document.querySelector("[data-remove-custom-background]")?.addEventListener("click", async () => { await setBackground(null); applyCustomBackground(null); updateBackgroundControls(false); notify("Eigenes Hintergrundbild wurde entfernt."); });
   }
 
   function vacationUsage(year = new Date().getFullYear()) {
@@ -80,6 +159,7 @@
         <header><span class="settings-card-icon violet"><i class="fa-solid fa-palette"></i></span><div><small>Darstellung</small><h2 id="personalizationTitle">Persönliches Erscheinungsbild</h2></div></header>
         <div class="settings-list">
           <label class="settings-select"><span><strong>Hintergrund</strong><small>Farbstimmung der gesamten App</small></span><select data-personal-setting="appBackground"><option value="midnight">Mitternacht</option><option value="ocean">Ozeanblau</option><option value="teal">Petrol</option><option value="violet">Violett</option><option value="graphite">Graphit</option><option value="forest">Waldgrün</option><option value="sunset">Sonnenuntergang</option><option value="rose">Rosé</option><option value="light">Hell</option></select></label>
+          <div class="custom-background-setting" data-custom-background-preview><span><strong>Eigenes Hintergrundbild</strong><small>Bleibt lokal auf diesem Gerät. Fenster und Kontrast passen sich automatisch an.</small></span><div class="custom-background-actions"><label class="custom-background-pick"><i class="fa-solid fa-image"></i><span>Bild auswählen</span><input type="file" accept="image/*,.heic,.heif" data-custom-background-input></label><button type="button" data-remove-custom-background hidden><i class="fa-solid fa-trash-can"></i><span>Entfernen</span></button></div></div>
           <label class="settings-select"><span><strong>Schriftart</strong><small>Für alle Ansichten</small></span><select data-personal-setting="fontFamily"><option value="inter">Inter</option><option value="system">Systemschrift</option><option value="segoe">Segoe UI</option><option value="aptos">Aptos</option><option value="calibri">Calibri</option><option value="cambria">Cambria</option><option value="times">Times New Roman</option><option value="arial">Arial</option><option value="verdana">Verdana</option><option value="tahoma">Tahoma</option><option value="trebuchet">Trebuchet MS</option><option value="century">Century Gothic</option><option value="courier">Courier New</option><option value="rounded">Abgerundet</option><option value="serif">Serif</option><option value="mono">Monospace</option></select></label>
           <label class="settings-select"><span><strong>Schriftgröße</strong><small>Auch für Karten und Dialoge</small></span><select data-personal-setting="fontScale"><option value="1">Normal</option><option value="1.1">Groß</option><option value="1.2">Sehr groß</option><option value="1.3">Maximal</option></select></label>
         </div>
@@ -92,6 +172,7 @@
         notify("Darstellung wurde gespeichert.");
       });
     });
+    installBackgroundPicker();
     document.querySelector("[data-annual-vacation]")?.addEventListener("change", (event) => {
       const annualVacationDays = Math.max(0, Math.round(Number(event.target.value || 0)));
       const updated = saveSettings({ annualVacationDays });
@@ -139,6 +220,7 @@
   function initialize(access = window.TimeFlowBetaAccess || {}, verified = false) {
     applyRoleVisibility(access);
     applyPersonalization();
+    restoreCustomBackground();
     installSettings();
     if (verified) installSetup();
   }
