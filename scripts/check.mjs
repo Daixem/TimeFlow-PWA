@@ -46,3 +46,14 @@ for (const file of required) {
   if (!shell.includes(file) && file !== "sw.js") throw new Error(`${file} fehlt im App-Cache.`);
 }
 console.log("TimeFlow PWA: Struktur, Manifest und App-Cache sind vollständig.");
+
+if (!shell.includes('const BUILD_VERSION = "__TIMEFLOW_BUILD__"') || !shell.includes("self.skipWaiting()") || !shell.includes("self.clients.claim()")) {
+  throw new Error("Automatische Service-Worker-Versionierung oder Aktivierung fehlt.");
+}
+if (!shell.includes('relativePath.startsWith("api/")') || shell.indexOf('relativePath.startsWith("api/")') > shell.indexOf("event.respondWith")) {
+  throw new Error("API-Anfragen müssen vor jeder Cache-Antwort ausgeschlossen werden.");
+}
+const page = await readFile("index.html", "utf8");
+if (!page.includes('register("sw.js", { updateViaCache: "none" })') || /\?v=(?!__TIMEFLOW_BUILD__)[^"']+/.test(page + shell)) {
+  throw new Error("Statische Asset- oder Service-Worker-Version gefunden.");
+}
