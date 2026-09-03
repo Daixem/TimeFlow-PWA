@@ -34,7 +34,8 @@ const teamUpdates = [
 ];
 
 function dateKey(date) { return date.toLocaleDateString("sv-SE"); }
-function formatTime(date) { return date.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }); }
+function locale() { return window.TimeFlowLocalization?.locale?.() || "de-DE"; }
+function formatTime(date) { return date.toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit" }); }
 function formatMinutes(minutes) { return `${Math.floor(minutes / 60)} h ${minutes % 60} min`; }
 function elapsedMinutes() {
   if (!state.workStart) return 0;
@@ -81,9 +82,9 @@ function loadWorkday() {
 function updateDateTime() {
   const now = new Date();
   const homeMonthLabel = document.getElementById("homeMonthLabel");
-  if (homeMonthLabel) homeMonthLabel.textContent = now.toLocaleDateString("de-DE", { month: "long", year: "numeric" });
-  elements.currentDate.textContent = now.toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
-  elements.currentTime.textContent = now.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  if (homeMonthLabel) homeMonthLabel.textContent = now.toLocaleDateString(locale(), { month: "long", year: "numeric" });
+  elements.currentDate.textContent = now.toLocaleDateString(locale(), { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
+  elements.currentTime.textContent = now.toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit", second: "2-digit" });
   const workdayNear = (direction) => {
     const date = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     do { date.setDate(date.getDate() + direction); } while ([0, 6].includes(date.getDay()));
@@ -94,8 +95,8 @@ function updateDateTime() {
     const shiftCards = document.querySelectorAll(".shift-card");
     const previousWorkday = workdayNear(-1);
     const nextWorkday = workdayNear(1);
-    if (shiftCards[0]) shiftCards[0].querySelector("p").textContent = previousWorkday.toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" });
-    if (shiftCards[1]) shiftCards[1].querySelector("p").textContent = nextWorkday.toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" });
+    if (shiftCards[0]) shiftCards[0].querySelector("p").textContent = previousWorkday.toLocaleDateString(locale(), { weekday: "short", day: "2-digit", month: "2-digit" });
+    if (shiftCards[1]) shiftCards[1].querySelector("p").textContent = nextWorkday.toLocaleDateString(locale(), { weekday: "short", day: "2-digit", month: "2-digit" });
   }
   const hour = now.getHours();
   elements.greeting.textContent = hour < 12 && hour >= 5 ? "Guten Morgen" : hour < 18 ? "Guten Tag" : "Guten Abend";
@@ -110,15 +111,17 @@ function updateWorkUi() {
   elements.clockButton.classList.toggle("is-working", state.isWorking);
   elements.clockButton.setAttribute("aria-pressed", String(state.isWorking));
   elements.clockIcon.className = `fa-solid ${state.isWorking ? "fa-right-from-bracket" : "fa-right-to-bracket"}`;
-  elements.todayHours.textContent = formatMinutes(worked);
+  const privateMode = document.documentElement.classList.contains("timeflow-private-mode") || document.body.dataset.appMode === "private";
+  if (!privateMode) elements.todayHours.textContent = formatMinutes(worked);
   elements.todayBreak.textContent = `${pause} min`;
-  elements.todayOvertime.textContent = formatMinutes(Math.max(0, worked - targetMinutes));
+  if (!privateMode) elements.todayOvertime.textContent = formatMinutes(Math.max(0, worked - targetMinutes));
   elements.todayTarget.textContent = formatMinutes(targetMinutes);
   elements.progressCircle.textContent = `${percentage}%`;
   elements.progressCircle.style.setProperty("--progress", `${percentage * 3.6}deg`);
   elements.progressCircle.setAttribute("aria-valuenow", String(percentage));
   elements.progressLabel.textContent = percentage >= 100 ? "Ziel erreicht" : "Tagesziel";
   document.dispatchEvent(new CustomEvent("timeflow:workday-updated"));
+  if (privateMode) window.TimeFlowPrivateAccount?.refreshHome();
 }
 function clockIn() { state = { isWorking: true, workStart: new Date(), workEnd: null, isPaused: false, pauseStartedAt: null, pauseAccumulatedMs: 0, hasManualPause: false }; saveWorkday(); startTimer(); updateWorkUi(); showToast("Du bist eingestempelt."); }
 function clockOut() { if (state.isPaused && state.pauseStartedAt) state.pauseAccumulatedMs += new Date() - state.pauseStartedAt; state.isPaused = false; state.pauseStartedAt = null; state.isWorking = false; state.workEnd = new Date(); saveWorkday(); stopTimer(); updateWorkUi(); showToast("Du bist ausgestempelt."); }
@@ -134,7 +137,7 @@ function requestClockConfirmation() {
   dialog.querySelector("[data-clock-confirm-copy]").textContent = state.isWorking
     ? "Möchtest du deinen laufenden Arbeitstag jetzt wirklich beenden?"
     : "Möchtest du deinen Arbeitstag jetzt wirklich starten?";
-  dialog.querySelector("[data-clock-confirm-time]").textContent = new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+  dialog.querySelector("[data-clock-confirm-time]").textContent = new Date().toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit" });
   const confirm = dialog.querySelector("[data-confirm-clock]");
   confirm.innerHTML = `<i class="fa-solid ${state.isWorking ? "fa-right-from-bracket" : "fa-right-to-bracket"}"></i> Jetzt ${action.toLowerCase()}`;
   window.TimeFlowPlatform.dialog.open(dialog);

@@ -108,7 +108,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function formatTime(date) {
-    return date.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+    return date.toLocaleTimeString(window.TimeFlowLocalization?.locale?.() || "de-DE", { hour: "2-digit", minute: "2-digit" });
   }
 
   function formatDuration(totalSeconds) {
@@ -135,8 +135,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const netMinutes = Math.max(0, grossMinutes - breakMinutes);
     const progress = Math.min(100, Math.round((netMinutes / settings.dailyTargetMinutes) * 100));
 
-    elements.liveTime.textContent = now.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
-    elements.liveDate.textContent = now.toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
+    const locale = window.TimeFlowLocalization?.locale?.() || "de-DE";
+    elements.liveTime.textContent = now.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
+    elements.liveDate.textContent = now.toLocaleDateString(locale, { weekday: "long", day: "2-digit", month: "long", year: "numeric" });
     elements.elapsed.textContent = formatDuration(Math.max(0, elapsedSeconds - breakMinutes * 60));
     elements.start.textContent = start ? formatTime(start) : "--:--";
     elements.net.textContent = formatMinutes(netMinutes);

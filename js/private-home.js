@@ -60,7 +60,7 @@ if (!document.querySelector('script[data-private-clean]')) {
 }
 if (!document.querySelector('script[data-private-account]')) {
   const accountScript = document.createElement("script");
-  accountScript.src = "js/private-account.js?v=0040-invite1";
+  accountScript.src = "js/private-account.js?v=0040-account2";
   accountScript.dataset.privateAccount = "true";
   document.head.append(accountScript);
 }
@@ -130,7 +130,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const runningPause = workday?.isPaused && workday.pauseStartedAt ? Math.max(0, new Date() - new Date(workday.pauseStartedAt)) : 0;
     const usedBreak = workday?.hasManualPause ? Math.floor((Number(workday.pauseAccumulatedMs || 0) + runningPause) / 60000) : gross >= breakAfter ? breakLength : 0;
     const net = Math.max(0, gross - usedBreak);
-    document.getElementById("privateHomeStart").textContent = start ? start.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) : "--:--";
+    document.getElementById("privateHomeStart").textContent = start ? start.toLocaleTimeString(window.TimeFlowLocalization?.locale?.() || "de-DE", { hour: "2-digit", minute: "2-digit" }) : "--:--";
     document.getElementById("privateHomeBreakUsed").textContent = `${usedBreak} min`;
     document.getElementById("privateHomeNet").textContent = formatMinutes(net);
     document.getElementById("privateHomeTarget").textContent = formatMinutes(target);

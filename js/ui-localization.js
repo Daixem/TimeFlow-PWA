@@ -63,6 +63,11 @@ const originals=new WeakMap,attributeOriginals=new WeakMap;
 const attributes=["aria-label","aria-description","title","placeholder","alt"];
 const controls="button,input[type=button],input[type=submit],input[type=reset]";
 function language(){try{return JSON.parse(window.TimeFlowPlatform.storage.getItem(KEY)||"{}").language||"de"}catch{return"de"}}
+function locale(){const lang=language();return lang==="de"?"de-DE":lang}
+// Older feature modules were created with a fixed German formatting locale.
+// Redirect those calls through the selected app language so dates and times do
+// not remain German when the rest of the interface changes language.
+[["toLocaleDateString",Date.prototype.toLocaleDateString],["toLocaleTimeString",Date.prototype.toLocaleTimeString],["toLocaleString",Date.prototype.toLocaleString]].forEach(([name,native])=>{Date.prototype[name]=function(requested,options){return native.call(this,requested==="de-DE"?locale():requested,options)}});
 function dictionary(pack){return source.map((key,index)=>[key,pack[index]||key]).sort((a,b)=>b[0].length-a[0].length)}
 function isKnownRendering(original,value){return Object.values(packs).some(pack=>translated(original,dictionary(pack))===value)}
 function translated(value,entries){
@@ -79,7 +84,7 @@ function apply(root=document.body){
   document.documentElement.lang=lang;document.documentElement.dir=code==="ar"?"rtl":"ltr";
   const base=root.nodeType===1?root:root.parentElement;if(!base)return;
   [base,...base.querySelectorAll("*")].forEach(node=>{
-    attributes.forEach(name=>{if(node.hasAttribute(name)){const original=remember(node,attributeOriginals,name,node.getAttribute(name));node.setAttribute(name,translated(original,entries))}});
+    attributes.forEach(name=>{if(node.hasAttribute(name)){const original=remember(node,attributeOriginals,name,node.getAttribute(name)),value=translated(original,entries);if(node.getAttribute(name)!==value)node.setAttribute(name,value)}});
     if(node.matches?.(controls)&&node.value){const original=remember(node,attributeOriginals,"value",node.value);node.value=translated(original,entries)}
   });
   const walker=document.createTreeWalker(base,NodeFilter.SHOW_TEXT);let node;
@@ -97,5 +102,5 @@ function safelyApply(root){apply(root)}
 document.addEventListener("DOMContentLoaded",()=>{safelyApply();new MutationObserver(records=>records.forEach(record=>{if(record.type==="characterData")safelyApply(record.target);else record.addedNodes.forEach(node=>{if(node.nodeType===1||node.nodeType===3)safelyApply(node)});if(record.type==="attributes")safelyApply(record.target)})).observe(document.body,{childList:true,subtree:true,characterData:true,attributes:true,attributeFilter:[...attributes,"value"]})});
 document.addEventListener("timeflow:settings-updated",()=>safelyApply());
 document.addEventListener("timeflow:language-changed",()=>safelyApply());
-window.TimeFlowLocalization={apply:safelyApply,translate(value,lang=language()){const code=lang.startsWith("ar")?"ar":lang;return translated(value,dictionary(packs[code]||source))}};
+window.TimeFlowLocalization={apply:safelyApply,locale,translate(value,lang=language()){const code=lang.startsWith("ar")?"ar":lang;return translated(value,dictionary(packs[code]||source))}};
 }());
