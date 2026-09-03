@@ -1,6 +1,7 @@
 "use strict";
 
 const STORAGE_KEY = "timeflow-workday-v2";
+const WORKDAY_HISTORY_KEY = "timeflow-workday-history-v1";
 const SETTINGS_STORAGE_KEY = "timeflow-settings-v1";
 const TARGET_WORK_MINUTES = 480;
 const BREAK_AFTER_MINUTES = 360;
@@ -65,6 +66,15 @@ function workedMinutes() { return Math.max(0, elapsedMinutes() - breakMinutes())
 function saveWorkday() {
   window.TimeFlowPlatform.storage.setItem(STORAGE_KEY, JSON.stringify({ ...state, workStart: state.workStart?.toISOString() || null, workEnd: state.workEnd?.toISOString() || null }));
 }
+function saveCompletedWorkday() {
+  if (!state.workStart || !state.workEnd) return;
+  let history = [];
+  try { const stored = JSON.parse(window.TimeFlowPlatform.storage.getItem(WORKDAY_HISTORY_KEY) || "[]"); history = Array.isArray(stored) ? stored : []; } catch { history = []; }
+  const entry = { id: `workday-${state.workEnd.toISOString()}`, date: dateKey(state.workStart), workStart: state.workStart.toISOString(), workEnd: state.workEnd.toISOString() };
+  const index = history.findIndex((item) => item.id === entry.id);
+  if (index >= 0) history[index] = entry; else history.push(entry);
+  window.TimeFlowPlatform.storage.setItem(WORKDAY_HISTORY_KEY, JSON.stringify(history.sort((a, b) => String(a.workEnd).localeCompare(String(b.workEnd))).slice(-366)));
+}
 function loadWorkday() {
   try {
     const saved = JSON.parse(window.TimeFlowPlatform.storage.getItem(STORAGE_KEY));
@@ -124,7 +134,7 @@ function updateWorkUi() {
   if (privateMode) window.TimeFlowPrivateAccount?.refreshHome();
 }
 function clockIn() { state = { isWorking: true, workStart: new Date(), workEnd: null, isPaused: false, pauseStartedAt: null, pauseAccumulatedMs: 0, hasManualPause: false }; saveWorkday(); startTimer(); updateWorkUi(); showToast("Du bist eingestempelt."); }
-function clockOut() { if (state.isPaused && state.pauseStartedAt) state.pauseAccumulatedMs += new Date() - state.pauseStartedAt; state.isPaused = false; state.pauseStartedAt = null; state.isWorking = false; state.workEnd = new Date(); saveWorkday(); stopTimer(); updateWorkUi(); showToast("Du bist ausgestempelt."); }
+function clockOut() { if (state.isPaused && state.pauseStartedAt) state.pauseAccumulatedMs += new Date() - state.pauseStartedAt; state.isPaused = false; state.pauseStartedAt = null; state.isWorking = false; state.workEnd = new Date(); saveWorkday(); saveCompletedWorkday(); stopTimer(); updateWorkUi(); showToast("Du bist ausgestempelt."); }
 function togglePause() { if (!state.isWorking) return; if (state.isPaused) { state.pauseAccumulatedMs += new Date() - state.pauseStartedAt; state.pauseStartedAt = null; state.isPaused = false; showToast("Pause beendet."); } else { state.isPaused = true; state.hasManualPause = true; state.pauseStartedAt = new Date(); showToast("Pause gestartet."); } saveWorkday(); updateWorkUi(); }
 function startTimer() { stopTimer(); workTimer = window.setInterval(updateWorkUi, 1000); }
 function stopTimer() { if (workTimer) window.clearInterval(workTimer); workTimer = undefined; }

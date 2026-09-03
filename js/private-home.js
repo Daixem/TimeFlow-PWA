@@ -118,6 +118,12 @@ document.addEventListener("DOMContentLoaded", () => {
   function readJson(key) {
     try { return JSON.parse(window.TimeFlowPlatform.storage.getItem(key)); } catch { return null; }
   }
+  function scheduledEndFor(date) {
+    const shifts = readJson("timeflow-private-schedule-v1");
+    if (!Array.isArray(shifts) || !date) return null;
+    const key = date.toLocaleDateString("sv-SE");
+    return shifts.find((entry) => entry.date === key && entry.start && entry.end && !/^(frei|krank|urlaub)$/i.test(entry.title || ""))?.end || null;
+  }
   function renderPrivateClock() {
     const workday = readJson("timeflow-workday-v2");
     const settings = readJson("timeflow-settings-v1") || {};
@@ -136,8 +142,8 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("privateHomeTarget").textContent = formatMinutes(target);
     document.getElementById("privateHomeState").textContent = workday?.isPaused ? "In Pause" : workday?.isWorking ? "Im Dienst" : start ? "Dienst beendet" : "Bereit";
     const pauseButton = document.querySelector("[data-private-pause]"); if (pauseButton) { pauseButton.hidden = !workday?.isWorking; pauseButton.classList.toggle("is-paused", Boolean(workday?.isPaused)); pauseButton.querySelector("span").textContent = workday?.isPaused ? "Pause beenden" : "Pause starten"; }
-    const nextShift = document.querySelectorAll(".shift-card")[1]?.querySelector("strong")?.textContent.match(/(\d{2}:\d{2})\s*[–-]\s*(\d{2}:\d{2})/);
-    document.getElementById("privateHomePlannedEnd").textContent = nextShift?.[2] || "--:--";
+    const scheduledEnd = scheduledEndFor(start || new Date());
+    document.getElementById("privateHomePlannedEnd").textContent = workday?.workEnd ? workday.workEnd ? new Date(workday.workEnd).toLocaleTimeString(window.TimeFlowLocalization?.locale?.() || "de-DE", { hour: "2-digit", minute: "2-digit" }) : "--:--" : scheduledEnd || "--:--";
   }
   function applyPrivateHome() {
     const isPrivate = document.documentElement.classList.contains("timeflow-private-mode") || document.body.dataset.appMode === "private";

@@ -52,7 +52,7 @@
     const hours = document.getElementById("todayHours");
     const overtime = document.getElementById("todayOvertime");
     if (hours) hours.textContent = format(values.stamped + values.manual);
-    if (overtime) overtime.textContent = format(values.balance, true);
+    if (overtime) overtime.textContent = format(Math.max(0, values.balance), true);
     return values;
   }
   function install() {
