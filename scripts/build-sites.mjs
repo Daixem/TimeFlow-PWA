@@ -67,10 +67,10 @@ function jsonResponse(value, status = 200, extraHeaders = {}) {
 }
 
 async function latestMainAsset(request, url) {
-  if (!["GET", "HEAD"].includes(request.method) || url.pathname.startsWith("/api/")) return null;
+  if (!["GET", "HEAD"].includes(request.method) || url.pathname.startsWith("/api/") || url.pathname === "/version.json") return null;
   try {
     const upstreamUrl = new URL(url.pathname + url.search, MAIN_RELEASE_ORIGIN);
-    if (["/", "/index.html", "/sw.js", "/version.json"].includes(url.pathname)) upstreamUrl.searchParams.set("timeflow_release", String(Math.floor(Date.now() / 60000)));
+    if (["/", "/index.html", "/sw.js"].includes(url.pathname)) upstreamUrl.searchParams.set("timeflow_release", String(Math.floor(Date.now() / 60000)));
     const upstream = await fetch(upstreamUrl, {
       method: request.method,
       headers: { Accept: request.headers.get("Accept") || "*/*", "Cache-Control": "no-cache" },
