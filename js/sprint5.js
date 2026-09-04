@@ -32,8 +32,10 @@ document.addEventListener("DOMContentLoaded", () => {
         <section class="settings-card" aria-labelledby="timeSettingsTitle">
           <header><span class="settings-card-icon mint"><i class="fa-solid fa-stopwatch"></i></span><div><small>Zeiterfassung</small><h2 id="timeSettingsTitle">Arbeitszeit</h2></div></header>
           <div class="settings-list">
-            <label class="settings-select"><span><strong>Tägliches Arbeitsziel</strong><small>Berechnet Fortschritt und Überstunden</small></span><select data-setting="dailyTargetMinutes"><option value="360">6 Stunden</option><option value="450">7,5 Stunden</option><option value="480">8 Stunden</option><option value="600">10 Stunden</option></select></label>
-            <label class="settings-select"><span><strong>Monatliche Sollstunden</strong><small>Grundlage für dein monatliches Plus oder Minus</small></span><span class="settings-hours-input"><input type="number" inputmode="decimal" min="0" max="744" step="0.25" data-setting="monthlyTargetHours" aria-label="Monatliche Sollstunden"><b>Stunden</b></span></label>
+            <label class="settings-select"><span><strong>Wöchentliche Sollstunden</strong><small>Maßgeblich für deine Vertragsberechnung</small></span><span class="settings-hours-input"><input type="number" inputmode="decimal" min="1" max="120" step="0.25" data-setting="weeklyTargetHours" aria-label="Wöchentliche Sollstunden"><b>Stunden</b></span></label>
+            <label class="settings-select"><span><strong>Regelarbeitstage pro Woche</strong><small>Freie Tage außerhalb dieser Anzahl erzeugen eine fehlende Sollzeit</small></span><select data-setting="regularWorkDays"><option value="1">1 Tag</option><option value="2">2 Tage</option><option value="3">3 Tage</option><option value="4">4 Tage</option><option value="5">5 Tage</option><option value="6">6 Tage</option><option value="7">7 Tage</option></select></label>
+            <div class="settings-select settings-contract-result"><span><strong>Ziel pro Vertragstag</strong><small>Wird aus Wochenstunden und Regelarbeitstagen berechnet</small></span><b data-contract-daily-target>8 Stunden</b></div>
+            <label class="settings-select"><span><strong>Monatliche Sollstunden <em>(optional)</em></strong><small>Nur eintragen, wenn dein Arbeitsvertrag einen festen Monatswert vorgibt</small></span><span class="settings-hours-input"><input type="number" inputmode="decimal" min="0" max="744" step="0.25" data-setting="monthlyTargetHours" aria-label="Monatliche Sollstunden"><b>Stunden</b></span></label>
             <label class="settings-select"><span><strong>Automatische Pause</strong><small>Nach 6 Stunden Arbeitszeit</small></span><select data-setting="autoBreakMinutes"><option value="0">Deaktiviert</option><option value="30">30 Minuten</option><option value="45">45 Minuten</option><option value="60">60 Minuten</option></select></label>
             <label class="settings-toggle"><span><strong>Animationen reduzieren</strong><small>Ruhigere Übergänge in der gesamten App</small></span><input type="checkbox" data-setting="reducedMotion"><i aria-hidden="true"></i></label>
           </div>
@@ -81,6 +83,8 @@ document.addEventListener("DOMContentLoaded", () => {
     forgottenClockOut: true,
     chatAlerts: true,
     approvalAlerts: true,
+    weeklyTargetHours: 40,
+    regularWorkDays: 5,
     dailyTargetMinutes: 480,
     monthlyTargetHours: 160,
     autoBreakMinutes: 30,
@@ -103,15 +107,26 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function normalizeContractSettings(value, persisted = {}) {
+    const regularWorkDays = Math.max(1, Math.min(7, Math.round(Number(value.regularWorkDays || 5))));
+    const legacyDaily = Number(persisted.dailyTargetMinutes);
+    const persistedWeekly = Number(persisted.weeklyTargetHours);
+    const weeklyTargetHours = Math.max(1, Math.min(120, persistedWeekly || (legacyDaily ? legacyDaily * regularWorkDays / 60 : Number(value.weeklyTargetHours || defaults.weeklyTargetHours))));
+    return { ...value, weeklyTargetHours, regularWorkDays, dailyTargetMinutes: Math.round(weeklyTargetHours * 60 / regularWorkDays) };
+  }
+
   function loadSettings() {
-    return { ...defaults, ...parseStored(LEGACY_PREFERENCES_KEY), ...parseStored(SETTINGS_KEY) };
+    const persisted = parseStored(SETTINGS_KEY);
+    return normalizeContractSettings({ ...defaults, ...parseStored(LEGACY_PREFERENCES_KEY), ...persisted }, persisted);
   }
 
   function saveSettings() {
+    settings = normalizeContractSettings(settings, settings);
     window.TimeFlowPlatform.storage.setItem(SETTINGS_KEY, JSON.stringify(settings));
     const month = new Date().toLocaleDateString("sv-SE").slice(0, 7);
     const targets = parseStored(MONTHLY_TARGETS_KEY);
-    targets[month] = Number(settings.monthlyTargetHours || 0);
+    if (Number(settings.monthlyTargetHours) > 0) targets[month] = Number(settings.monthlyTargetHours);
+    else delete targets[month];
     window.TimeFlowPlatform.storage.setItem(MONTHLY_TARGETS_KEY, JSON.stringify(targets));
     window.TimeFlowPlatform.storage.setItem(LEGACY_PREFERENCES_KEY, JSON.stringify({ shiftReminders: settings.shiftReminders, chatAlerts: settings.chatAlerts }));
     applyPreferences();
@@ -129,6 +144,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if (control.type === "checkbox") control.checked = Boolean(value);
       else control.value = String(value);
     });
+    const contractTarget = page.querySelector("[data-contract-daily-target]");
+    if (contractTarget) contractTarget.textContent = `${(Number(settings.dailyTargetMinutes || 0) / 60).toLocaleString("de-DE", { maximumFractionDigits: 2 })} Stunden`;
     applyPreferences();
   }
 
@@ -213,6 +230,7 @@ document.addEventListener("DOMContentLoaded", () => {
   page.querySelectorAll("[data-setting]").forEach((control) => control.addEventListener("change", () => {
     settings[control.dataset.setting] = control.type === "checkbox" ? control.checked : Number(control.value);
     saveSettings();
+    renderControls();
   }));
   page.querySelector("[data-settings-back]").addEventListener("click", () => document.dispatchEvent(new CustomEvent("timeflow:open-profile")));
   page.querySelector("[data-check-update]").addEventListener("click", (event) => checkForUpdate(event.currentTarget));

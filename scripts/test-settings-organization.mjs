@@ -8,6 +8,8 @@ const localization = await readFile(new URL("../js/ui-localization.js", import.m
 const adaptive = await readFile(new URL("../css/adaptive-ui-fixes.css", import.meta.url), "utf8");
 const index = await readFile(new URL("../index.html", import.meta.url), "utf8");
 for (const marker of ["data-language-select", "Deutsch", "English", "Français", "Español", "Italiano", "Nederlands", "Polski", "Türkçe", "applyLanguage", "shellWords", "timeflow:language-changed", "Good morning", "Dernier service", "Darstellung & Sprache", "Arbeitszeit & Schutz", "App & Updates", "cloud-sync-card", "release-readiness-card", "settings-hero", "aria-expanded", "MutationObserver"]) if (!script.includes(marker)) throw new Error(`Einstellungsorganisation fehlt: ${marker}`);
+const sprint5 = await readFile(new URL("../js/sprint5.js", import.meta.url), "utf8");
+for (const marker of ["Wöchentliche Sollstunden", "Regelarbeitstage pro Woche", "weeklyTargetHours", "regularWorkDays", "Ziel pro Vertragstag", "normalizeContractSettings"]) if (!sprint5.includes(marker)) throw new Error(`Vertragseinstellung fehlt: ${marker}`);
 for (const marker of ["settings-accordion-body", "settings-chevron", "profile-language-select", "max-width:430px"]) if (!css.includes(marker)) throw new Error(`Darstellung der Einstellungen fehlt: ${marker}`);
 for (const marker of ['data-tf-font="arial"','data-tf-font="rounded"','data-tf-font="mono"','data-tf-background="forest"','data-tf-background="light"']) if (!options.includes(marker)) throw new Error(`Personalisierungsoption fehlt: ${marker}`);
 for (const marker of ["graphite", "forest", "sunset", "rose", "light", "arial", "rounded", "mono"]) if (!personalization.includes(marker)) throw new Error(`Auswahloption fehlt: ${marker}`);
