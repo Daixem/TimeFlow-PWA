@@ -12,22 +12,18 @@ veröffentlicht. Sprint-Branches lösen keine eigene Veröffentlichung aus.
 
 ### Geschützte Private Beta
 
-`timeflow-connect.daixem.chatgpt.site` ist keine eingecheckte zweite Kopie,
-sondern das in [`.openai/hosting.json`](.openai/hosting.json) gebundene OpenAI-
-Hosting-Projekt. Der Server-Build entsteht mit `npm run build` aus denselben
-App-Dateien wie das GitHub-Pages-Paket; Anmeldung, Beta-Freigaben und D1-Daten
-bleiben dabei im bestehenden Hosting-Projekt erhalten.
+`timeflow-connect.daixem.chatgpt.site` ist der einzige Beta-Zugang. Das in
+[`.openai/hosting.json`](.openai/hosting.json) gebundene Hosting-Projekt
+übernimmt Anmeldung, Beta-Freigaben, API und D1-Daten. Die App-Dateien bezieht
+es direkt aus dem aktuellen GitHub-Pages-Release von `main`; es gibt somit
+keine zweite, manuell zu veröffentlichende Beta-Kopie.
 
-Nach einem erfolgreichen GitHub-Pages-Deployment von `main` ruft derselbe
-Workflow den als Repository-Secret `TIMEFLOW_PRIVATE_BETA_DEPLOY_HOOK`
-hinterlegten Deployment-Hook des Hosting-Projekts auf. Der Hook muss im
-Hosting-Projekt auf dieses Repository, den Branch `main` und den Build-Befehl
-`npm run build` zeigen. Der Workflow übergibt Repository, Branch und Commit-SHA
-und wartet anschließend, bis `/version.json` genau diesen Commit meldet. Danach
-prüft er zusätzlich, ob der ausgelieferte Arbeitszeitkonto-Code „SOLL BIS
-HEUTE“ enthält. Fehlt der Hook oder liefert die Beta einen anderen Build, wird
-das Deployment sichtbar als fehlgeschlagen markiert, statt unbemerkt auf einem
-alten Stand zu bleiben.
+Jeder erfolgreiche Upload nach `main` – egal ob aus einer Cloud-Aufgabe oder
+aus Codex – aktualisiert zuerst GitHub Pages und anschließend denselben
+Beta-Zugang. Der Workflow wartet, bis die Beta unter `/version.json` genau
+diesen Commit meldet und prüft zusätzlich den ausgelieferten
+Arbeitszeitkonto-Code („SOLL BIS HEUTE“). Schlägt einer dieser Schritte fehl,
+wird der Ablauf sichtbar als fehlgeschlagen markiert.
 
 ## In VS Code starten
 

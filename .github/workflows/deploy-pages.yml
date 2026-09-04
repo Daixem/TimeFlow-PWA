@@ -53,33 +53,10 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-      # The protected beta is an OpenAI Hosting project, not a second copy in
-      # this repository. Its deployment hook is configured to build main with
-      # `npm run build`; sending the exact Pages SHA keeps both publications in
-      # lockstep while the existing Hosting project retains auth and D1 data.
-      - name: Private Beta auf denselben Commit aktualisieren
-        env:
-          DEPLOY_HOOK: ${{ secrets.TIMEFLOW_PRIVATE_BETA_DEPLOY_HOOK }}
-          PROJECT_ID: appgprj_6a691ed2b46481918ff80390110ca2a6
-        shell: bash
-        run: |
-          set -euo pipefail
-          if [[ -z "$DEPLOY_HOOK" ]]; then
-            echo "TIMEFLOW_PRIVATE_BETA_DEPLOY_HOOK ist nicht konfiguriert." >&2
-            exit 1
-          fi
-          curl --fail-with-body --retry 3 --retry-all-errors \
-            --request POST \
-            --header "Content-Type: application/json" \
-            --data "$(jq -n \
-              --arg project_id "$PROJECT_ID" \
-              --arg repository "$GITHUB_REPOSITORY" \
-              --arg ref "$GITHUB_REF_NAME" \
-              --arg sha "$GITHUB_SHA" \
-              '{project_id: $project_id, repository: $repository, ref: $ref, sha: $sha}')" \
-            "$DEPLOY_HOOK"
-
-      - name: Private-Beta-Version verifizieren
+      # Die geschützte Beta behält Anmeldung und D1-Daten im Hosting-Projekt,
+      # liefert die App-Dateien jedoch direkt aus dem eben veröffentlichten
+      # main-Release. Dadurch gibt es keine zweite, manuell zu pflegende Kopie.
+      - name: Private Beta auf aktuellen Main-Stand prüfen
         shell: bash
         run: |
           set -euo pipefail

@@ -49,6 +49,7 @@ for (const file of files) {
 
 const worker = `const FILES = ${JSON.stringify(payload)};
 const BUILD_VERSION = ${JSON.stringify(buildVersion)};
+const MAIN_RELEASE_ORIGIN = "https://daixem.github.io/TimeFlow-PWA";
 const SYNC_KEYS = ["timeflow-profile-v1", "timeflow-settings-v1", "timeflow-profile-preferences-v1", "timeflow-private-schedule-v1", "timeflow-private-schedule-learning-v1", "timeflow-private-account-v1", "timeflow-worktime-audit-v1", "timeflow-monthly-targets-v1", "timeflow-private-setup-v1", "timeflow-beta-consent-v1", "timeflow-workday-v2", "timeflow-notifications-v1", "timeflow-notification-read-v1", "timeflow-quick-actions-v1"];
 
 function decode(value) {
@@ -63,6 +64,24 @@ function jsonResponse(value, status = 200, extraHeaders = {}) {
     status,
     headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", ...extraHeaders }
   });
+}
+
+async function latestMainAsset(request, url) {
+  if (!["GET", "HEAD"].includes(request.method) || url.pathname.startsWith("/api/")) return null;
+  try {
+    const upstream = await fetch(new URL(url.pathname + url.search, MAIN_RELEASE_ORIGIN), {
+      method: request.method,
+      headers: { Accept: request.headers.get("Accept") || "*/*" },
+      redirect: "follow"
+    });
+    if (!upstream.ok) return null;
+    const headers = new Headers(upstream.headers);
+    headers.set("X-TimeFlow-Release", "main");
+    headers.set("Cache-Control", url.pathname === "/sw.js" || url.pathname === "/index.html" || url.pathname === "/version.json" ? "no-cache" : "public, max-age=300");
+    return new Response(request.method === "HEAD" ? null : upstream.body, { status: upstream.status, headers });
+  } catch {
+    return null;
+  }
 }
 
 function authenticatedUser(request) {
@@ -292,7 +311,6 @@ async function handleSync(request, env, url) {
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    if (url.pathname === "/version.json") return jsonResponse({ build: BUILD_VERSION });
     if (url.pathname === "/api/session") {
       const user = authenticatedUser(request);
       return jsonResponse({ authenticated: user.authenticated, user: user.authenticated ? { id: user.id, email: user.email, name: user.name } : null });
@@ -304,6 +322,9 @@ export default {
     if (url.pathname === "/api/beta/invite") return handleBetaInvite(request, env, url);
     if (url.pathname === "/api/beta/invites") return handleBetaInvites(request, env, url);
     if (url.pathname === "/api/support") return handleSupport(request, env, url);
+    const currentMainAsset = await latestMainAsset(request, url);
+    if (currentMainAsset) return currentMainAsset;
+    if (url.pathname === "/version.json") return jsonResponse({ build: BUILD_VERSION });
     let path;
     try {
       path = decodeURIComponent(url.pathname).replace(/^\\/+/, "") || "index.html";
