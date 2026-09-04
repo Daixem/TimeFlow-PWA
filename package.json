@@ -8,7 +8,7 @@
     "start": "node server.mjs",
     "check": "node scripts/check.mjs",
     "build": "node scripts/build-sites.mjs",
-    "test": "node scripts/check.mjs && node scripts/test-platform.mjs && node scripts/build-sites.mjs && node scripts/test-sprint11.mjs && node scripts/test-sprint12.mjs && node scripts/test-private-import.mjs && node scripts/test-private-real.mjs && node scripts/test-private-account.mjs && node scripts/test-private-beta.mjs && node scripts/test-work-protection.mjs && node scripts/test-settings-organization.mjs && node scripts/test-support-feedback.mjs",
+    "test": "node scripts/check.mjs && node scripts/test-platform.mjs && node scripts/build-sites.mjs && node scripts/test-deployment-sync.mjs && node scripts/test-sprint11.mjs && node scripts/test-sprint12.mjs && node scripts/test-private-import.mjs && node scripts/test-private-real.mjs && node scripts/test-private-account.mjs && node scripts/test-private-beta.mjs && node scripts/test-work-protection.mjs && node scripts/test-settings-organization.mjs && node scripts/test-support-feedback.mjs",
     "build:pages": "node scripts/build-pages.mjs"
   }
 }

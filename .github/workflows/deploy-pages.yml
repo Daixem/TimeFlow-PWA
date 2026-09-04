@@ -52,3 +52,51 @@ jobs:
       - name: GitHub Pages aktualisieren
         id: deployment
         uses: actions/deploy-pages@v4
+
+      # The protected beta is an OpenAI Hosting project, not a second copy in
+      # this repository. Its deployment hook is configured to build main with
+      # `npm run build`; sending the exact Pages SHA keeps both publications in
+      # lockstep while the existing Hosting project retains auth and D1 data.
+      - name: Private Beta auf denselben Commit aktualisieren
+        env:
+          DEPLOY_HOOK: ${{ secrets.TIMEFLOW_PRIVATE_BETA_DEPLOY_HOOK }}
+          PROJECT_ID: appgprj_6a691ed2b46481918ff80390110ca2a6
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "$DEPLOY_HOOK" ]]; then
+            echo "TIMEFLOW_PRIVATE_BETA_DEPLOY_HOOK ist nicht konfiguriert." >&2
+            exit 1
+          fi
+          curl --fail-with-body --retry 3 --retry-all-errors \
+            --request POST \
+            --header "Content-Type: application/json" \
+            --data "$(jq -n \
+              --arg project_id "$PROJECT_ID" \
+              --arg repository "$GITHUB_REPOSITORY" \
+              --arg ref "$GITHUB_REF_NAME" \
+              --arg sha "$GITHUB_SHA" \
+              '{project_id: $project_id, repository: $repository, ref: $ref, sha: $sha}')" \
+            "$DEPLOY_HOOK"
+
+      - name: Private-Beta-Version verifizieren
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected="${GITHUB_SHA:0:12}"
+          for attempt in {1..30}; do
+            deployed="$(curl --fail --silent --show-error --max-time 15 \
+              https://timeflow-connect.daixem.chatgpt.site/version.json \
+              | jq -r '.build // empty' || true)"
+            if [[ "$deployed" == "$expected" ]]; then
+              curl --fail --silent --show-error --max-time 15 \
+                https://timeflow-connect.daixem.chatgpt.site/js/private-account.js \
+                | grep -q 'SOLL BIS HEUTE'
+              echo "Private Beta verwendet Build $deployed und enthält SOLL BIS HEUTE."
+              exit 0
+            fi
+            echo "Warte auf Private Beta (Versuch $attempt/30, aktuell: ${deployed:-unbekannt})"
+            sleep 10
+          done
+          echo "Private Beta wurde nicht auf Build $expected aktualisiert." >&2
+          exit 1
