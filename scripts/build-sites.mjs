@@ -69,9 +69,11 @@ function jsonResponse(value, status = 200, extraHeaders = {}) {
 async function latestMainAsset(request, url) {
   if (!["GET", "HEAD"].includes(request.method) || url.pathname.startsWith("/api/")) return null;
   try {
-    const upstream = await fetch(new URL(url.pathname + url.search, MAIN_RELEASE_ORIGIN), {
+    const upstreamUrl = new URL(url.pathname + url.search, MAIN_RELEASE_ORIGIN);
+    if (["/", "/index.html", "/sw.js", "/version.json"].includes(url.pathname)) upstreamUrl.searchParams.set("timeflow_release", String(Math.floor(Date.now() / 60000)));
+    const upstream = await fetch(upstreamUrl, {
       method: request.method,
-      headers: { Accept: request.headers.get("Accept") || "*/*" },
+      headers: { Accept: request.headers.get("Accept") || "*/*", "Cache-Control": "no-cache" },
       redirect: "follow"
     });
     if (!upstream.ok) return null;
