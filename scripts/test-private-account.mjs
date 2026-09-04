@@ -22,7 +22,11 @@ const context = {
 };
 vm.runInNewContext(account, context);
 const weeklyTarget = context.window.TimeFlowPrivateAccount.scheduleDueForMonth("2026-09", "2026-09-06");
-if (weeklyTarget.targetDue !== 2400 || weeklyTarget.extraFreeDays !== 1 || weeklyTarget.absenceCredit !== 0) throw new Error("40-Stunden-Vertrag: Vier 7-Stunden-Schichten und drei freie Tage müssen 40 Stunden Sollzeit ergeben.");
+if (weeklyTarget.targetDue !== 1920 || weeklyTarget.extraFreeDays !== 1 || weeklyTarget.absenceCredit !== 0) throw new Error("40-Stunden-Vertrag: Vier Schichten ergeben 32 Stunden Sollzeit; freie Tage bleiben sollzeitfrei.");
+storage.set("timeflow-private-schedule-v1", JSON.stringify(week.map((entry) => entry.date === "2026-09-02" ? { ...entry, title: "Urlaub", start: "", end: "", break: 0 } : entry)));
+const absenceTarget = context.window.TimeFlowPrivateAccount.scheduleDueForMonth("2026-09", "2026-09-06");
+if (absenceTarget.targetDue !== 1440 || absenceTarget.absenceCredit !== 0) throw new Error("Urlaub und Krankheit dürfen keine Sollzeit oder Zeitgutschrift erzeugen.");
+storage.set("timeflow-private-schedule-v1", JSON.stringify(week));
 storage.set("timeflow-settings-v1", JSON.stringify({ weeklyTargetHours: 30, regularWorkDays: 4 }));
 const partTimeTarget = context.window.TimeFlowPrivateAccount.scheduleDueForMonth("2026-09", "2026-09-06");
 if (partTimeTarget.targetDue !== 1800 || partTimeTarget.extraFreeDays !== 0 || partTimeTarget.normalFreeDays !== 3) throw new Error("Teilzeitvertrag: 30 Stunden auf vier Tage muss drei reguläre freie Tage berücksichtigen.");
