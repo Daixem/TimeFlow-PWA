@@ -21,14 +21,6 @@
   const isWork = (entry) => entry.source === "stamp" || entryType(entry) === "manual_work";
   const isCorrection = (entry) => ["opening_balance", "time_correction"].includes(entryType(entry));
   const schedule = () => { try { const value = JSON.parse(platform().storage.getItem(SCHEDULE_KEY) || "[]"); return Array.isArray(value) ? value : []; } catch (_error) { return []; } };
-  const dayMinutes = (entry) => {
-    const match = (value) => String(value || "").match(/^(\d{1,2}):(\d{2})$/);
-    const start = match(entry?.start); const end = match(entry?.end);
-    if (!start || !end) return 0;
-    let gross = (Number(end[1]) * 60 + Number(end[2])) - (Number(start[1]) * 60 + Number(start[2]));
-    if (gross < 0) gross += 24 * 60;
-    return Math.max(0, gross - Number(entry.break || 0));
-  };
   const scheduleType = (entry) => String(entry?.title || "").trim().toLocaleLowerCase("de-DE");
   const isFreeScheduleDay = (entry) => /^(frei|free|off|a|f|-)$/i.test(scheduleType(entry));
   const isCreditedAbsence = (entry) => /^(urlaub|krank|vacation|sick)$/i.test(scheduleType(entry));
@@ -39,32 +31,39 @@
   };
   const dailyTarget = (config = settings()) => Number(config.dailyTargetMinutes || 480);
   function scheduleTargetForDate(date, config = settings()) {
-    const entry = schedule().find((item) => item.date === date);
-    return entry && dayMinutes(entry) > 0 ? dayMinutes(entry) : dailyTarget(config);
+    // The employment contract sets the daily target. A shorter planned shift
+    // must not turn a 40-hour contract into fictitious overtime.
+    return dailyTarget(config);
   }
   function scheduleDueForMonth(month, today = currentDate()) {
     const todayMonth = today.slice(0, 7);
     if (month > todayMonth) return { hasSchedule: false, targetDue: 0, absenceCredit: 0, extraFreeDays: 0 };
     const limit = month < todayMonth ? `${month}-31` : today;
-    const entriesByDate = new Map();
-    schedule().filter((entry) => String(entry.date || "").startsWith(month) && entry.date <= limit).forEach((entry) => entriesByDate.set(entry.date, entry));
+    const allEntriesByDate = new Map();
+    schedule().filter((entry) => entry.date <= limit).forEach((entry) => allEntriesByDate.set(entry.date, entry));
+    const entriesByDate = new Map([...allEntriesByDate].filter(([date]) => date.startsWith(month)));
     if (!entriesByDate.size) return { hasSchedule: false, targetDue: 0, absenceCredit: 0, extraFreeDays: 0 };
-    let planned = 0; let absenceCredit = 0;
+    let contractualDays = 0; let absenceCredit = 0;
     const freeByWeek = new Map();
-    entriesByDate.forEach((entry) => {
+    const relevantWeeks = new Set([...entriesByDate.values()].map((entry) => mondayFor(entry.date)));
+    // A calendar week can begin in the previous month. Its free days still
+    // determine whether the current month's Sunday is the third free day.
+    [...allEntriesByDate.values()].filter((entry) => relevantWeeks.has(mondayFor(entry.date))).forEach((entry) => {
       if (isFreeScheduleDay(entry)) {
         const week = mondayFor(entry.date); freeByWeek.set(week, (freeByWeek.get(week) || 0) + 1);
-        return;
       }
-      const target = dayMinutes(entry) || dailyTarget();
-      planned += target;
-      if (isCreditedAbsence(entry)) absenceCredit += target;
+    });
+    entriesByDate.forEach((entry) => {
+      if (isFreeScheduleDay(entry)) return;
+      contractualDays += 1;
+      if (isCreditedAbsence(entry)) absenceCredit += dailyTarget();
     });
     const extraFreeDays = [...freeByWeek.values()].reduce((sum, freeDays) => sum + Math.max(0, freeDays - 2), 0);
-    // Two free days per Monday–Sunday week are normal. Every additional free day
-    // remains an 8-hour target and therefore creates a deficit unless worked later.
-    const freePenalty = extraFreeDays * dailyTarget();
-    return { hasSchedule: true, targetDue: planned + freePenalty, absenceCredit, extraFreeDays };
+    // Two free days per Monday–Sunday week are normal. Every other entered day
+    // is a contractual day of eight hours for a 40-hour week. The third free day
+    // is therefore counted as a missing contractual day, not as paid work.
+    const contractualTarget = (contractualDays + extraFreeDays) * dailyTarget();
+    return { hasSchedule: true, targetDue: contractualTarget, absenceCredit, extraFreeDays, contractualDays };
   }
   function weekdaysThrough(month, date) {
     const [year, monthNumber] = month.split("-").map(Number);
@@ -131,7 +130,7 @@
   function actualOvertimeForMonth(month) {
     captureCompletedWorkday();
     const target = dailyTarget();
-    const completed = read().filter((entry) => String(entry.date || "").startsWith(month) && isWork(entry)).reduce((sum, entry) => sum + Math.max(0, Number(entry.minutes || 0) - Number(entry.target || target)), 0);
+    const completed = read().filter((entry) => String(entry.date || "").startsWith(month) && isWork(entry)).reduce((sum, entry) => sum + Math.max(0, Number(entry.minutes || 0) - target), 0);
     const workday = readObject("timeflow-workday-v2");
     if (!workday?.isWorking || String(workday.workStart || "").slice(0, 7) !== month) return completed;
     const gross = Math.max(0, Math.floor((Date.now() - new Date(workday.workStart).getTime()) / 60000));
@@ -167,7 +166,7 @@
     document.body.insertAdjacentHTML("beforeend", `<dialog class="private-account-dialog" id="privateAccountDialog"><header><div><small>PRIVAT · ARBEITSZEITKONTO</small><h2>Mein Arbeitszeitkonto</h2><p>Stempelungen werden automatisch übernommen. Anfangsstände und Korrekturen kannst du manuell ergänzen.</p></div><button type="button" data-close-private-account aria-label="Schließen"><i class="fa-solid fa-xmark"></i></button></header><section class="private-account-summary"><span><small>ERFASSTE ARBEITSZEIT</small><strong data-account-stamped>0 h 0 min</strong></span><span><small>MANUELLE KORREKTUREN</small><strong data-account-manual>0 h 0 min</strong></span><span><small>ANGERECHNETE ABWESENHEIT</small><strong data-account-absence>0 h 0 min</strong></span><span><small>AKTUELLER SALDO</small><strong data-account-balance>0 h 0 min</strong></span><span><small>MONATSSOLL</small><strong data-account-target>0 h 0 min</strong></span><span><small>SOLL BIS HEUTE</small><strong data-account-target-due>0 h 0 min</strong></span></section><p class="private-account-model" data-account-model></p><form class="private-account-form"><label>Datum<input name="date" type="date" required></label><label>Kategorie<select name="entryType"><option value="time_correction">Zeitkorrektur</option><option value="opening_balance">Anfangssaldo</option><option value="manual_work">Manuell erfasste Arbeitszeit</option></select></label><label>Art<select name="direction"><option value="1">Guthaben hinzufügen</option><option value="-1">Stunden abziehen</option></select></label><label>Stunden<input name="hours" type="number" min="0" max="9999" value="0" required></label><label>Minuten<input name="minutes" type="number" min="0" max="59" value="0" required></label><label>Notiz<input name="note" type="text" maxlength="80" placeholder="z. B. Anfangsstand oder Korrektur"></label><button type="submit"><i class="fa-solid fa-plus"></i> Im Arbeitszeitkonto speichern</button></form><section class="private-account-list" data-account-list></section></dialog>`);
     const dialog = document.getElementById("privateAccountDialog"); const form = dialog.querySelector("form"); form.elements.date.value = currentDate(); dialog.querySelector(".private-account-summary").insertAdjacentHTML("afterend", `<label class="private-account-period"><i class="fa-regular fa-calendar"></i><span>Monatsarchiv</span><input type="month" data-account-month-picker aria-label="Monat auswählen"></label><div class="private-account-export"><button type="button" data-account-csv><i class="fa-solid fa-file-csv"></i> CSV exportieren</button><button type="button" data-account-pdf><i class="fa-solid fa-file-pdf"></i> PDF speichern</button><button type="button" data-account-audit><i class="fa-solid fa-clock-rotate-left"></i> Änderungsverlauf</button></div><section class="private-account-audit" data-account-audit-list hidden></section>`); const monthPicker = dialog.querySelector("[data-account-month-picker]"); monthPicker.value = currentMonth();
     function render() { const entries = read().sort((a, b) => `${b.date}${b.id}`.localeCompare(`${a.date}${a.id}`)); const month = monthPicker.value || currentMonth(); const { stamped, manual, absenceCredit, target, targetDue, balance, extraFreeDays, scheduleBased, entries: monthEntries } = monthlyValues(month); renderHomeMonth();
-      dialog.querySelector("[data-account-stamped]").textContent = format(stamped); dialog.querySelector("[data-account-manual]").textContent = format(manual, true); dialog.querySelector("[data-account-absence]").textContent = format(absenceCredit); dialog.querySelector("[data-account-target]").textContent = format(target); dialog.querySelector("[data-account-target-due]").textContent = format(targetDue); dialog.querySelector("[data-account-balance]").textContent = format(balance, true); dialog.querySelector("[data-account-balance]").classList.toggle("is-negative", balance < 0); dialog.querySelector("[data-account-model]").textContent = scheduleBased ? `Dienstplanmodell: Zwei freie Tage je Montag–Sonntag sind regulär. ${extraFreeDays ? `${extraFreeDays} zusätzlicher freier Tag${extraFreeDays === 1 ? "" : "e"} wird mit je ${format(dailyTarget())} als fehlende Sollzeit berücksichtigt.` : "Urlaub und Krankheit werden als Sollzeit angerechnet."}` : "Ohne Dienstplan wird das hinterlegte Monatssoll anteilig auf Werktage verteilt."; const homeCaptured = document.getElementById("privateAccountCaptured"); const homeManual = document.getElementById("privateAccountManual"); const homeBalance = document.getElementById("privateAccountBalance"); if (homeCaptured) homeCaptured.textContent = format(stamped); if (homeManual) homeManual.textContent = `Soll ${format(targetDue)}`; if (homeBalance) { homeBalance.textContent = format(balance, true); homeBalance.classList.toggle("positive", balance >= 0); }
+      dialog.querySelector("[data-account-stamped]").textContent = format(stamped); dialog.querySelector("[data-account-manual]").textContent = format(manual, true); dialog.querySelector("[data-account-absence]").textContent = format(absenceCredit); dialog.querySelector("[data-account-target]").textContent = format(target); dialog.querySelector("[data-account-target-due]").textContent = format(targetDue); dialog.querySelector("[data-account-balance]").textContent = format(balance, true); dialog.querySelector("[data-account-balance]").classList.toggle("is-negative", balance < 0); dialog.querySelector("[data-account-model]").textContent = scheduleBased ? `Vertragsmodell: ${format(dailyTarget() * 5)} pro Woche (${format(dailyTarget())} je Vertragstag). Zwei freie Tage je Montag–Sonntag sind regulär; ${extraFreeDays ? `${extraFreeDays} weiterer freier Tag${extraFreeDays === 1 ? "" : "e"} zählt als fehlende Sollzeit.` : "Urlaub und Krankheit werden als Sollzeit angerechnet."}` : "Ohne Dienstplan wird das hinterlegte Monatssoll anteilig auf Werktage verteilt."; const homeCaptured = document.getElementById("privateAccountCaptured"); const homeManual = document.getElementById("privateAccountManual"); const homeBalance = document.getElementById("privateAccountBalance"); if (homeCaptured) homeCaptured.textContent = format(stamped); if (homeManual) homeManual.textContent = `Soll ${format(targetDue)}`; if (homeBalance) { homeBalance.textContent = format(balance, true); homeBalance.classList.toggle("positive", balance >= 0); }
       dialog.querySelector("[data-account-list]").innerHTML = monthEntries.length ? monthEntries.map((entry) => { const work = isWork(entry); const typeLabel = entryType(entry) === "opening_balance" ? "Anfangssaldo" : entryType(entry) === "manual_work" ? "Manuelle Arbeitszeit" : entry.source === "stamp" ? "Automatisch" : "Zeitkorrektur"; return `<article><span><strong>${escapeHtml(entry.note || (work ? "Arbeitszeit" : "Korrektur"))}</strong><small>${new Date(`${entry.date}T12:00:00`).toLocaleDateString(locale(), { day: "2-digit", month: "2-digit", year: "numeric" })} · ${typeLabel}</small></span><b>${work ? format(entry.minutes) : format(entry.adjustment, true)}</b><span class="account-row-actions"><button type="button" data-edit-account="${entry.id}" aria-label="Eintrag korrigieren"><i class="fa-solid fa-pen"></i></button><button type="button" data-delete-account="${entry.id}" aria-label="Eintrag löschen"><i class="fa-regular fa-trash-can"></i></button></span></article>`; }).join("") : '<p class="private-import-empty">Für diesen Monat sind noch keine Arbeitszeiten vorhanden.</p>';
     }
     form.addEventListener("submit", (event) => { event.preventDefault(); const hours = Number(form.elements.hours.value || 0); const minuteValue = Number(form.elements.minutes.value || 0); const value = hours * 60 + minuteValue; if (!value) return; const type = form.elements.entryType.value; const work = type === "manual_work"; const adjustment = work ? 0 : Number(form.elements.direction.value) * value; const entries = read(); const entry = { id: `manual-${Date.now()}`, date: form.elements.date.value, minutes: work ? value : 0, target: 0, adjustment, note: form.elements.note.value.trim() || (work ? "Manuell erfasste Arbeitszeit" : type === "opening_balance" ? "Anfangssaldo" : "Manuelle Korrektur"), source: "manual", entryType: type }; entries.push(entry); audit("create", entry); reopenArchivedMonth(entry.date); write(entries); form.elements.hours.value = "0"; form.elements.minutes.value = "0"; form.elements.note.value = ""; render(); document.dispatchEvent(new CustomEvent("timeflow:private-account-updated")); });
