@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import vm from "node:vm";
 
 const code = await readFile(new URL("../js/private-schedule-import.js", import.meta.url), "utf8");
-for (const marker of ["multiple accept=", "application/pdf", "application/json", "async function readPlanFile", "json.schedule", "mehrere Dateien gleichzeitig möglich"]) {
+for (const marker of ["multiple accept=", "application/pdf", "application/json", "async function readPlanFile", "json.schedule", "mehrere Dateien gleichzeitig möglich", "data-private-week=\"previous\"", "data-private-week=\"next\"", "data-absence-plan", "privateAbsenceDialog", "An diesem Tag wird keine Sollzeit berechnet."]) {
   if (!code.includes(marker)) throw new Error(`Mehrfach- oder Dateiformatimport fehlt: ${marker}`);
 }
 const memory = new Map();
