@@ -53,27 +53,3 @@ jobs:
         id: deployment
         uses: actions/deploy-pages@v4
 
-      # Die geschützte Beta behält Anmeldung und D1-Daten im Hosting-Projekt,
-      # liefert die App-Dateien jedoch direkt aus dem eben veröffentlichten
-      # main-Release. Dadurch gibt es keine zweite, manuell zu pflegende Kopie.
-      - name: Private Beta auf aktuellen Main-Stand prüfen
-        shell: bash
-        run: |
-          set -euo pipefail
-          expected="${GITHUB_SHA:0:12}"
-          for attempt in {1..30}; do
-            deployed="$(curl --fail --silent --show-error --max-time 15 \
-              https://timeflow-connect.daixem.chatgpt.site/version.json \
-              | jq -r '.build // empty' || true)"
-            if [[ "$deployed" == "$expected" ]]; then
-              curl --fail --silent --show-error --max-time 15 \
-                https://timeflow-connect.daixem.chatgpt.site/js/private-account.js \
-                | grep -q 'SOLL BIS HEUTE'
-              echo "Private Beta verwendet Build $deployed und enthält SOLL BIS HEUTE."
-              exit 0
-            fi
-            echo "Warte auf Private Beta (Versuch $attempt/30, aktuell: ${deployed:-unbekannt})"
-            sleep 10
-          done
-          echo "Private Beta wurde nicht auf Build $expected aktualisiert." >&2
-          exit 1
