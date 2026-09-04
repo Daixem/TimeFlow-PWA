@@ -28,7 +28,7 @@
     if (!isPrivate()) return;
     const shifts = schedule(); const today = new Date().toLocaleDateString("sv-SE");
     const previous = [...shifts].reverse().find((entry) => entry.date < today && working(entry)); const next = shifts.find((entry) => entry.date >= today && working(entry));
-    const cards = document.querySelectorAll(".shift-card"); const completed = [...history()].reverse().find((entry) => String(entry.date || entry.workStart || "").slice(0, 10) < today); if (!setCompletedShiftCard(cards[0], completed)) setShiftCard(cards[0], previous, "Noch kein Einsatz"); setShiftCard(cards[1], next, "Kein Einsatz geplant");
+    const cards = document.querySelectorAll(".shift-card"); const completed = [...history()].reverse().find((entry) => String(entry.date || entry.workStart || "").slice(0, 10) <= today); if (!setCompletedShiftCard(cards[0], completed)) setShiftCard(cards[0], previous, "Noch kein Einsatz"); setShiftCard(cards[1], next, "Kein Einsatz geplant");
     const month = today.slice(0, 7); const monthEntries = shifts.filter((entry) => entry.date.startsWith(month)); const stats = document.querySelectorAll(".month-card .month-stats>div");
     if (stats[2]) { stats[2].querySelector("span").textContent = "Urlaub"; stats[2].querySelector("strong").textContent = `${monthEntries.filter((entry) => /^urlaub$/i.test(entry.title || "")).length} Tage`; }
     if (stats[3]) { stats[3].querySelector("span").textContent = "Krankheit"; stats[3].querySelector("strong").textContent = `${monthEntries.filter((entry) => /^krank$/i.test(entry.title || "")).length} Tage`; }

@@ -4,7 +4,7 @@ const account = await readFile(new URL("../js/private-account.js", import.meta.u
 const home = await readFile(new URL("../js/private-home.js", import.meta.url), "utf8");
 const core = await readFile(new URL("../js/script.js", import.meta.url), "utf8");
 
-for (const marker of ["timeflow-private-account-v1", "captureCompletedWorkday", "monthlyValues", "renderHomeMonth", "TimeFlowPrivateAccount", "Guthaben hinzufügen", "Stunden abziehen", "data-delete-account", "timeflow:open-private-account", "monthlyTargetHours", "MONATSSOLL", "SOLL BIS HEUTE", "stamped + manual - targetDue", "targetDueForMonth", "timeflow-private-account-archive-v1", "opening_balance", "time_correction", "manual_work", "Math.max(0, values.balance)"]) {
+for (const marker of ["timeflow-private-account-v1", "captureCompletedWorkday", "monthlyValues", "actualOvertimeForMonth", "renderHomeMonth", "TimeFlowPrivateAccount", "Guthaben hinzufügen", "Stunden abziehen", "data-delete-account", "timeflow:open-private-account", "monthlyTargetHours", "MONATSSOLL", "SOLL BIS HEUTE", "stamped + manual - targetDue", "targetDueForMonth", "timeflow-private-account-archive-v1", "opening_balance", "time_correction", "manual_work", "Math.max(0, Number(entry.minutes || 0) - Number(entry.target || target))"]) {
   if (!account.includes(marker)) throw new Error(`Arbeitszeitkonto: ${marker} fehlt.`);
 }
 if (!home.includes('data-private-action="account"') || !home.includes('document.dispatchEvent(new CustomEvent("timeflow:open-private-account"))')) throw new Error("Das Arbeitszeitkonto fehlt im Schnellzugriff.");

@@ -9,7 +9,7 @@ if (!main.includes("if (!privateMode)") || !main.includes('document.body.dataset
 for (const marker of ["data-notification-filter=\"worktime\"", "data-notification-filter=\"schedule\"", "data-notification-filter=\"system\"", "return []", "timeflow:replace-notifications", "timeflow-notification-read-v1", "rememberRead", "receipts[entry.id]"]) {
   if (!notifications.includes(marker)) throw new Error(`Persönliche Mitteilungen: ${marker} fehlt.`);
 }
-for (const marker of ["timeflow-private-schedule-v1", "timeflow-workday-v2", "private-next-", "private-offline", "renderRealHome"]) {
+for (const marker of ["timeflow-private-schedule-v1", "timeflow-workday-v2", "timeflow-workday-history-v1", "setCompletedShiftCard", "<= today", "private-next-", "private-offline", "renderRealHome"]) {
   if (!clean.includes(marker)) throw new Error(`Echte Privatdaten: ${marker} fehlt.`);
 }
 for (const marker of [".for-you-card", ".team-card", ".account-section", ".statistics-section"]) {

@@ -77,6 +77,17 @@
     }
     return { ...calculated, entries: monthEntries };
   }
+  function actualOvertimeForMonth(month) {
+    captureCompletedWorkday();
+    const target = Number(settings().dailyTargetMinutes || 480);
+    const completed = read().filter((entry) => String(entry.date || "").startsWith(month) && isWork(entry)).reduce((sum, entry) => sum + Math.max(0, Number(entry.minutes || 0) - Number(entry.target || target)), 0);
+    const workday = readObject("timeflow-workday-v2");
+    if (!workday?.isWorking || String(workday.workStart || "").slice(0, 7) !== month) return completed;
+    const gross = Math.max(0, Math.floor((Date.now() - new Date(workday.workStart).getTime()) / 60000));
+    const runningPause = workday.isPaused && workday.pauseStartedAt ? Math.max(0, Date.now() - new Date(workday.pauseStartedAt).getTime()) : 0;
+    const pause = workday.hasManualPause ? Math.floor((Number(workday.pauseAccumulatedMs || 0) + runningPause) / 60000) : gross >= Number(settings().autoBreakAfterMinutes || 360) ? Number(settings().autoBreakMinutes || 30) : 0;
+    return completed + Math.max(0, gross - pause - target);
+  }
   function archivePreviousMonth() {
     const month = currentMonth(); const state = readObject(STATE_KEY);
     if (state.month && state.month < month && state.values) { const archive = readObject(ARCHIVE_KEY); if (!archive[state.month]) { const values = state.values; archive[state.month] = { ...values, targetDue: values.target, balance: values.stamped + values.manual - values.target, archivedAt: new Date().toISOString() }; platform().storage.setItem(ARCHIVE_KEY, JSON.stringify(archive)); } }
@@ -96,7 +107,7 @@
     const hours = document.getElementById("todayHours");
     const overtime = document.getElementById("todayOvertime");
     if (hours) hours.textContent = format(values.stamped + values.manual);
-    if (overtime) overtime.textContent = format(Math.max(0, values.balance), true);
+    if (overtime) overtime.textContent = format(actualOvertimeForMonth(currentMonth), true);
     return values;
   }
   function install() {
