@@ -4,6 +4,7 @@ dist/
 build/
 coverage/
 _site/
+backups/
 
 # Lokale Konfiguration und Geheimnisse
 .env

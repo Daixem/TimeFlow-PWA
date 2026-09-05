@@ -61,10 +61,33 @@ function decode(value) {
   return bytes;
 }
 
+const RATE_WINDOWS = new Map();
+const SECURITY_CSP = "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self'; manifest-src 'self'";
+
+function securityHeaders(initial = {}) {
+  const headers = new Headers(initial);
+  headers.set("Content-Security-Policy", SECURITY_CSP);
+  headers.set("X-Content-Type-Options", "nosniff");
+  headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=(), usb=()");
+  headers.set("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  return headers;
+}
+
+function allowRate(user, scope, limit, intervalMs) {
+  const key = scope + ":" + user.id;
+  const now = Date.now();
+  const entries = (RATE_WINDOWS.get(key) || []).filter((timestamp) => timestamp > now - intervalMs);
+  if (entries.length >= limit) return false;
+  entries.push(now);
+  RATE_WINDOWS.set(key, entries);
+  return true;
+}
+
 function jsonResponse(value, status = 200, extraHeaders = {}) {
   return new Response(JSON.stringify(value), {
     status,
-    headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff", ...extraHeaders }
+    headers: securityHeaders({ "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", ...extraHeaders })
   });
 }
 
@@ -79,7 +102,7 @@ async function latestMainAsset(request, url) {
       redirect: "follow"
     });
     if (!upstream.ok) return null;
-    const headers = new Headers(upstream.headers);
+    const headers = securityHeaders(upstream.headers);
     headers.set("X-TimeFlow-Release", "main");
     headers.set("Cache-Control", url.pathname === "/sw.js" || url.pathname === "/index.html" || url.pathname === "/version.json" ? "no-cache" : "public, max-age=300");
     return new Response(request.method === "HEAD" ? null : upstream.body, { status: upstream.status, headers });
@@ -157,7 +180,8 @@ async function handleBetaInvite(request, env, url) {
   const valid = Boolean(invite && invite.status === "pending" && !invite.claimed_by && new Date(invite.expires_at) > new Date());
   if (request.method === "GET") return jsonResponse({ valid, invitation: valid ? { id: invite.id, label: invite.label, expiresAt: invite.expires_at } : null });
   if (request.method === "POST") {
-    const origin = request.headers.get("Origin"); if (origin && origin !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403); if (!valid) return jsonResponse({ error: "invitation_unavailable" }, 409);
+    const origin = request.headers.get("Origin"); if (origin !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403); if (!valid) return jsonResponse({ error: "invitation_unavailable" }, 409);
+    if (!allowRate(user, "beta-invite-claim", 10, 60 * 60 * 1000)) return jsonResponse({ error: "rate_limited" }, 429, { "Retry-After": "3600" });
     const claimedAt = new Date().toISOString();
     const result = await env.DB.prepare("UPDATE timeflow_beta_invites SET claimed_by = ?, claimed_at = ?, status = 'claimed' WHERE id = ? AND status = 'pending' AND claimed_by IS NULL").bind(user.id, claimedAt, invite.id).run();
     if (!result?.meta?.changes) return jsonResponse({ error: "invitation_already_claimed" }, 409);
@@ -172,7 +196,8 @@ async function handleBetaInvites(request, env, url) {
   if (!env?.DB || !betaAdmin(user, env)) return jsonResponse({ error: "admin_required" }, 403); await ensureBetaTables(env.DB);
   if (request.method === "GET") { const rows = await env.DB.prepare("SELECT id, label, created_at, expires_at, claimed_at, status FROM timeflow_beta_invites ORDER BY created_at DESC LIMIT 100").all(); return jsonResponse({ invitations: rows?.results || [] }); }
   if (request.method === "POST") {
-    const origin = request.headers.get("Origin"); if (origin && origin !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
+    const origin = request.headers.get("Origin"); if (origin !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
+    if (!allowRate(user, "beta-invite-create", 20, 60 * 60 * 1000)) return jsonResponse({ error: "rate_limited" }, 429, { "Retry-After": "3600" });
     let body; try { body = await request.json(); } catch { return jsonResponse({ error: "invalid_json" }, 400); }
     const label = String(body?.label || "").trim().slice(0, 80); const days = Math.min(30, Math.max(1, Number(body?.expiresDays || 7))); if (!label) return jsonResponse({ error: "label_required" }, 400);
     const token = randomToken(); const now = new Date(); const expires = new Date(now.getTime() + days * 86400000); const id = crypto.randomUUID();
@@ -193,7 +218,8 @@ async function handleTeamAccess(request, env, url) {
   if (request.method === "GET") return jsonResponse({ allowed: Boolean(member), membership: member || null, invitation: invite || null });
   if (request.method === "POST") {
     const origin = request.headers.get("Origin");
-    if (origin && origin !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
+    if (origin !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
+    if (!allowRate(user, "team-invitation-accept", 10, 60 * 60 * 1000)) return jsonResponse({ error: "rate_limited" }, 429, { "Retry-After": "3600" });
     let body; try { body = await request.json(); } catch { return jsonResponse({ error: "invalid_json" }, 400); }
     if (body?.action !== "accept" || !invite || body.invitationId !== invite.id) return jsonResponse({ error: "valid_invitation_required" }, 403);
     const joinedAt = new Date().toISOString();
@@ -247,7 +273,8 @@ async function handleSupport(request, env, url) {
     return jsonResponse({ tickets, admin: access.admin });
   }
   if (request.method !== "POST") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "GET, POST" });
-  const origin = request.headers.get("Origin"); if (origin && origin !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
+  const origin = request.headers.get("Origin"); if (origin !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
+  if (!allowRate(user, "support-write", 60, 60 * 60 * 1000)) return jsonResponse({ error: "rate_limited" }, 429, { "Retry-After": "3600" });
   if (Number(request.headers.get("Content-Length") || 0) > 950000) return jsonResponse({ error: "payload_too_large" }, 413);
   let body; try { body = await request.json(); } catch { return jsonResponse({ error: "invalid_json" }, 400); }
   const action = String(body?.action || "create"); const now = new Date().toISOString();
@@ -294,7 +321,8 @@ async function handleSync(request, env, url) {
 
   if (request.method === "PUT") {
     const origin = request.headers.get("Origin");
-    if (origin && origin !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
+    if (origin !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
+    if (!allowRate(user, "sync-write", 60, 60 * 1000)) return jsonResponse({ error: "rate_limited" }, 429, { "Retry-After": "60" });
     const contentLength = Number(request.headers.get("Content-Length") || 0);
     if (contentLength > 65536) return jsonResponse({ error: "payload_too_large" }, 413);
     let body;
@@ -339,15 +367,14 @@ export default {
     const file = FILES[path];
     if (!file) return new Response("Nicht gefunden", { status: 404 });
     const immutable = /\\.(?:png|svg)$/.test(path);
-    const headers = {
+    const headers = securityHeaders({
       "Content-Type": file.type,
       "Referrer-Policy": "no-referrer",
-      "X-Frame-Options": "DENY",
       "Cache-Control": path === "sw.js" || path === "index.html"
         ? "no-cache"
         : immutable ? "public, max-age=86400" : "public, max-age=300",
       "X-Content-Type-Options": "nosniff"
-    };
+    });
     return new Response(request.method === "HEAD" ? null : decode(file.body), { status: 200, headers });
   }
 };

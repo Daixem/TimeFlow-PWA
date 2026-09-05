@@ -18,6 +18,9 @@ Alternativ kann über **Terminal → Aufgabe ausführen** die Aufgabe
 Mit `npm test` werden Manifest, Offline-Cache, Sites-Build und die aktuellen
 Sprint-12-Abnahmekriterien automatisch geprüft.
 
+Die Sicherheits-, Backup- und Wiederherstellungsstrategie steht in
+[Sicherheit-und-Backup.md](Sicherheit-und-Backup.md).
+
 ## Als App installieren
 
 Auf `localhost` oder nach einer Bereitstellung über HTTPS kann TimeFlow in
