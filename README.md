@@ -8,22 +8,28 @@ zusammengeführt aus den bereitgestellten TimeFlow-Ständen.
 Die jeweils zuletzt veröffentlichte Sprint-Version ist unter
 [daixem.github.io/TimeFlow-PWA](https://daixem.github.io/TimeFlow-PWA/)
 erreichbar. Änderungen auf `main` werden automatisch über GitHub Pages
-veröffentlicht. Sprint-Branches lösen keine eigene Veröffentlichung aus.
+veröffentlicht. `main` ist die einzige verbindliche Quell- und Release-Version.
+Feature- und Cloud-Arbeitsbranches werden erst nach einem Merge nach `main`
+veröffentlicht.
 
 ### Geschützte Private Beta
 
 `timeflow-connect.daixem.chatgpt.site` ist der einzige Beta-Zugang. Das in
-[`.openai/hosting.json`](.openai/hosting.json) gebundene Hosting-Projekt
-übernimmt Anmeldung, Beta-Freigaben, API und D1-Daten. Die App-Dateien bezieht
-es direkt aus dem aktuellen GitHub-Pages-Release von `main`; es gibt somit
-keine zweite, manuell zu veröffentlichende Beta-Kopie.
+[`.openai/hosting.json`](.openai/hosting.json) gebundene bestehende
+Hosting-Projekt übernimmt Anmeldung, Beta-Freigaben, API und D1-Daten. Seine
+statischen App-Dateien beziehen sich aus dem GitHub-Pages-Release von `main`.
 
-Jeder erfolgreiche Upload nach `main` – egal ob aus einer Cloud-Aufgabe oder
-aus Codex – aktualisiert zuerst GitHub Pages und anschließend denselben
-Beta-Zugang. Der Workflow wartet, bis die Beta unter `/version.json` genau
-diesen Commit meldet und prüft zusätzlich den ausgelieferten
-Arbeitszeitkonto-Code („SOLL BIS HEUTE“). Schlägt einer dieser Schritte fehl,
-wird der Ablauf sichtbar als fehlgeschlagen markiert.
+Ein Push nach `main` baut und veröffentlicht GitHub Pages ausschließlich aus
+diesem Commit. Der Beta-Worker liefert diese Hauptdateien weiter aus. Änderungen
+am Worker, an D1-Routen oder an der Hosting-Laufzeit selbst werden dagegen nur
+über die vorhandene ChatGPT-Sites-Veröffentlichung des bestehenden Projekts
+ausgerollt. Es gibt bewusst keinen erfundenen GitHub-zu-Sites-Webhook.
+
+Jeder Produktions-Build erzeugt `_site/version.json` mit vollem Commit-SHA,
+eindeutiger Build-ID und UTC-Buildzeit. Der Build stoppt, wenn `GITHUB_SHA`
+nicht dem ausgecheckten Commit entspricht, Platzhalter übrig bleiben oder
+referenzierte Dateien fehlen. Gleichzeitige Pages-Läufe verwenden eine
+gemeinsame Concurrency-Gruppe; ein neuerer `main`-Lauf ersetzt einen älteren.
 
 ## In VS Code starten
 

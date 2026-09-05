@@ -1,6 +1,6 @@
 import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { extname, join, relative, sep } from "node:path";
-import { execFileSync } from "node:child_process";
+import { createBuildMetadata, replaceBuildPlaceholders } from "./build-metadata.mjs";
 
 const root = new URL("../", import.meta.url);
 const output = new URL("../dist/server/", import.meta.url);
@@ -33,13 +33,14 @@ const files = [
   ...(await Promise.all(publicDirectories.map(collect))).flat()
 ];
 const payload = {};
-const buildVersion = (process.env.GITHUB_SHA || execFileSync("git", ["rev-parse", "HEAD"], { cwd: root, encoding: "utf8" }).trim()).slice(0, 12);
+const buildMetadata = createBuildMetadata(root);
+const buildVersion = buildMetadata.build;
 
 for (const file of files) {
   const normalized = file.split(sep).join("/");
   const source = await readFile(new URL(normalized, root));
   const body = [".html", ".js", ".webmanifest"].includes(extname(file))
-    ? Buffer.from(source.toString("utf8").replaceAll("__TIMEFLOW_BUILD__", buildVersion))
+    ? Buffer.from(replaceBuildPlaceholders(source.toString("utf8"), buildMetadata))
     : source;
   payload[normalized] = {
     type: contentTypes[extname(file)] || "application/octet-stream",
@@ -48,6 +49,7 @@ for (const file of files) {
 }
 
 const worker = `const FILES = ${JSON.stringify(payload)};
+const BUILD_METADATA = ${JSON.stringify(buildMetadata)};
 const BUILD_VERSION = ${JSON.stringify(buildVersion)};
 const MAIN_RELEASE_ORIGIN = "https://daixem.github.io/TimeFlow-PWA";
 const SYNC_KEYS = ["timeflow-profile-v1", "timeflow-settings-v1", "timeflow-profile-preferences-v1", "timeflow-private-schedule-v1", "timeflow-private-schedule-learning-v1", "timeflow-private-account-v1", "timeflow-worktime-audit-v1", "timeflow-monthly-targets-v1", "timeflow-private-setup-v1", "timeflow-beta-consent-v1", "timeflow-workday-v2", "timeflow-notifications-v1", "timeflow-notification-read-v1", "timeflow-quick-actions-v1"];
@@ -326,7 +328,7 @@ export default {
     if (url.pathname === "/api/support") return handleSupport(request, env, url);
     const currentMainAsset = await latestMainAsset(request, url);
     if (currentMainAsset) return currentMainAsset;
-    if (url.pathname === "/version.json") return jsonResponse({ build: BUILD_VERSION });
+    if (url.pathname === "/version.json") return jsonResponse(BUILD_METADATA);
     let path;
     try {
       path = decodeURIComponent(url.pathname).replace(/^\\/+/, "") || "index.html";

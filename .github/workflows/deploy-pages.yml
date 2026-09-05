@@ -13,11 +13,12 @@ permissions:
 
 concurrency:
   group: timeflow-github-pages-main
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   deploy:
     name: Aktuellen TimeFlow-Stand veröffentlichen
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -25,11 +26,19 @@ jobs:
     steps:
       - name: Projekt laden
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Node.js vorbereiten
         uses: actions/setup-node@v4
         with:
           node-version: 22
+
+      - name: Aktuellen Main-Commit verifizieren
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
 
       - name: PWA prüfen
         run: npm test
