@@ -21,13 +21,19 @@ for (const marker of [
   "Strict-Transport-Security",
   "allowRate(user, \"support-write\"",
   "allowRate(user, \"sync-write\"",
-  "allowRate(user, \"beta-invite-create\""
+  "allowRate(user, \"beta-invite-create\"",
+  "if (!access.admin) return jsonResponse({ error: \"team_admin_required\" }, 403)",
+  "return jsonResponse({ allowed: true, membership: member || { organization_id: null, role: \"admin\", name: \"TimeFlow\" }"
 ]) {
   if (!worker.includes(marker)) throw new Error(`Sicherheitskontrolle fehlt im Sites-Worker: ${marker}`);
 }
 
 if (!accessClient.includes("const label = escapeHtml(invitation.result.invitation.label)")) {
   throw new Error("Einladungsbezeichnungen müssen vor HTML-Ausgabe maskiert werden.");
+}
+const modeClient = await text("js/sprint11.js");
+if (!modeClient.includes("button.hidden = !access.admin")) {
+  throw new Error("Die Team-Auswahl muss für normale Beta-Tester ausgeblendet werden.");
 }
 if (!serviceWorker.includes('relativePath.startsWith("api/")')) {
   throw new Error("Personenbezogene API-Antworten dürfen nicht im PWA-Cache liegen.");

@@ -210,12 +210,17 @@ async function handleBetaInvites(request, env, url) {
 async function handleTeamAccess(request, env, url) {
   const user = authenticatedUser(request);
   if (!user.authenticated || !user.id) return jsonResponse({ error: "authentication_required" }, 401);
-  if (!(await betaAccess(user, env)).allowed) return jsonResponse({ error: "beta_access_required" }, 403);
+  const access = await betaAccess(user, env);
+  if (!access.allowed) return jsonResponse({ error: "beta_access_required" }, 403);
+  // Die Teamoberfläche und alle zugehörigen Verwaltungsaktionen gehören in der
+  // Einzel-Beta ausschließlich zum fest serverseitig hinterlegten Beta-Admin.
+  // Eine Unternehmensmitgliedschaft oder ein manipuliertes Frontend genügt nie.
+  if (!access.admin) return jsonResponse({ error: "team_admin_required" }, 403);
   if (!env?.DB) return jsonResponse({ error: "storage_unavailable" }, 503);
   await ensureTeamTables(env.DB);
   const member = await env.DB.prepare("SELECT m.organization_id, m.role, o.name FROM timeflow_organization_members m JOIN timeflow_organizations o ON o.id = m.organization_id WHERE m.user_id = ? LIMIT 1").bind(user.id).first();
   const invite = user.email ? await env.DB.prepare("SELECT i.id, i.organization_id, i.role, o.name FROM timeflow_organization_invites i JOIN timeflow_organizations o ON o.id = i.organization_id WHERE lower(i.email) = lower(?) AND i.status = 'pending' ORDER BY i.created_at DESC LIMIT 1").bind(user.email).first() : null;
-  if (request.method === "GET") return jsonResponse({ allowed: Boolean(member), membership: member || null, invitation: invite || null });
+  if (request.method === "GET") return jsonResponse({ allowed: true, membership: member || { organization_id: null, role: "admin", name: "TimeFlow" }, invitation: invite || null });
   if (request.method === "POST") {
     const origin = request.headers.get("Origin");
     if (origin !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403);

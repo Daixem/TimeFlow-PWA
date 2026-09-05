@@ -51,6 +51,9 @@ document.addEventListener("DOMContentLoaded", () => {
   function updateTeamAccess(access = {}) {
     teamAccessAllowed = Boolean(access.allowed);
     document.querySelectorAll('[data-select-mode="team"], [data-mode-setting="team"]').forEach((button) => {
+      // Team ist in der Einzel-Beta eine ausschließlich administrative Ansicht.
+      // Das Ausblenden ergänzt die serverseitige 403-Sperre, ersetzt sie aber nicht.
+      button.hidden = !access.admin;
       button.disabled = !teamAccessAllowed;
       button.classList.toggle("is-locked", !teamAccessAllowed);
       button.setAttribute("aria-disabled", String(!teamAccessAllowed));
