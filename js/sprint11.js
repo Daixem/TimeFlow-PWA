@@ -1,6 +1,32 @@
 "use strict";
 
+function installTimeFlowLaunch() {
+  if (document.getElementById("timeflowLaunch")) return;
+  document.body.insertAdjacentHTML("afterbegin", `
+    <section class="timeflow-launch" id="timeflowLaunch" aria-label="TimeFlow wird geöffnet">
+      <div class="timeflow-launch-glow"></div>
+      <div class="timeflow-launch-content">
+        <img src="assets/branding/timeflow-phoenix-mark-v1.png" alt="" class="timeflow-launch-phoenix">
+        <p class="timeflow-launch-eyebrow">MEHR ALS NUR ZEITERFASSUNG</p>
+        <h1>Time<span>Flow</span></h1>
+        <p class="timeflow-launch-claim">Organisieren. Zusammenarbeiten. Wachsen.</p>
+        <em>Rise Together</em>
+      </div>
+    </section>
+  `);
+  const close = () => {
+    const launch = document.getElementById("timeflowLaunch");
+    if (!launch || launch.dataset.closing) return;
+    launch.dataset.closing = "true";
+    window.setTimeout(() => launch.remove(), 420);
+  };
+  window.setTimeout(close, 1150);
+  document.addEventListener("timeflow:beta-access-ready", () => window.setTimeout(close, 260), { once: true });
+  document.addEventListener("timeflow:session-ready", () => window.setTimeout(close, 260), { once: true });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
+  installTimeFlowLaunch();
   const SETTINGS_KEY = "timeflow-settings-v1";
   const settingsPage = document.getElementById("settingsPage");
   const settingsLayout = settingsPage?.querySelector(".settings-layout");
@@ -126,11 +152,56 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function removeTeamDemoContent() {
+    const teamCard = document.querySelector(".team-card");
+    if (teamCard && !teamCard.dataset.demoRemoved) {
+      teamCard.dataset.demoRemoved = "true";
+      teamCard.querySelector(".count-badge")?.remove();
+      const heading = teamCard.querySelector(".section-heading div");
+      if (heading) heading.innerHTML = "<h2>Team-Informationen</h2><p>Aktuell liegen keine echten Teamdaten vor.</p>";
+      const list = teamCard.querySelector(".team-update-list");
+      if (list) list.innerHTML = '<p class="team-empty-state"><i class="fa-solid fa-users"></i><span>Noch keine Teamdaten synchronisiert.</span></p>';
+    }
+    const teamToday = document.querySelector(".team-today");
+    if (teamToday && !teamToday.dataset.demoRemoved) {
+      teamToday.dataset.demoRemoved = "true";
+      teamToday.innerHTML = '<h2><i class="fa-solid fa-users"></i> Team heute</h2><p class="team-empty-state"><i class="fa-solid fa-cloud"></i><span>Es sind noch keine echten Teamdaten verbunden.</span></p>';
+    }
+    const schedule = document.getElementById("schedulePage");
+    if (schedule) schedule.classList.add("team-data-empty");
+    const chat = document.getElementById("chatPage");
+    if (chat && !chat.dataset.demoRemoved) {
+      chat.dataset.demoRemoved = "true";
+      chat.querySelector(".chat-toolbar")?.setAttribute("hidden", "");
+      chat.querySelector(".inbox-highlight")?.remove();
+      const conversations = chat.querySelector(".conversation-list");
+      if (conversations) conversations.innerHTML = '<p class="team-empty-state"><i class="fa-regular fa-comments"></i><span>Noch keine echten Team-Chats vorhanden.</span></p>';
+      chat.querySelector(".chat-thread")?.setAttribute("hidden", "");
+      chat.querySelector(".chat-demo-note")?.remove();
+    }
+  }
+
+  function updateTeamSupport(isTeam) {
+    const settings = document.querySelector("#settingsPage .settings-layout");
+    if (!settings) return;
+    const existing = settings.querySelector(".team-support-card");
+    if (!isTeam) { existing?.remove(); return; }
+    if (!existing) {
+      settings.insertAdjacentHTML("beforeend", `<section class="settings-card team-support-card"><header><span class="settings-card-icon blue"><i class="fa-regular fa-life-ring"></i></span><div><small>SUPPORT</small><h2>Support & Feedback</h2></div></header><p class="settings-card-copy">Melde Fehler oder Ideen direkt an TimeFlow. Es gelten dieselben Einstellungen und Datenschutzregeln wie in deiner Einzelnutzung.</p><button type="button" data-open-team-support><i class="fa-regular fa-paper-plane"></i> Support öffnen</button></section>`);
+      settings.querySelector("[data-open-team-support]")?.addEventListener("click", () => {
+        document.querySelector("[data-open-support]")?.click();
+      });
+    }
+  }
+
   function applyMode(mode) {
     const isPrivate = mode === "private";
     document.documentElement.classList.toggle("timeflow-private-mode", isPrivate);
     document.documentElement.classList.toggle("timeflow-team-mode", !isPrivate);
     document.body.dataset.appMode = mode;
+    if (!isPrivate) removeTeamDemoContent();
+    else document.getElementById("schedulePage")?.classList.remove("team-data-empty");
+    updateTeamSupport(!isPrivate);
 
     const quickActionsCard = document.querySelector(".quick-actions-card");
     if (quickActionsCard) quickActionsCard.hidden = isPrivate;

@@ -1,7 +1,7 @@
 import { readFile } from "node:fs/promises";
 
 const requiredSnippets = new Map([
-  ["index.html", ["css/compat.css?v=__TIMEFLOW_BUILD__", "css/sprint12.css?v=__TIMEFLOW_BUILD__", "css/private-home.css?v=__TIMEFLOW_BUILD__", "js/platform.js?v=__TIMEFLOW_BUILD__", "js/shell.js?v=__TIMEFLOW_BUILD__", "js/sprint12.js?v=__TIMEFLOW_BUILD__", "js/private-home.js?v=__TIMEFLOW_BUILD__", "register(\"sw.js\"", "personal-update-list", "data-personal-message", "team-update-list", "team-update-status", "month-open-statistics", "homeMonthLabel"]],
+  ["index.html", ["css/compat.css?v=__TIMEFLOW_BUILD__", "css/sprint12.css?v=__TIMEFLOW_BUILD__", "css/private-home.css?v=__TIMEFLOW_BUILD__", "js/platform.js?v=__TIMEFLOW_BUILD__", "js/shell.js?v=__TIMEFLOW_BUILD__", "js/sprint12.js?v=__TIMEFLOW_BUILD__", "js/private-home.js?v=__TIMEFLOW_BUILD__", "register(\"sw.js\"", "personal-update-list", "data-personal-message", "team-update-list", "team-empty-state", "month-open-statistics", "homeMonthLabel"]],
   ["sw.js", ["timeflow-", "relativePath.startsWith(\"api/\")", "response.type === \"opaque\"", "js/platform.js?v=__TIMEFLOW_BUILD__", "js/shell.js?v=__TIMEFLOW_BUILD__", "css/compat.css?v=__TIMEFLOW_BUILD__", "js/sprint12.js?v=__TIMEFLOW_BUILD__", "js/private-home.js?v=__TIMEFLOW_BUILD__", "js/private-schedule-import.js?v=__TIMEFLOW_BUILD__"]],
   ["js/platform.js", ["tf-platform-", "createStorage", "visualViewport", "openDialog", "data-timeflow-platform"]],
   ["css/compat.css", ["--tf-viewport-height", "pointer: coarse", "orientation: landscape", "forced-colors: active"]],

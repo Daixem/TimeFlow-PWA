@@ -423,7 +423,7 @@ document.addEventListener("DOMContentLoaded", () => {
     renderProfile();
     document.dispatchEvent(new CustomEvent("timeflow:profile-updated", { detail: { ...profile } }));
     window.TimeFlowPlatform.dialog.close(profileDialog);
-    notify("Dein Profil wurde lokal gespeichert.");
+    notify("Dein Profil wurde gespeichert und mit deinem Konto abgeglichen.");
   });
 
   profileDialog.addEventListener("click", (event) => {

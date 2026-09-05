@@ -28,6 +28,10 @@ for (const marker of [
   if (!worker.includes(marker)) throw new Error(`Sicherheitskontrolle fehlt im Sites-Worker: ${marker}`);
 }
 
+for (const syncKey of ["timeflow-profile-v1", "timeflow-settings-v1", "timeflow-custom-background-v1"]) {
+  if (!worker.includes(syncKey)) throw new Error(`Profil-Synchronisierung enthält ${syncKey} nicht.`);
+}
+
 if (!accessClient.includes("const label = escapeHtml(invitation.result.invitation.label)")) {
   throw new Error("Einladungsbezeichnungen müssen vor HTML-Ausgabe maskiert werden.");
 }

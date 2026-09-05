@@ -20,7 +20,7 @@ const theme = await readFile(new URL("../css/theme-personalization.css", import.
 
 for (const marker of ["/api/team-access", "valid_invitation_required", "timeflow_organization_members", "timeflow_organization_invites"]) if (!worker.includes(marker)) throw new Error(`Team-API fehlt: ${marker}`);
 for (const marker of ["teamAccessAllowed", "Nur nach Einladung eines Unternehmens", "loadTeamAccess", 'saveMode("private", false)']) if (!mode.includes(marker)) throw new Error(`Team-Sperre fehlt: ${marker}`);
-for (const marker of ["timeflow-private-schedule-v1", "timeflow-private-account-v1", "timeflow-workday-v2", "timeflow-notification-read-v1"]) if (!worker.includes(marker) || !sync.includes(marker)) throw new Error(`Cloud-Datensatz fehlt: ${marker}`);
+for (const marker of ["timeflow-private-schedule-v1", "timeflow-private-account-v1", "timeflow-workday-v2", "timeflow-notification-read-v1", "timeflow-profile-v1", "timeflow-settings-v1", "timeflow-custom-background-v1"]) if (!worker.includes(marker) || !sync.includes(marker)) throw new Error(`Cloud-Datensatz fehlt: ${marker}`);
 for (const marker of ["queuedWorkdaySnapshot", "scheduleWorkdayUpload", "current === queuedWorkdaySnapshot"]) if (!sync.includes(marker)) throw new Error(`Stabile laufende Synchronisierung fehlt: ${marker}`);
 for (const marker of ["CSV exportieren", "PDF speichern", "downloadCsv", "printPdf"]) if (!account.includes(marker)) throw new Error(`Export fehlt: ${marker}`);
 for (const marker of ["togglePause", "pauseAccumulatedMs", "hasManualPause"]) if (!worktime.includes(marker)) throw new Error(`Pausenstatus fehlt: ${marker}`);

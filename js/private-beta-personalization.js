@@ -3,6 +3,7 @@
   const SETTINGS_KEY = "timeflow-settings-v1";
   const SETUP_KEY = "timeflow-private-setup-v1";
   const TARGETS_KEY = "timeflow-monthly-targets-v1";
+  const CUSTOM_BACKGROUND_KEY = "timeflow-custom-background-v1";
   const BACKGROUND_DB = "timeflow-personalization-v1";
   const BACKGROUND_STORE = "assets";
   const storage = () => window.TimeFlowPlatform?.storage || { getItem: () => null, setItem: () => undefined };
@@ -29,14 +30,34 @@
     });
   }
 
-  async function getBackground() {
+  async function getBackgroundFromDevice() {
     const store = await backgroundStore();
     return new Promise((resolve, reject) => { const request = store.get("custom-background"); request.onsuccess = () => resolve(request.result || null); request.onerror = () => reject(request.error); });
   }
 
-  async function setBackground(value) {
+  async function saveBackgroundOnDevice(value) {
     const store = await backgroundStore("readwrite");
     return new Promise((resolve, reject) => { const request = value ? store.put(value, "custom-background") : store.delete("custom-background"); request.onsuccess = () => resolve(); request.onerror = () => reject(request.error); });
+  }
+
+  function storedBackground() {
+    const value = read(CUSTOM_BACKGROUND_KEY, null);
+    if (value?.cleared) return null;
+    return value?.dataUrl ? value : undefined;
+  }
+
+  async function getBackground() {
+    const accountBackground = storedBackground();
+    if (accountBackground !== undefined) return accountBackground;
+    const deviceBackground = await getBackgroundFromDevice();
+    if (deviceBackground?.dataUrl) write(CUSTOM_BACKGROUND_KEY, deviceBackground);
+    return deviceBackground;
+  }
+
+  async function setBackground(value) {
+    await saveBackgroundOnDevice(value);
+    write(CUSTOM_BACKGROUND_KEY, value || { cleared: true, updatedAt: new Date().toISOString() });
+    document.dispatchEvent(new CustomEvent("timeflow:settings-updated", { detail: { customBackground: Boolean(value?.dataUrl) } }));
   }
 
   function applyCustomBackground(asset) {
@@ -63,7 +84,9 @@
     if (!file?.type.startsWith("image/")) throw new Error("invalid_type");
     if (file.size > 30 * 1024 * 1024) throw new Error("too_large");
     const image = await loadImage(file);
-    const scale = Math.min(1, 1920 / Math.max(image.naturalWidth, image.naturalHeight));
+    // The personalized image travels with the authenticated profile. Keep it
+    // visually useful while limiting sync payloads and D1 storage growth.
+    const scale = Math.min(1, 960 / Math.max(image.naturalWidth, image.naturalHeight));
     const canvas = document.createElement("canvas");
     canvas.width = Math.max(1, Math.round(image.naturalWidth * scale)); canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
     const context = canvas.getContext("2d", { alpha: false }); context.drawImage(image, 0, 0, canvas.width, canvas.height);
@@ -74,7 +97,7 @@
     for (let index = 0; index < pixels.length; index += 16) { red += pixels[index]; green += pixels[index + 1]; blue += pixels[index + 2]; count += 1; }
     const rgb = [red, green, blue].map((value) => Math.round(value / count));
     const luminance = (0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]) / 255;
-    return { dataUrl: canvas.toDataURL("image/jpeg", 0.84), rgb, luminance, updatedAt: new Date().toISOString() };
+    return { dataUrl: canvas.toDataURL("image/jpeg", 0.72), rgb, luminance, updatedAt: new Date().toISOString() };
   }
 
   function updateBackgroundControls(active) {
@@ -90,11 +113,11 @@
     input.addEventListener("change", async () => {
       const file = input.files?.[0]; if (!file) return;
       const picker = input.closest(".custom-background-setting"); picker?.classList.add("is-processing");
-      try { const asset = await prepareBackground(file); await setBackground(asset); applyCustomBackground(asset); updateBackgroundControls(true); notify("Eigenes Hintergrundbild wurde gespeichert."); }
+      try { const asset = await prepareBackground(file); await setBackground(asset); applyCustomBackground(asset); updateBackgroundControls(true); notify("Eigenes Hintergrundbild ist mit deinem Profil verbunden."); }
       catch { notify("Dieses Bild konnte nicht verarbeitet werden."); }
       finally { picker?.classList.remove("is-processing"); input.value = ""; }
     });
-    document.querySelector("[data-remove-custom-background]")?.addEventListener("click", async () => { await setBackground(null); applyCustomBackground(null); updateBackgroundControls(false); notify("Eigenes Hintergrundbild wurde entfernt."); });
+    document.querySelector("[data-remove-custom-background]")?.addEventListener("click", async () => { await setBackground(null); applyCustomBackground(null); updateBackgroundControls(false); notify("Eigenes Hintergrundbild wurde aus deinem Profil entfernt."); });
   }
 
   function vacationUsage(year = new Date().getFullYear()) {
@@ -162,7 +185,7 @@
         <header><span class="settings-card-icon violet"><i class="fa-solid fa-palette"></i></span><div><small>Darstellung</small><h2 id="personalizationTitle">Persönliches Erscheinungsbild</h2></div></header>
         <div class="settings-list">
           <label class="settings-select"><span><strong>Hintergrund</strong><small>Farbstimmung der gesamten App</small></span><select data-personal-setting="appBackground"><option value="midnight">Mitternacht</option><option value="ocean">Ozeanblau</option><option value="teal">Petrol</option><option value="violet">Violett</option><option value="graphite">Graphit</option><option value="forest">Waldgrün</option><option value="sunset">Sonnenuntergang</option><option value="rose">Rosé</option><option value="light">Hell</option></select></label>
-          <div class="custom-background-setting" data-custom-background-preview><span><strong>Eigenes Hintergrundbild</strong><small>Bleibt lokal auf diesem Gerät. Fenster und Kontrast passen sich automatisch an.</small></span><div class="custom-background-actions"><label class="custom-background-pick"><i class="fa-solid fa-image"></i><span>Bild auswählen</span><input type="file" accept="image/*,.heic,.heif" data-custom-background-input></label><button type="button" data-remove-custom-background hidden><i class="fa-solid fa-trash-can"></i><span>Entfernen</span></button></div></div>
+          <div class="custom-background-setting" data-custom-background-preview><span><strong>Eigenes Hintergrundbild</strong><small>Mit deinem Profil verbunden. Fenster und Kontrast passen sich automatisch an.</small></span><div class="custom-background-actions"><label class="custom-background-pick"><i class="fa-solid fa-image"></i><span>Bild auswählen</span><input type="file" accept="image/*,.heic,.heif" data-custom-background-input></label><button type="button" data-remove-custom-background hidden><i class="fa-solid fa-trash-can"></i><span>Entfernen</span></button></div></div>
           <label class="settings-select"><span><strong>Schriftart</strong><small>Für alle Ansichten</small></span><select data-personal-setting="fontFamily"><option value="inter">Inter</option><option value="system">Systemschrift</option><option value="segoe">Segoe UI</option><option value="aptos">Aptos</option><option value="calibri">Calibri</option><option value="cambria">Cambria</option><option value="times">Times New Roman</option><option value="arial">Arial</option><option value="verdana">Verdana</option><option value="tahoma">Tahoma</option><option value="trebuchet">Trebuchet MS</option><option value="century">Century Gothic</option><option value="courier">Courier New</option><option value="rounded">Abgerundet</option><option value="serif">Serif</option><option value="mono">Monospace</option></select></label>
           <label class="settings-select"><span><strong>Schriftgröße</strong><small>Auch für Karten und Dialoge</small></span><select data-personal-setting="fontScale"><option value="1">Normal</option><option value="1.1">Groß</option><option value="1.2">Sehr groß</option><option value="1.3">Maximal</option></select></label>
         </div>

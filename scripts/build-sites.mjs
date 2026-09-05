@@ -52,7 +52,7 @@ const worker = `const FILES = ${JSON.stringify(payload)};
 const BUILD_METADATA = ${JSON.stringify(buildMetadata)};
 const BUILD_VERSION = ${JSON.stringify(buildVersion)};
 const MAIN_RELEASE_ORIGIN = "https://daixem.github.io/TimeFlow-PWA";
-const SYNC_KEYS = ["timeflow-profile-v1", "timeflow-settings-v1", "timeflow-profile-preferences-v1", "timeflow-private-schedule-v1", "timeflow-private-schedule-learning-v1", "timeflow-private-account-v1", "timeflow-worktime-audit-v1", "timeflow-monthly-targets-v1", "timeflow-private-setup-v1", "timeflow-beta-consent-v1", "timeflow-workday-v2", "timeflow-notifications-v1", "timeflow-notification-read-v1", "timeflow-quick-actions-v1"];
+const SYNC_KEYS = ["timeflow-profile-v1", "timeflow-settings-v1", "timeflow-profile-preferences-v1", "timeflow-custom-background-v1", "timeflow-private-schedule-v1", "timeflow-private-schedule-learning-v1", "timeflow-private-account-v1", "timeflow-worktime-audit-v1", "timeflow-monthly-targets-v1", "timeflow-private-setup-v1", "timeflow-beta-consent-v1", "timeflow-workday-v2", "timeflow-notifications-v1", "timeflow-notification-read-v1", "timeflow-quick-actions-v1"];
 
 function decode(value) {
   const binary = atob(value);
@@ -329,13 +329,13 @@ async function handleSync(request, env, url) {
     if (origin !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
     if (!allowRate(user, "sync-write", 60, 60 * 1000)) return jsonResponse({ error: "rate_limited" }, 429, { "Retry-After": "60" });
     const contentLength = Number(request.headers.get("Content-Length") || 0);
-    if (contentLength > 65536) return jsonResponse({ error: "payload_too_large" }, 413);
+    if (contentLength > 1048576) return jsonResponse({ error: "payload_too_large" }, 413);
     let body;
     try { body = await request.json(); } catch { return jsonResponse({ error: "invalid_json" }, 400); }
     const snapshot = validatedSnapshot(body?.snapshot);
     if (!snapshot) return jsonResponse({ error: "invalid_snapshot" }, 400);
     const payloadJson = JSON.stringify(snapshot);
-    if (payloadJson.length > 50000) return jsonResponse({ error: "payload_too_large" }, 413);
+    if (payloadJson.length > 786432) return jsonResponse({ error: "payload_too_large" }, 413);
     const updatedAt = new Date().toISOString();
     await env.DB.prepare("INSERT INTO timeflow_user_sync (user_id, payload_json, revision, updated_at) VALUES (?, ?, 1, ?) ON CONFLICT(user_id) DO UPDATE SET payload_json = excluded.payload_json, revision = timeflow_user_sync.revision + 1, updated_at = excluded.updated_at").bind(user.id, payloadJson, updatedAt).run();
     const row = await env.DB.prepare("SELECT revision, updated_at FROM timeflow_user_sync WHERE user_id = ?").bind(user.id).first();
