@@ -22,15 +22,16 @@
   -webkit-backdrop-filter:blur(24px) saturate(135%)!important;
 }
 
+/* Windows keep one continuous glass surface. Actual controls and individual
+   records remain tactile; explanatory and preference rows use spacing alone. */
 .timeflow-private-mode :is(
   .settings-list>label,.settings-toggle,.settings-select,.support-consent,
   .vacation-balance span,.app-status-list>div,.private-home-summary>span,
-  .private-account-summary span,.private-account-list article,.private-import-preview article,
-  .device-check-list li,.home-detail-content article,.support-ticket,.work-protection-card li,
-  .profile-permission-card,.profile-menu-link,.month-summary-item
+  .private-account-summary span,.device-check-list li,.home-detail-content article,
+  .work-protection-card li,.profile-permission-card,.profile-menu-link,.month-summary-item
 ){
-  border-color:var(--tf-glass-separator)!important;
-  background:var(--tf-glass-inset)!important;
+  border-color:transparent!important;
+  background:transparent!important;
   background-image:none!important;
   box-shadow:none!important;
 }
@@ -83,6 +84,21 @@ html[data-tf-background="light"] .timeflow-private-mode{
   --tf-glass-shadow:0 16px 42px rgba(29,73,112,.14);
 }
 html[data-tf-background="light"] .timeflow-private-mode :is(input,select,textarea,.settings-hours-input){background:rgba(255,255,255,.4)!important}
+
+/* Appearance is one continuous glass surface. Controls retain their own
+   affordance; only the surrounding preference rows become visually quiet. */
+.timeflow-private-mode .personalization-settings-card>header{border-bottom:0!important;padding-bottom:10px!important}
+.timeflow-private-mode .personalization-settings-card :is(>.settings-list,.settings-accordion-body>.settings-list){display:grid;gap:18px;padding:2px 14px 16px!important}
+.timeflow-private-mode .personalization-settings-card :is(>.settings-list,.settings-accordion-body>.settings-list)>:is(.settings-select,.custom-background-setting){min-height:0!important;padding:0!important;border:0!important;background:transparent!important;background-image:none!important;box-shadow:none!important}
+.timeflow-private-mode .personalization-settings-card .custom-background-setting{color:inherit}
+.timeflow-private-mode .personalization-settings-card .custom-background-setting small{color:inherit;opacity:.66}
+
+@media(max-width:600px){
+  .timeflow-private-mode .personalization-settings-card :is(>.settings-list,.settings-accordion-body>.settings-list){gap:16px;padding-bottom:14px!important}
+  .timeflow-private-mode .personalization-settings-card :is(>.settings-list,.settings-accordion-body>.settings-list)>.settings-select{grid-template-columns:minmax(0,1fr)!important;gap:8px}
+  .timeflow-private-mode .personalization-settings-card :is(>.settings-list,.settings-accordion-body>.settings-list)>.settings-select select{width:100%;min-height:44px;font-size:1rem}
+}
+.timeflow-private-mode :is(.settings-list,.app-status-list,.device-check-list,.work-protection-card ul,.home-detail-content,.private-home-summary,.private-account-summary){gap:14px}
 
 @media(max-width:600px){
   :root{--tf-glass-shadow:0 12px 34px rgba(0,7,20,.22)}
