@@ -30,10 +30,10 @@ const required = [
   "js/sprint11.js",
   "js/sprint12.js",
   "js/stamp.js",
-  "assets/icons/timeflow-icon.svg",
-  "assets/icons/timeflow-icon-192.png",
-  "assets/icons/timeflow-icon-512.png",
-  "assets/icons/timeflow-maskable-512.png"
+  "assets/branding/timeflow-phoenix-mark-v1.png",
+  "assets/icons/timeflow-phoenix-icon-192.png",
+  "assets/icons/timeflow-phoenix-icon-512.png",
+  "assets/icons/timeflow-phoenix-maskable-512.png"
 ];
 
 for (const file of required) await access(file);

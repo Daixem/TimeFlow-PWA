@@ -100,6 +100,42 @@ html[data-tf-background="light"] .timeflow-private-mode :is(input,select,textare
 }
 .timeflow-private-mode :is(.settings-list,.app-status-list,.device-check-list,.work-protection-card ul,.home-detail-content,.private-home-summary,.private-account-summary){gap:14px}
 
+/* The same glass language is used for the home overview, schedule and
+   quick access. A window gets one surface; its informational rows do not
+   create a second dark card inside it. Buttons and form controls stay clear
+   interactive targets. */
+.timeflow-private-mode :is(
+  .private-home-dialog,.schedule-tabs,.private-import-panel,.week-summary,
+  .week-list,.shift-grid,.month-card,.month-overview,.schedule-view>.date-switch
+){
+  border:1px solid var(--tf-glass-border)!important;
+  background:linear-gradient(145deg,rgba(255,255,255,.07),rgba(255,255,255,.018)),var(--tf-glass-panel)!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),var(--tf-glass-shadow)!important;
+  backdrop-filter:blur(24px) saturate(135%)!important;
+  -webkit-backdrop-filter:blur(24px) saturate(135%)!important;
+}
+
+.timeflow-private-mode :is(
+  .private-home-timeline>span,.private-home-account,.private-home-dialog section button,
+  .private-import-panel :is(.private-import-formats,.private-import-note,.private-learning-note),
+  .week-summary>span,.private-imported-shifts article,.month-overview>div>span
+){
+  background:transparent!important;
+  background-image:none!important;
+  border-color:transparent!important;
+  box-shadow:none!important;
+}
+
+.timeflow-private-mode .private-home-dialog section button + button,
+.timeflow-private-mode .week-summary>span + span,
+.timeflow-private-mode .private-home-timeline>span + span,
+.timeflow-private-mode .private-import-panel :is(.private-import-note,.private-learning-note){
+  border-top:1px solid var(--tf-glass-separator)!important;
+}
+
+.timeflow-private-mode .private-home-account>span + span{border-left-color:var(--tf-glass-separator)!important}
+.timeflow-private-mode .private-home-dialog{background-color:var(--tf-glass-panel)!important}
+
 @media(max-width:600px){
   :root{--tf-glass-shadow:0 12px 34px rgba(0,7,20,.22)}
   .timeflow-private-mode :is(.card,.list-card,.shift-card,.settings-card,.profile-menu-card){backdrop-filter:blur(18px) saturate(125%)!important;-webkit-backdrop-filter:blur(18px) saturate(125%)!important}

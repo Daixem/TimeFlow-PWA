@@ -44,7 +44,7 @@ for (const match of index.matchAll(/(?:src|href)="([^"#?]+)(?:\?[^\"]*)?"/g)) {
   const target = new URL(asset, output);
   try { await stat(target); } catch { throw new Error(`Index referenziert fehlendes Asset: ${asset}`); }
 }
-for (const file of ["manifest.webmanifest", "sw.js", "assets/icons/timeflow-icon-192.png", "assets/icons/timeflow-icon-512.png", "assets/icons/timeflow-maskable-512.png"]) await access(new URL(file, output));
+for (const file of ["manifest.webmanifest", "sw.js", "assets/icons/timeflow-phoenix-icon-192.png", "assets/icons/timeflow-phoenix-icon-512.png", "assets/icons/timeflow-phoenix-maskable-512.png"]) await access(new URL(file, output));
 
 const manifest = JSON.parse(await readFile(new URL("manifest.webmanifest", output), "utf8"));
 for (const icon of manifest.icons || []) await access(new URL(icon.src, output));

@@ -8,7 +8,7 @@
     const sent = read(SENT_KEY, {}); if (sent[id]) return;
     sent[id] = new Date().toISOString(); write(SENT_KEY, sent);
     const registration = await navigator.serviceWorker?.ready.catch(() => null);
-    if ("Notification" in window && Notification.permission === "granted" && registration) await registration.showNotification(title, { body, icon: "assets/icons/timeflow-icon-192.png", badge: "assets/icons/timeflow-icon-192.png", tag: id, data: { url: "./" } });
+    if ("Notification" in window && Notification.permission === "granted" && registration) await registration.showNotification(title, { body, icon: "assets/icons/timeflow-phoenix-icon-192.png", badge: "assets/icons/timeflow-phoenix-icon-192.png", tag: id, data: { url: "./" } });
     const toast = document.getElementById("toast"); if (toast) { toast.textContent = `${title}: ${body}`; toast.classList.add("is-visible"); window.setTimeout(() => toast.classList.remove("is-visible"), 5000); }
   }
   function check() {

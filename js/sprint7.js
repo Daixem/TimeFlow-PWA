@@ -189,8 +189,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const registration = await navigator.serviceWorker.ready;
       await registration.showNotification(title, {
         body,
-        icon: "assets/icons/timeflow-icon-192.png",
-        badge: "assets/icons/timeflow-icon-192.png",
+        icon: "assets/icons/timeflow-phoenix-icon-192.png",
+        badge: "assets/icons/timeflow-phoenix-icon-192.png",
         tag: data.tag || `timeflow-${Date.now()}`,
         renotify: true,
         data: { url: "./", ...data }

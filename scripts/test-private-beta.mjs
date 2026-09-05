@@ -17,6 +17,7 @@ const profileScript = await readFile(new URL("../js/sprint4.js", import.meta.url
 const serviceWorker = await readFile(new URL("../sw.js", import.meta.url), "utf8");
 const protection = await readFile(new URL("../js/work-protection.js", import.meta.url), "utf8");
 const theme = await readFile(new URL("../css/theme-personalization.css", import.meta.url), "utf8");
+const schedule = await readFile(new URL("../js/private-schedule-import.js", import.meta.url), "utf8");
 
 for (const marker of ["/api/team-access", "valid_invitation_required", "timeflow_organization_members", "timeflow_organization_invites"]) if (!worker.includes(marker)) throw new Error(`Team-API fehlt: ${marker}`);
 for (const marker of ["teamAccessAllowed", "Nur nach Einladung eines Unternehmens", "loadTeamAccess", 'saveMode("private", false)']) if (!mode.includes(marker)) throw new Error(`Team-Sperre fehlt: ${marker}`);
@@ -37,9 +38,10 @@ for (const marker of ["js/sprint8.js?v=__TIMEFLOW_BUILD__", "js/sprint9.js?v=__T
 for (const marker of ["Wöchentliche Sollstunden", "weeklyTargetHours", "Regelarbeitstage pro Woche", "regularWorkDays", "Monatliche Sollstunden", "Verfügbare Urlaubstage pro Jahr", "annualVacationDays", "fontScale", "fontFamily", "appBackground", "timeflow-private-setup-v1", "timeflow-beta-admin"]) if (!personalization.includes(marker)) throw new Error(`Ersteinrichtung oder Personalisierung fehlt: ${marker}`);
 for (const marker of ["timeflow-personalization-v1", "data-custom-background-input", "prepareBackground", "indexedDB", "--tf-custom-background-image"]) if (!personalization.includes(marker) && !theme.includes(marker)) throw new Error(`Eigenes Hintergrundbild fehlt: ${marker}`);
 const glass = await readFile(new URL("../css/unified-glass.css", import.meta.url), "utf8");
-for (const marker of ["personalization-settings-card :is", "border:0!important", "timeflow-icon-192.png"]) if (!glass.includes(marker) && !serviceWorker.includes(marker)) throw new Error(`Einheitliche Darstellung oder PWA-Logo fehlt: ${marker}`);
+for (const marker of ["personalization-settings-card :is", "border:0!important", "timeflow-phoenix-icon-192.png"]) if (!glass.includes(marker) && !serviceWorker.includes(marker)) throw new Error(`Einheitliche Darstellung oder PWA-Logo fehlt: ${marker}`);
 for (const marker of ["birthDate", "autocomplete=\"bday\"", "dataset.tfFontSize", "if (verified) installSetup()"] ) if (!personalization.includes(marker) && !profileScript.includes(marker)) throw new Error(`Geburtsdatum oder adaptive Schrift fehlt: ${marker}`);
 for (const marker of ["--tf-glass", "backdrop-filter", "data-tf-font-size=\"expanded\"", ".profile-settings-shortcut"]) if (!theme.includes(marker)) throw new Error(`Adaptives Farbschema fehlt: ${marker}`);
+for (const marker of ["const isoWeek", "KW ${isoWeek(weekDates[0])}"]) if (!schedule.includes(marker)) throw new Error(`Kalenderwoche in der Wochenansicht fehlt: ${marker}`);
 for (const marker of ["Arbeits- & Jugendschutz", "otherEmployerWeeklyHours", "fullTimeSchool", "vocationalSchoolDay", "Mehr als fünf Arbeitstage", "Nachtarbeit erkannt", "nationwideHoliday"]) if (!protection.includes(marker)) throw new Error(`Arbeitszeitschutz fehlt: ${marker}`);
 for (const marker of ["css/theme-personalization.css?v=__TIMEFLOW_BUILD__", "css/device-safe-layout.css?v=__TIMEFLOW_BUILD__", "css/unified-glass.css?v=__TIMEFLOW_BUILD__", "js/work-protection.js?v=__TIMEFLOW_BUILD__", "js/sprint4.js?v=__TIMEFLOW_BUILD__"]) if (!index.includes(marker) || !serviceWorker.includes(marker)) throw new Error(`Neues Profil-Asset fehlt: ${marker}`);
 for (const marker of ["position:fixed!important", "timeflow-beta-user [data-manage-users]", "--tf-font-scale", "timeflow-private-mode .private-home-account{display:none"]) if (!personalizationCss.includes(marker)) throw new Error(`Darstellungsregel fehlt: ${marker}`);
