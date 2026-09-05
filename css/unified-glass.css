@@ -144,3 +144,33 @@ html[data-tf-background="light"] .timeflow-private-mode :is(input,select,textare
 @media(prefers-reduced-transparency:reduce){
   .timeflow-private-mode :is(.card,.list-card,.shift-card,.settings-card,.profile-menu-card,dialog,.private-quick-nav){background:var(--tf-glass-strong)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
 }
+
+/* The launch view uses the Phoenix brand instead of the former clock mark. */
+.brand-splash{position:fixed;inset:0;z-index:10000;display:grid;place-items:center;padding:28px;color:#f4f9ff;background:radial-gradient(circle at 50% 38%,#0b3970 0,#031a35 46%,#000b18 100%);opacity:1;transition:opacity .45s ease,visibility .45s ease}
+.brand-splash.is-leaving{opacity:0;visibility:hidden;pointer-events:none}
+.brand-splash-content{display:grid;justify-items:center;width:min(92vw,480px);padding:30px 24px 27px;border:1px solid rgba(90,196,255,.7);border-radius:24px;background:rgba(0,15,34,.42);box-shadow:0 0 28px rgba(21,141,255,.25),inset 0 0 24px rgba(57,153,255,.08);text-align:center}
+.brand-splash img{width:min(58vw,235px);height:auto;margin:-14px 0 -20px;filter:drop-shadow(0 0 18px rgba(45,174,255,.55));animation:brand-rise 1.1s ease-out both}
+.brand-splash-kicker{order:-1;margin:0 0 3px;color:#dbeaff;font-size:.72rem;font-weight:800;letter-spacing:.18em;text-transform:uppercase}
+.brand-splash h1{margin:0;font-size:clamp(2.4rem,10vw,4rem);line-height:.95;letter-spacing:-.055em;text-shadow:0 0 18px rgba(104,190,255,.4)}
+.brand-splash-claim{margin:10px 0 0;color:#c7d9ed;font-size:.82rem}
+.brand-splash-signature{margin:18px 0 0;color:#8ecbff;font-family:"Segoe Script","Bradley Hand",cursive;font-size:clamp(1.25rem,6vw,1.8rem);font-style:italic}
+@keyframes brand-rise{from{opacity:0;transform:translateY(24px) scale(.92)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.brand-splash,.brand-splash img{animation:none;transition:none}}
+
+/* Every selected palette now owns the navigation and interactive surfaces. */
+html[data-tf-background] :is(.bottom-nav,.private-quick-nav){border-color:var(--tf-glass-border)!important;background:color-mix(in srgb,var(--tf-glass-strong) 88%,transparent)!important}
+html[data-tf-background] :is(.settings-card,.profile-menu-card,.schedule-tabs,.date-switch,.my-shift,.team-today,.week-summary span,.week-list,.month-overview,.clock-shift-card,.clock-summary article){border-color:var(--tf-glass-border)!important;background-color:var(--tf-glass)!important}
+html[data-tf-background] :is(input,select,textarea,.settings-hours-input){border-color:var(--tf-glass-border)!important;background-color:var(--tf-control)!important;accent-color:var(--tf-accent)}
+html[data-tf-background] :is(.bottom-nav,.private-quick-nav) .nav-item.active{color:var(--tf-accent)!important}
+html[data-tf-background] .main-nav .nav-icon{background:linear-gradient(135deg,color-mix(in srgb,var(--tf-accent) 80%,white),var(--tf-accent))!important}
+
+/* High-contrast ink and pale controls for the light background. */
+html[data-tf-background="light"]{--text:#092746;--text-light:#385875;--text-dark:#58738c;--surface:#edf7ff;--surface-light:#dcecf8;--surface-dark:#c9deef}
+html[data-tf-background="light"] body{color:#092746}
+html[data-tf-background="light"] :is(.header,.dashboard,.schedule-page,.clock-page,.chat-page,.profile-page,.settings-page,dialog){color:#092746!important}
+html[data-tf-background="light"] :is(p,small,label,span,.subtitle,.nav-item,.list-row,.settings-card-copy,.profile-menu-link,.team-today>p,.my-shift small,.week-row small){color:#385875}
+html[data-tf-background="light"] :is(h1,h2,h3,strong,b,.info-item h3,.motivation-card p,.month-header button,.schedule-header button,.date-switch button,.team-today>button){color:#092746!important}
+html[data-tf-background="light"] :is(input,select,textarea,.settings-hours-input){color:#092746!important;background-color:rgba(245,251,255,.82)!important}
+html[data-tf-background="light"] :is(input,textarea)::placeholder{color:#668099}
+html[data-tf-background="light"] :is(.bottom-nav,.private-quick-nav){color:#385875!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 14px 38px rgba(30,75,112,.18)!important}
+html[data-tf-background="light"] :is(.card,.list-card,.shift-card,.settings-card,.profile-menu-card,.top-grid,.approval-card,dialog){box-shadow:inset 0 1px 0 rgba(255,255,255,.72),0 12px 32px rgba(34,78,115,.12)!important}

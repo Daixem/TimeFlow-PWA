@@ -8,11 +8,11 @@
 html[data-tf-background="ocean"] { --tf-glass: rgba(6, 62, 105, .66); --tf-glass-strong: rgba(7, 72, 119, .82); --tf-glass-border: rgba(112, 200, 255, .28); --tf-accent:#2398df; --tf-control:#075080; }
 html[data-tf-background="teal"] { --tf-glass: rgba(2, 66, 68, .66); --tf-glass-strong: rgba(3, 78, 78, .82); --tf-glass-border: rgba(91, 222, 197, .27); --tf-accent:#159f91; --tf-control:#075b5b; }
 html[data-tf-background="violet"] { --tf-glass: rgba(42, 31, 91, .68); --tf-glass-strong: rgba(52, 39, 111, .84); --tf-glass-border: rgba(174, 139, 255, .28); --tf-accent:#7959d9; --tf-control:#352873; }
-html[data-tf-background="graphite"] { --tf-accent:#71859b; --tf-control:#283542; }
-html[data-tf-background="forest"] { --tf-accent:#318c67; --tf-control:#164c3d; }
-html[data-tf-background="sunset"] { --tf-accent:#c1694c; --tf-control:#663b3e; }
-html[data-tf-background="rose"] { --tf-accent:#b75f91; --tf-control:#633453; }
-html[data-tf-background="light"] { --tf-accent:#2875bb; --tf-control:#e4f2ff; }
+html[data-tf-background="graphite"] { --tf-glass:rgba(28,39,51,.68); --tf-glass-strong:rgba(35,48,61,.86); --tf-glass-border:rgba(151,174,197,.25); --tf-accent:#71859b; --tf-control:#283542; }
+html[data-tf-background="forest"] { --tf-glass:rgba(8,59,47,.68); --tf-glass-strong:rgba(13,72,57,.86); --tf-glass-border:rgba(104,194,157,.25); --tf-accent:#318c67; --tf-control:#164c3d; }
+html[data-tf-background="sunset"] { --tf-glass:rgba(76,39,48,.68); --tf-glass-strong:rgba(92,47,53,.86); --tf-glass-border:rgba(225,151,124,.26); --tf-accent:#c1694c; --tf-control:#663b3e; }
+html[data-tf-background="rose"] { --tf-glass:rgba(73,35,64,.68); --tf-glass-strong:rgba(88,42,75,.86); --tf-glass-border:rgba(225,145,190,.25); --tf-accent:#b75f91; --tf-control:#633453; }
+html[data-tf-background="light"] { --tf-glass:rgba(238,247,255,.72); --tf-glass-strong:rgba(245,250,255,.88); --tf-glass-border:rgba(35,83,133,.2); --tf-accent:#2875bb; --tf-control:#e4f2ff; }
 
 .timeflow-private-mode :is(select,input,textarea),
 .timeflow-private-mode :is(.settings-select,.profile-language-select) select {
