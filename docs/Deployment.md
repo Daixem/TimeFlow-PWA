@@ -15,6 +15,14 @@ frischen `_site`-Build und veröffentlicht ausschließlich dieses Artefakt. Die
 Concurrency-Gruppe bricht einen älteren laufenden Deployment-Lauf ab, wenn ein
 neuerer `main`-Commit eintrifft.
 
+**Einmalige Repository-Einstellung:** In GitHub unter **Settings → Pages →
+Build and deployment → Source** muss **GitHub Actions** ausgewählt sein. Bei
+der Bestandsaufnahme lieferte die öffentliche Pages-URL trotz eines erfolgreichen
+Actions-Laufs noch den Repository-Quellordner (einschließlich
+`__TIMEFLOW_BUILD__`) aus; `version.json` war dort nicht vorhanden. Diese
+Einstellung liegt außerhalb des Repositories und kann nicht sicher durch Code
+oder einen erfundenen API-Hook ersetzt werden.
+
 `scripts/build-metadata.mjs` bildet die einheitliche Versionsinformation. Ein
 Build schlägt fehl, wenn `GITHUB_SHA` nicht dem tatsächlich ausgecheckten HEAD
 entspricht. `scripts/verify-production-build.mjs` stoppt den Release bei
