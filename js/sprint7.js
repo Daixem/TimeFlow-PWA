@@ -12,7 +12,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <section>
         <header class="notification-center-header">
           <span class="notification-center-icon"><i class="fa-regular fa-bell"></i></span>
-          <div><small><i class="fa-solid fa-sparkles"></i> Sprint 7</small><h2 id="notificationCenterTitle">Benachrichtigungen</h2><p>Alles Wichtige aus deinem Arbeitstag an einem Ort.</p></div>
+          <div><small><i class="fa-solid fa-sparkles"></i> Übersicht</small><h2 id="notificationCenterTitle">Benachrichtigungen</h2><p>Alles Wichtige aus deinem Arbeitstag an einem Ort.</p></div>
           <button type="button" data-close-notifications aria-label="Benachrichtigungen schließen"><i class="fa-solid fa-xmark"></i></button>
         </header>
         <div class="notification-permission" id="notificationPermissionCard">

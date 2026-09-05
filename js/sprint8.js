@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.body.insertAdjacentHTML("beforeend", `
     <section class="auth-gate" id="authGate" aria-labelledby="authGateTitle" hidden>
       <div class="auth-gate-card">
-        <header><span class="auth-brand"><i class="fa-solid fa-stopwatch"></i></span><div><small>TimeFlow · Sprint 8</small><strong>Arbeitszeit, die verbindet.</strong></div></header>
+        <header><span class="auth-brand"><i class="fa-solid fa-stopwatch"></i></span><div><small>TimeFlow</small><strong>Arbeitszeit, die verbindet.</strong></div></header>
         <div class="auth-intro"><span><i class="fa-solid fa-shield-halved"></i></span><h1 id="authGateTitle">Willkommen zurück</h1><p>Wähle für die öffentliche Vorschau ein Demo-Konto. Es werden keine Passwörter oder echten Zugangsdaten gespeichert.</p></div>
         <div class="auth-demo-users" id="authDemoUsers" aria-label="Demo-Konten"></div>
         <p class="auth-security-note"><i class="fa-solid fa-lock"></i><span><strong>Sicher getrennt</strong><small>Die private TimeFlow-Site verwendet deine bestehende ChatGPT-Anmeldung. Diese Auswahl gilt nur lokal für die öffentliche Demo.</small></span></p>
@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <section>
         <header>
           <span><i class="fa-solid fa-users-gear"></i></span>
-          <div><small>Sprint 8 · Lokal</small><h2 id="userManagementTitle">Benutzer & Rollen</h2><p>Verwalte die Demo-Belegschaft auf diesem Gerät.</p></div>
+          <div><small>Lokal</small><h2 id="userManagementTitle">Benutzer & Rollen</h2><p>Verwalte die Demo-Belegschaft auf diesem Gerät.</p></div>
           <button type="button" data-close-users aria-label="Benutzerverwaltung schließen"><i class="fa-solid fa-xmark"></i></button>
         </header>
         <div class="user-management-summary"><span><strong id="activeUserCount">3</strong><small>Aktive Benutzer</small></span><span><strong>3</strong><small>Rollen</small></span><span><strong>Nur lokal</strong><small>Alpha-Modus</small></span></div>

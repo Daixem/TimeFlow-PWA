@@ -54,7 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   settingsPage.querySelector(".settings-layout")?.insertAdjacentHTML("beforeend", `
     <section class="release-readiness-card" aria-labelledby="releaseReadinessTitle">
-      <header><span><i class="fa-solid fa-shield-heart"></i></span><div><small>Sprint 10 · Alpha 1.0</small><h2 id="releaseReadinessTitle">TimeFlow ist startklar</h2><p id="releaseReadinessCopy">App, Offline-Modus und Datensicherheit werden geprüft.</p></div><strong id="releaseReadinessScore">0/4</strong></header>
+      <header><span><i class="fa-solid fa-shield-heart"></i></span><div><small>App-Check</small><h2 id="releaseReadinessTitle">TimeFlow ist startklar</h2><p id="releaseReadinessCopy">App, Offline-Modus und Datensicherheit werden geprüft.</p></div><strong id="releaseReadinessScore">0/4</strong></header>
       <div class="release-readiness-grid">
         <span data-readiness="app"><i class="fa-solid fa-mobile-screen"></i><b>App</b><small>Browser</small></span>
         <span data-readiness="offline"><i class="fa-solid fa-cloud-arrow-down"></i><b>Offline</b><small>Prüfung</small></span>

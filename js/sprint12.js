@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const BUILD = "0040";
   const heading = readinessCard.querySelector("header small");
   const title = readinessCard.querySelector("header h2");
-  if (heading) heading.textContent = "Sprint 12 · Praxistest";
+  if (heading) heading.textContent = "Geräte-Check";
   if (title) title.textContent = "TimeFlow auf diesem Gerät";
 
   readinessCard.querySelector("[data-open-readiness-settings]")?.insertAdjacentHTML("beforebegin", `

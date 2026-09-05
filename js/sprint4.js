@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
     <section id="profilePage" class="profile-page app-page hidden" aria-labelledby="profileTitle">
       <header class="profile-page-header">
         <div>
-          <span class="profile-eyebrow"><i class="fa-solid fa-chart-line"></i> Sprint 4</span>
+          <span class="profile-eyebrow"><i class="fa-solid fa-chart-line"></i> Einzelnutzung</span>
           <h1 id="profileTitle">Mein Profil</h1>
           <p>Deine Arbeit. Deine Entwicklung. Alles im Blick.</p>
         </div>

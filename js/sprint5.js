@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
     <section id="settingsPage" class="settings-page app-page hidden" aria-labelledby="settingsTitle">
       <header class="settings-page-header">
         <button class="settings-back" type="button" data-settings-back aria-label="Zurück zum Profil"><i class="fa-solid fa-arrow-left"></i></button>
-        <div><span class="settings-eyebrow"><i class="fa-solid fa-sliders"></i> Sprint 5</span><h1 id="settingsTitle">Einstellungen</h1><p>TimeFlow so einrichten, wie dein Arbeitstag funktioniert.</p></div>
+        <div><span class="settings-eyebrow"><i class="fa-solid fa-sliders"></i> Persönlich</span><h1 id="settingsTitle">Einstellungen</h1><p>TimeFlow so einrichten, wie dein Arbeitstag funktioniert.</p></div>
         <span class="settings-saved"><i class="fa-solid fa-check"></i> Lokal</span>
       </header>
 
@@ -64,7 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </section>
       </div>
 
-      <section class="settings-about"><span><i class="fa-solid fa-fingerprint"></i></span><div><strong>TimeFlow PWA</strong><p>Sprint 12 · Version 1.0.1 · Build 0040</p></div><em>Made for better workdays</em></section>
+      <section class="settings-about"><span><i class="fa-solid fa-fingerprint"></i></span><div><strong>TimeFlow PWA</strong><p>Version 1.0.1 · Build 0040</p></div><em>Made for better workdays</em></section>
 
       <dialog class="settings-dialog" id="settingsResetDialog" aria-labelledby="settingsResetTitle">
         <div class="settings-dialog-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>

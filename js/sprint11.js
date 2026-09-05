@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
     <dialog class="mode-onboarding" id="modeOnboarding" aria-labelledby="modeOnboardingTitle">
       <section>
         <span class="mode-onboarding-brand"><i class="fa-solid fa-stopwatch"></i></span>
-        <small>Sprint 11 · Dein TimeFlow</small>
+        <small>Dein TimeFlow</small>
         <h2 id="modeOnboardingTitle">Wie möchtest du TimeFlow nutzen?</h2>
         <p>Du kannst den Modus später jederzeit in den Einstellungen ändern.</p>
         <div class="mode-choice-grid">

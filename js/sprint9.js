@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
   settingsLayout.insertAdjacentHTML("beforeend", `
     <section class="cloud-sync-card" aria-labelledby="cloudSyncTitle">
       <span class="cloud-sync-icon"><i class="fa-solid fa-cloud-arrow-up"></i></span>
-      <div class="cloud-sync-copy"><small>Sprint 9 · Datensynchronisierung</small><strong id="cloudSyncTitle">Synchronisierung wird vorbereitet</strong><p id="cloudSyncDescription">Profildaten und Einstellungen werden geprüft.</p></div>
+      <div class="cloud-sync-copy"><small>Datensynchronisierung</small><strong id="cloudSyncTitle">Synchronisierung wird vorbereitet</strong><p id="cloudSyncDescription">Profildaten und Einstellungen werden geprüft.</p></div>
       <span class="cloud-sync-state" id="cloudSyncState"><i></i><b>Prüfung</b></span>
       <button type="button" data-sync-now disabled><i class="fa-solid fa-arrows-rotate"></i><span><strong>Jetzt synchronisieren</strong><small id="cloudSyncTimestamp">Noch nicht synchronisiert</small></span></button>
     </section>

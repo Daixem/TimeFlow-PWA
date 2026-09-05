@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
   anchor.insertAdjacentHTML("beforebegin", `
     <section class="quick-actions-card" aria-labelledby="quickActionsTitle">
       <header>
-        <div><span><i class="fa-solid fa-bolt"></i> Sprint 6</span><h2 id="quickActionsTitle">Schnellaktionen</h2><p>Wichtige Anliegen in wenigen Sekunden erledigen.</p></div>
+        <div><span><i class="fa-solid fa-bolt"></i> Schnellzugriff</span><h2 id="quickActionsTitle">Schnellaktionen</h2><p>Wichtige Anliegen in wenigen Sekunden erledigen.</p></div>
         <button type="button" data-quick-history><i class="fa-solid fa-clock-rotate-left"></i> Verlauf <b id="quickActionCount" hidden>0</b></button>
       </header>
       <div class="quick-actions-grid">
