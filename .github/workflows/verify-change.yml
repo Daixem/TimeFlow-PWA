@@ -23,6 +23,7 @@ jobs:
   verify:
     name: Tests und Produktionsbuild
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - name: Projektstand laden
         uses: actions/checkout@v4
