@@ -2,6 +2,7 @@ import { readFile } from "node:fs/promises";
 const script = await readFile(new URL("../js/settings-organization.js", import.meta.url), "utf8");
 const css = await readFile(new URL("../css/settings-organization.css", import.meta.url), "utf8");
 const options = await readFile(new URL("../css/personalization-options.css", import.meta.url), "utf8");
+const theme = await readFile(new URL("../css/theme-personalization.css", import.meta.url), "utf8");
 const fontOptions = await readFile(new URL("../css/font-language-options.css", import.meta.url), "utf8");
 const personalization = await readFile(new URL("../js/private-beta-personalization.js", import.meta.url), "utf8");
 const localization = await readFile(new URL("../js/ui-localization.js", import.meta.url), "utf8");
@@ -11,7 +12,8 @@ for (const marker of ["data-language-select", "Deutsch", "English", "Français",
 const sprint5 = await readFile(new URL("../js/sprint5.js", import.meta.url), "utf8");
 for (const marker of ["Wöchentliche Sollstunden", "Regelarbeitstage pro Woche", "weeklyTargetHours", "regularWorkDays", "Ziel pro Vertragstag", "normalizeContractSettings"]) if (!sprint5.includes(marker)) throw new Error(`Vertragseinstellung fehlt: ${marker}`);
 for (const marker of ["settings-accordion-body", "settings-chevron", "profile-language-select", "max-width:430px"]) if (!css.includes(marker)) throw new Error(`Darstellung der Einstellungen fehlt: ${marker}`);
-for (const marker of ['data-tf-font="arial"','data-tf-font="rounded"','data-tf-font="mono"','data-tf-background="forest"','data-tf-background="light"']) if (!options.includes(marker)) throw new Error(`Personalisierungsoption fehlt: ${marker}`);
+for (const marker of ['data-tf-font="arial"','data-tf-font="rounded"','data-tf-font="mono"']) if (!options.includes(marker)) throw new Error(`Personalisierungsoption fehlt: ${marker}`);
+for (const marker of ['data-tf-background="forest"','data-tf-background="light"','--tf-app-background']) if (!theme.includes(marker)) throw new Error(`Zentrale Theme-Option fehlt: ${marker}`);
 for (const marker of ["graphite", "forest", "sunset", "rose", "light", "arial", "rounded", "mono"]) if (!personalization.includes(marker)) throw new Error(`Auswahloption fehlt: ${marker}`);
 for (const marker of ["Русский", "Українська", "Dansk", "Svenska", "العربية الفصحى", "ar-EG", "ar-AE", "ar-MA", 'dir = language.startsWith("ar")']) if (!script.includes(marker)) throw new Error(`Sprachoption fehlt: ${marker}`);
 for (const marker of ['data-tf-font="segoe"', 'data-tf-font="aptos"', 'data-tf-font="calibri"', 'data-tf-font="cambria"', 'data-tf-font="times"', 'html[dir="rtl"]']) if (!fontOptions.includes(marker)) throw new Error(`Schrift- oder RTL-Regel fehlt: ${marker}`);

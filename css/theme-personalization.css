@@ -1,4 +1,7 @@
 :root {
+  /* One owner for the page canvas. Cards deliberately keep their separate
+     glass values below, so a fixed navigation cannot reveal a second colour. */
+  --tf-app-background: radial-gradient(circle at 15% 0, #0a3d72, #001c3b 52%, #000e20);
   --tf-glass: rgba(4, 35, 70, .78);
   --tf-glass-strong: rgba(5, 43, 83, .9);
   --tf-glass-border: rgba(102, 164, 235, .22);
@@ -8,14 +11,17 @@
   --tf-text-secondary: #b7c9dd;
   --tf-text-muted: #8da6c1;
 }
-html[data-tf-background="ocean"] { --tf-glass: rgba(6, 62, 105, .66); --tf-glass-strong: rgba(7, 72, 119, .82); --tf-glass-border: rgba(112, 200, 255, .28); --tf-accent:#2398df; --tf-control:#075080; }
-html[data-tf-background="teal"] { --tf-glass: rgba(2, 66, 68, .66); --tf-glass-strong: rgba(3, 78, 78, .82); --tf-glass-border: rgba(91, 222, 197, .27); --tf-accent:#159f91; --tf-control:#075b5b; }
-html[data-tf-background="violet"] { --tf-glass: rgba(42, 31, 91, .68); --tf-glass-strong: rgba(52, 39, 111, .84); --tf-glass-border: rgba(174, 139, 255, .28); --tf-accent:#7959d9; --tf-control:#352873; }
-html[data-tf-background="graphite"] { --tf-glass:rgba(28,39,51,.68); --tf-glass-strong:rgba(35,48,61,.86); --tf-glass-border:rgba(151,174,197,.25); --tf-accent:#71859b; --tf-control:#283542; }
-html[data-tf-background="forest"] { --tf-glass:rgba(8,59,47,.68); --tf-glass-strong:rgba(13,72,57,.86); --tf-glass-border:rgba(104,194,157,.25); --tf-accent:#318c67; --tf-control:#164c3d; }
-html[data-tf-background="sunset"] { --tf-glass:rgba(76,39,48,.68); --tf-glass-strong:rgba(92,47,53,.86); --tf-glass-border:rgba(225,151,124,.26); --tf-accent:#c1694c; --tf-control:#663b3e; }
-html[data-tf-background="rose"] { --tf-glass:rgba(73,35,64,.68); --tf-glass-strong:rgba(88,42,75,.86); --tf-glass-border:rgba(225,145,190,.25); --tf-accent:#b75f91; --tf-control:#633453; }
-html[data-tf-background="light"] { --tf-glass:rgba(238,247,255,.72); --tf-glass-strong:rgba(245,250,255,.88); --tf-glass-border:rgba(35,83,133,.2); --tf-accent:#2875bb; --tf-control:#e4f2ff; --tf-text-primary:#092746; --tf-text-secondary:#385875; --tf-text-muted:#58738c; }
+html[data-tf-background="ocean"] { --tf-app-background:radial-gradient(circle at 15% 0,#0b477f,#00152e 52%,#000d1c); --tf-glass: rgba(6, 62, 105, .66); --tf-glass-strong: rgba(7, 72, 119, .82); --tf-glass-border: rgba(112, 200, 255, .28); --tf-accent:#2398df; --tf-control:#075080; }
+html[data-tf-background="teal"] { --tf-app-background:radial-gradient(circle at 15% 0,#075a58,#022b38 48%,#00151f); --tf-glass: rgba(2, 66, 68, .66); --tf-glass-strong: rgba(3, 78, 78, .82); --tf-glass-border: rgba(91, 222, 197, .27); --tf-accent:#159f91; --tf-control:#075b5b; }
+html[data-tf-background="violet"] { --tf-app-background:radial-gradient(circle at 15% 0,#39276d,#151b45 50%,#071126); --tf-glass: rgba(42, 31, 91, .68); --tf-glass-strong: rgba(52, 39, 111, .84); --tf-glass-border: rgba(174, 139, 255, .28); --tf-accent:#7959d9; --tf-control:#352873; }
+html[data-tf-background="graphite"] { --tf-app-background:radial-gradient(circle at 15% 0,#394452,#17202b 50%,#0a0f15); --tf-glass:rgba(28,39,51,.68); --tf-glass-strong:rgba(35,48,61,.86); --tf-glass-border:rgba(151,174,197,.25); --tf-accent:#71859b; --tf-control:#283542; }
+html[data-tf-background="forest"] { --tf-app-background:radial-gradient(circle at 15% 0,#236149,#0d332c 48%,#061a19); --tf-glass:rgba(8,59,47,.68); --tf-glass-strong:rgba(13,72,57,.86); --tf-glass-border:rgba(104,194,157,.25); --tf-accent:#318c67; --tf-control:#164c3d; }
+html[data-tf-background="sunset"] { --tf-app-background:radial-gradient(circle at 15% 0,#85472f,#3b2444 48%,#12152b); --tf-glass:rgba(76,39,48,.68); --tf-glass-strong:rgba(92,47,53,.86); --tf-glass-border:rgba(225,151,124,.26); --tf-accent:#c1694c; --tf-control:#663b3e; }
+html[data-tf-background="rose"] { --tf-app-background:radial-gradient(circle at 15% 0,#783e63,#392344 50%,#151326); --tf-glass:rgba(73,35,64,.68); --tf-glass-strong:rgba(88,42,75,.86); --tf-glass-border:rgba(225,145,190,.25); --tf-accent:#b75f91; --tf-control:#633453; }
+html[data-tf-background="light"] { --tf-app-background:radial-gradient(circle at 15% 0,#d9edff,#b9d3ed 52%,#9bb8d5); --tf-glass:rgba(238,247,255,.72); --tf-glass-strong:rgba(245,250,255,.88); --tf-glass-border:rgba(35,83,133,.2); --tf-accent:#2875bb; --tf-control:#e4f2ff; --tf-text-primary:#092746; --tf-text-secondary:#385875; --tf-text-muted:#58738c; }
+
+html,
+body { min-height:100%; background:var(--tf-app-background)!important; }
 
 .timeflow-private-mode :is(select,input,textarea),
 .timeflow-private-mode :is(.settings-select,.profile-language-select) select {
@@ -59,5 +65,5 @@ html[data-tf-font-size="expanded"] .timeflow-private-mode .private-home-summary 
 .work-protection-card .is-clear { color: #6edbb3; background: rgba(31,142,103,.13); }
 
 .custom-background-setting{display:grid;gap:12px;padding:14px;border-top:1px solid var(--tf-glass-separator);color:#eef7ff}.custom-background-setting>span{display:grid;gap:4px}.custom-background-setting small{color:#91a9c4;line-height:1.4}.custom-background-actions{display:flex;flex-wrap:wrap;gap:9px}.custom-background-pick,.custom-background-setting button{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:44px;padding:10px 14px;border:1px solid var(--tf-glass-border);border-radius:12px;color:#fff;background:color-mix(in srgb,var(--tf-accent) 34%,transparent);font:inherit;font-size:.78rem;font-weight:800;cursor:pointer}.custom-background-pick input{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}.custom-background-setting button{background:rgba(210,65,91,.14);color:#ff9aab}.custom-background-setting button[hidden]{display:none!important}.custom-background-setting.is-processing{opacity:.65;pointer-events:none}.custom-background-setting.is-processing .custom-background-pick span::after{content:' …'}.custom-background-setting.has-image>span strong::after{content:' ✓';color:#62dfad}
-html[data-tf-custom-background="true"] body{background-image:linear-gradient(rgba(0,10,25,var(--tf-custom-background-overlay)),rgba(0,8,22,calc(var(--tf-custom-background-overlay) + .1))),var(--tf-custom-background-image)!important;background-position:center!important;background-size:cover!important;background-repeat:no-repeat!important;background-attachment:fixed!important}html[data-tf-custom-background="true"]{--tf-glass:rgb(var(--tf-custom-background-rgb)/.42);--tf-glass-strong:rgb(var(--tf-custom-background-rgb)/.58);--tf-glass-border:rgba(220,240,255,.25);--tf-control:rgb(var(--tf-custom-background-rgb)/.3)}html[data-tf-custom-background="true"] .timeflow-private-mode{--tf-glass-panel:rgb(var(--tf-custom-background-rgb)/.44);--tf-glass-inset:rgba(255,255,255,.045);--tf-glass-separator:rgba(225,242,255,.16);--tf-glass-shadow:0 18px 50px rgba(0,5,18,.34)}
+html[data-tf-custom-background="true"]{--tf-app-background:linear-gradient(rgba(0,10,25,var(--tf-custom-background-overlay)),rgba(0,8,22,calc(var(--tf-custom-background-overlay) + .1))),var(--tf-custom-background-image);--tf-glass:rgb(var(--tf-custom-background-rgb)/.42);--tf-glass-strong:rgb(var(--tf-custom-background-rgb)/.58);--tf-glass-border:rgba(220,240,255,.25);--tf-control:rgb(var(--tf-custom-background-rgb)/.3)}html[data-tf-custom-background="true"] body{background-position:center!important;background-size:cover!important;background-repeat:no-repeat!important;background-attachment:fixed!important}html[data-tf-custom-background="true"] .timeflow-private-mode{--tf-glass-panel:rgb(var(--tf-custom-background-rgb)/.44);--tf-glass-inset:rgba(255,255,255,.045);--tf-glass-separator:rgba(225,242,255,.16);--tf-glass-shadow:0 18px 50px rgba(0,5,18,.34)}
 @media(max-width:900px){html[data-tf-custom-background="true"] body{background-attachment:scroll!important}.custom-background-actions>*{flex:1 1 145px}}
