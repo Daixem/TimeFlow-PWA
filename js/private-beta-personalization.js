@@ -6,6 +6,8 @@
   const CUSTOM_BACKGROUND_KEY = "timeflow-custom-background-v1";
   const BACKGROUND_DB = "timeflow-personalization-v1";
   const BACKGROUND_STORE = "assets";
+  const BACKGROUND_MAX_BYTES = 30 * 1024 * 1024;
+  const BACKGROUND_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
   const storage = () => window.TimeFlowPlatform?.storage || { getItem: () => null, setItem: () => undefined };
 
   function read(key, fallback = {}) {
@@ -81,8 +83,8 @@
   }
 
   async function prepareBackground(file) {
-    if (!file?.type.startsWith("image/")) throw new Error("invalid_type");
-    if (file.size > 30 * 1024 * 1024) throw new Error("too_large");
+    if (!file || !BACKGROUND_TYPES.has(file.type)) throw new Error("invalid_type");
+    if (file.size > BACKGROUND_MAX_BYTES) throw new Error("too_large");
     const image = await loadImage(file);
     // The personalized image travels with the authenticated profile. Keep it
     // visually useful while limiting sync payloads and D1 storage growth.
@@ -114,7 +116,14 @@
       const file = input.files?.[0]; if (!file) return;
       const picker = input.closest(".custom-background-setting"); picker?.classList.add("is-processing");
       try { const asset = await prepareBackground(file); await setBackground(asset); applyCustomBackground(asset); updateBackgroundControls(true); notify("Eigenes Hintergrundbild ist mit deinem Profil verbunden."); }
-      catch { notify("Dieses Bild konnte nicht verarbeitet werden."); }
+      catch (error) {
+        const message = error?.message === "too_large"
+          ? "Das Bild ist größer als 30 MB."
+          : error?.message === "invalid_type"
+            ? "Bitte wähle ein JPG-, PNG- oder WebP-Bild aus."
+            : "Dieses Bild konnte nicht verarbeitet werden.";
+        notify(message);
+      }
       finally { picker?.classList.remove("is-processing"); input.value = ""; }
     });
     document.querySelector("[data-remove-custom-background]")?.addEventListener("click", async () => { await setBackground(null); applyCustomBackground(null); updateBackgroundControls(false); notify("Eigenes Hintergrundbild wurde aus deinem Profil entfernt."); });
@@ -185,7 +194,7 @@
         <header><span class="settings-card-icon violet"><i class="fa-solid fa-palette"></i></span><div><small>Darstellung</small><h2 id="personalizationTitle">Persönliches Erscheinungsbild</h2></div></header>
         <div class="settings-list">
           <label class="settings-select"><span><strong>Hintergrund</strong><small>Farbstimmung der gesamten App</small></span><select data-personal-setting="appBackground"><option value="midnight">Mitternacht</option><option value="ocean">Ozeanblau</option><option value="teal">Petrol</option><option value="violet">Violett</option><option value="graphite">Graphit</option><option value="forest">Waldgrün</option><option value="sunset">Sonnenuntergang</option><option value="rose">Rosé</option><option value="light">Hell</option></select></label>
-          <div class="custom-background-setting" data-custom-background-preview><span><strong>Eigenes Hintergrundbild</strong><small>Mit deinem Profil verbunden. Fenster und Kontrast passen sich automatisch an.</small></span><div class="custom-background-actions"><label class="custom-background-pick"><i class="fa-solid fa-image"></i><span>Bild auswählen</span><input type="file" accept="image/*,.heic,.heif" data-custom-background-input></label><button type="button" data-remove-custom-background hidden><i class="fa-solid fa-trash-can"></i><span>Entfernen</span></button></div></div>
+          <div class="custom-background-setting" data-custom-background-preview><span><strong>Eigenes Hintergrundbild</strong><small>Mit deinem Profil verbunden. Fenster und Kontrast passen sich automatisch an.</small></span><div class="custom-background-actions"><label class="custom-background-pick"><i class="fa-solid fa-image"></i><span>Bild auswählen</span><input type="file" accept="image/jpeg,image/png,image/webp" data-custom-background-input></label><button type="button" data-remove-custom-background hidden><i class="fa-solid fa-trash-can"></i><span>Entfernen</span></button></div><small class="custom-background-limit">Unterstützte Bilder: JPG, PNG, WebP · Max. 30 MB<br>Für eine schnelle Synchronisierung wird eine optimierte Hintergrundversion gespeichert.</small></div>
           <label class="settings-select"><span><strong>Schriftart</strong><small>Für alle Ansichten</small></span><select data-personal-setting="fontFamily"><option value="inter">Inter</option><option value="system">Systemschrift</option><option value="segoe">Segoe UI</option><option value="aptos">Aptos</option><option value="calibri">Calibri</option><option value="cambria">Cambria</option><option value="times">Times New Roman</option><option value="arial">Arial</option><option value="verdana">Verdana</option><option value="tahoma">Tahoma</option><option value="trebuchet">Trebuchet MS</option><option value="century">Century Gothic</option><option value="courier">Courier New</option><option value="rounded">Abgerundet</option><option value="serif">Serif</option><option value="mono">Monospace</option></select></label>
           <label class="settings-select"><span><strong>Schriftgröße</strong><small>Auch für Karten und Dialoge</small></span><select data-personal-setting="fontScale"><option value="1">Normal</option><option value="1.1">Groß</option><option value="1.2">Sehr groß</option><option value="1.3">Maximal</option></select></label>
         </div>

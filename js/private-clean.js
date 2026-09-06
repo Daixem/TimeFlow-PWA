@@ -2,6 +2,9 @@
   "use strict";
   const platform = () => window.TimeFlowPlatform;
   const read = (key, fallback) => { try { const value = JSON.parse(platform().storage.getItem(key)); return value ?? fallback; } catch (_error) { return fallback; } };
+  const isBeta = () => /\.chatgpt\.site$/i.test(location.hostname);
+  const buildId = (() => { try { return new URL(document.currentScript?.src || location.href).searchParams.get("v"); } catch { return null; } })();
+  const updateNewsEntry = (build) => !build ? null : { id: `timeflow-update-${build}`, type: "system", category: "system", title: "Update-News", body: `TimeFlow wurde aktualisiert. Build ${build.slice(0, 12)} ist jetzt bereit – inklusive stabiler PWA-Updates und aktueller Verbesserungen.`, createdAt: new Date().toISOString(), read: false, action: "" };
   const isPrivate = () => document.documentElement.classList.contains("timeflow-private-mode") || document.body.dataset.appMode === "private";
   const schedule = () => { const value = read("timeflow-private-schedule-v1", []); return Array.isArray(value) ? value.sort((a, b) => `${a.date}${a.start}`.localeCompare(`${b.date}${b.start}`)) : []; };
   const history = () => { const value = read("timeflow-workday-history-v1", []); return Array.isArray(value) ? value.sort((a, b) => String(a.workEnd || "").localeCompare(String(b.workEnd || ""))) : []; };
@@ -47,6 +50,7 @@
   function buildNotifications() {
     if (!isPrivate()) return;
     const result = []; const now = new Date(); const shifts = schedule(); const next = shifts.find((entry) => working(entry) && new Date(`${entry.date}T${entry.start}:00`) > now); const workday = read("timeflow-workday-v2", null);
+    const updateNews = window.TimeFlowUpdateNews?.entry?.(); if (updateNews) result.push(updateNews);
     if (next) { const start = new Date(`${next.date}T${next.start}:00`); const hours = (start - now) / 3600000; if (hours <= 48) result.push({ id: `private-next-${next.date}-${next.start}`, type: "schedule", category: "schedule", title: "Geplanter Einsatz", body: `${dateText(next.date)} · ${next.start} – ${next.end} Uhr`, createdAt: new Date().toISOString(), read: false, action: "schedule" }); }
     const lastImport = read("timeflow-private-last-import-v1", null); if (lastImport?.at && Date.now() - new Date(lastImport.at).getTime() < 86400000) result.push({ id: `private-import-${lastImport.at}`, type: "success", category: "schedule", title: "Dienstplan übernommen", body: `${Number(lastImport.added || 0)} Tage ergänzt${lastImport.updated ? `, ${lastImport.updated} aktualisiert` : ""}.`, createdAt: lastImport.at, read: false, action: "schedule" });
     if (workday?.isWorking && workday.workStart) { const hours = (Date.now() - new Date(workday.workStart).getTime()) / 3600000; if (hours >= 10) result.push({ id: "private-long-workday", type: "system", category: "worktime", title: "Ausstempeln prüfen", body: `Deine laufende Arbeitszeit beträgt bereits mehr als ${Math.floor(hours)} Stunden.`, createdAt: new Date().toISOString(), read: false, action: "" }); }
@@ -55,7 +59,22 @@
     const title = document.getElementById("notificationCenterTitle"); if (title) title.textContent = "Persönliche Hinweise";
     const copy = title?.nextElementSibling; if (copy) copy.textContent = "Arbeitszeit, Dienstplan und System – nur aus deinen tatsächlichen Daten.";
   }
+  async function loadUpdateNews() {
+    if (!isBeta() || !window.TimeFlowBetaAccess?.allowed) return;
+    const entry = updateNewsEntry(buildId); if (!entry) return;
+    window.TimeFlowUpdateNews = { entry: () => entry, isUnread: () => !read("timeflow-notification-read-v1", {})[entry.id] };
+    document.dispatchEvent(new CustomEvent("timeflow:update-news-ready", { detail: entry }));
+  }
   function apply() { renderRealHome(); removeProfileExamples(); buildNotifications(); }
   document.addEventListener("timeflow:mode-changed", apply); document.addEventListener("timeflow:private-schedule-updated", apply); document.addEventListener("timeflow:workday-updated", apply); window.addEventListener("online", apply); window.addEventListener("offline", apply);
+  document.addEventListener("timeflow:update-news-ready", (event) => {
+    apply();
+    if (!window.TimeFlowUpdateNews?.isUnread?.()) return;
+    const title = document.getElementById("notificationCenterTitle"); if (title) title.textContent = "Update-News";
+    const copy = title?.nextElementSibling; if (copy) copy.textContent = "TimeFlow wurde aktualisiert. Die Neuerungen stehen für dich bereit.";
+    document.dispatchEvent(new CustomEvent("timeflow:open-notifications", { detail: { update: event.detail } }));
+  });
+  document.addEventListener("timeflow:beta-access-ready", loadUpdateNews, { once: true });
+  if (window.TimeFlowBetaAccess?.allowed) loadUpdateNews();
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", apply); else apply();
 }());
