@@ -43,6 +43,15 @@ self.addEventListener("fetch", (event) => {
   // Personenbezogene API-Antworten werden weder beantwortet noch im PWA-Cache gespeichert.
   if (!inScope || relativePath.startsWith("api/")) return;
 
+  // Build-Metadaten müssen online immer frisch sein. Sie werden bewusst nicht
+  // in den App-Cache geschrieben, damit ein alter Versionsnachweis keinen
+  // neueren Release verdecken kann. Offline bleibt die installierte App-Shell
+  // weiterhin vollständig nutzbar; nur der Online-Versionscheck entfällt.
+  if (relativePath === "version.json") {
+    event.respondWith(fetch(event.request, { cache: "no-store" }));
+    return;
+  }
+
   if (event.request.mode === "navigate") {
     event.respondWith(fetch(event.request, { cache: "no-store" })
       .then((response) => cacheSuccessful("./", response))
