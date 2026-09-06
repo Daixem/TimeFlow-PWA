@@ -80,9 +80,21 @@
     // It must never move the user's current reading position.
   }
 
+  var repairQueued = false;
+  var queuedPage = null;
+
+  // Several lifecycle events can happen together when an installed PWA opens.
+  // Queue one repair instead of rebuilding the view for each event.
   function scheduleRepair(page) {
-    window.setTimeout(function () { repair(page); }, 0);
-    window.setTimeout(function () { repair(page); }, 180);
+    queuedPage = page || queuedPage || currentPage();
+    if (repairQueued) return;
+    repairQueued = true;
+    window.requestAnimationFrame(function () {
+      repairQueued = false;
+      var pageToRepair = queuedPage;
+      queuedPage = null;
+      repair(pageToRepair);
+    });
   }
 
   document.addEventListener("click", function (event) {
@@ -90,12 +102,10 @@
     if (target) scheduleRepair(target);
   }, false);
 
-  document.addEventListener("DOMContentLoaded", function () {
-    window.setTimeout(function () { repair(currentPage()); }, 350);
-  });
-  window.addEventListener("pageshow", function () { scheduleRepair(currentPage()); });
-  document.addEventListener("visibilitychange", function () {
-    if (!document.hidden) scheduleRepair(currentPage());
+  document.addEventListener("DOMContentLoaded", function () { scheduleRepair(currentPage()); });
+  window.addEventListener("pageshow", function (event) {
+    // The first pageshow follows DOMContentLoaded; repair only bfcache returns.
+    if (event.persisted) scheduleRepair(currentPage());
   });
   window.addEventListener("error", function (event) {
     if (event && event.filename && event.filename.indexOf("/js/") !== -1) scheduleRepair(currentPage());

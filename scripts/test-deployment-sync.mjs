@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 
 const workflow = await readFile(new URL("../.github/workflows/deploy-pages.yml", import.meta.url), "utf8");
+const verifyWorkflow = await readFile(new URL("../.github/workflows/verify-change.yml", import.meta.url), "utf8");
 const worker = await readFile(new URL("../dist/server/index.js", import.meta.url), "utf8");
 
 for (const marker of ["npm test", "GITHUB_SHA", "actions/deploy-pages@v4", "cancel-in-progress: true", "Aktuellen Main-Commit verifizieren", "github.ref == 'refs/heads/main'"]) {
@@ -15,4 +16,8 @@ if (!worker.includes("const BUILD_VERSION =") || !worker.includes("const BUILD_M
 
 if (workflow.includes("timeflow-connect.daixem.chatgpt.site/version.json")) throw new Error("GitHub Pages darf nicht auf den separaten Beta-Host warten oder dessen Veröffentlichung als Fehler werten.");
 
-console.log("GitHub Pages veröffentlicht den Main-Stand unabhängig; die Private Beta übernimmt die App-Dateien ohne fehleranfällige Workflow-Wartezeit.");
+for (const marker of ["pull_request:", "branches-ignore:", "npm test", "npm run build:pages", "GITHUB_SHA", "cancel-in-progress: true"]) {
+  if (!verifyWorkflow.includes(marker)) throw new Error(`Gemeinsame Cloud-/Arbeitsbranch-Prüfung fehlt: ${marker}`);
+}
+
+console.log("Arbeitsbranches, GitHub Pages und Private Beta verwenden denselben überprüfbaren Main-Release ohne fehleranfällige Wartezeit.");

@@ -1,0 +1,43 @@
+name: TimeFlow-Änderung prüfen
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches-ignore:
+      - main
+  workflow_dispatch:
+
+# Jeder Arbeitsbranch – unabhängig davon, ob er lokal oder in einer
+# Cloud-Aufgabe entstanden ist – nutzt dieselbe reproduzierbare Prüfung.
+# Ein neuer Commit ersetzt nur die noch laufende Prüfung desselben Branches.
+concurrency:
+  group: timeflow-verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Tests und Produktionsbuild
+    runs-on: ubuntu-latest
+    steps:
+      - name: Projektstand laden
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Node.js vorbereiten
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Prüfkette ausführen
+        run: npm test
+
+      - name: Produktionsbuild zum geprüften Commit erzeugen
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+        run: npm run build:pages

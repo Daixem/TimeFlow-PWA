@@ -8,6 +8,7 @@
     window.setTimeout(() => splash.remove(), 480);
   };
 
-  window.addEventListener("load", () => window.setTimeout(close, 1450), { once: true });
-  window.setTimeout(close, 3500);
+  // Keep the branding visible, without making it feel like a second app start.
+  document.addEventListener("DOMContentLoaded", () => window.setTimeout(close, 520), { once: true });
+  window.setTimeout(close, 1800);
 })();

@@ -174,3 +174,28 @@ html[data-tf-background="light"] :is(input,select,textarea,.settings-hours-input
 html[data-tf-background="light"] :is(input,textarea)::placeholder{color:#668099}
 html[data-tf-background="light"] :is(.bottom-nav,.private-quick-nav){color:#385875!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 14px 38px rgba(30,75,112,.18)!important}
 html[data-tf-background="light"] :is(.card,.list-card,.shift-card,.settings-card,.profile-menu-card,.top-grid,.approval-card,dialog){box-shadow:inset 0 1px 0 rgba(255,255,255,.72),0 12px 32px rgba(34,78,115,.12)!important}
+
+/* A selected palette controls all normal app surfaces. Semantic state
+   colours (success, warning and error) deliberately remain independent. */
+html[data-tf-background] .timeflow-private-mode :is(
+  .header,.dashboard,.schedule-page,.clock-page,.chat-page,.profile-page,.settings-page,
+  .profile-menu-card,.settings-card,.private-home-clock,.private-import-panel,.week-list,
+  .month-overview,.private-home-dialog,.quick-action-dialog,.support-dialog,dialog
+){color:var(--tf-text-primary)!important}
+html[data-tf-background] .timeflow-private-mode :is(
+  p,small,label,.subtitle,.settings-card-copy,.profile-menu-link,.week-row small,
+  .private-home-clock small,.private-home-dialog header p,.custom-background-setting small,
+  .work-protection-card>p,.profile-language-select small
+){color:var(--tf-text-secondary)!important}
+html[data-tf-background] .timeflow-private-mode :is(
+  .label,.settings-group-title,.settings-chevron,.private-home-dialog header small,
+  .private-home-clock header small,.custom-background-setting>span>small
+){color:var(--tf-text-muted)!important}
+html[data-tf-background] .timeflow-private-mode :is(
+  h1,h2,h3,h4,strong,b,.settings-select>span,.profile-language-select>span,.week-row b,
+  .week-row>span,.date-switch span,.month-header button,.schedule-header button
+){color:var(--tf-text-primary)!important}
+html[data-tf-background] .timeflow-private-mode :is(.bottom-nav,.private-quick-nav) :is(button,.nav-item,.nav-text){color:var(--tf-text-secondary)!important}
+html[data-tf-background] .timeflow-private-mode :is(.bottom-nav,.private-quick-nav) :is(button.active,.nav-item.active){color:var(--tf-text-primary)!important}
+html[data-tf-background] .timeflow-private-mode :is(input,select,textarea,.settings-hours-input,.profile-language-select select){color:var(--tf-text-primary)!important;background-color:var(--tf-control)!important}
+html[data-tf-background] .timeflow-private-mode :is(input,textarea)::placeholder{color:var(--tf-text-muted)!important}

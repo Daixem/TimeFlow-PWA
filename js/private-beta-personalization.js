@@ -256,4 +256,5 @@
   document.addEventListener("DOMContentLoaded", () => initialize(window.TimeFlowBetaAccess || {}, Boolean(window.TimeFlowBetaAccess)));
   document.addEventListener("timeflow:beta-access-ready", (event) => initialize(event.detail, true));
   document.addEventListener("timeflow:private-schedule-updated", () => { installSettings(); refreshVacationBalance(); });
+  document.addEventListener("timeflow:sync-restored", () => { applyPersonalization(); restoreCustomBackground(); refreshVacationBalance(); });
 }());

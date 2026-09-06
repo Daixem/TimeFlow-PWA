@@ -127,8 +127,12 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!localMeta.revision || Number(cloud.revision) > Number(localMeta.revision)) {
         applySnapshot(cloud.snapshot);
         saveMeta(cloud.revision, cloud.updatedAt);
-        window.TimeFlowPlatform.session.setItem("timeflow-sync-restored", "1");
-        window.location.reload();
+        // Refresh the mounted interface in place. A full reload made a normal
+        // PWA start look like a second launch after the cloud check.
+        document.dispatchEvent(new CustomEvent("timeflow:sync-restored", { detail: { revision: cloud.revision, updatedAt: cloud.updatedAt } }));
+        renderStatus("synced", "Cloud-Sicherung ist aktuell", "Profil und Einstellungen sind mit deinem privaten Konto verbunden.", "Synchron");
+        notify("Deine Cloud-Daten wurden auf diesem Gerät wiederhergestellt.");
+        markReady();
         return;
       }
       saveMeta(cloud.revision, cloud.updatedAt);
@@ -182,8 +186,4 @@ document.addEventListener("DOMContentLoaded", () => {
   window.addEventListener("online", () => platformSession ? initialSync() : undefined);
   window.addEventListener("offline", () => renderStatus("error", "Offline – lokale Daten aktiv", "Änderungen bleiben auf diesem Gerät und können später synchronisiert werden.", "Offline"));
 
-  if (window.TimeFlowPlatform.session.getItem("timeflow-sync-restored") === "1") {
-    window.TimeFlowPlatform.session.removeItem("timeflow-sync-restored");
-    notify("Deine Cloud-Daten wurden auf diesem Gerät wiederhergestellt.");
-  }
 });

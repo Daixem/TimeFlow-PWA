@@ -12,7 +12,7 @@
 <nav class="bottom-nav" aria-label="Hauptnavigation"><button class="nav-item active" type="button" data-target="home" aria-current="page"><i class="fa-solid fa-house nav-icon"></i><span class="nav-text">Home</span></button><button class="nav-item" type="button" data-target="schedule"><i class="fa-regular fa-clock nav-icon"></i><span class="nav-text">Zeiten</span></button><button class="nav-item main-nav" type="button" data-target="clock"><i class="fa-solid fa-stopwatch nav-icon"></i><span class="nav-text">Stempeln</span></button><button class="nav-item" type="button" data-target="chat"><i class="fa-regular fa-comments nav-icon"></i><span class="nav-text">Chat</span></button><button class="nav-item" type="button" data-target="profile"><i class="fa-regular fa-user nav-icon"></i><span class="nav-text">Profil</span></button></nav><span class="sr-only" id="teamNews"></span><div id="toast" class="toast" role="status" aria-live="polite"></div><script src="js/branding-splash.js?v=__TIMEFLOW_BUILD__"></script><script src="js/platform.js?v=__TIMEFLOW_BUILD__"></script><script src="js/shell.js?v=__TIMEFLOW_BUILD__"></script><script src="js/script.js?v=__TIMEFLOW_BUILD__"></script><script src="js/sprint3.js?v=__TIMEFLOW_BUILD__"></script><script src="js/sprint4.js?v=__TIMEFLOW_BUILD__"></script><script src="js/sprint5.js?v=__TIMEFLOW_BUILD__"></script><script src="js/sprint6.js?v=__TIMEFLOW_BUILD__"></script><script src="js/sprint7.js?v=__TIMEFLOW_BUILD__"></script><script src="js/sprint8.js?v=__TIMEFLOW_BUILD__"></script><script src="js/sprint9.js?v=__TIMEFLOW_BUILD__"></script><script src="js/sprint10.js?v=__TIMEFLOW_BUILD__"></script><script src="js/sprint11.js?v=__TIMEFLOW_BUILD__"></script><script src="js/sprint12.js?v=__TIMEFLOW_BUILD__"></script><script src="js/stamp.js?v=__TIMEFLOW_BUILD__"></script><script src="js/private-home.js?v=__TIMEFLOW_BUILD__"></script><script src="js/work-protection.js?v=__TIMEFLOW_BUILD__"></script><script src="js/settings-organization.js?v=__TIMEFLOW_BUILD__"></script><script src="js/support-feedback.js?v=__TIMEFLOW_BUILD__"></script><script src="js/ui-localization.js?v=__TIMEFLOW_BUILD__"></script><script>
 if ("serviceWorker" in navigator) {
   let hadController = Boolean(navigator.serviceWorker.controller);
-  const reloadKey = "timeflow-sw-reloaded";
+  let controllerReloadHandled = false;
   window.addEventListener("load", async () => {
     const registration = await navigator.serviceWorker.register("sw.js", { updateViaCache: "none" });
     const checkForUpdate = () => navigator.onLine && registration.update().catch(() => undefined);
@@ -24,10 +24,9 @@ if ("serviceWorker" in navigator) {
   });
   navigator.serviceWorker.addEventListener("controllerchange", () => {
     if (!hadController) { hadController = true; return; }
-    if (sessionStorage.getItem(reloadKey)) return;
-    sessionStorage.setItem(reloadKey, "1");
+    if (controllerReloadHandled) return;
+    controllerReloadHandled = true;
     window.location.reload();
   });
-  window.addEventListener("pageshow", () => sessionStorage.removeItem(reloadKey));
 }
 </script></body></html>

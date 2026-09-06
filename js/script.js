@@ -226,6 +226,10 @@ document.addEventListener("DOMContentLoaded", initialise);
 document.addEventListener("timeflow:toggle-clock", requestClockConfirmation);
 document.addEventListener("timeflow:settings-updated", updateWorkUi);
 document.addEventListener("timeflow:device-resumed", () => { loadWorkday(); updateDateTime(); updateWorkUi(); if (state.isWorking) startTimer(); });
+document.addEventListener("timeflow:sync-restored", () => {
+  loadWorkday(); updateDateTime(); updateWorkUi();
+  if (state.isWorking) startTimer(); else stopTimer();
+});
 
 document.addEventListener("DOMContentLoaded", () => {
   const dashboard = document.getElementById("dashboard");

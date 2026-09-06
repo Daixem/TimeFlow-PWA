@@ -1,32 +1,6 @@
 "use strict";
 
-function installTimeFlowLaunch() {
-  if (document.getElementById("timeflowLaunch")) return;
-  document.body.insertAdjacentHTML("afterbegin", `
-    <section class="timeflow-launch" id="timeflowLaunch" aria-label="TimeFlow wird geöffnet">
-      <div class="timeflow-launch-glow"></div>
-      <div class="timeflow-launch-content">
-        <img src="assets/branding/timeflow-phoenix-mark-v1.png" alt="" class="timeflow-launch-phoenix">
-        <p class="timeflow-launch-eyebrow">MEHR ALS NUR ZEITERFASSUNG</p>
-        <h1>Time<span>Flow</span></h1>
-        <p class="timeflow-launch-claim">Organisieren. Zusammenarbeiten. Wachsen.</p>
-        <em>Rise Together</em>
-      </div>
-    </section>
-  `);
-  const close = () => {
-    const launch = document.getElementById("timeflowLaunch");
-    if (!launch || launch.dataset.closing) return;
-    launch.dataset.closing = "true";
-    window.setTimeout(() => launch.remove(), 420);
-  };
-  window.setTimeout(close, 1150);
-  document.addEventListener("timeflow:beta-access-ready", () => window.setTimeout(close, 260), { once: true });
-  document.addEventListener("timeflow:session-ready", () => window.setTimeout(close, 260), { once: true });
-}
-
 document.addEventListener("DOMContentLoaded", () => {
-  installTimeFlowLaunch();
   const SETTINGS_KEY = "timeflow-settings-v1";
   const settingsPage = document.getElementById("settingsPage");
   const settingsLayout = settingsPage?.querySelector(".settings-layout");
