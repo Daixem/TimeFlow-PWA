@@ -24,8 +24,12 @@ Einstellung liegt außerhalb des Repositories und kann nicht sicher durch Code
 oder einen erfundenen API-Hook ersetzt werden.
 
 `scripts/build-metadata.mjs` bildet die einheitliche Versionsinformation. Ein
-Build schlägt fehl, wenn `GITHUB_SHA` nicht dem tatsächlich ausgecheckten HEAD
-entspricht. `scripts/verify-production-build.mjs` stoppt den Release bei
+offizieller Release-Build bricht ab, wenn `git status --porcelain` Änderungen
+oder untracked Dateien meldet. Ein Build schlägt ebenfalls fehl, wenn
+`GITHUB_SHA` nicht dem tatsächlich ausgecheckten HEAD entspricht. Für reine
+lokale Entwicklungsprüfungen steht `npm run build:dev` zur Verfügung;
+`npm run build` und `npm run build:pages` sind Release-Builds.
+`scripts/verify-production-build.mjs` stoppt den Release bei
 unersetzten Build-Platzhaltern, fehlenden referenzierten Dateien, ungültigem
 Manifest oder fehlender Service-Worker-Versionierung.
 

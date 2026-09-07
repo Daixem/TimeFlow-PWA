@@ -7,6 +7,16 @@ function git(root, args) {
 }
 
 /**
+ * A release must be reproducible from exactly one committed revision.  This
+ * intentionally includes untracked files: a copied asset must not silently
+ * become part of a build labelled with an older commit.
+ */
+export function assertCleanWorkingTree(root) {
+  const changes = git(root, ["status", "--porcelain"]);
+  if (changes) throw new Error("Production build aborted: working tree contains uncommitted changes.");
+}
+
+/**
  * Creates the one build identity used by all production artifacts.
  * A CI build must be checked out at the exact GitHub event commit; otherwise
  * building stops instead of accidentally publishing another revision.

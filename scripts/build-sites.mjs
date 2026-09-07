@@ -1,9 +1,11 @@
 import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { extname, join, relative, sep } from "node:path";
-import { createBuildMetadata, replaceBuildPlaceholders } from "./build-metadata.mjs";
+import { assertCleanWorkingTree, createBuildMetadata, replaceBuildPlaceholders } from "./build-metadata.mjs";
 
 const root = new URL("../", import.meta.url);
 const output = new URL("../dist/server/", import.meta.url);
+const releaseBuild = process.argv.includes("--release");
+if (releaseBuild) assertCleanWorkingTree(root);
 const publicEntries = ["index.html", "manifest.webmanifest", "sw.js"];
 const publicDirectories = ["assets", "css", "js"];
 const contentTypes = {

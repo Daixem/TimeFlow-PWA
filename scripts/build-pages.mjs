@@ -1,9 +1,10 @@
 import { cp, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
-import { createBuildMetadata, replaceBuildPlaceholders } from "./build-metadata.mjs";
+import { assertCleanWorkingTree, createBuildMetadata, replaceBuildPlaceholders } from "./build-metadata.mjs";
 
 const root = new URL("../", import.meta.url);
 const output = new URL("../_site/", import.meta.url);
 const entries = ["index.html", "manifest.webmanifest", "sw.js", "assets", "css", "js"];
+assertCleanWorkingTree(root);
 const metadata = createBuildMetadata(root);
 
 await rm(output, { recursive: true, force: true });
