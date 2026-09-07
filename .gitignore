@@ -18,6 +18,12 @@ backups/
 .DS_Store
 Thumbs.db
 
+# Nicht zu TimeFlow gehörende lokale Zelda-/RetroArch-Dateien
+/Zelda Randomizer Collection/
+/artifacts/
+/scripts/build-zelda-presets.ps1
+/tools/
+
 # Editor-Einstellungen; die gemeinsamen VS-Code-Aufgaben bleiben versioniert
 .idea/
 .history/
