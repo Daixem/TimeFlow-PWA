@@ -1,4 +1,4 @@
-import { mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { extname, join, relative, sep } from "node:path";
 import { assertCleanWorkingTree, createBuildMetadata, replaceBuildPlaceholders } from "./build-metadata.mjs";
 
@@ -406,4 +406,6 @@ export default {
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 await writeFile(new URL("index.js", output), worker, "utf8");
+await mkdir(new URL("../.openai/", output), { recursive: true });
+await copyFile(new URL(".openai/hosting.json", root), new URL("../.openai/hosting.json", output));
 console.log(`Sites-Build enthält ${files.length} PWA-Dateien.`);
