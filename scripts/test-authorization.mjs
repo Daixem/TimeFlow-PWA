@@ -36,7 +36,13 @@ const database = {
   }
 };
 
-const env = { DB: database, TIMEFLOW_BETA_ADMIN_USER_ID: adminUserId };
+const fingerprint = async (value) => {
+  const bytes = new TextEncoder().encode(value);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return [...new Uint8Array(digest)].map((entry) => entry.toString(16).padStart(2, "0")).join("");
+};
+const adminFingerprint = await fingerprint(adminUserId);
+const env = { DB: database, TIMEFLOW_BETA_ADMIN_USER_FINGERPRINT: adminFingerprint };
 const headersFor = (id, email = `${id}@example.test`) => ({
   "oai-authenticated-user-id": id,
   "oai-authenticated-user-email": email
@@ -51,8 +57,12 @@ const expectStatus = async (path, expected, options) => {
 for (const path of ["/api/sync", "/api/team-access", "/api/beta/invites", "/api/support", "/api/account-data"]) {
   await expectStatus(path, 401);
 }
+await expectStatus("/api/beta/identity-fingerprint", 401);
 
 const normalHeaders = headersFor(normalUserId);
+const normalFingerprintResponse = await expectStatus("/api/beta/identity-fingerprint", 200, { headers: normalHeaders });
+const normalFingerprint = (await normalFingerprintResponse.json()).fingerprint;
+if (normalFingerprint !== await fingerprint(normalUserId) || normalFingerprint === adminFingerprint) throw new Error("Der eigene Identitätsfingerprint muss deterministisch sein und darf keinen Adminzugriff erzeugen.");
 await expectStatus("/api/beta/invites", 403, { headers: normalHeaders });
 await expectStatus("/api/team-access", 403, { headers: normalHeaders });
 await expectStatus("/api/sync", 200, { headers: normalHeaders });
@@ -78,5 +88,12 @@ const adminHeaders = headersFor(adminUserId);
 await expectStatus("/api/beta/invites", 200, { headers: adminHeaders });
 await expectStatus("/api/team-access", 200, { headers: adminHeaders });
 await expectStatus("/api/support?admin=1", 200, { headers: adminHeaders });
+
+const clientFingerprintHeaders = { ...normalHeaders, "x-timeflow-admin-fingerprint": adminFingerprint };
+await expectStatus("/api/beta/invites", 403, { headers: clientFingerprintHeaders });
+await expectStatus("/api/team-access", 403, { headers: clientFingerprintHeaders });
+const missingFingerprintEnv = { DB: database };
+const missingFingerprintResponse = await worker.fetch(new Request("https://timeflow.test/api/beta/invites", { headers: adminHeaders }), missingFingerprintEnv);
+if (missingFingerprintResponse.status !== 403) throw new Error("Ohne Admin-Fingerprint muss der sichere Default 403 sein.");
 
 console.log("Autorisierung: 401, 403, Adminzugriff und Sync-Identitätsbindung mit isolierter D1-Attrappe geprüft.");

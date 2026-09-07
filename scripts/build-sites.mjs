@@ -158,13 +158,22 @@ async function ensureSupportTables(database) {
   await database.prepare("CREATE TABLE IF NOT EXISTS timeflow_support_messages (id TEXT PRIMARY KEY NOT NULL, ticket_id TEXT NOT NULL, author_id TEXT NOT NULL, author_role TEXT NOT NULL, message TEXT NOT NULL, created_at TEXT NOT NULL)").run();
 }
 
-const betaAdmin = (user, env) => Boolean(user?.id && env?.TIMEFLOW_BETA_ADMIN_USER_ID && user.id === env.TIMEFLOW_BETA_ADMIN_USER_ID);
+async function userIdentityFingerprint(userId) {
+  const bytes = new TextEncoder().encode(userId || "");
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return [...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, "0")).join("");
+}
+
+async function betaAdmin(user, env) {
+  if (!user?.id || !env?.TIMEFLOW_BETA_ADMIN_USER_FINGERPRINT) return false;
+  return (await userIdentityFingerprint(user.id)) === env.TIMEFLOW_BETA_ADMIN_USER_FINGERPRINT;
+}
 async function tokenHash(token) { const bytes = new TextEncoder().encode(token); const digest = await crypto.subtle.digest("SHA-256", bytes); return [...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, "0")).join(""); }
 function randomToken() { const bytes = new Uint8Array(24); crypto.getRandomValues(bytes); let token = btoa(String.fromCharCode(...bytes)).split("+").join("-").split("/").join("_"); while (token.endsWith("=")) token = token.slice(0, -1); return token; }
 
 async function betaAccess(user, env) {
   if (!user.authenticated || !user.id || !env?.DB) return { allowed: false, admin: false };
-  await ensureBetaTables(env.DB); if (betaAdmin(user, env)) return { allowed: true, admin: true };
+  await ensureBetaTables(env.DB); if (await betaAdmin(user, env)) return { allowed: true, admin: true };
   const row = await env.DB.prepare("SELECT user_id FROM timeflow_beta_access WHERE user_id = ? AND revoked_at IS NULL").bind(user.id).first();
   return { allowed: Boolean(row), admin: false };
 }
@@ -172,6 +181,12 @@ async function betaAccess(user, env) {
 async function handleBetaAccess(request, env) {
   const user = authenticatedUser(request); if (!user.authenticated) return jsonResponse({ authenticated: false, allowed: false, admin: false }, 401);
   return jsonResponse({ authenticated: true, ...(await betaAccess(user, env)), user: { id: user.id, email: user.email, name: user.name } });
+}
+
+async function handleBetaIdentityFingerprint(request) {
+  const user = authenticatedUser(request);
+  if (!user.authenticated || !user.id) return jsonResponse({ error: "authentication_required" }, 401);
+  return jsonResponse({ fingerprint: await userIdentityFingerprint(user.id) });
 }
 
 async function handleBetaInvite(request, env, url) {
@@ -195,7 +210,7 @@ async function handleBetaInvite(request, env, url) {
 
 async function handleBetaInvites(request, env, url) {
   const user = authenticatedUser(request); if (!user.authenticated || !user.id) return jsonResponse({ error: "authentication_required" }, 401);
-  if (!env?.DB || !betaAdmin(user, env)) return jsonResponse({ error: "admin_required" }, 403); await ensureBetaTables(env.DB);
+  if (!env?.DB || !(await betaAdmin(user, env))) return jsonResponse({ error: "admin_required" }, 403); await ensureBetaTables(env.DB);
   if (request.method === "GET") { const rows = await env.DB.prepare("SELECT id, label, created_at, expires_at, claimed_at, status FROM timeflow_beta_invites ORDER BY created_at DESC LIMIT 100").all(); return jsonResponse({ invitations: rows?.results || [] }); }
   if (request.method === "POST") {
     const origin = request.headers.get("Origin"); if (origin !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
@@ -358,6 +373,7 @@ export default {
     if (url.pathname === "/api/team-access") return handleTeamAccess(request, env, url);
     if (url.pathname === "/api/account-data") return handleAccountData(request, env, url);
     if (url.pathname === "/api/beta/access") return handleBetaAccess(request, env);
+    if (url.pathname === "/api/beta/identity-fingerprint") return handleBetaIdentityFingerprint(request);
     if (url.pathname === "/api/beta/invite") return handleBetaInvite(request, env, url);
     if (url.pathname === "/api/beta/invites") return handleBetaInvites(request, env, url);
     if (url.pathname === "/api/support") return handleSupport(request, env, url);

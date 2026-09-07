@@ -7,6 +7,7 @@ Stand: September 2026. Diese Anleitung enthält keine Zugangsdaten und ersetzt k
 - **GitHub Pages** ist eine öffentliche, rein lokale Demo. Dort werden keine D1- oder Beta-Daten bereitgestellt.
 - **TimeFlow Connect** ist die produktive Beta. Die Plattform-Anmeldung liefert den Nutzerkontext; alle serverseitigen API-Routen prüfen die Anmeldung.
 - Geschützte Routen prüfen zusätzlich Beta-Zugang oder Administratorstatus. Der Browser entscheidet nie allein über eine Berechtigung.
+- Der einzige Beta-Admin wird über den SHA-256-Fingerprint seiner bereits serverseitig authentifizierten Plattform-User-ID zugeordnet. Der Fingerprint und die zugrunde liegende User-ID liegen ausschließlich als Hosting-Secret vor; sie werden weder versioniert noch über den Client als Berechtigung akzeptiert.
 - D1-Abfragen verwenden gebundene Parameter. Daten werden nach Nutzer-ID, Einladung oder Organisationsmitgliedschaft abgegrenzt.
 - Einladungen sind zufällige, einmalige Tokens; in D1 liegt nur ihr SHA-256-Hash. Erstellen, Einlösen, Support und Synchronisierung haben serverseitige Begrenzungen pro angemeldetem Nutzer.
 - API-Antworten werden nicht im Service-Worker-Cache abgelegt. Lokale Browserdaten sind Komfort-/Offline-Daten, aber kein Backup.
