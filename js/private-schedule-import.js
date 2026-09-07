@@ -1,6 +1,12 @@
 (function () {
   "use strict";
   const KEY = "timeflow-private-schedule-v1";
+  const PDFJS_MODULE_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs";
+  const PDFJS_WORKER_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
+  const TESSERACT_MODULE_URL = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.esm.min.js";
+  const TESSERACT_WORKER_URL = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js";
+  const TESSERACT_CORE_URL = "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1";
+  const TESSERACT_LANGUAGE_URL = "https://cdn.jsdelivr.net/npm/@tesseract.js-data/deu@1.0.0/4.0.0";
   const platform = () => window.TimeFlowPlatform;
   const privateMode = () => document.documentElement.classList.contains("timeflow-private-mode") || document.body.dataset.appMode === "private";
   const read = () => { try { const value = JSON.parse(platform().storage.getItem(KEY) || "[]"); return Array.isArray(value) ? value : []; } catch (_error) { return []; } };
@@ -131,8 +137,8 @@
   window.TimeFlowPrivateScheduleLayoutParser = parseLayout;
   window.TimeFlowPrivateScheduleMerge = mergeEntries;
   async function pdfText(file) {
-    const pdfjs = await import("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs");
-    pdfjs.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
+    const pdfjs = await import(PDFJS_MODULE_URL);
+    pdfjs.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
     const pdf = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
     let text = "";
     for (let number = 1; number <= pdf.numPages; number += 1) { const content = await (await pdf.getPage(number)).getTextContent(); text += `\n${content.items.map((item) => item.str).join(" ")}`; }
@@ -140,7 +146,7 @@
   }
   async function imageText(file, status) {
     status.textContent = "Das Bild wird lokal gelesen – das kann einen Moment dauern …";
-    const module = await import("https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.esm.min.js");
+    const module = await import(TESSERACT_MODULE_URL);
     const api = module.default || module;
     const bitmap = await createImageBitmap(file);
     const scale = Math.max(1, Math.min(2.5, 2400 / Math.max(bitmap.width, bitmap.height)));
@@ -153,7 +159,12 @@
     const invert = brightness / (pixels.data.length / 4) < 128;
     for (let index = 0; index < pixels.data.length; index += 4) { let gray = .299 * pixels.data[index] + .587 * pixels.data[index + 1] + .114 * pixels.data[index + 2]; if (invert) gray = 255 - gray; gray = gray > 155 ? 255 : gray < 80 ? 0 : gray; pixels.data[index] = pixels.data[index + 1] = pixels.data[index + 2] = gray; }
     context.putImageData(pixels, 0, 0);
-    const worker = await api.createWorker("deu", 1, { logger: (message) => { if (message.status === "recognizing text") status.textContent = `Texterkennung: ${Math.round((message.progress || 0) * 100)} %`; } });
+    const worker = await api.createWorker("deu", 1, {
+      workerPath: TESSERACT_WORKER_URL,
+      corePath: TESSERACT_CORE_URL,
+      langPath: TESSERACT_LANGUAGE_URL,
+      logger: (message) => { if (message.status === "recognizing text") status.textContent = `Texterkennung: ${Math.round((message.progress || 0) * 100)} %`; }
+    });
     await worker.setParameters({ tessedit_pageseg_mode: "11", preserve_interword_spaces: "1" });
     const result = await worker.recognize(canvas, {}, { blocks: true });
     status.textContent = "Wochentage und Datumswerte werden gezielt zugeordnet …";
