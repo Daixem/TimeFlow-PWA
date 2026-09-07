@@ -41,6 +41,8 @@ for (const marker of ["background-size:cover", "rgb(var(--tf-custom-background-r
 if (!personalization.includes("custom-background-limit")) throw new Error("Bildmodus-Hinweis fehlt.");
 const privateClean = await readFile(new URL("../js/private-clean.js", import.meta.url), "utf8");
 for (const marker of ["timeflow-update-", "document.currentScript", "timeflow-notification-read-v1", "timeflow:update-news-ready", "Update-News", "timeflow:beta-access-ready"]) if (!privateClean.includes(marker)) throw new Error(`Update-News fehlt: ${marker}`);
+for (const marker of ["TimeFlow wurde aktualisiert", "Ein neues Update wurde erfolgreich installiert."]) if (!privateClean.includes(marker)) throw new Error(`Verständliche Update-News fehlt: ${marker}`);
+if (privateClean.includes("Build ${build.slice")) throw new Error("Update-News enthält noch eine technische Build-ID.");
 const glass = await readFile(new URL("../css/unified-glass.css", import.meta.url), "utf8");
 for (const marker of ["personalization-settings-card :is", "border:0!important", "timeflow-phoenix-icon-192.png"]) if (!glass.includes(marker) && !serviceWorker.includes(marker)) throw new Error(`Einheitliche Darstellung oder PWA-Logo fehlt: ${marker}`);
 for (const marker of ["birthDate", "autocomplete=\"bday\"", "dataset.tfFontSize", "if (verified) installSetup()"] ) if (!personalization.includes(marker) && !profileScript.includes(marker)) throw new Error(`Geburtsdatum oder adaptive Schrift fehlt: ${marker}`);

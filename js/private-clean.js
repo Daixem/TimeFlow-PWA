@@ -4,7 +4,7 @@
   const read = (key, fallback) => { try { const value = JSON.parse(platform().storage.getItem(key)); return value ?? fallback; } catch (_error) { return fallback; } };
   const isBeta = () => /\.chatgpt\.site$/i.test(location.hostname);
   const buildId = (() => { try { return new URL(document.currentScript?.src || location.href).searchParams.get("v"); } catch { return null; } })();
-  const updateNewsEntry = (build) => !build ? null : { id: `timeflow-update-${build}`, type: "system", category: "system", title: "Update-News", body: `TimeFlow wurde aktualisiert. Build ${build.slice(0, 12)} ist jetzt bereit – inklusive stabiler PWA-Updates und aktueller Verbesserungen.`, createdAt: new Date().toISOString(), read: false, action: "" };
+  const updateNewsEntry = (build) => !build ? null : { id: `timeflow-update-${build}`, type: "system", category: "system", title: "TimeFlow wurde aktualisiert", body: "Ein neues Update wurde erfolgreich installiert.", createdAt: new Date().toISOString(), read: false, action: "" };
   const isPrivate = () => document.documentElement.classList.contains("timeflow-private-mode") || document.body.dataset.appMode === "private";
   const schedule = () => { const value = read("timeflow-private-schedule-v1", []); return Array.isArray(value) ? value.sort((a, b) => `${a.date}${a.start}`.localeCompare(`${b.date}${b.start}`)) : []; };
   const history = () => { const value = read("timeflow-workday-history-v1", []); return Array.isArray(value) ? value.sort((a, b) => String(a.workEnd || "").localeCompare(String(b.workEnd || ""))) : []; };
@@ -71,7 +71,7 @@
     apply();
     if (!window.TimeFlowUpdateNews?.isUnread?.()) return;
     const title = document.getElementById("notificationCenterTitle"); if (title) title.textContent = "Update-News";
-    const copy = title?.nextElementSibling; if (copy) copy.textContent = "TimeFlow wurde aktualisiert. Die Neuerungen stehen für dich bereit.";
+    const copy = title?.nextElementSibling; if (copy) copy.textContent = "Ein neues Update wurde erfolgreich installiert.";
     document.dispatchEvent(new CustomEvent("timeflow:open-notifications", { detail: { update: event.detail } }));
   });
   document.addEventListener("timeflow:beta-access-ready", loadUpdateNews, { once: true });
