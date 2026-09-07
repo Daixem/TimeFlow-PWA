@@ -1,10 +1,3 @@
-:root{
-  --tf-glass-panel:color-mix(in srgb,var(--tf-glass) 78%,transparent);
-  --tf-glass-inset:rgba(255,255,255,.035);
-  --tf-glass-separator:color-mix(in srgb,var(--tf-glass-border) 58%,transparent);
-  --tf-glass-shadow:0 18px 48px rgba(0,7,20,.24);
-}
-
 /* One coherent glass layer per window. Inner rows no longer introduce another
    coloured card; structure comes from spacing and quiet separators. */
 .timeflow-private-mode :is(
@@ -15,9 +8,9 @@
   .device-check-dialog,.beta-privacy-dialog,.private-initial-setup,
   .top-grid,.approval-card,.quick-actions-card
 ){
-  border:1px solid var(--tf-glass-border)!important;
-  background:linear-gradient(145deg,rgba(255,255,255,.07),rgba(255,255,255,.018)),var(--tf-glass-panel)!important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),var(--tf-glass-shadow)!important;
+  border:1px solid var(--tf-border)!important;
+  background:linear-gradient(145deg,var(--tf-surface-inset),transparent),var(--tf-card-background)!important;
+  box-shadow:inset 0 1px 0 var(--tf-surface-inset),var(--tf-shadow)!important;
   backdrop-filter:blur(24px) saturate(135%)!important;
   -webkit-backdrop-filter:blur(24px) saturate(135%)!important;
 }
@@ -47,8 +40,8 @@
   box-shadow:none!important;
 }
 .timeflow-private-mode .top-grid>.card{border:0!important;border-radius:0!important}
-.timeflow-private-mode .top-grid>.card+.card{border-inline-start:1px solid var(--tf-glass-separator)!important}
-.timeflow-private-mode :is(.list-row,.week-row)+:is(.list-row,.week-row){border-top-color:var(--tf-glass-separator)!important}
+.timeflow-private-mode .top-grid>.card+.card{border-inline-start:1px solid var(--tf-divider)!important}
+.timeflow-private-mode :is(.list-row,.week-row)+:is(.list-row,.week-row){border-top-color:var(--tf-divider)!important}
 
 .timeflow-private-mode :is(
   dialog>header,.support-dialog>header,.support-dialog>nav,
@@ -57,20 +50,20 @@
 ){
   background:transparent!important;
   background-image:none!important;
-  border-color:var(--tf-glass-separator)!important;
+  border-color:var(--tf-divider)!important;
 }
 
 .timeflow-private-mode :is(input,select,textarea,.settings-hours-input,.profile-language-select select){
-  border-color:var(--tf-glass-separator)!important;
-  background:rgba(255,255,255,.045)!important;
+  border-color:var(--tf-divider)!important;
+  background:var(--tf-input-background)!important;
   background-image:none!important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.035)!important;
+  box-shadow:inset 0 1px 0 var(--tf-surface-inset)!important;
 }
 
 .timeflow-private-mode :is(.private-quick-nav,.bottom-nav){
-  border-color:var(--tf-glass-border)!important;
-  background:color-mix(in srgb,var(--tf-glass-strong) 82%,transparent)!important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 18px 50px rgba(0,5,18,.32)!important;
+  border-color:var(--tf-border)!important;
+  background:var(--tf-navigation-background)!important;
+  box-shadow:var(--tf-navigation-shadow)!important;
   backdrop-filter:blur(26px) saturate(140%)!important;
   -webkit-backdrop-filter:blur(26px) saturate(140%)!important;
 }
@@ -78,12 +71,6 @@
 .timeflow-private-mode :is(button.active,[aria-selected="true"],form>button[type="submit"],.clock-confirm-submit){
   background:linear-gradient(135deg,color-mix(in srgb,var(--tf-accent) 88%,white),var(--tf-accent))!important;
 }
-
-html[data-tf-background="light"] .timeflow-private-mode{
-  --tf-glass-inset:rgba(255,255,255,.28);
-  --tf-glass-shadow:0 16px 42px rgba(29,73,112,.14);
-}
-html[data-tf-background="light"] .timeflow-private-mode :is(input,select,textarea,.settings-hours-input){background:rgba(255,255,255,.4)!important}
 
 /* Appearance is one continuous glass surface. Controls retain their own
    affordance; only the surrounding preference rows become visually quiet. */
@@ -108,9 +95,9 @@ html[data-tf-background="light"] .timeflow-private-mode :is(input,select,textare
   .private-home-dialog,.schedule-tabs,.private-import-panel,.week-summary,
   .week-list,.shift-grid,.month-card,.month-overview,.schedule-view>.date-switch
 ){
-  border:1px solid var(--tf-glass-border)!important;
-  background:linear-gradient(145deg,rgba(255,255,255,.07),rgba(255,255,255,.018)),var(--tf-glass-panel)!important;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),var(--tf-glass-shadow)!important;
+  border:1px solid var(--tf-border)!important;
+  background:linear-gradient(145deg,var(--tf-surface-inset),transparent),var(--tf-card-background)!important;
+  box-shadow:inset 0 1px 0 var(--tf-surface-inset),var(--tf-shadow)!important;
   backdrop-filter:blur(24px) saturate(135%)!important;
   -webkit-backdrop-filter:blur(24px) saturate(135%)!important;
 }
@@ -130,14 +117,14 @@ html[data-tf-background="light"] .timeflow-private-mode :is(input,select,textare
 .timeflow-private-mode .week-summary>span + span,
 .timeflow-private-mode .private-home-timeline>span + span,
 .timeflow-private-mode .private-import-panel :is(.private-import-note,.private-learning-note){
-  border-top:1px solid var(--tf-glass-separator)!important;
+  border-top:1px solid var(--tf-divider)!important;
 }
 
-.timeflow-private-mode .private-home-account>span + span{border-left-color:var(--tf-glass-separator)!important}
-.timeflow-private-mode .private-home-dialog{background-color:var(--tf-glass-panel)!important}
+.timeflow-private-mode .private-home-account>span + span{border-left-color:var(--tf-divider)!important}
+.timeflow-private-mode .private-home-dialog{background-color:var(--tf-dialog-background)!important}
 
 @media(max-width:600px){
-  :root{--tf-glass-shadow:0 12px 34px rgba(0,7,20,.22)}
+  :root{--tf-shadow:0 12px 34px rgba(0,7,20,.22)}
   .timeflow-private-mode :is(.card,.list-card,.shift-card,.settings-card,.profile-menu-card){backdrop-filter:blur(18px) saturate(125%)!important;-webkit-backdrop-filter:blur(18px) saturate(125%)!important}
 }
 
@@ -158,22 +145,22 @@ html[data-tf-background="light"] .timeflow-private-mode :is(input,select,textare
 @media(prefers-reduced-motion:reduce){.brand-splash,.brand-splash img{animation:none;transition:none}}
 
 /* Every selected palette now owns the navigation and interactive surfaces. */
-html[data-tf-background] :is(.bottom-nav,.private-quick-nav){border-color:var(--tf-glass-border)!important;background:color-mix(in srgb,var(--tf-glass-strong) 88%,transparent)!important}
-html[data-tf-background] :is(.settings-card,.profile-menu-card,.schedule-tabs,.date-switch,.my-shift,.team-today,.week-summary span,.week-list,.month-overview,.clock-shift-card,.clock-summary article){border-color:var(--tf-glass-border)!important;background-color:var(--tf-glass)!important}
-html[data-tf-background] :is(input,select,textarea,.settings-hours-input){border-color:var(--tf-glass-border)!important;background-color:var(--tf-control)!important;accent-color:var(--tf-accent)}
+html[data-tf-background] :is(.bottom-nav,.private-quick-nav){border-color:var(--tf-border)!important;background:var(--tf-navigation-background)!important}
+html[data-tf-background] :is(.settings-card,.profile-menu-card,.schedule-tabs,.date-switch,.my-shift,.team-today,.week-summary span,.week-list,.month-overview,.clock-shift-card,.clock-summary article){border-color:var(--tf-border)!important;background-color:var(--tf-surface)!important}
+html[data-tf-background] :is(input,select,textarea,.settings-hours-input){border-color:var(--tf-border)!important;background-color:var(--tf-input-background)!important;accent-color:var(--tf-accent)}
 html[data-tf-background] :is(.bottom-nav,.private-quick-nav) .nav-item.active{color:var(--tf-accent)!important}
 html[data-tf-background] .main-nav .nav-icon{background:linear-gradient(135deg,color-mix(in srgb,var(--tf-accent) 80%,white),var(--tf-accent))!important}
 
 /* High-contrast ink and pale controls for the light background. */
-html[data-tf-background="light"]{--text:#092746;--text-light:#385875;--text-dark:#58738c;--surface:#edf7ff;--surface-light:#dcecf8;--surface-dark:#c9deef}
-html[data-tf-background="light"] body{color:#092746}
-html[data-tf-background="light"] :is(.header,.dashboard,.schedule-page,.clock-page,.chat-page,.profile-page,.settings-page,dialog){color:#092746!important}
-html[data-tf-background="light"] :is(p,small,label,span,.subtitle,.nav-item,.list-row,.settings-card-copy,.profile-menu-link,.team-today>p,.my-shift small,.week-row small){color:#385875}
-html[data-tf-background="light"] :is(h1,h2,h3,strong,b,.info-item h3,.motivation-card p,.month-header button,.schedule-header button,.date-switch button,.team-today>button){color:#092746!important}
-html[data-tf-background="light"] :is(input,select,textarea,.settings-hours-input){color:#092746!important;background-color:rgba(245,251,255,.82)!important}
-html[data-tf-background="light"] :is(input,textarea)::placeholder{color:#668099}
-html[data-tf-background="light"] :is(.bottom-nav,.private-quick-nav){color:#385875!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 14px 38px rgba(30,75,112,.18)!important}
-html[data-tf-background="light"] :is(.card,.list-card,.shift-card,.settings-card,.profile-menu-card,.top-grid,.approval-card,dialog){box-shadow:inset 0 1px 0 rgba(255,255,255,.72),0 12px 32px rgba(34,78,115,.12)!important}
+html[data-tf-background="light"]{--text:var(--tf-text-primary);--text-light:var(--tf-text-secondary);--text-dark:var(--tf-text-muted);--surface:var(--tf-surface);--surface-light:var(--tf-surface-elevated);--surface-dark:var(--tf-control)}
+html[data-tf-background="light"] body{color:var(--tf-text-primary)}
+html[data-tf-background="light"] :is(.header,.dashboard,.schedule-page,.clock-page,.chat-page,.profile-page,.settings-page,dialog){color:var(--tf-text-primary)!important}
+html[data-tf-background="light"] :is(p,small,label,span,.subtitle,.nav-item,.list-row,.settings-card-copy,.profile-menu-link,.team-today>p,.my-shift small,.week-row small){color:var(--tf-text-secondary)}
+html[data-tf-background="light"] :is(h1,h2,h3,strong,b,.info-item h3,.motivation-card p,.month-header button,.schedule-header button,.date-switch button,.team-today>button){color:var(--tf-text-primary)!important}
+html[data-tf-background="light"] :is(input,select,textarea,.settings-hours-input){color:var(--tf-text-primary)!important;background-color:var(--tf-input-background)!important}
+html[data-tf-background="light"] :is(input,textarea)::placeholder{color:var(--tf-text-muted)}
+html[data-tf-background="light"] :is(.bottom-nav,.private-quick-nav){color:var(--tf-text-secondary)!important;box-shadow:var(--tf-navigation-shadow)!important}
+html[data-tf-background="light"] :is(.card,.list-card,.shift-card,.settings-card,.profile-menu-card,.top-grid,.approval-card,dialog){box-shadow:inset 0 1px 0 var(--tf-surface-inset),var(--tf-shadow)!important}
 
 /* A selected palette controls all normal app surfaces. Semantic state
    colours (success, warning and error) deliberately remain independent. */
