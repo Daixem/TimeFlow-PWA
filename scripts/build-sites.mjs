@@ -351,12 +351,20 @@ async function handleSync(request, env, url) {
     try { body = await request.json(); } catch { return jsonResponse({ error: "invalid_json" }, 400); }
     const snapshot = validatedSnapshot(body?.snapshot);
     if (!snapshot) return jsonResponse({ error: "invalid_snapshot" }, 400);
+    const expectedRevision = Number(body?.expectedRevision);
+    if (!Number.isInteger(expectedRevision) || expectedRevision < 0) return jsonResponse({ error: "invalid_expected_revision" }, 400);
     const payloadJson = JSON.stringify(snapshot);
     if (payloadJson.length > 786432) return jsonResponse({ error: "payload_too_large" }, 413);
     const updatedAt = new Date().toISOString();
-    await env.DB.prepare("INSERT INTO timeflow_user_sync (user_id, payload_json, revision, updated_at) VALUES (?, ?, 1, ?) ON CONFLICT(user_id) DO UPDATE SET payload_json = excluded.payload_json, revision = timeflow_user_sync.revision + 1, updated_at = excluded.updated_at").bind(user.id, payloadJson, updatedAt).run();
-    const row = await env.DB.prepare("SELECT revision, updated_at FROM timeflow_user_sync WHERE user_id = ?").bind(user.id).first();
-    return jsonResponse({ saved: true, revision: row?.revision || 1, updatedAt: row?.updated_at || updatedAt });
+    if (expectedRevision === 0) {
+      const created = await env.DB.prepare("INSERT INTO timeflow_user_sync (user_id, payload_json, revision, updated_at) VALUES (?, ?, 1, ?) ON CONFLICT(user_id) DO NOTHING").bind(user.id, payloadJson, updatedAt).run();
+      if ((created?.meta?.changes || 0) === 1) return jsonResponse({ saved: true, revision: 1, updatedAt });
+    }
+    const updated = await env.DB.prepare("UPDATE timeflow_user_sync SET payload_json = ?, revision = revision + 1, updated_at = ? WHERE user_id = ? AND revision = ?").bind(payloadJson, updatedAt, user.id, expectedRevision).run();
+    if ((updated?.meta?.changes || 0) === 1) return jsonResponse({ saved: true, revision: expectedRevision + 1, updatedAt });
+    const current = await env.DB.prepare("SELECT payload_json, revision, updated_at FROM timeflow_user_sync WHERE user_id = ?").bind(user.id).first();
+    let data = null; try { data = current ? JSON.parse(current.payload_json) : null; } catch {}
+    return jsonResponse({ error: "sync_conflict", revision: current?.revision || 0, data, updatedAt: current?.updated_at || null }, 409);
   }
 
   return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "GET, PUT" });

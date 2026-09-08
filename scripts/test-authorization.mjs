@@ -77,7 +77,7 @@ bindings.length = 0;
 await expectStatus("/api/sync", 200, {
   method: "PUT",
   headers: { ...normalHeaders, Origin: "https://timeflow.test", "Content-Type": "application/json" },
-  body: JSON.stringify({ userId: adminUserId, role: "admin", snapshot: { "timeflow-profile-v1": { name: "Test" } } })
+  body: JSON.stringify({ userId: adminUserId, role: "admin", expectedRevision: 0, snapshot: { "timeflow-profile-v1": { name: "Test" } } })
 });
 const syncWrite = bindings.find(({ sql }) => sql.includes("INSERT INTO timeflow_user_sync"));
 if (!syncWrite || syncWrite.values[0] !== normalUserId || syncWrite.values.includes(adminUserId)) {
