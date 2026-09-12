@@ -444,13 +444,13 @@ async function handleWorkTime(request, env, url) {
       // the committed row before classifying an otherwise successful write as a conflict.
       if ((result?.[0]?.meta?.changes || 0) !== 1) {
         const committed = await env.DB.prepare("SELECT state_json, revision, last_actor_user_id, last_event_type, last_source, effective_timestamp, server_updated_at FROM timeflow_work_time_current WHERE user_id = ?").bind(target.userId).first();
-        if (committed?.revision === body.expectedRevision + 1
-          && committed.state_json === stateJson
-          && committed.last_actor_user_id === actorUserId
-          && committed.last_event_type === eventType
-          && committed.last_source === source
+        if (Number(committed?.revision) === body.expectedRevision + 1
+          && String(committed.state_json) === stateJson
+          && String(committed.last_actor_user_id) === actorUserId
+          && String(committed.last_event_type) === eventType
+          && String(committed.last_source) === source
           && (committed.effective_timestamp || null) === (effectiveTimestamp || null)
-          && committed.server_updated_at === now) return jsonResponse({ saved: true, revision: body.expectedRevision + 1, state: nextState, updatedAt: now });
+          && String(committed.server_updated_at) === now) return jsonResponse({ saved: true, revision: body.expectedRevision + 1, state: nextState, updatedAt: now });
       }
     }
   } catch {

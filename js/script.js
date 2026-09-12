@@ -19,6 +19,12 @@ const elements = {
 
 let state = { isWorking: false, workStart: null, workEnd: null, isPaused: false, pauseStartedAt: null, pauseAccumulatedMs: 0, hasManualPause: false };
 let workTimer;
+let workTimeApi;
+let workTimeServerEnabled = false;
+let workTimeServerMode;
+window.TimeFlowWorkTimeServerEnabled = () => workTimeServerMode === true;
+window.TimeFlowWorkTimeReady = () => workTimeServerMode !== undefined;
+let workTimeReady;
 
 const quotes = [
   "Erfolg entsteht nicht durch Perfektion, sondern durch Beständigkeit.",
@@ -89,6 +95,52 @@ function loadWorkday() {
   } catch { window.TimeFlowPlatform.storage.removeItem(STORAGE_KEY); }
 }
 
+function defaultWorkdayState() { return { isWorking: false, workStart: null, workEnd: null, isPaused: false, pauseStartedAt: null, pauseAccumulatedMs: 0, hasManualPause: false }; }
+function applyWorkTimeState(next) {
+  const value = next && typeof next === "object" ? next : defaultWorkdayState();
+  state = { isWorking: Boolean(value.isWorking), workStart: value.workStart ? new Date(value.workStart) : null, workEnd: value.workEnd ? new Date(value.workEnd) : null, isPaused: Boolean(value.isPaused), pauseStartedAt: value.pauseStartedAt ? new Date(value.pauseStartedAt) : null, pauseAccumulatedMs: Number(value.pauseAccumulatedMs || 0), hasManualPause: Boolean(value.hasManualPause) };
+  saveWorkday();
+  updateWorkUi();
+  if (state.isWorking) startTimer(); else stopTimer();
+}
+function workTimeClient() {
+  if (!workTimeApi && window.TimeFlowWorkTimeApi && window.TimeFlowPlatform) workTimeApi = window.TimeFlowWorkTimeApi.create({ storage: window.TimeFlowPlatform.storage });
+  return workTimeApi;
+}
+async function initialiseWorkTime() {
+  const client = workTimeClient();
+  if (!client) { workTimeServerMode = false; return false; }
+  try {
+    workTimeServerEnabled = await client.isEnabled(); workTimeServerMode = workTimeServerEnabled;
+    if (workTimeServerEnabled) {
+      const current = await client.getCurrent();
+      applyWorkTimeState(current.state);
+    }
+  } catch (_error) { workTimeServerEnabled = false; workTimeServerMode = false; }
+  return workTimeServerEnabled;
+}
+function ensureWorkTimeReady() { return workTimeReady || (workTimeReady = initialiseWorkTime()); }
+async function writeServerWorkTime(eventType, requestedState) {
+  const client = workTimeClient();
+  if (!client || !workTimeServerEnabled) return false;
+  try {
+    const result = await client.writeChange({ eventType, state: requestedState });
+    if (result.pending) { showToast("Offline gespeichert – wird beim Reconnect gesendet."); return true; }
+    applyWorkTimeState(result.state);
+    showToast(eventType === "CLOCK_IN" ? "Du bist eingestempelt." : eventType === "CLOCK_OUT" ? "Du bist ausgestempelt." : eventType === "PAUSE_START" ? "Pause gestartet." : "Pause beendet.");
+    return true;
+  } catch (error) {
+    if (error.status === 409) {
+      applyWorkTimeState(error.result?.state);
+      showToast("Arbeitszeitkonflikt – bitte bewusst erneut auslösen.");
+      return true;
+    }
+    if (error.network) { showToast("Offline gespeichert – wird beim Reconnect gesendet."); return true; }
+    showToast("Arbeitszeit konnte nicht gespeichert werden.");
+    return true;
+  }
+}
+
 function updateDateTime() {
   const now = new Date();
   const homeMonthLabel = document.getElementById("homeMonthLabel");
@@ -133,9 +185,11 @@ function updateWorkUi() {
   document.dispatchEvent(new CustomEvent("timeflow:workday-updated"));
   if (privateMode) window.TimeFlowPrivateAccount?.refreshHome();
 }
-function clockIn() { state = { isWorking: true, workStart: new Date(), workEnd: null, isPaused: false, pauseStartedAt: null, pauseAccumulatedMs: 0, hasManualPause: false }; saveWorkday(); startTimer(); updateWorkUi(); showToast("Du bist eingestempelt."); }
-function clockOut() { if (state.isPaused && state.pauseStartedAt) state.pauseAccumulatedMs += new Date() - state.pauseStartedAt; state.isPaused = false; state.pauseStartedAt = null; state.isWorking = false; state.workEnd = new Date(); saveWorkday(); saveCompletedWorkday(); stopTimer(); updateWorkUi(); showToast("Du bist ausgestempelt."); }
-function togglePause() { if (!state.isWorking) return; if (state.isPaused) { state.pauseAccumulatedMs += new Date() - state.pauseStartedAt; state.pauseStartedAt = null; state.isPaused = false; showToast("Pause beendet."); } else { state.isPaused = true; state.hasManualPause = true; state.pauseStartedAt = new Date(); showToast("Pause gestartet."); } saveWorkday(); updateWorkUi(); }
+function clockInLocal() { state = { isWorking: true, workStart: new Date(), workEnd: null, isPaused: false, pauseStartedAt: null, pauseAccumulatedMs: 0, hasManualPause: false }; saveWorkday(); startTimer(); updateWorkUi(); showToast("Du bist eingestempelt."); }
+function clockOutLocal() { if (state.isPaused && state.pauseStartedAt) state.pauseAccumulatedMs += new Date() - state.pauseStartedAt; state.isPaused = false; state.pauseStartedAt = null; state.isWorking = false; state.workEnd = new Date(); saveWorkday(); saveCompletedWorkday(); stopTimer(); updateWorkUi(); showToast("Du bist ausgestempelt."); }
+async function clockIn() { await ensureWorkTimeReady(); if (workTimeServerEnabled) { await writeServerWorkTime("CLOCK_IN"); return; } clockInLocal(); }
+async function clockOut() { await ensureWorkTimeReady(); if (workTimeServerEnabled) { await writeServerWorkTime("CLOCK_OUT"); return; } clockOutLocal(); }
+async function togglePause() { if (!state.isWorking) return; await ensureWorkTimeReady(); if (workTimeServerEnabled) { await writeServerWorkTime(state.isPaused ? "PAUSE_END" : "PAUSE_START"); return; } if (state.isPaused) { state.pauseAccumulatedMs += new Date() - state.pauseStartedAt; state.pauseStartedAt = null; state.isPaused = false; showToast("Pause beendet."); } else { state.isPaused = true; state.hasManualPause = true; state.pauseStartedAt = new Date(); showToast("Pause gestartet."); } saveWorkday(); updateWorkUi(); }
 function startTimer() { stopTimer(); workTimer = window.setInterval(updateWorkUi, 1000); }
 function stopTimer() { if (workTimer) window.clearInterval(workTimer); workTimer = undefined; }
 function showToast(message) { elements.toast.textContent = message; elements.toast.classList.add("is-visible"); window.clearTimeout(showToast.timer); showToast.timer = window.setTimeout(() => elements.toast.classList.remove("is-visible"), 3200); }
@@ -173,10 +227,10 @@ function initialise() {
   clockConfirmDialog.querySelector("[data-cancel-clock]").addEventListener("click", () => window.TimeFlowPlatform.dialog.close(clockConfirmDialog));
   clockConfirmDialog.querySelector("[data-confirm-clock]").addEventListener("click", () => {
     window.TimeFlowPlatform.dialog.close(clockConfirmDialog);
-    if (state.isWorking) clockOut(); else clockIn();
+    void (state.isWorking ? clockOut() : clockIn());
   });
   clockConfirmDialog.addEventListener("click", (event) => { if (event.target === clockConfirmDialog) window.TimeFlowPlatform.dialog.close(clockConfirmDialog); });
-  loadWorkday(); updateDateTime();
+  loadWorkday(); updateDateTime(); workTimeReady = initialiseWorkTime();
   const day = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
   elements.dailyQuote.textContent = quotes[day % quotes.length];
   elements.teamNews.textContent = teamUpdates[day % teamUpdates.length];
@@ -229,6 +283,11 @@ document.addEventListener("timeflow:device-resumed", () => { loadWorkday(); upda
 document.addEventListener("timeflow:sync-restored", () => {
   loadWorkday(); updateDateTime(); updateWorkUi();
   if (state.isWorking) startTimer(); else stopTimer();
+});
+window.addEventListener("online", async () => {
+  await ensureWorkTimeReady();
+  if (!workTimeServerEnabled || !workTimeApi?.getPending?.()) return;
+  try { const result = await workTimeApi.reconnectPending(); if (result?.state) { applyWorkTimeState(result.state); window.TimeFlowPlatform.storage.removeItem("timeflow-work-time-correction-pending-v1"); } } catch (error) { if (error.status === 409) applyWorkTimeState(error.result?.state); }
 });
 
 document.addEventListener("DOMContentLoaded", () => {
