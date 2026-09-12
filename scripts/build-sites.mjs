@@ -440,6 +440,18 @@ async function handleWorkTime(request, env, url) {
       const statement = env.DB.prepare("UPDATE timeflow_work_time_current SET state_json = ?, revision = revision + 1, last_actor_user_id = ?, last_event_type = ?, last_source = ?, effective_timestamp = ?, server_updated_at = ? WHERE user_id = ? AND revision = ?").bind(stateJson, actorUserId, eventType, source, effectiveTimestamp, now, target.userId, body.expectedRevision);
       const result = await env.DB.batch([statement]);
       if ((result?.[0]?.meta?.changes || 0) === 1) return jsonResponse({ saved: true, revision: body.expectedRevision + 1, state: nextState, updatedAt: now });
+      // Remote D1 preview can report an unreliable meta.changes value; verify
+      // the committed row before classifying an otherwise successful write as a conflict.
+      if ((result?.[0]?.meta?.changes || 0) !== 1) {
+        const committed = await env.DB.prepare("SELECT state_json, revision, last_actor_user_id, last_event_type, last_source, effective_timestamp, server_updated_at FROM timeflow_work_time_current WHERE user_id = ?").bind(target.userId).first();
+        if (committed?.revision === body.expectedRevision + 1
+          && committed.state_json === stateJson
+          && committed.last_actor_user_id === actorUserId
+          && committed.last_event_type === eventType
+          && committed.last_source === source
+          && (committed.effective_timestamp || null) === (effectiveTimestamp || null)
+          && committed.server_updated_at === now) return jsonResponse({ saved: true, revision: body.expectedRevision + 1, state: nextState, updatedAt: now });
+      }
     }
   } catch {
     return jsonResponse({ error: "work_time_write_failed" }, 500);
