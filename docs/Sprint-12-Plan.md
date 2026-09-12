@@ -24,7 +24,6 @@ nach dem Wiederöffnen der App.
 
 ## Noch durch den Nutzer zu prüfen
 
-- Dauerhafte lokale Speicherung in der installierten PWA auf dem realen iPad
 - Installation und Start als PWA auf einem realen Android-Gerät
 - Offline-Start nach vorherigem vollständigem Laden
 - Synchronisierung desselben Profils auf zwei angemeldeten Geräten

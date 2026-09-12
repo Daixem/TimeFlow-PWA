@@ -143,9 +143,9 @@ späteren Backend-Sprint umgesetzt.
 - [x] Dynamische Viewport-Höhe, Touch-Ziele, Hoch-/Querformat und Desktopbreiten abgesichert
 - [x] Plattformspezifische Installationshinweise
 - [x] Reale Abnahme auf iPhone
-- [ ] Reale Abnahme auf iPad: App und Darstellung bestätigt, dauerhafte Speicherung noch offen
+- [x] Reale Abnahme auf iPad: App, Darstellung und dauerhafte Nutzung ohne festgestellte Mängel bestätigt
 - [ ] Reale Abnahme auf Android-Smartphone und Android-Tablet
-- [ ] Reale Abnahme unter Windows und macOS
+- [x] Reale Abnahme unter Windows und macOS
 - [ ] Reale Abnahme unter Linux
 
 ## Vorgemerkt – echte Benutzerkonten und Anmeldung

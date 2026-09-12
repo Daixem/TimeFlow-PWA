@@ -2,7 +2,7 @@
 
 Stand: Version 1.0.1, Build 0040
 
-Realer Gerätestatus: **iPhone vollständig abgenommen. Auf dem iPad funktionieren App und Darstellung; die dauerhafte lokale Speicherung muss im installierten PWA-Kontext noch bestätigt werden.**
+Realer Gerätestatus: **iPhone, iPad, Windows und macOS abgenommen. App, Darstellung und angemeldete Nutzung zeigen auf den geprüften Geräten keine festgestellten Mängel. Android bleibt mangels Testgerät offen.**
 
 ## Unterstützte Plattformen
 
