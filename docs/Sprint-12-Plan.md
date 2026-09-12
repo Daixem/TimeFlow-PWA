@@ -26,7 +26,6 @@ nach dem Wiederöffnen der App.
 
 - Installation und Start als PWA auf einem realen Android-Gerät
 - Offline-Start nach vorherigem vollständigem Laden
-- Synchronisierung desselben Profils auf zwei angemeldeten Geräten
 - Backup-Export und kontrollierte Wiederherstellung einer Testdatei
 
 Sprint 12 gilt nach diesen realen Gerätetests und der Behebung möglicher

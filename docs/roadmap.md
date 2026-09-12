@@ -131,7 +131,7 @@ späteren Backend-Sprint umgesetzt.
 - [x] Automatisierte Sprint-12-Abnahme
 - [ ] Installationstest auf einem realen Android-Gerät
 - [ ] Installationstest auf einem realen iPhone
-- [ ] Geräteübergreifender Synchronisationstest
+- [x] Geräteübergreifender Synchronisationstest
 - [ ] Backup-Wiederherstellung mit einer echten Testdatei
 
 ## Geräteübergreifende Parität – vor weiteren Funktionssprints
