@@ -7,6 +7,9 @@
   const TESSERACT_WORKER_URL = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js";
   const TESSERACT_CORE_URL = "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1";
   const TESSERACT_LANGUAGE_URL = "https://cdn.jsdelivr.net/npm/@tesseract.js-data/deu@1.0.0/4.0.0";
+  const MAX_IMAGE_BYTES = 25 * 1024 * 1024;
+  const IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
+  const TEXT_EXTENSIONS = new Set(["pdf", "csv", "txt", "json", "ics"]);
   const platform = () => window.TimeFlowPlatform;
   const privateMode = () => document.documentElement.classList.contains("timeflow-private-mode") || document.body.dataset.appMode === "private";
   const read = () => { try { const value = JSON.parse(platform().storage.getItem(KEY) || "[]"); return Array.isArray(value) ? value : []; } catch (_error) { return []; } };
@@ -14,6 +17,11 @@
     const merged = new Map(saved.map((entry) => [entry.date, entry]));
     incoming.forEach((entry) => merged.set(entry.date, entry));
     return [...merged.values()].sort((a, b) => `${a.date}${a.start}`.localeCompare(`${b.date}${b.start}`));
+  };
+  const saveEntries = (storage, saved, incoming) => {
+    const merged = mergeEntries(saved, incoming);
+    storage.setItem(KEY, JSON.stringify(merged));
+    return merged;
   };
   const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
   const minutes = (entry) => {
@@ -38,6 +46,25 @@
   const readLearning = () => { try { const value = JSON.parse(platform().storage.getItem(learningKey()) || "{}"); return value && typeof value === "object" ? value : {}; } catch (_error) { return {}; } };
   const writeLearning = (value) => platform().storage.setItem(learningKey(), JSON.stringify(value));
   const dateValue = (text) => { const match = String(text).match(/(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})/); if (!match) return ""; return `${match[3].length === 2 ? "20" + match[3] : match[3]}-${match[2].padStart(2, "0")}-${match[1].padStart(2, "0")}`; };
+  const fileExtension = (file) => String(file?.name || "").split(".").pop().toLowerCase();
+  const importError = (message) => { const error = new Error(message); error.importMessage = message; return error; };
+  const validateImportFile = (file) => {
+    const type = String(file?.type || "").toLowerCase(); const extension = fileExtension(file);
+    if (["heic", "heif"].includes(extension) || ["image/heic", "image/heif"].includes(type)) throw importError("HEIC/HEIF wird auf diesem Gerät noch nicht unterstützt. Bitte als JPG oder PNG exportieren.");
+    const image = IMAGE_TYPES.has(type) || ["png", "jpg", "jpeg", "webp"].includes(extension);
+    if (image) {
+      if (Number(file?.size || 0) > MAX_IMAGE_BYTES) throw importError("Das Bild ist zu groß. Bitte einen Screenshot bis 25 MB auswählen.");
+      return "image";
+    }
+    if (TEXT_EXTENSIONS.has(extension) || ["application/pdf", "text/csv", "text/plain", "application/json", "text/calendar"].includes(type)) return extension === "pdf" || type === "application/pdf" ? "pdf" : "text";
+    throw importError("Dieses Dateiformat wird nicht unterstützt. Erlaubt sind PNG, JPG, WEBP, PDF, CSV, TXT, JSON und ICS.");
+  };
+  const validEntry = (entry) => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(entry?.date || ""))) return false;
+    if (/^(frei|urlaub|krank)$/i.test(String(entry.title || ""))) return true;
+    const validTime = (value) => /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(String(value || ""));
+    return validTime(entry.start) && validTime(entry.end) && entry.start !== entry.end;
+  };
   const parse = (text) => {
     const source = String(text).replace(/[–—]/g, "-").replace(/\r/g, "\n");
     const lines = source.split(/\n|;/).map((line) => line.replace(/\s+/g, " ").trim()).filter(Boolean);
@@ -129,13 +156,14 @@
       const rawMarker = band.trim().replace(/^[\s|:;,-]+|[\s|:;,-]+$/g, "");
       const marker = rawMarker ? rawMarker.toUpperCase().slice(0, 30) : "__EMPTY__";
       const learnedTitle = readLearning()[marker];
-      const knownFree = marker === "__EMPTY__" || /^(A|F|FREI|OFF|—|-)$/i.test(marker);
-      return { id: `import-${Date.now()}-${index}`, date: `${year}-${String(month).padStart(2, "0")}-${String(row.day).padStart(2, "0")}`, start: free ? "" : times[0], end: free ? "" : times[1], break: free ? 0 : 30, title: free ? learnedTitle || (knownFree ? "Frei" : `Prüfen: ${rawMarker}`) : /früh/i.test(band) ? "Frühschicht" : /spät/i.test(band) ? "Spätschicht" : /nacht/i.test(band) ? "Nachtschicht" : "Arbeit", sourceMarker: free ? marker : "", note: free ? `${learnedTitle ? "Persönlich gelernt" : "Aus Dienstplan erkannt"}: ${rawMarker || "leeres Feld"}` : "Aus Dienstplan-Screenshot erkannt" };
+      const absenceTitle = /^(U|URLAUB)$/i.test(marker) ? "Urlaub" : /^(K|KRANK)$/i.test(marker) ? "Krank" : /^(A|F|FREI|OFF|—|-|__EMPTY__)$/i.test(marker) ? "Frei" : "";
+      return { id: `import-${Date.now()}-${index}`, date: `${year}-${String(month).padStart(2, "0")}-${String(row.day).padStart(2, "0")}`, start: free ? "" : times[0], end: free ? "" : times[1], break: free ? 0 : 30, title: free ? learnedTitle || absenceTitle || `Prüfen: ${rawMarker}` : /früh/i.test(band) ? "Frühschicht" : /spät/i.test(band) ? "Spätschicht" : /nacht/i.test(band) ? "Nachtschicht" : "Arbeit", sourceMarker: free ? marker : "", note: free ? `${learnedTitle ? "Persönlich gelernt" : "Aus Dienstplan erkannt"}: ${rawMarker || "leeres Feld"}` : "Aus Dienstplan-Screenshot erkannt" };
     });
   };
   window.TimeFlowPrivateScheduleParser = parse;
   window.TimeFlowPrivateScheduleLayoutParser = parseLayout;
   window.TimeFlowPrivateScheduleMerge = mergeEntries;
+  window.TimeFlowPrivateScheduleImport = { validateImportFile, validEntry, saveEntries };
   async function pdfText(file) {
     const pdfjs = await import(PDFJS_MODULE_URL);
     pdfjs.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
@@ -148,12 +176,23 @@
     status.textContent = "Das Bild wird lokal gelesen – das kann einen Moment dauern …";
     const module = await import(TESSERACT_MODULE_URL);
     const api = module.default || module;
-    const bitmap = await createImageBitmap(file);
-    const scale = Math.max(1, Math.min(2.5, 2400 / Math.max(bitmap.width, bitmap.height)));
+    let image;
+    try {
+      if (typeof createImageBitmap === "function") image = await createImageBitmap(file);
+    } catch (_error) { /* Safari fallback below. */ }
+    if (!image) {
+      const objectUrl = URL.createObjectURL(file);
+      try {
+        image = await new Promise((resolve, reject) => {
+          const element = new Image(); element.onload = () => resolve(element); element.onerror = () => reject(importError("Das Bild konnte nicht dekodiert werden. Bitte JPG oder PNG verwenden.")); element.src = objectUrl;
+        });
+      } finally { URL.revokeObjectURL(objectUrl); }
+    }
+    const scale = Math.max(1, Math.min(2.5, 2400 / Math.max(image.width, image.height)));
     const canvas = document.createElement("canvas");
-    canvas.width = Math.round(bitmap.width * scale); canvas.height = Math.round(bitmap.height * scale);
+    canvas.width = Math.round(image.width * scale); canvas.height = Math.round(image.height * scale);
     const context = canvas.getContext("2d", { willReadFrequently: true });
-    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height); bitmap.close?.();
+    context.drawImage(image, 0, 0, canvas.width, canvas.height); image.close?.();
     const pixels = context.getImageData(0, 0, canvas.width, canvas.height); let brightness = 0;
     for (let index = 0; index < pixels.data.length; index += 4) brightness += (pixels.data[index] + pixels.data[index + 1] + pixels.data[index + 2]) / 3;
     const invert = brightness / (pixels.data.length / 4) < 128;
@@ -165,26 +204,28 @@
       langPath: TESSERACT_LANGUAGE_URL,
       logger: (message) => { if (message.status === "recognizing text") status.textContent = `Texterkennung: ${Math.round((message.progress || 0) * 100)} %`; }
     });
-    await worker.setParameters({ tessedit_pageseg_mode: "11", preserve_interword_spaces: "1" });
-    const result = await worker.recognize(canvas, {}, { blocks: true });
-    status.textContent = "Wochentage und Datumswerte werden gezielt zugeordnet …";
-    const dayCanvas = document.createElement("canvas"); dayCanvas.width = Math.max(180, Math.round(canvas.width * .3)); dayCanvas.height = canvas.height;
-    dayCanvas.getContext("2d").drawImage(canvas, 0, 0, dayCanvas.width, dayCanvas.height, 0, 0, dayCanvas.width, dayCanvas.height);
-    await worker.setParameters({ tessedit_pageseg_mode: "6", preserve_interword_spaces: "1" });
-    const dayResult = await worker.recognize(dayCanvas, {}, { blocks: true });
-    await worker.terminate();
-    const combinedData = { blocks: [...(result.data.blocks || []), ...(dayResult.data.blocks || [])] };
-    return { text: `${result.data.text}\n${dayResult.data.text}`, layoutEntries: parseLayout(combinedData, canvas.width) };
+    try {
+      await worker.setParameters({ tessedit_pageseg_mode: "11", preserve_interword_spaces: "1" });
+      const result = await worker.recognize(canvas, {}, { blocks: true });
+      status.textContent = "Wochentage und Datumswerte werden gezielt zugeordnet …";
+      const dayCanvas = document.createElement("canvas"); dayCanvas.width = Math.max(180, Math.round(canvas.width * .3)); dayCanvas.height = canvas.height;
+      dayCanvas.getContext("2d").drawImage(canvas, 0, 0, dayCanvas.width, dayCanvas.height, 0, 0, dayCanvas.width, dayCanvas.height);
+      await worker.setParameters({ tessedit_pageseg_mode: "6", preserve_interword_spaces: "1" });
+      const dayResult = await worker.recognize(dayCanvas, {}, { blocks: true });
+      const combinedData = { blocks: [...(result.data.blocks || []), ...(dayResult.data.blocks || [])] };
+      return { text: `${result.data.text}\n${dayResult.data.text}`, layoutEntries: parseLayout(combinedData, canvas.width) };
+    } finally { await worker.terminate(); }
   }
   function install() {
     const tabs = document.querySelector("#schedulePage .schedule-tabs");
     if (!tabs || document.querySelector(".private-import-panel")) return;
     const panel = document.createElement("section");
     panel.className = "private-import-panel";
-    panel.innerHTML = `<header><div><small>PRIVAT / EINZELNUTZUNG</small><h2>Mein eigener Dienstplan</h2><p>Lade einen oder mehrere Dienstpläne hoch oder trage deine Einsätze vollständig manuell ein.</p></div><div class="private-import-actions"><button type="button" data-pick-plan><i class="fa-solid fa-file-arrow-up"></i> Dienstplan hochladen</button><button type="button" data-manual-plan><i class="fa-solid fa-pen-to-square"></i> Manuell eintragen</button><button type="button" data-absence-plan><i class="fa-solid fa-calendar-day"></i> Abwesenheit eintragen</button></div></header><input hidden type="file" data-plan-file multiple accept="image/*,.pdf,.csv,.txt,.json,.ics,application/pdf,text/csv,text/plain,application/json,text/calendar"><p class="private-import-formats"><i class="fa-solid fa-file-circle-check"></i> Bilder, Screenshots, PDF, JSON, CSV, TXT und ICS · mehrere Dateien gleichzeitig möglich</p><p class="private-import-note"><i class="fa-solid fa-shield-halved"></i> Auswählen oder Eintragen allein ändert nichts. Die Übernahme erfolgt erst nach deiner ausdrücklichen Zustimmung.</p><p class="private-learning-note" data-learning-note></p>`;
+    panel.innerHTML = `<header><div><small>PRIVAT / EINZELNUTZUNG</small><h2>Mein eigener Dienstplan</h2><p>Lade einen oder mehrere Dienstpläne hoch oder trage deine Einsätze vollständig manuell ein.</p></div><div class="private-import-actions"><button type="button" data-pick-plan><i class="fa-solid fa-file-arrow-up"></i> Dienstplan hochladen</button><button type="button" data-manual-plan><i class="fa-solid fa-pen-to-square"></i> Manuell eintragen</button><button type="button" data-absence-plan><i class="fa-solid fa-calendar-day"></i> Abwesenheit eintragen</button></div></header><input hidden type="file" data-plan-file multiple accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp,.heic,.heif,.pdf,.csv,.txt,.json,.ics,application/pdf,text/csv,text/plain,application/json,text/calendar"><p class="private-import-formats"><i class="fa-solid fa-file-circle-check"></i> PNG, JPG, WEBP, PDF, JSON, CSV, TXT und ICS · mehrere Dateien gleichzeitig möglich</p><p class="private-import-note"><i class="fa-solid fa-shield-halved"></i> HEIC/HEIF bitte vor dem Import als JPG oder PNG exportieren. Auswählen oder Eintragen allein ändert nichts.</p><p class="private-learning-note" data-learning-note></p>`;
     tabs.insertAdjacentElement("afterend", panel);
     document.body.insertAdjacentHTML("beforeend", `<dialog class="private-import-dialog" id="privateImportDialog"><header><div><small>IMPORT-VORSCHAU</small><h2>Erkannte Einsätze prüfen und korrigieren</h2><p data-import-status>Die Datei wird analysiert.</p></div><button type="button" data-close-import aria-label="Schließen"><i class="fa-solid fa-xmark"></i></button></header><form><div class="private-import-toolbar"><span>Jeder Wert kann vor der Übernahme geändert werden.</span><button type="button" data-add-import-row><i class="fa-solid fa-plus"></i> Fehlenden Einsatz ergänzen</button></div><div class="private-import-preview" data-import-preview></div><label class="private-import-consent"><input type="checkbox" data-import-consent><span>Ich habe alle Einträge geprüft und stimme der Übernahme in meinen privaten Dienstplan zu.</span></label><footer><button type="button" data-close-import>Abbrechen</button><button type="submit" data-commit-import disabled><i class="fa-solid fa-check"></i> Verbindlich übernehmen</button></footer></form></dialog><dialog class="private-absence-dialog" id="privateAbsenceDialog"><header><div><small>TAG KENNZEICHNEN</small><h2>Frei oder Abwesenheit eintragen</h2><p>An diesem Tag wird keine Sollzeit berechnet.</p></div><button type="button" data-close-absence aria-label="Schließen"><i class="fa-solid fa-xmark"></i></button></header><form><label>Datum<input name="date" type="date" required></label><label>Art<select name="title"><option value="Frei">Frei</option><option value="Urlaub">Urlaub</option><option value="Krank">Krank</option></select></label><footer><button type="button" data-close-absence>Abbrechen</button><button type="submit"><i class="fa-solid fa-check"></i> Tag speichern</button></footer></form></dialog>`);
     const dialog = document.getElementById("privateImportDialog"); const absenceDialog = document.getElementById("privateAbsenceDialog"); const absenceForm = absenceDialog.querySelector("form"); const input = panel.querySelector("[data-plan-file]"); const status = dialog.querySelector("[data-import-status]"); const preview = dialog.querySelector("[data-import-preview]"); const learningNote = panel.querySelector("[data-learning-note]"); const consent = dialog.querySelector("[data-import-consent]"); const commit = dialog.querySelector("[data-commit-import]"); let entries = []; let visibleWeekStart = "";
+    const setStatus = (message, state = "info") => { status.textContent = message; status.dataset.state = state; };
     const renderLearning = () => { const learned = Object.entries(readLearning()).filter(([marker]) => marker !== "__EMPTY__"); learningNote.innerHTML = learned.length ? `<i class="fa-solid fa-brain"></i> Persönlich gelernt: ${learned.map(([marker, title]) => `${marker} = ${title}`).join(" · ")}` : '<i class="fa-solid fa-brain"></i> TimeFlow lernt deine Dienstplan-Kürzel nach einer geprüften Übernahme.'; };
     const renderScheduleViews = (shifts) => {
       const dayPanel = document.querySelector('#schedulePage [data-panel="day"]'); const weekPanel = document.querySelector('#schedulePage [data-panel="week"]'); const periodPanel = document.querySelector('#schedulePage [data-panel="period"]');
@@ -213,12 +254,17 @@
     });
     panel.querySelector("[data-absence-plan]").addEventListener("click", () => { absenceForm.elements.date.value = new Date().toLocaleDateString("sv-SE"); platform().dialog.open(absenceDialog); });
     absenceDialog.querySelectorAll("[data-close-absence]").forEach((button) => button.addEventListener("click", () => platform().dialog.close(absenceDialog)));
-    absenceForm.addEventListener("submit", (event) => { event.preventDefault(); const entry = { id: `absence-${Date.now()}`, date: absenceForm.elements.date.value, start: "", end: "", break: 0, title: absenceForm.elements.title.value, note: "Persönlich eingetragen" }; platform().storage.setItem(KEY, JSON.stringify(mergeEntries(read(), [entry]))); visibleWeekStart = ""; platform().dialog.close(absenceDialog); renderSaved(); document.dispatchEvent(new CustomEvent("timeflow:private-schedule-updated")); });
+    absenceForm.addEventListener("submit", (event) => { event.preventDefault(); const entry = { id: `absence-${Date.now()}`, date: absenceForm.elements.date.value, start: "", end: "", break: 0, title: absenceForm.elements.title.value, note: "Persönlich eingetragen" }; saveEntries(platform().storage, read(), [entry]); visibleWeekStart = ""; platform().dialog.close(absenceDialog); renderSaved(); document.dispatchEvent(new CustomEvent("timeflow:private-schedule-updated")); });
     document.querySelector('#schedulePage [data-panel="week"]').addEventListener("click", (event) => { const button = event.target.closest("[data-private-week]"); if (!button) return; const date = new Date(`${visibleWeekStart}T12:00:00`); date.setDate(date.getDate() + (button.dataset.privateWeek === "next" ? 7 : -7)); visibleWeekStart = date.toLocaleDateString("sv-SE"); renderSaved(); });
     async function readPlanFile(file, fileIndex) {
-      status.textContent = `${file.name} wird geprüft …`;
-      const imageResult = file.type.startsWith("image/") ? await imageText(file, status) : null;
-      const text = imageResult?.text ?? (file.type === "application/pdf" || /\.pdf$/i.test(file.name) ? await pdfText(file) : await file.text());
+      const kind = validateImportFile(file);
+      setStatus(`${file.name} wird geprüft …`);
+      let imageResult = null;
+      if (kind === "image") {
+        try { imageResult = await imageText(file, status); }
+        catch (error) { throw error.importMessage ? error : importError("Die Texterkennung konnte nicht gestartet werden. Bitte Verbindung, Bildformat und Lesbarkeit prüfen."); }
+      }
+      const text = imageResult?.text ?? (kind === "pdf" ? await pdfText(file) : await file.text());
       let found = imageResult?.layoutEntries?.length ? imageResult.layoutEntries : [];
       if (/\.json$/i.test(file.name) || file.type === "application/json") {
         try {
@@ -228,18 +274,18 @@
         } catch (_error) { found = []; }
       }
       if (!found.length) found = parse(text);
-      return found.map((entry, index) => ({ ...entry, id: `import-${Date.now()}-${fileIndex}-${index}`, sourceFile: file.name }));
+      return found.filter(validEntry).map((entry, index) => ({ ...entry, id: `import-${Date.now()}-${fileIndex}-${index}`, sourceFile: file.name }));
     }
     input.addEventListener("change", async () => {
       const files = [...(input.files || [])]; if (!files.length) return; entries = []; render(); platform().dialog.open(dialog);
       const failed = [];
       for (let index = 0; index < files.length; index += 1) {
         try { entries = mergeEntries(entries, await readPlanFile(files[index], index)); }
-        catch (_error) { failed.push(files[index].name); }
+        catch (error) { failed.push(`${files[index].name}: ${error.importMessage || "Datei konnte nicht gelesen werden."}`); }
       }
-      status.textContent = entries.length
+      setStatus(entries.length
         ? `${entries.length} Tage aus ${files.length} Datei${files.length === 1 ? "" : "en"} erkannt. Bitte alle Angaben kontrollieren.${failed.length ? ` Nicht gelesen: ${failed.join(", ")}.` : ""}`
-        : "Keine vollständigen Einsätze erkannt. Die Angaben können unten manuell ergänzt werden.";
+        : failed.length ? `Es wurden keine Daten übernommen. ${failed.join(" ")}` : "Keine vollständigen Einsätze erkannt. Die Angaben können unten manuell ergänzt werden.", entries.length ? "success" : "error");
       render(); input.value = "";
     });
     preview.addEventListener("input", (event) => { const entry = entries[Number(event.target.dataset.i)]; if (entry && event.target.dataset.field) entry[event.target.dataset.field] = event.target.value; consent.checked = false; commit.disabled = true; });
@@ -248,7 +294,7 @@
     dialog.querySelector("[data-add-import-row]").addEventListener("click", () => { entries.push({ id: `import-${Date.now()}-${entries.length}`, date: new Date().toLocaleDateString("sv-SE"), start: "08:00", end: "16:30", break: 30, title: "Arbeit", note: "In Import-Vorschau ergänzt" }); render(); });
     consent.addEventListener("change", () => { commit.disabled = !consent.checked || !entries.length || entries.some((entry) => !entry.date || (!/^(frei|urlaub|krank)$/i.test(entry.title) && (!entry.start || !entry.end))); });
     dialog.querySelectorAll("[data-close-import]").forEach((button) => button.addEventListener("click", () => platform().dialog.close(dialog)));
-    dialog.querySelector("form").addEventListener("submit", (event) => { event.preventDefault(); if (commit.disabled) return; const learned = readLearning(); entries.filter((entry) => entry.sourceMarker).forEach((entry) => { learned[entry.sourceMarker] = entry.title.trim(); }); writeLearning(learned); const saved = read(); const updated = entries.filter((entry) => saved.some((item) => item.date === entry.date)).length; platform().storage.setItem(KEY, JSON.stringify(mergeEntries(saved, entries))); platform().storage.setItem("timeflow-private-last-import-v1", JSON.stringify({ at: new Date().toISOString(), added: entries.length - updated, updated })); platform().dialog.close(dialog); renderLearning(); renderSaved(); document.dispatchEvent(new CustomEvent("timeflow:private-schedule-updated")); const toast = document.getElementById("toast"); toast.textContent = `${entries.length - updated} Tage ergänzt${updated ? `, ${updated} aktualisiert` : ""}. Persönliche Kürzel wurden gelernt.`; toast.classList.add("is-visible"); });
+    dialog.querySelector("form").addEventListener("submit", (event) => { event.preventDefault(); if (commit.disabled) return; const learned = readLearning(); entries.filter((entry) => entry.sourceMarker).forEach((entry) => { learned[entry.sourceMarker] = entry.title.trim(); }); writeLearning(learned); const saved = read(); const updated = entries.filter((entry) => saved.some((item) => item.date === entry.date)).length; saveEntries(platform().storage, saved, entries); platform().storage.setItem("timeflow-private-last-import-v1", JSON.stringify({ at: new Date().toISOString(), added: entries.length - updated, updated })); platform().dialog.close(dialog); renderLearning(); renderSaved(); document.dispatchEvent(new CustomEvent("timeflow:private-schedule-updated")); const toast = document.getElementById("toast"); toast.textContent = `${entries.length - updated} Tage ergänzt${updated ? `, ${updated} aktualisiert` : ""}. Persönliche Kürzel wurden gelernt.`; toast.classList.add("is-visible"); });
     const updateMode = () => { panel.hidden = !privateMode(); if (privateMode()) { const weekTab = tabs.querySelector('[data-view="week"]'); if (weekTab && weekTab.getAttribute("aria-selected") !== "true") weekTab.click(); renderLearning(); renderSaved(); } }; updateMode(); new MutationObserver(updateMode).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
     document.addEventListener("timeflow:sync-restored", () => { visibleWeekStart = ""; renderLearning(); renderSaved(); });
   }

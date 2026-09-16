@@ -20,9 +20,8 @@ const elements = {
 let state = { isWorking: false, workStart: null, workEnd: null, isPaused: false, pauseStartedAt: null, pauseAccumulatedMs: 0, hasManualPause: false };
 let workTimer;
 let workTimeApi;
-let workTimeServerEnabled = false;
 let workTimeServerMode;
-window.TimeFlowWorkTimeServerEnabled = () => workTimeServerMode === true;
+window.TimeFlowWorkTimeServerEnabled = () => workTimeServerMode === "enabled";
 window.TimeFlowWorkTimeReady = () => workTimeServerMode !== undefined;
 let workTimeReady;
 
@@ -109,20 +108,33 @@ function workTimeClient() {
 }
 async function initialiseWorkTime() {
   const client = workTimeClient();
-  if (!client) { workTimeServerMode = false; return false; }
+  if (!client) { workTimeServerMode = "unavailable"; return workTimeServerMode; }
   try {
-    workTimeServerEnabled = await client.isEnabled(); workTimeServerMode = workTimeServerEnabled;
-    if (workTimeServerEnabled) {
+    const enabled = await client.isEnabled();
+    if (!enabled) {
+      workTimeServerMode = "disabled";
+      return workTimeServerMode;
+    }
+    workTimeServerMode = "enabled";
+    {
       const current = await client.getCurrent();
       applyWorkTimeState(current.state);
     }
-  } catch (_error) { workTimeServerEnabled = false; workTimeServerMode = false; }
-  return workTimeServerEnabled;
+  } catch (_error) {
+    // A transport, authentication or storage failure must never turn an
+    // intended server-authoritative work-time mode into a local fallback.
+    if (workTimeServerMode !== "enabled") workTimeServerMode = "unavailable";
+  }
+  return workTimeServerMode;
 }
-function ensureWorkTimeReady() { return workTimeReady || (workTimeReady = initialiseWorkTime()); }
+function ensureWorkTimeReady() {
+  if (workTimeServerMode === "unavailable") workTimeReady = initialiseWorkTime();
+  return workTimeReady || (workTimeReady = initialiseWorkTime());
+}
+function showWorkTimeUnavailable() { showToast("Arbeitszeiterfassung derzeit nicht erreichbar. Es wurde keine lokale Ersatzbuchung erstellt."); }
 async function writeServerWorkTime(eventType, requestedState) {
   const client = workTimeClient();
-  if (!client || !workTimeServerEnabled) return false;
+  if (!client || workTimeServerMode !== "enabled") return false;
   try {
     const result = await client.writeChange({ eventType, state: requestedState });
     if (result.pending) { showToast("Offline gespeichert – wird beim Reconnect gesendet."); return true; }
@@ -135,8 +147,9 @@ async function writeServerWorkTime(eventType, requestedState) {
       showToast("Arbeitszeitkonflikt – bitte bewusst erneut auslösen.");
       return true;
     }
-    if (error.network) { showToast("Offline gespeichert – wird beim Reconnect gesendet."); return true; }
-    showToast("Arbeitszeit konnte nicht gespeichert werden.");
+    if (error.network) { showToast("Arbeitszeit wartet auf Verbindung – es wurde keine lokale Ersatzbuchung erstellt."); return true; }
+    if (error.status === 503 && error.result?.error === "work_time_feature_disabled") workTimeServerMode = "disabled";
+    showWorkTimeUnavailable();
     return true;
   }
 }
@@ -187,9 +200,9 @@ function updateWorkUi() {
 }
 function clockInLocal() { state = { isWorking: true, workStart: new Date(), workEnd: null, isPaused: false, pauseStartedAt: null, pauseAccumulatedMs: 0, hasManualPause: false }; saveWorkday(); startTimer(); updateWorkUi(); showToast("Du bist eingestempelt."); }
 function clockOutLocal() { if (state.isPaused && state.pauseStartedAt) state.pauseAccumulatedMs += new Date() - state.pauseStartedAt; state.isPaused = false; state.pauseStartedAt = null; state.isWorking = false; state.workEnd = new Date(); saveWorkday(); saveCompletedWorkday(); stopTimer(); updateWorkUi(); showToast("Du bist ausgestempelt."); }
-async function clockIn() { await ensureWorkTimeReady(); if (workTimeServerEnabled) { await writeServerWorkTime("CLOCK_IN"); return; } clockInLocal(); }
-async function clockOut() { await ensureWorkTimeReady(); if (workTimeServerEnabled) { await writeServerWorkTime("CLOCK_OUT"); return; } clockOutLocal(); }
-async function togglePause() { if (!state.isWorking) return; await ensureWorkTimeReady(); if (workTimeServerEnabled) { await writeServerWorkTime(state.isPaused ? "PAUSE_END" : "PAUSE_START"); return; } if (state.isPaused) { state.pauseAccumulatedMs += new Date() - state.pauseStartedAt; state.pauseStartedAt = null; state.isPaused = false; showToast("Pause beendet."); } else { state.isPaused = true; state.hasManualPause = true; state.pauseStartedAt = new Date(); showToast("Pause gestartet."); } saveWorkday(); updateWorkUi(); }
+async function clockIn() { const mode = await ensureWorkTimeReady(); if (mode === "enabled") { await writeServerWorkTime("CLOCK_IN"); return; } if (mode === "disabled") { clockInLocal(); return; } showWorkTimeUnavailable(); }
+async function clockOut() { const mode = await ensureWorkTimeReady(); if (mode === "enabled") { await writeServerWorkTime("CLOCK_OUT"); return; } if (mode === "disabled") { clockOutLocal(); return; } showWorkTimeUnavailable(); }
+async function togglePause() { if (!state.isWorking) return; const mode = await ensureWorkTimeReady(); if (mode === "enabled") { await writeServerWorkTime(state.isPaused ? "PAUSE_END" : "PAUSE_START"); return; } if (mode !== "disabled") { showWorkTimeUnavailable(); return; } if (state.isPaused) { state.pauseAccumulatedMs += new Date() - state.pauseStartedAt; state.pauseStartedAt = null; state.isPaused = false; showToast("Pause beendet."); } else { state.isPaused = true; state.hasManualPause = true; state.pauseStartedAt = new Date(); showToast("Pause gestartet."); } saveWorkday(); updateWorkUi(); }
 function startTimer() { stopTimer(); workTimer = window.setInterval(updateWorkUi, 1000); }
 function stopTimer() { if (workTimer) window.clearInterval(workTimer); workTimer = undefined; }
 function showToast(message) { elements.toast.textContent = message; elements.toast.classList.add("is-visible"); window.clearTimeout(showToast.timer); showToast.timer = window.setTimeout(() => elements.toast.classList.remove("is-visible"), 3200); }
@@ -285,8 +298,8 @@ document.addEventListener("timeflow:sync-restored", () => {
   if (state.isWorking) startTimer(); else stopTimer();
 });
 window.addEventListener("online", async () => {
-  await ensureWorkTimeReady();
-  if (!workTimeServerEnabled || !workTimeApi?.getPending?.()) return;
+  const mode = await ensureWorkTimeReady();
+  if (mode !== "enabled" || !workTimeApi?.getPending?.()) return;
   try { const result = await workTimeApi.reconnectPending(); if (result?.state) { applyWorkTimeState(result.state); window.TimeFlowPlatform.storage.removeItem("timeflow-work-time-correction-pending-v1"); } } catch (error) { if (error.status === 409) applyWorkTimeState(error.result?.state); }
 });
 

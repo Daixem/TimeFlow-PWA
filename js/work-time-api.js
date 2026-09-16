@@ -5,6 +5,7 @@
   function errorFromResponse(status, result) { var error = new Error(result && result.error ? result.error : "work_time_" + status); error.status = status; error.result = result || {}; return error; }
   function create(options) {
     var storage = options.storage, request = options.request || root.fetch.bind(root), baseUrl = options.baseUrl || new URL("api/work-time", root.document ? root.document.baseURI : "https://timeflow.invalid/").toString();
+    var reconnectInFlight = null;
     function read(key, fallback) { return parse(storage.getItem(key), fallback); }
     function write(key, value) { storage.setItem(key, JSON.stringify(value)); }
     function clear(key) { storage.removeItem(key); }
@@ -38,7 +39,13 @@
         throw error;
       }
     }
-    async function reconnectPending() { var pending = read(PENDING_KEY, null); if (!pending || !pending.change) return { pending: false }; return writeChange(pending.change); }
+    async function reconnectPending() {
+      if (reconnectInFlight) return reconnectInFlight;
+      var pending = read(PENDING_KEY, null);
+      if (!pending || !pending.change) return { pending: false };
+      reconnectInFlight = writeChange(pending.change);
+      try { return await reconnectInFlight; } finally { reconnectInFlight = null; }
+    }
     async function loadServerConflictVersion(applyLocalState) { var conflict = read(CONFLICT_KEY, null); if (!conflict || !conflict.active) return null; if (typeof applyLocalState === "function") await applyLocalState(conflict.serverState); saveCurrent({ state: conflict.serverState, revision: conflict.serverRevision, updatedAt: conflict.updatedAt }); clear(CONFLICT_KEY); return conflict.serverState; }
     async function reapplyLocalConflictVersion() { var conflict = read(CONFLICT_KEY, null); if (!conflict || !conflict.active) return null; try { return await send(conflict.localChange, conflict.serverRevision); } catch (error) { if (error.status === 409) error.conflict = preserveConflict(conflict.localChange, error.result || {}); throw error; } }
     return { getCurrent: getCurrent, getJournal: getJournal, isEnabled: isEnabled, writeChange: writeChange, reconnectPending: reconnectPending, loadServerConflictVersion: loadServerConflictVersion, reapplyLocalConflictVersion: reapplyLocalConflictVersion, getMeta: meta, getPending: function () { return read(PENDING_KEY, null); }, getConflict: function () { return read(CONFLICT_KEY, null); } };

@@ -11,6 +11,14 @@ const context = { window: { TimeFlowPlatform: { storage } }, document: { readySt
 vm.runInNewContext(code, context);
 const parse = context.window.TimeFlowPrivateScheduleParser;
 const merge = context.window.TimeFlowPrivateScheduleMerge;
+const importApi = context.window.TimeFlowPrivateScheduleImport;
+if (!importApi || importApi.validateImportFile({ name: "plan.PNG", type: "image/png", size: 4096 }) !== "image" || importApi.validateImportFile({ name: "plan.jpg", type: "", size: 4096 }) !== "image") throw new Error("PNG/JPG-Dateien werden nicht als aktive Bildimporte akzeptiert.");
+if (!importApi.validEntry({ date: "2026-09-01", start: "08:00", end: "16:00", title: "Arbeit" }) || importApi.validEntry({ date: "", start: "08:00", end: "16:00", title: "Arbeit" }) || importApi.validEntry({ date: "2026-09-01", start: "29:99", end: "16:00", title: "Arbeit" })) throw new Error("Importvorschau validiert vollständige Schichten nicht korrekt.");
+for (const file of [{ name: "plan.heic", type: "image/heic", size: 1 }, { name: "plan.docx", type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", size: 1 }, { name: "large.png", type: "image/png", size: 26 * 1024 * 1024 }]) {
+  try { importApi.validateImportFile(file); throw new Error(`${file.name} wurde nicht abgelehnt.`); } catch (error) { if (!error.importMessage) throw error; }
+}
+const savedByActiveImportPath = importApi.saveEntries(storage, [], [{ date: "2026-09-03", start: "08:00", end: "16:00", break: 30, title: "Arbeit" }]);
+if (savedByActiveImportPath.length !== 1 || JSON.parse(storage.getItem("timeflow-private-schedule-v1") || "[]")[0]?.date !== "2026-09-03") throw new Error("Der aktive Importpfad speichert bestätigte Daten nicht im privaten Dienstplanmodell.");
 const mergedPlans = merge([{ date: "2026-09-01", start: "08:00", end: "16:00" }], [{ date: "2026-09-01", start: "09:00", end: "17:00" }, { date: "2026-09-02", start: "08:00", end: "16:00" }]);
 if (mergedPlans.length !== 2 || mergedPlans[0].start !== "09:00") throw new Error("Mehrfach-Import: neue Pläne werden nicht ergänzt oder vorhandene Tage nicht aktualisiert.");
 const weekly = parse("Woche 31.08 - 06.09\nMo 31\n-\nDi 1\nHotel Rezeption\n07:30 - 15:00\nMi 2\n07.30 – 15.00\nDo 3\n0730 bis 1500\nFr 4\n7 Uhr - 15 Uhr");

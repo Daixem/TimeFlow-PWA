@@ -102,7 +102,36 @@ if (pendingWrites.length !== 2 || pendingWrites[1].expectedRevision !== 8 || pen
 
 for (const status of [401, 403]) {
   const rejected = create({ storage: new MemoryStorage(), request: async () => response(status, { error: "rejected" }) });
-  try { await rejected.getCurrent(); throw new Error(`Expected ${status}.`); } catch (error) { if (error.status !== status) throw error; }
+  try { await rejected.isEnabled(); throw new Error(`Expected ${status}.`); } catch (error) { if (error.status !== status) throw error; }
 }
+
+for (const status of [500, 409]) {
+  let writes = 0;
+  const rejected = create({ storage: new MemoryStorage(), request: async (_path, options = {}) => {
+    if (options.method === "GET") return response(200, { state: { isWorking: false }, revision: 0 });
+    writes += 1;
+    return response(status, { error: status === 409 ? "work_time_conflict" : "storage_unavailable", state: { isWorking: false }, revision: 1 });
+  } });
+  await rejected.isEnabled();
+  try { await rejected.writeChange({ eventType: "CLOCK_IN" }); throw new Error(`Expected ${status}.`); } catch (error) { if (error.status !== status) throw error; }
+  if (writes !== 1 || rejected.getPending()) throw new Error(`${status} must not create a local fallback or pending replacement write.`);
+}
+
+let networkWrites = 0;
+const unavailable = create({ storage: new MemoryStorage(), request: async () => { networkWrites += 1; throw new TypeError("network unavailable"); } });
+try { await unavailable.isEnabled(); throw new Error("Expected network availability error."); } catch (error) { if (!error.network) throw error; }
+if (networkWrites !== 1 || unavailable.getPending()) throw new Error("An unavailable initial server must not create a local replacement booking.");
+
+let simultaneousWrites = 0;
+const reconnectStorage = new MemoryStorage({ "timeflow-work-time-meta-v1": JSON.stringify({ revision: 1 }) });
+const reconnectClient = create({ storage: reconnectStorage, request: async (_path, options = {}) => {
+  if (options.method === "GET") return response(200, { state: { isWorking: false }, revision: 1 });
+  simultaneousWrites += 1;
+  await new Promise((resolve) => setTimeout(resolve, 5));
+  return response(200, { state: { isWorking: true }, revision: 2 });
+} });
+reconnectStorage.setItem("timeflow-work-time-pending-v1", JSON.stringify({ change: { eventType: "CLOCK_IN", expectedRevision: 1 } }));
+await Promise.all([reconnectClient.reconnectPending(), reconnectClient.reconnectPending()]);
+if (simultaneousWrites !== 1) throw new Error("Reconnect must perform one controlled write, not a double-write.");
 
 console.log("Work-time client: feature gate, dedicated revision, API actions, 401/403/409, offline pending, reconnect and no automatic conflict retry verified.");

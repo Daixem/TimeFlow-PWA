@@ -9,7 +9,12 @@ for (const marker of [
   'TESSERACT_MODULE_URL = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.esm.min.js"',
   'workerPath: TESSERACT_WORKER_URL',
   'corePath: TESSERACT_CORE_URL',
-  'langPath: TESSERACT_LANGUAGE_URL'
+  'langPath: TESSERACT_LANGUAGE_URL',
+  'await api.createWorker("deu", 1, {',
+  'URL.createObjectURL(file)',
+  'URL.revokeObjectURL(objectUrl)',
+  'finally { await worker.terminate(); }',
+  'HEIC/HEIF wird auf diesem Gerät noch nicht unterstützt'
 ]) {
   if (!source.includes(marker)) throw new Error(`PDF-/OCR-Quelle oder Pfad fehlt: ${marker}`);
 }
@@ -17,7 +22,8 @@ for (const marker of [
 for (const marker of [
   "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net",
   "connect-src 'self' https://cdn.jsdelivr.net",
-  "worker-src 'self' blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net"
+  "worker-src 'self' blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net",
+  "img-src 'self' data: blob:"
 ]) {
   if (!worker.includes(marker)) throw new Error(`CSP erlaubt die erforderliche PDF-/OCR-Quelle nicht: ${marker}`);
 }
