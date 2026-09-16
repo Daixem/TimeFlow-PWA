@@ -132,11 +132,11 @@ function ensureWorkTimeReady() {
   return workTimeReady || (workTimeReady = initialiseWorkTime());
 }
 function showWorkTimeUnavailable() { showToast("Arbeitszeiterfassung derzeit nicht erreichbar. Es wurde keine lokale Ersatzbuchung erstellt."); }
-async function writeServerWorkTime(eventType, requestedState) {
+async function writeServerWorkTime(eventType) {
   const client = workTimeClient();
   if (!client || workTimeServerMode !== "enabled") return false;
   try {
-    const result = await client.writeChange({ eventType, state: requestedState });
+    const result = await client.writeChange({ eventType });
     if (result.pending) { showToast("Offline gespeichert – wird beim Reconnect gesendet."); return true; }
     applyWorkTimeState(result.state);
     showToast(eventType === "CLOCK_IN" ? "Du bist eingestempelt." : eventType === "CLOCK_OUT" ? "Du bist ausgestempelt." : eventType === "PAUSE_START" ? "Pause gestartet." : "Pause beendet.");

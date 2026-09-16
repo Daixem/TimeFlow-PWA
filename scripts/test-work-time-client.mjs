@@ -48,10 +48,17 @@ if (clockIn.expectedRevision !== 7 || "actor_user_id" in clockIn || "server_time
 await client.writeChange({ eventType: "CLOCK_OUT" });
 await client.writeChange({ eventType: "PAUSE_START" });
 await client.writeChange({ eventType: "PAUSE_END" });
-await client.writeChange({ eventType: "TIME_CORRECTION", state: { isWorking: false, note: "own" } });
-await client.writeChange({ eventType: "ADMIN_CORRECTION", userId: "other-user", state: { isWorking: false } });
+await client.writeChange({ eventType: "TIME_CORRECTION", correctionId: "client-correction", date: "2026-09-16", adjustmentMinutes: 15, note: "own", state: { isWorking: false }, actor_user_id: "forged" });
+const correctionPayload = calls.at(-1).payload;
+if (correctionPayload.correctionId !== "client-correction" || correctionPayload.adjustmentMinutes !== 15 || "state" in correctionPayload || "actor_user_id" in correctionPayload) throw new Error("Client correction must send only the narrow command.");
+await client.writeChange({ eventType: "MANUAL_ENTRY", date: "2026-09-16", start: "08:00", end: "16:00", breakMinutes: 30, note: "manual", state: { isWorking: true } });
+const manualPayload = calls.at(-1).payload;
+if (manualPayload.start !== "08:00" || manualPayload.breakMinutes !== 30 || "state" in manualPayload) throw new Error("Client manual entry must send only the narrow command.");
+await client.writeChange({ eventType: "ADMIN_CORRECTION", userId: "other-user", correctionId: "admin-client-correction", date: "2026-09-16", adjustmentMinutes: -15, note: "admin", state: { isWorking: false } });
+const adminPayload = calls.at(-1).payload;
+if (adminPayload.userId !== "other-user" || adminPayload.adjustmentMinutes !== -15 || "state" in adminPayload) throw new Error("Client admin correction must send only the narrow command.");
 await client.getJournal();
-if (client.getMeta().revision !== 13) throw new Error("Server responses did not update the separate work-time revision.");
+if (client.getMeta().revision !== 14) throw new Error("Server responses did not update the separate work-time revision.");
 
 let conflictWrites = 0;
 const conflictStorage = new MemoryStorage({ "timeflow-work-time-meta-v1": JSON.stringify({ revision: 3, updatedAt: "old" }) });

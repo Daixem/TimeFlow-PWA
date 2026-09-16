@@ -146,13 +146,50 @@ function validExpectedRevision(value) {
   return typeof value === "number" && Number.isInteger(value) && value >= 0;
 }
 
-function parsedWorkTimeState(value) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  const state = { ...value };
-  // Audit and authorization fields have no place in a client-controlled state.
-  for (const key of ["actor_user_id", "server_timestamp", "server_updated_at", "revision", "user_id", "admin"]) delete state[key];
-  const json = JSON.stringify(state);
-  return json.length <= 32768 ? state : null;
+const WORK_TIME_COMMAND_FIELDS = {
+  CLOCK_IN: ["eventType", "expectedRevision"],
+  CLOCK_OUT: ["eventType", "expectedRevision"],
+  PAUSE_START: ["eventType", "expectedRevision"],
+  PAUSE_END: ["eventType", "expectedRevision"],
+  TIME_CORRECTION: ["eventType", "expectedRevision", "correctionId", "date", "adjustmentMinutes", "note"],
+  MANUAL_ENTRY: ["eventType", "expectedRevision", "date", "start", "end", "breakMinutes", "note"],
+  ADMIN_CORRECTION: ["eventType", "expectedRevision", "userId", "correctionId", "date", "adjustmentMinutes", "note"]
+};
+
+function validWorkTimeDate(value) {
+  if (typeof value !== "string" || !/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+  const parsed = new Date(value + "T00:00:00.000Z");
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
+function validWorkTimeClock(value) {
+  if (typeof value !== "string" || !/^\\d{2}:\\d{2}$/.test(value)) return false;
+  const [hours, minutes] = value.split(":").map(Number);
+  return hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60;
+}
+
+function validWorkTimeNote(value) {
+  return typeof value === "string" && value.trim().length <= 500;
+}
+
+// Commands are deliberately narrow. In particular, the client can never send
+// a replacement current-state object for a correction or manual entry.
+function parsedWorkTimeCommand(body) {
+  if (!body || typeof body !== "object" || Array.isArray(body)) return null;
+  const eventType = typeof body.eventType === "string" ? body.eventType : "";
+  const allowed = WORK_TIME_COMMAND_FIELDS[eventType];
+  if (!allowed || !validExpectedRevision(body.expectedRevision) || Object.keys(body).some((key) => !allowed.includes(key))) return null;
+  if (["CLOCK_IN", "CLOCK_OUT", "PAUSE_START", "PAUSE_END"].includes(eventType)) return { eventType, expectedRevision: body.expectedRevision };
+  if (eventType === "TIME_CORRECTION" || eventType === "ADMIN_CORRECTION") {
+    if (typeof body.correctionId !== "string" || !/^[A-Za-z0-9_-]{1,80}$/.test(body.correctionId) || !validWorkTimeDate(body.date) || !Number.isInteger(body.adjustmentMinutes) || body.adjustmentMinutes < -1440 || body.adjustmentMinutes > 1440 || !validWorkTimeNote(body.note)) return null;
+    if (eventType === "ADMIN_CORRECTION" && (typeof body.userId !== "string" || !/^[A-Za-z0-9_-]{1,160}$/.test(body.userId))) return null;
+    return { eventType, expectedRevision: body.expectedRevision, ...(eventType === "ADMIN_CORRECTION" ? { userId: body.userId } : {}), correctionId: body.correctionId, date: body.date, adjustmentMinutes: body.adjustmentMinutes, note: body.note.trim() };
+  }
+  if (!validWorkTimeDate(body.date) || !validWorkTimeClock(body.start) || !validWorkTimeClock(body.end) || !Number.isInteger(body.breakMinutes) || body.breakMinutes < 0 || body.breakMinutes > 720 || !validWorkTimeNote(body.note)) return null;
+  const [startHours, startMinutes] = body.start.split(":").map(Number), [endHours, endMinutes] = body.end.split(":").map(Number);
+  const duration = (endHours * 60 + endMinutes) - (startHours * 60 + startMinutes);
+  if (duration <= 0 || duration > 16 * 60 || body.breakMinutes >= duration) return null;
+  return { eventType, expectedRevision: body.expectedRevision, date: body.date, start: body.start, end: body.end, breakMinutes: body.breakMinutes, note: body.note.trim() };
 }
 
 function storedWorkTimeState(row) {
@@ -175,7 +212,8 @@ function workTimeServerEnabled(env) {
   return env?.TIMEFLOW_WORK_TIME_SERVER_ENABLED === "true";
 }
 
-function serverWorkTimeState(eventType, currentState, requestedState, now) {
+function serverWorkTimeState(command, currentState, now) {
+  const eventType = command.eventType;
   if (eventType === "CLOCK_IN") {
     if (currentState?.isWorking) return null;
     return { isWorking: true, workStart: now, workEnd: null, isPaused: false, pauseStartedAt: null, pauseAccumulatedMs: 0, hasManualPause: false };
@@ -193,7 +231,14 @@ function serverWorkTimeState(eventType, currentState, requestedState, now) {
     if (!currentState?.isWorking || !currentState.isPaused || !currentState.pauseStartedAt) return null;
     return { ...currentState, isPaused: false, pauseStartedAt: null, pauseAccumulatedMs: Math.max(0, Number(currentState.pauseAccumulatedMs || 0)) + Math.max(0, Date.parse(now) - Date.parse(currentState.pauseStartedAt)) };
   }
-  return parsedWorkTimeState(requestedState);
+  const base = currentState ? { ...currentState } : { isWorking: false, workStart: null, workEnd: null, isPaused: false, pauseStartedAt: null, pauseAccumulatedMs: 0, hasManualPause: false };
+  if (eventType === "TIME_CORRECTION" || eventType === "ADMIN_CORRECTION") {
+    const corrections = Array.isArray(base.manualCorrections) ? base.manualCorrections.filter((item) => item && typeof item === "object") : [];
+    if (corrections.some((item) => item.id === command.correctionId)) return null;
+    return { ...base, manualCorrections: [...corrections, { id: command.correctionId, date: command.date, adjustmentMinutes: command.adjustmentMinutes, note: command.note }].slice(-366) };
+  }
+  const entries = Array.isArray(base.manualEntries) ? base.manualEntries.filter((item) => item && typeof item === "object") : [];
+  return { ...base, manualEntries: [...entries, { date: command.date, start: command.start, end: command.end, breakMinutes: command.breakMinutes, note: command.note }].slice(-366) };
 }
 
 async function ensureTeamTables(database) {
@@ -380,10 +425,15 @@ async function handleSupport(request, env, url) {
   return jsonResponse({ ticket: await supportTicketWithMessages(env.DB, await env.DB.prepare("SELECT * FROM timeflow_support_tickets WHERE id = ?").bind(ticketId).first()) });
 }
 
-async function workTimeTarget(user, access, value) {
+async function workTimeTarget(user, access, value, env) {
   const requested = typeof value === "string" ? value.trim() : "";
   if (!requested || requested === user.id) return { userId: user.id, adminCorrection: false };
   if (!access.admin) return null;
+  // TimeFlow currently has a single closed-beta tenant. A cross-user admin
+  // correction is nevertheless restricted to a server-verified beta account;
+  // arbitrary external IDs can never become work-time targets.
+  const targetAccess = await betaAccess({ authenticated: true, id: requested }, env);
+  if (!targetAccess.allowed) return null;
   return { userId: requested, adminCorrection: true };
 }
 
@@ -396,7 +446,7 @@ async function handleWorkTime(request, env, url) {
   if (!env?.DB) return jsonResponse({ error: "storage_unavailable" }, 503);
 
   if (request.method === "GET") {
-    const target = await workTimeTarget(user, access, url.searchParams.get("userId"));
+    const target = await workTimeTarget(user, access, url.searchParams.get("userId"), env);
     if (!target) return jsonResponse({ error: "work_time_forbidden" }, 403);
     const row = await env.DB.prepare("SELECT state_json, revision, server_updated_at FROM timeflow_work_time_current WHERE user_id = ?").bind(target.userId).first();
     if (!row) return jsonResponse({ state: null, revision: 0, updatedAt: null });
@@ -411,20 +461,19 @@ async function handleWorkTime(request, env, url) {
   if (Number(request.headers.get("Content-Length") || 0) > 65536) return jsonResponse({ error: "payload_too_large" }, 413);
   let body;
   try { body = await request.json(); } catch { return jsonResponse({ error: "invalid_json" }, 400); }
-  if (!validExpectedRevision(body?.expectedRevision)) return jsonResponse({ error: "invalid_expected_revision" }, 400);
-  const target = await workTimeTarget(user, access, body?.userId);
+  const command = parsedWorkTimeCommand(body);
+  if (!command) return jsonResponse({ error: "invalid_work_time_command" }, 400);
+  const eventType = command.eventType;
+  const target = await workTimeTarget(user, access, command.userId, env);
   if (!target) return jsonResponse({ error: "work_time_forbidden" }, 403);
-  let eventType = typeof body?.eventType === "string" ? body.eventType : "";
-  if (!WORK_TIME_EVENT_TYPES.has(eventType)) return jsonResponse({ error: "invalid_work_time_event" }, 400);
   if (target.adminCorrection && eventType !== "ADMIN_CORRECTION") return jsonResponse({ error: "admin_correction_event_required" }, 400);
   if (!target.adminCorrection && eventType === "ADMIN_CORRECTION") return jsonResponse({ error: "admin_required" }, 403);
-  if (["TIME_CORRECTION", "ADMIN_CORRECTION", "MANUAL_ENTRY"].includes(eventType) && !parsedWorkTimeState(body?.state)) return jsonResponse({ error: "invalid_work_time_state" }, 400);
-  const effectiveTimestamp = typeof body?.effectiveTimestamp === "string" && body.effectiveTimestamp.length <= 64 ? body.effectiveTimestamp : null;
+  const effectiveTimestamp = command.date || null;
   const now = new Date().toISOString();
   const row = await env.DB.prepare("SELECT state_json, revision, server_updated_at FROM timeflow_work_time_current WHERE user_id = ?").bind(target.userId).first();
   const currentState = row ? storedWorkTimeState(row) : null;
   if (row && !currentState) return jsonResponse({ error: "stored_work_time_invalid" }, 500);
-  const nextState = serverWorkTimeState(eventType, currentState, body?.state, now);
+  const nextState = serverWorkTimeState(command, currentState, now);
   if (!nextState) return jsonResponse({ error: "invalid_work_time_transition" }, 409);
   const stateJson = JSON.stringify(nextState);
   const source = workTimeSource(eventType, target.adminCorrection);
@@ -432,25 +481,25 @@ async function handleWorkTime(request, env, url) {
 
   try {
     if (!row) {
-      if (body.expectedRevision !== 0) return jsonResponse({ error: "work_time_conflict", revision: 0, state: null, updatedAt: null }, 409);
+      if (command.expectedRevision !== 0) return jsonResponse({ error: "work_time_conflict", revision: 0, state: null, updatedAt: null }, 409);
       const statement = env.DB.prepare("INSERT INTO timeflow_work_time_current (user_id, state_json, revision, last_actor_user_id, last_event_type, last_source, effective_timestamp, server_updated_at, created_at) VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?) ON CONFLICT(user_id) DO NOTHING").bind(target.userId, stateJson, actorUserId, eventType, source, effectiveTimestamp, now, now);
       const result = await env.DB.batch([statement]);
       if ((result?.[0]?.meta?.changes || 0) === 1) return jsonResponse({ saved: true, revision: 1, state: nextState, updatedAt: now }, 201);
     } else {
-      const statement = env.DB.prepare("UPDATE timeflow_work_time_current SET state_json = ?, revision = revision + 1, last_actor_user_id = ?, last_event_type = ?, last_source = ?, effective_timestamp = ?, server_updated_at = ? WHERE user_id = ? AND revision = ?").bind(stateJson, actorUserId, eventType, source, effectiveTimestamp, now, target.userId, body.expectedRevision);
+      const statement = env.DB.prepare("UPDATE timeflow_work_time_current SET state_json = ?, revision = revision + 1, last_actor_user_id = ?, last_event_type = ?, last_source = ?, effective_timestamp = ?, server_updated_at = ? WHERE user_id = ? AND revision = ?").bind(stateJson, actorUserId, eventType, source, effectiveTimestamp, now, target.userId, command.expectedRevision);
       const result = await env.DB.batch([statement]);
-      if ((result?.[0]?.meta?.changes || 0) === 1) return jsonResponse({ saved: true, revision: body.expectedRevision + 1, state: nextState, updatedAt: now });
+      if ((result?.[0]?.meta?.changes || 0) === 1) return jsonResponse({ saved: true, revision: command.expectedRevision + 1, state: nextState, updatedAt: now });
       // Remote D1 preview can report an unreliable meta.changes value; verify
       // the committed row before classifying an otherwise successful write as a conflict.
       if ((result?.[0]?.meta?.changes || 0) !== 1) {
         const committed = await env.DB.prepare("SELECT state_json, revision, last_actor_user_id, last_event_type, last_source, effective_timestamp, server_updated_at FROM timeflow_work_time_current WHERE user_id = ?").bind(target.userId).first();
-        if (Number(committed?.revision) === body.expectedRevision + 1
+        if (Number(committed?.revision) === command.expectedRevision + 1
           && String(committed.state_json) === stateJson
           && String(committed.last_actor_user_id) === actorUserId
           && String(committed.last_event_type) === eventType
           && String(committed.last_source) === source
           && (committed.effective_timestamp || null) === (effectiveTimestamp || null)
-          && String(committed.server_updated_at) === now) return jsonResponse({ saved: true, revision: body.expectedRevision + 1, state: nextState, updatedAt: now });
+          && String(committed.server_updated_at) === now) return jsonResponse({ saved: true, revision: command.expectedRevision + 1, state: nextState, updatedAt: now });
       }
     }
   } catch {
@@ -470,7 +519,7 @@ async function handleWorkTimeJournal(request, env, url) {
   if (!access.allowed) return jsonResponse({ error: "beta_access_required" }, 403);
   if (!env?.DB) return jsonResponse({ error: "storage_unavailable" }, 503);
   if (request.method !== "GET") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "GET" });
-  const target = await workTimeTarget(user, access, url.searchParams.get("userId"));
+  const target = await workTimeTarget(user, access, url.searchParams.get("userId"), env);
   if (!target) return jsonResponse({ error: "work_time_forbidden" }, 403);
   const rows = await env.DB.prepare("SELECT id, user_id, actor_user_id, event_type, source, revision, effective_timestamp, server_timestamp, previous_state_json, new_state_json FROM timeflow_work_time_journal WHERE user_id = ? ORDER BY revision DESC LIMIT 200").bind(target.userId).all();
   return jsonResponse({ events: rows?.results || [] });

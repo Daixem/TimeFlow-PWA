@@ -105,13 +105,14 @@ const disabled = await worker.fetch(new Request("https://timeflow.test/api/work-
 if (disabled.status !== 503) throw new Error("The server work-time feature gate must default to a disabled response.");
 await expectStatus("/api/work-time", 200, { headers: headersFor(normalUserId) });
 await expectStatus("/api/work-time", 400, { method: "PUT", headers: { ...headersFor(normalUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ expectedRevision: "0", eventType: "CLOCK_IN" }) });
+await expectStatus("/api/work-time", 400, { method: "PUT", headers: { ...headersFor(normalUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ expectedRevision: 0, eventType: "CLOCK_IN", server_timestamp: "2099-01-01T00:00:00.000Z" }) });
 
 let response = await expectStatus("/api/work-time", 201, {
   method: "PUT", headers: { ...headersFor(normalUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" },
-  body: JSON.stringify({ expectedRevision: 0, eventType: "CLOCK_IN", actor_user_id: adminUserId, server_timestamp: "2099-01-01T00:00:00.000Z", admin: true })
+  body: JSON.stringify({ expectedRevision: 0, eventType: "CLOCK_IN" })
 });
 let body = await response.json();
-if (body.revision !== 1 || database.journal.length !== 1 || database.journal[0].actor_user_id !== normalUserId || database.journal[0].server_timestamp === "2099-01-01T00:00:00.000Z") throw new Error("CLOCK_IN must use server actor and server time.");
+if (body.revision !== 1 || database.journal.length !== 1 || database.journal[0].actor_user_id !== normalUserId) throw new Error("CLOCK_IN must use the authenticated server actor.");
 
 await expectStatus("/api/work-time", 200, { headers: headersFor(normalUserId) });
 const beforeInvalidPayload = database.journal.length;
@@ -126,26 +127,39 @@ if ((await response.json()).revision !== 3) throw new Error("PAUSE_END revision 
 response = await put(normalUserId, { expectedRevision: 3, eventType: "CLOCK_OUT" });
 if ((await response.json()).revision !== 4) throw new Error("CLOCK_OUT revision invalid.");
 
-response = await put(normalUserId, { expectedRevision: 4, eventType: "TIME_CORRECTION", state: { isWorking: false, note: "corrected", actor_user_id: adminUserId, revision: 99 } });
+const correction = { expectedRevision: 4, eventType: "TIME_CORRECTION", correctionId: "correction-1", date: "2026-09-16", adjustmentMinutes: 30, note: "corrected" };
+response = await put(normalUserId, correction);
 body = await response.json();
-if (body.revision !== 5 || database.journal.at(-1).actor_user_id !== normalUserId || Object.hasOwn(body.state, "actor_user_id") || Object.hasOwn(body.state, "revision")) throw new Error("Own correction accepted client audit fields.");
+if (body.revision !== 5 || database.journal.at(-1).actor_user_id !== normalUserId || body.state.isWorking || body.state.manualCorrections.at(-1).adjustmentMinutes !== 30) throw new Error("Own correction must be server-computed without changing the clock state.");
+
+for (const field of [{ isWorking: true }, { revision: 999 }, { actor_user_id: adminUserId }, { server_timestamp: "2099-01-01T00:00:00.000Z" }, { state: { isWorking: true } }, { unknown: true }]) {
+  await expectStatus("/api/work-time", 400, { method: "PUT", headers: { ...headersFor(normalUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ ...correction, ...field }) });
+}
+if (database.journal.length !== 5) throw new Error("Rejected correction command created a journal event.");
 
 const beforeForbidden = database.journal.length;
-await expectStatus("/api/work-time", 403, { method: "PUT", headers: { ...headersFor(normalUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ userId: otherUserId, expectedRevision: 0, eventType: "TIME_CORRECTION", state: { isWorking: false } }) });
+await expectStatus("/api/work-time", 400, { method: "PUT", headers: { ...headersFor(normalUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ userId: otherUserId, ...correction }) });
 if (database.current.has(otherUserId) || database.journal.length !== beforeForbidden) throw new Error("Forbidden cross-user correction changed data.");
+await expectStatus("/api/work-time", 403, { method: "PUT", headers: { ...headersFor(normalUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ userId: otherUserId, expectedRevision: 0, eventType: "ADMIN_CORRECTION", correctionId: "forbidden-admin-correction", date: "2026-09-16", adjustmentMinutes: 10, note: "forbidden" }) });
+await expectStatus("/api/work-time", 403, { method: "PUT", headers: { ...headersFor(adminUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ userId: "outside-timeflow-beta", expectedRevision: 0, eventType: "ADMIN_CORRECTION", correctionId: "outside-admin-correction", date: "2026-09-16", adjustmentMinutes: 10, note: "outside" }) });
+if (database.journal.length !== beforeForbidden) throw new Error("Forbidden admin correction created a journal event.");
 
-response = await expectStatus("/api/work-time", 201, { method: "PUT", headers: { ...headersFor(adminUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ userId: otherUserId, expectedRevision: 0, eventType: "ADMIN_CORRECTION", state: { isWorking: false }, actor_user_id: normalUserId }) });
+response = await expectStatus("/api/work-time", 201, { method: "PUT", headers: { ...headersFor(adminUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ userId: otherUserId, expectedRevision: 0, eventType: "ADMIN_CORRECTION", correctionId: "admin-correction-1", date: "2026-09-16", adjustmentMinutes: -15, note: "admin correction" }) });
 if ((await response.json()).revision !== 1 || database.journal.at(-1).actor_user_id !== adminUserId || database.journal.at(-1).event_type !== "ADMIN_CORRECTION") throw new Error("Admin correction actor binding invalid.");
 
 const beforeStale = database.journal.length;
-await expectStatus("/api/work-time", 409, { method: "PUT", headers: { ...headersFor(normalUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ expectedRevision: 4, eventType: "MANUAL_ENTRY", state: { value: "stale" } }) });
+const manualEntry = { eventType: "MANUAL_ENTRY", date: "2026-09-16", start: "08:00", end: "16:00", breakMinutes: 30, note: "manual entry" };
+await expectStatus("/api/work-time", 409, { method: "PUT", headers: { ...headersFor(normalUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ ...manualEntry, expectedRevision: 4 }) });
 if (database.current.get(normalUserId).revision !== 5 || database.journal.length !== beforeStale) throw new Error("Stale revision wrote current or journal.");
 
-response = await put(normalUserId, { expectedRevision: 5, eventType: "MANUAL_ENTRY", state: { value: "parallel-a" } });
+for (const invalidManual of [{ start: "28:00" }, { end: "07:00" }, { breakMinutes: -1 }, { actor_user_id: adminUserId }, { extra: true }]) {
+  await expectStatus("/api/work-time", 400, { method: "PUT", headers: { ...headersFor(normalUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ ...manualEntry, expectedRevision: 5, ...invalidManual }) });
+}
+response = await put(normalUserId, { ...manualEntry, expectedRevision: 5 });
 if ((await response.json()).revision !== 6) throw new Error("Parallel winner failed.");
 const journalAfterWinner = database.journal.length;
-await expectStatus("/api/work-time", 409, { method: "PUT", headers: { ...headersFor(normalUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ expectedRevision: 5, eventType: "MANUAL_ENTRY", state: { value: "parallel-b" } }) });
-if (database.current.get(normalUserId).revision !== 6 || JSON.parse(database.current.get(normalUserId).state_json).value !== "parallel-a" || database.journal.length !== journalAfterWinner) throw new Error("Parallel loser overwrote state or added journal event.");
+await expectStatus("/api/work-time", 409, { method: "PUT", headers: { ...headersFor(normalUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ ...manualEntry, note: "parallel-b", expectedRevision: 5 }) });
+if (database.current.get(normalUserId).revision !== 6 || JSON.parse(database.current.get(normalUserId).state_json).manualEntries.at(-1).note !== "manual entry" || database.journal.length !== journalAfterWinner) throw new Error("Parallel loser overwrote state or added journal event.");
 if (database.journal.filter((event) => event.user_id === normalUserId).length !== 6) throw new Error("Successful writes did not produce exactly one journal event each.");
 
 const failureUser = "work-time-journal-failure";

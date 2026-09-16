@@ -21,9 +21,21 @@
     }
     function safeChange(change, revision) {
       var result = { eventType: change && change.eventType, expectedRevision: revision };
-      if (change && change.state && typeof change.state === "object" && !Array.isArray(change.state)) result.state = change.state;
-      if (change && typeof change.effectiveTimestamp === "string") result.effectiveTimestamp = change.effectiveTimestamp;
-      if (change && typeof change.userId === "string") result.userId = change.userId;
+      var eventType = result.eventType;
+      if (change && (eventType === "TIME_CORRECTION" || eventType === "ADMIN_CORRECTION")) {
+        result.correctionId = change.correctionId;
+        result.date = change.date;
+        result.adjustmentMinutes = change.adjustmentMinutes;
+        result.note = change.note;
+      }
+      if (change && eventType === "ADMIN_CORRECTION") result.userId = change.userId;
+      if (change && eventType === "MANUAL_ENTRY") {
+        result.date = change.date;
+        result.start = change.start;
+        result.end = change.end;
+        result.breakMinutes = change.breakMinutes;
+        result.note = change.note;
+      }
       return result;
     }
     async function getCurrent() { var result = await api(baseUrl, "GET"); if (result.state) saveCurrent(result); return result; }
