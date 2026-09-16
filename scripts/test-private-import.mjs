@@ -7,12 +7,20 @@ for (const marker of ["multiple accept=", "application/pdf", "application/json",
 }
 const memory = new Map();
 const storage = { getItem: (key) => memory.has(key) ? memory.get(key) : null, setItem: (key, value) => memory.set(key, String(value)) };
-const context = { window: { TimeFlowPlatform: { storage } }, document: { readyState: "loading", addEventListener() {} }, console, Date, JSON, String, Number, Array, Math };
+const context = {
+  window: { TimeFlowPlatform: { storage }, location: { href: "https://example.test/TimeFlow-PWA/index.html" }, setTimeout, clearTimeout },
+  document: { readyState: "loading", currentScript: { src: "https://example.test/TimeFlow-PWA/js/private-schedule-import.js" }, addEventListener() {} },
+  console, Date, JSON, String, Number, Array, Math, URL, setTimeout, clearTimeout
+};
 vm.runInNewContext(code, context);
 const parse = context.window.TimeFlowPrivateScheduleParser;
 const merge = context.window.TimeFlowPrivateScheduleMerge;
 const importApi = context.window.TimeFlowPrivateScheduleImport;
 if (!importApi || importApi.validateImportFile({ name: "plan.PNG", type: "image/png", size: 4096 }) !== "image" || importApi.validateImportFile({ name: "plan.jpg", type: "", size: 4096 }) !== "image") throw new Error("PNG/JPG-Dateien werden nicht als aktive Bildimporte akzeptiert.");
+if (code.includes(".heic,.heif")) throw new Error("Die Dateiauswahl darf HEIC/HEIF nicht als unterstütztes Format anbieten.");
+for (const stage of ["Texterkennung wird geladen …", "OCR-Worker wird erstellt …", "Erkannte Daten werden geprüft …", "OCR_MODULE_TIMEOUT_MS"]) {
+  if (!code.includes(stage)) throw new Error(`Bildimport meldet die OCR-Stufe nicht sichtbar: ${stage}`);
+}
 if (!importApi.validEntry({ date: "2026-09-01", start: "08:00", end: "16:00", title: "Arbeit" }) || importApi.validEntry({ date: "", start: "08:00", end: "16:00", title: "Arbeit" }) || importApi.validEntry({ date: "2026-09-01", start: "29:99", end: "16:00", title: "Arbeit" })) throw new Error("Importvorschau validiert vollständige Schichten nicht korrekt.");
 for (const file of [{ name: "plan.heic", type: "image/heic", size: 1 }, { name: "plan.docx", type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", size: 1 }, { name: "large.png", type: "image/png", size: 26 * 1024 * 1024 }]) {
   try { importApi.validateImportFile(file); throw new Error(`${file.name} wurde nicht abgelehnt.`); } catch (error) { if (!error.importMessage) throw error; }

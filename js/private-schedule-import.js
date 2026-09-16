@@ -3,10 +3,18 @@
   const KEY = "timeflow-private-schedule-v1";
   const PDFJS_MODULE_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs";
   const PDFJS_WORKER_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
-  const TESSERACT_MODULE_URL = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.esm.min.js";
-  const TESSERACT_WORKER_URL = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/worker.min.js";
-  const TESSERACT_CORE_URL = "https://cdn.jsdelivr.net/npm/tesseract.js-core@5.1.1";
-  const TESSERACT_LANGUAGE_URL = "https://cdn.jsdelivr.net/npm/@tesseract.js-data/deu@1.0.0/4.0.0";
+  // OCR is a core private-schedule feature. It deliberately uses fixed local
+  // assets rather than an unbounded dynamic CDN import that can stall in a PWA.
+  const importScriptUrl = document.currentScript?.src || window.location.href;
+  const localAssetUrl = (path) => new URL(path, importScriptUrl).toString();
+  const TESSERACT_MODULE_URL = localAssetUrl("../vendor/tesseract/tesseract.esm.min.js");
+  const TESSERACT_WORKER_URL = localAssetUrl("../vendor/tesseract/worker.min.js");
+  const TESSERACT_CORE_URL = localAssetUrl("../vendor/tesseract/core");
+  const TESSERACT_LANGUAGE_URL = localAssetUrl("../vendor/tesseract/lang/4.0.0");
+  const OCR_MODULE_TIMEOUT_MS = 20000;
+  const OCR_WORKER_TIMEOUT_MS = 30000;
+  const OCR_RECOGNITION_TIMEOUT_MS = 90000;
+  const IMAGE_DECODE_TIMEOUT_MS = 15000;
   const MAX_IMAGE_BYTES = 25 * 1024 * 1024;
   const IMAGE_TYPES = new Set(["image/png", "image/jpeg", "image/webp"]);
   const TEXT_EXTENSIONS = new Set(["pdf", "csv", "txt", "json", "ics"]);
@@ -48,6 +56,15 @@
   const dateValue = (text) => { const match = String(text).match(/(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})/); if (!match) return ""; return `${match[3].length === 2 ? "20" + match[3] : match[3]}-${match[2].padStart(2, "0")}-${match[1].padStart(2, "0")}`; };
   const fileExtension = (file) => String(file?.name || "").split(".").pop().toLowerCase();
   const importError = (message) => { const error = new Error(message); error.importMessage = message; return error; };
+  const withTimeout = (promise, timeout, message) => new Promise((resolve, reject) => {
+    const timer = window.setTimeout(() => reject(importError(message)), timeout);
+    Promise.resolve(promise).then((value) => { window.clearTimeout(timer); resolve(value); }, (error) => { window.clearTimeout(timer); reject(error); });
+  });
+  const stage = (status, message, state = "info") => {
+    status.textContent = message;
+    status.dataset.state = state;
+    console.info("[TimeFlow schedule import]", message);
+  };
   const validateImportFile = (file) => {
     const type = String(file?.type || "").toLowerCase(); const extension = fileExtension(file);
     if (["heic", "heif"].includes(extension) || ["image/heic", "image/heif"].includes(type)) throw importError("HEIC/HEIF wird auf diesem Gerät noch nicht unterstützt. Bitte als JPG oder PNG exportieren.");
@@ -65,6 +82,10 @@
     const validTime = (value) => /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(String(value || ""));
     return validTime(entry.start) && validTime(entry.end) && entry.start !== entry.end;
   };
+  const entryQuality = (entries) => entries.reduce((score, entry) => {
+    if (!validEntry(entry)) return score;
+    return score + (entry.start && entry.end ? 3 : 1);
+  }, 0);
   const parse = (text) => {
     const source = String(text).replace(/[–—]/g, "-").replace(/\r/g, "\n");
     const lines = source.split(/\n|;/).map((line) => line.replace(/\s+/g, " ").trim()).filter(Boolean);
@@ -164,30 +185,39 @@
   window.TimeFlowPrivateScheduleLayoutParser = parseLayout;
   window.TimeFlowPrivateScheduleMerge = mergeEntries;
   window.TimeFlowPrivateScheduleImport = { validateImportFile, validEntry, saveEntries };
-  async function pdfText(file) {
-    const pdfjs = await import(PDFJS_MODULE_URL);
+  async function pdfText(file, status) {
+    stage(status, "PDF wird vorbereitet …");
+    let pdfjs;
+    try { pdfjs = await withTimeout(import(PDFJS_MODULE_URL), OCR_MODULE_TIMEOUT_MS, "PDF-Komponente konnte nicht geladen werden."); }
+    catch (error) { throw error.importMessage ? error : importError("PDF-Komponente konnte nicht geladen werden."); }
     pdfjs.GlobalWorkerOptions.workerSrc = PDFJS_WORKER_URL;
-    const pdf = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
+    const pdf = await withTimeout(pdfjs.getDocument({ data: await file.arrayBuffer() }).promise, OCR_RECOGNITION_TIMEOUT_MS, "PDF konnte nicht gelesen werden.");
     let text = "";
     for (let number = 1; number <= pdf.numPages; number += 1) { const content = await (await pdf.getPage(number)).getTextContent(); text += `\n${content.items.map((item) => item.str).join(" ")}`; }
     return text;
   }
   async function imageText(file, status) {
-    status.textContent = "Das Bild wird lokal gelesen – das kann einen Moment dauern …";
-    const module = await import(TESSERACT_MODULE_URL);
+    stage(status, "Datei akzeptiert. Bild wird vorbereitet …");
+    stage(status, "Texterkennung wird geladen …");
+    let module;
+    try { module = await withTimeout(import(TESSERACT_MODULE_URL), OCR_MODULE_TIMEOUT_MS, "Texterkennung konnte nicht gestartet werden. OCR-Komponente konnte nicht geladen werden."); }
+    catch (error) { throw error.importMessage ? error : importError("Texterkennung konnte nicht gestartet werden. OCR-Komponente konnte nicht geladen werden."); }
+    stage(status, "Texterkennung geladen. Bild wird dekodiert …");
     const api = module.default || module;
+    if (!api || typeof api.createWorker !== "function") throw importError("Texterkennung konnte nicht gestartet werden. OCR-Komponente ist ungültig.");
     let image;
     try {
-      if (typeof createImageBitmap === "function") image = await createImageBitmap(file);
+      if (typeof createImageBitmap === "function") image = await withTimeout(createImageBitmap(file), IMAGE_DECODE_TIMEOUT_MS, "Das Bild konnte nicht rechtzeitig dekodiert werden.");
     } catch (_error) { /* Safari fallback below. */ }
     if (!image) {
       const objectUrl = URL.createObjectURL(file);
       try {
-        image = await new Promise((resolve, reject) => {
+        image = await withTimeout(new Promise((resolve, reject) => {
           const element = new Image(); element.onload = () => resolve(element); element.onerror = () => reject(importError("Das Bild konnte nicht dekodiert werden. Bitte JPG oder PNG verwenden.")); element.src = objectUrl;
-        });
+        }), IMAGE_DECODE_TIMEOUT_MS, "Das Bild konnte nicht rechtzeitig dekodiert werden.");
       } finally { URL.revokeObjectURL(objectUrl); }
     }
+    stage(status, "Bild dekodiert. OCR-Worker wird erstellt …");
     const scale = Math.max(1, Math.min(2.5, 2400 / Math.max(image.width, image.height)));
     const canvas = document.createElement("canvas");
     canvas.width = Math.round(image.width * scale); canvas.height = Math.round(image.height * scale);
@@ -198,30 +228,43 @@
     const invert = brightness / (pixels.data.length / 4) < 128;
     for (let index = 0; index < pixels.data.length; index += 4) { let gray = .299 * pixels.data[index] + .587 * pixels.data[index + 1] + .114 * pixels.data[index + 2]; if (invert) gray = 255 - gray; gray = gray > 155 ? 255 : gray < 80 ? 0 : gray; pixels.data[index] = pixels.data[index + 1] = pixels.data[index + 2] = gray; }
     context.putImageData(pixels, 0, 0);
-    const worker = await api.createWorker("deu", 1, {
-      workerPath: TESSERACT_WORKER_URL,
-      corePath: TESSERACT_CORE_URL,
-      langPath: TESSERACT_LANGUAGE_URL,
-      logger: (message) => { if (message.status === "recognizing text") status.textContent = `Texterkennung: ${Math.round((message.progress || 0) * 100)} %`; }
-    });
+    let worker;
     try {
+      worker = await withTimeout(api.createWorker("deu", 1, {
+        workerPath: TESSERACT_WORKER_URL,
+        corePath: TESSERACT_CORE_URL,
+        langPath: TESSERACT_LANGUAGE_URL,
+        logger: (message) => {
+          if (message.status === "loading language traineddata") stage(status, "Deutsche Sprache wird geladen …");
+          else if (message.status === "recognizing text") stage(status, `Dienstplan wird gelesen: ${Math.round((message.progress || 0) * 100)} %`);
+        }
+      }), OCR_WORKER_TIMEOUT_MS, "Texterkennung konnte nicht gestartet werden. OCR-Worker, Core oder deutsche Sprachdatei konnten nicht geladen werden.");
+      stage(status, "OCR-Worker erstellt. Dienstplan wird gelesen …");
       await worker.setParameters({ tessedit_pageseg_mode: "11", preserve_interword_spaces: "1" });
-      const result = await worker.recognize(canvas, {}, { blocks: true });
-      status.textContent = "Wochentage und Datumswerte werden gezielt zugeordnet …";
+      const result = await withTimeout(worker.recognize(canvas, {}, { blocks: true }), OCR_RECOGNITION_TIMEOUT_MS, "Die Texterkennung hat zu lange gedauert. Bitte einen kleineren oder klareren Screenshot verwenden.");
+      stage(status, "Erkannte Daten werden geprüft …");
       const dayCanvas = document.createElement("canvas"); dayCanvas.width = Math.max(180, Math.round(canvas.width * .3)); dayCanvas.height = canvas.height;
       dayCanvas.getContext("2d").drawImage(canvas, 0, 0, dayCanvas.width, dayCanvas.height, 0, 0, dayCanvas.width, dayCanvas.height);
       await worker.setParameters({ tessedit_pageseg_mode: "6", preserve_interword_spaces: "1" });
-      const dayResult = await worker.recognize(dayCanvas, {}, { blocks: true });
+      const dayResult = await withTimeout(worker.recognize(dayCanvas, {}, { blocks: true }), OCR_RECOGNITION_TIMEOUT_MS, "Die Datumsprüfung hat zu lange gedauert. Bitte einen kleineren oder klareren Screenshot verwenden.");
       const combinedData = { blocks: [...(result.data.blocks || []), ...(dayResult.data.blocks || [])] };
+      stage(status, "Parser startet …");
       return { text: `${result.data.text}\n${dayResult.data.text}`, layoutEntries: parseLayout(combinedData, canvas.width) };
-    } finally { await worker.terminate(); }
+    } catch (error) {
+      throw error.importMessage ? error : importError("Die Texterkennung ist fehlgeschlagen. Bitte Bildformat, Lesbarkeit und Verbindung prüfen.");
+    } finally {
+      if (worker) {
+        try { await withTimeout(worker.terminate(), 5000, ""); }
+        catch (_error) { console.warn("[TimeFlow schedule import] OCR-Worker konnte nicht rechtzeitig beendet werden."); }
+      }
+    }
   }
   function install() {
     const tabs = document.querySelector("#schedulePage .schedule-tabs");
     if (!tabs || document.querySelector(".private-import-panel")) return;
     const panel = document.createElement("section");
     panel.className = "private-import-panel";
-    panel.innerHTML = `<header><div><small>PRIVAT / EINZELNUTZUNG</small><h2>Mein eigener Dienstplan</h2><p>Lade einen oder mehrere Dienstpläne hoch oder trage deine Einsätze vollständig manuell ein.</p></div><div class="private-import-actions"><button type="button" data-pick-plan><i class="fa-solid fa-file-arrow-up"></i> Dienstplan hochladen</button><button type="button" data-manual-plan><i class="fa-solid fa-pen-to-square"></i> Manuell eintragen</button><button type="button" data-absence-plan><i class="fa-solid fa-calendar-day"></i> Abwesenheit eintragen</button></div></header><input hidden type="file" data-plan-file multiple accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp,.heic,.heif,.pdf,.csv,.txt,.json,.ics,application/pdf,text/csv,text/plain,application/json,text/calendar"><p class="private-import-formats"><i class="fa-solid fa-file-circle-check"></i> PNG, JPG, WEBP, PDF, JSON, CSV, TXT und ICS · mehrere Dateien gleichzeitig möglich</p><p class="private-import-note"><i class="fa-solid fa-shield-halved"></i> HEIC/HEIF bitte vor dem Import als JPG oder PNG exportieren. Auswählen oder Eintragen allein ändert nichts.</p><p class="private-learning-note" data-learning-note></p>`;
+    panel.innerHTML = `<header><div><small>PRIVAT / EINZELNUTZUNG</small><h2>Mein eigener Dienstplan</h2><p>Lade einen oder mehrere Dienstpläne hoch oder trage deine Einsätze vollständig manuell ein.</p></div><div class="private-import-actions"><button type="button" data-pick-plan><i class="fa-solid fa-file-arrow-up"></i> Dienstplan hochladen</button><button type="button" data-manual-plan><i class="fa-solid fa-pen-to-square"></i> Manuell eintragen</button><button type="button" data-absence-plan><i class="fa-solid fa-calendar-day"></i> Abwesenheit eintragen</button></div></header><input hidden type="file" data-plan-file multiple accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp,.pdf,.csv,.txt,.json,.ics,application/pdf,text/csv,text/plain,application/json,text/calendar"><p class="private-import-formats"><i class="fa-solid fa-file-circle-check"></i> PNG, JPG, WEBP, PDF, JSON, CSV, TXT und ICS · mehrere Dateien gleichzeitig möglich</p><p class="private-import-note"><i class="fa-solid fa-shield-halved"></i> HEIC/HEIF bitte vor dem Import als JPG oder PNG exportieren. Auswählen oder Eintragen allein ändert nichts.</p><p class="private-learning-note" data-learning-note></p>`;
     tabs.insertAdjacentElement("afterend", panel);
     document.body.insertAdjacentHTML("beforeend", `<dialog class="private-import-dialog" id="privateImportDialog"><header><div><small>IMPORT-VORSCHAU</small><h2>Erkannte Einsätze prüfen und korrigieren</h2><p data-import-status>Die Datei wird analysiert.</p></div><button type="button" data-close-import aria-label="Schließen"><i class="fa-solid fa-xmark"></i></button></header><form><div class="private-import-toolbar"><span>Jeder Wert kann vor der Übernahme geändert werden.</span><button type="button" data-add-import-row><i class="fa-solid fa-plus"></i> Fehlenden Einsatz ergänzen</button></div><div class="private-import-preview" data-import-preview></div><label class="private-import-consent"><input type="checkbox" data-import-consent><span>Ich habe alle Einträge geprüft und stimme der Übernahme in meinen privaten Dienstplan zu.</span></label><footer><button type="button" data-close-import>Abbrechen</button><button type="submit" data-commit-import disabled><i class="fa-solid fa-check"></i> Verbindlich übernehmen</button></footer></form></dialog><dialog class="private-absence-dialog" id="privateAbsenceDialog"><header><div><small>TAG KENNZEICHNEN</small><h2>Frei oder Abwesenheit eintragen</h2><p>An diesem Tag wird keine Sollzeit berechnet.</p></div><button type="button" data-close-absence aria-label="Schließen"><i class="fa-solid fa-xmark"></i></button></header><form><label>Datum<input name="date" type="date" required></label><label>Art<select name="title"><option value="Frei">Frei</option><option value="Urlaub">Urlaub</option><option value="Krank">Krank</option></select></label><footer><button type="button" data-close-absence>Abbrechen</button><button type="submit"><i class="fa-solid fa-check"></i> Tag speichern</button></footer></form></dialog>`);
     const dialog = document.getElementById("privateImportDialog"); const absenceDialog = document.getElementById("privateAbsenceDialog"); const absenceForm = absenceDialog.querySelector("form"); const input = panel.querySelector("[data-plan-file]"); const status = dialog.querySelector("[data-import-status]"); const preview = dialog.querySelector("[data-import-preview]"); const learningNote = panel.querySelector("[data-learning-note]"); const consent = dialog.querySelector("[data-import-consent]"); const commit = dialog.querySelector("[data-commit-import]"); let entries = []; let visibleWeekStart = "";
@@ -264,7 +307,7 @@
         try { imageResult = await imageText(file, status); }
         catch (error) { throw error.importMessage ? error : importError("Die Texterkennung konnte nicht gestartet werden. Bitte Verbindung, Bildformat und Lesbarkeit prüfen."); }
       }
-      const text = imageResult?.text ?? (kind === "pdf" ? await pdfText(file) : await file.text());
+      const text = imageResult?.text ?? (kind === "pdf" ? await pdfText(file, status) : await file.text());
       let found = imageResult?.layoutEntries?.length ? imageResult.layoutEntries : [];
       if (/\.json$/i.test(file.name) || file.type === "application/json") {
         try {
@@ -273,8 +316,15 @@
           if (Array.isArray(list)) found = list.map((item, index) => ({ id: `import-${Date.now()}-${fileIndex}-${index}`, date: item.date || item.day, start: item.start || item.begin || "", end: item.end || item.finish || "", break: Number(item.break ?? item.pause ?? 30), title: item.title || item.shift || item.type || "Arbeit", note: `Aus ${file.name} importiert` })).filter((item) => item.date);
         } catch (_error) { found = []; }
       }
-      if (!found.length) found = parse(text);
-      return found.filter(validEntry).map((entry, index) => ({ ...entry, id: `import-${Date.now()}-${fileIndex}-${index}`, sourceFile: file.name }));
+      const textEntries = parse(text);
+      // OCR layout information is useful for grid-like rosters, but it must
+      // never hide a more complete text result. This also protects against a
+      // partially read weekday column being mistaken for several free days.
+      if (entryQuality(textEntries) > entryQuality(found)) found = textEntries;
+      const valid = found.filter(validEntry).map((entry, index) => ({ ...entry, id: `import-${Date.now()}-${fileIndex}-${index}`, sourceFile: file.name }));
+      if (!valid.length) throw importError("Keine lesbaren Schichten erkannt. Es wurde nichts gespeichert. Bitte Bild und Vorschau prüfen.");
+      stage(status, `${valid.length} Einträge erkannt. Vorschau wird angezeigt.`, "success");
+      return valid;
     }
     input.addEventListener("change", async () => {
       const files = [...(input.files || [])]; if (!files.length) return; entries = []; render(); platform().dialog.open(dialog);

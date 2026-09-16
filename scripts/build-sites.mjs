@@ -7,7 +7,7 @@ const output = new URL("../dist/server/", import.meta.url);
 const releaseBuild = process.argv.includes("--release");
 if (releaseBuild) assertCleanWorkingTree(root);
 const publicEntries = ["index.html", "manifest.webmanifest", "sw.js"];
-const publicDirectories = ["assets", "css", "js"];
+const publicDirectories = ["assets", "css", "js", "vendor"];
 const contentTypes = {
   ".css": "text/css; charset=utf-8",
   ".html": "text/html; charset=utf-8",
@@ -15,6 +15,8 @@ const contentTypes = {
   ".json": "application/json; charset=utf-8",
   ".png": "image/png",
   ".svg": "image/svg+xml",
+  ".wasm": "application/wasm",
+  ".gz": "application/octet-stream",
   ".webmanifest": "application/manifest+json; charset=utf-8"
 };
 
@@ -64,7 +66,7 @@ function decode(value) {
 }
 
 const RATE_WINDOWS = new Map();
-const SECURITY_CSP = "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob:; connect-src 'self' https://cdn.jsdelivr.net; worker-src 'self' blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; manifest-src 'self'";
+const SECURITY_CSP = "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob: https://cdnjs.cloudflare.com; manifest-src 'self'";
 
 function securityHeaders(initial = {}) {
   const headers = new Headers(initial);
