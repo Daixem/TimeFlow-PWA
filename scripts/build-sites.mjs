@@ -57,6 +57,7 @@ const BUILD_METADATA = ${JSON.stringify(buildMetadata)};
 const BUILD_VERSION = ${JSON.stringify(buildVersion)};
 const MAIN_RELEASE_ORIGIN = "https://daixem.github.io/TimeFlow-PWA";
 const SYNC_KEYS = ["timeflow-profile-v1", "timeflow-settings-v1", "timeflow-profile-preferences-v1", "timeflow-custom-background-v1", "timeflow-private-schedule-v1", "timeflow-private-schedule-learning-v1", "timeflow-private-account-v1", "timeflow-worktime-audit-v1", "timeflow-monthly-targets-v1", "timeflow-private-setup-v1", "timeflow-beta-consent-v1", "timeflow-workday-v2", "timeflow-notifications-v1", "timeflow-notification-read-v1", "timeflow-quick-actions-v1"];
+const WORK_TIME_SNAPSHOT_KEYS = new Set(["timeflow-workday-v2", "timeflow-workday-history-v1", "timeflow-private-account-v1", "timeflow-worktime-audit-v1", "timeflow-work-time-current-v1", "timeflow-work-time-meta-v1", "timeflow-work-time-pending-v1", "timeflow-work-time-conflict-v1", "timeflow-work-time-correction-pending-v1", "timeflow-work-time-sessions-v1"]);
 
 function decode(value) {
   const binary = atob(value);
@@ -132,10 +133,12 @@ async function ensureSyncTable(database) {
   await database.prepare("CREATE TABLE IF NOT EXISTS timeflow_user_sync (user_id TEXT PRIMARY KEY NOT NULL, payload_json TEXT NOT NULL DEFAULT '{}', revision INTEGER NOT NULL DEFAULT 1 CHECK (revision > 0), updated_at TEXT NOT NULL)").run();
 }
 
-function validatedSnapshot(value) {
+function snapshotKeys(env) { return workTimeServerEnabled(env) ? SYNC_KEYS.filter((key) => !WORK_TIME_SNAPSHOT_KEYS.has(key)) : SYNC_KEYS; }
+
+function validatedSnapshot(value, env) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const snapshot = {};
-  for (const key of SYNC_KEYS) {
+  for (const key of snapshotKeys(env)) {
     const item = value[key];
     if (item && typeof item === "object") snapshot[key] = item;
   }
@@ -556,7 +559,7 @@ async function handleSync(request, env, url) {
     const row = await env.DB.prepare("SELECT payload_json, revision, updated_at FROM timeflow_user_sync WHERE user_id = ?").bind(user.id).first();
     if (!row) return jsonResponse({ snapshot: null, revision: 0, updatedAt: null });
     try {
-      return jsonResponse({ snapshot: JSON.parse(row.payload_json), revision: row.revision, updatedAt: row.updated_at });
+      return jsonResponse({ snapshot: validatedSnapshot(JSON.parse(row.payload_json), env) || {}, revision: row.revision, updatedAt: row.updated_at });
     } catch {
       return jsonResponse({ error: "stored_data_invalid" }, 500);
     }
@@ -570,7 +573,7 @@ async function handleSync(request, env, url) {
     if (contentLength > 1048576) return jsonResponse({ error: "payload_too_large" }, 413);
     let body;
     try { body = await request.json(); } catch { return jsonResponse({ error: "invalid_json" }, 400); }
-    const snapshot = validatedSnapshot(body?.snapshot);
+    const snapshot = validatedSnapshot(body?.snapshot, env);
     if (!snapshot) return jsonResponse({ error: "invalid_snapshot" }, 400);
     const expectedRevision = Number(body?.expectedRevision);
     if (!Number.isInteger(expectedRevision) || expectedRevision < 0) return jsonResponse({ error: "invalid_expected_revision" }, 400);
@@ -584,7 +587,7 @@ async function handleSync(request, env, url) {
     const updated = await env.DB.prepare("UPDATE timeflow_user_sync SET payload_json = ?, revision = revision + 1, updated_at = ? WHERE user_id = ? AND revision = ?").bind(payloadJson, updatedAt, user.id, expectedRevision).run();
     if ((updated?.meta?.changes || 0) === 1) return jsonResponse({ saved: true, revision: expectedRevision + 1, updatedAt });
     const current = await env.DB.prepare("SELECT payload_json, revision, updated_at FROM timeflow_user_sync WHERE user_id = ?").bind(user.id).first();
-    let data = null; try { data = current ? JSON.parse(current.payload_json) : null; } catch {}
+    let data = null; try { data = current ? (validatedSnapshot(JSON.parse(current.payload_json), env) || {}) : null; } catch {}
     return jsonResponse({ error: "sync_conflict", revision: current?.revision || 0, data, updatedAt: current?.updated_at || null }, 409);
   }
 

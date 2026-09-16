@@ -9,6 +9,8 @@
   const SERVER_SESSIONS_KEY = "timeflow-work-time-sessions-v1";
   const SCHEDULE_KEY = "timeflow-private-schedule-v1";
   const platform = () => window.TimeFlowPlatform;
+  const serverMode = () => Boolean(window.TimeFlowWorkTimeSnapshotAuthority?.());
+  const currentWorkday = () => serverMode() ? readObject("timeflow-work-time-current-v1") : readObject("timeflow-workday-v2");
   const read = () => {
     let entries = [];
     try { const value = JSON.parse(platform().storage.getItem(KEY) || "[]"); entries = Array.isArray(value) ? value : []; } catch (_error) { entries = []; }
@@ -137,6 +139,7 @@
   }
   function captureCompletedWorkday() {
     if (window.TimeFlowWorkTimeReady && (!window.TimeFlowWorkTimeReady() || window.TimeFlowWorkTimeServerEnabled?.())) return;
+    if (serverMode()) return;
     let workday; try { workday = JSON.parse(platform().storage.getItem("timeflow-workday-v2") || "null"); } catch (_error) { return; }
     if (!workday?.workStart || !workday.workEnd || workday.isWorking) return;
     const entries = read(); const id = `stamp-${workday.workEnd}`; if (entries.some((entry) => entry.id === id)) return;
@@ -148,7 +151,7 @@
     const monthEntries = read().filter((entry) => String(entry.date || "").startsWith(month));
     let stamped = monthEntries.filter(isWork).reduce((sum, entry) => sum + Number(entry.minutes || 0), 0);
     const manual = monthEntries.filter(isCorrection).reduce((sum, entry) => sum + Number(entry.adjustment || 0), 0);
-    const workday = readObject("timeflow-workday-v2");
+    const workday = currentWorkday();
     if (workday?.isWorking && String(workday.workStart || "").slice(0, 7) === month) {
       const gross = Math.max(0, Math.floor((Date.now() - new Date(workday.workStart).getTime()) / 60000));
       const config = settings();
@@ -176,7 +179,7 @@
     captureCompletedWorkday();
     const target = dailyTarget();
     const completed = read().filter((entry) => String(entry.date || "").startsWith(month) && isWork(entry)).reduce((sum, entry) => sum + Math.max(0, Number(entry.minutes || 0) - target), 0);
-    const workday = readObject("timeflow-workday-v2");
+    const workday = currentWorkday();
     if (!workday?.isWorking || String(workday.workStart || "").slice(0, 7) !== month) return completed;
     const gross = Math.max(0, Math.floor((Date.now() - new Date(workday.workStart).getTime()) / 60000));
     const runningPause = workday.isPaused && workday.pauseStartedAt ? Math.max(0, Date.now() - new Date(workday.pauseStartedAt).getTime()) : 0;

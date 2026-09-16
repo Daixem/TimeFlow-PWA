@@ -98,9 +98,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function serverWorkTimeAuthority() { return window.TimeFlowWorkTimeSnapshotAuthority?.() !== false; }
+
   function readState() {
     try {
-      const saved = JSON.parse(window.TimeFlowPlatform.storage.getItem(STORAGE_KEY));
+      const key = serverWorkTimeAuthority() ? "timeflow-work-time-current-v1" : STORAGE_KEY;
+      const saved = JSON.parse(window.TimeFlowPlatform.storage.getItem(key));
       return saved && saved.workStart ? saved : { isWorking: false, workStart: null, workEnd: null };
     } catch {
       return { isWorking: false, workStart: null, workEnd: null };
@@ -161,6 +164,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   elements.action.addEventListener("click", () => document.dispatchEvent(new CustomEvent("timeflow:toggle-clock")));
   document.addEventListener("timeflow:workday-updated", renderClock);
+  document.addEventListener("timeflow:work-time-mode", renderClock);
   document.addEventListener("timeflow:settings-updated", renderClock);
   window.setInterval(renderClock, 1000);
   renderClock();

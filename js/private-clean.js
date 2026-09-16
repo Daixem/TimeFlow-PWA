@@ -6,6 +6,7 @@
   const buildId = (() => { try { return new URL(document.currentScript?.src || location.href).searchParams.get("v"); } catch { return null; } })();
   const updateNewsEntry = (build) => !build ? null : { id: `timeflow-update-${build}`, type: "system", category: "system", title: "TimeFlow wurde aktualisiert", body: "Ein neues Update wurde erfolgreich installiert.", createdAt: new Date().toISOString(), read: false, action: "" };
   const isPrivate = () => document.documentElement.classList.contains("timeflow-private-mode") || document.body.dataset.appMode === "private";
+  const currentWorkday = () => read(window.TimeFlowWorkTimeSnapshotAuthority?.() !== false ? "timeflow-work-time-current-v1" : "timeflow-workday-v2", null);
   const schedule = () => { const value = read("timeflow-private-schedule-v1", []); return Array.isArray(value) ? value.sort((a, b) => `${a.date}${a.start}`.localeCompare(`${b.date}${b.start}`)) : []; };
   const history = () => { const value = read("timeflow-workday-history-v1", []); return Array.isArray(value) ? value.sort((a, b) => String(a.workEnd || "").localeCompare(String(b.workEnd || ""))) : []; };
   const dateText = (date) => new Date(`${date}T12:00:00`).toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" });
@@ -45,11 +46,11 @@
     if (profileName?.textContent.trim() === "Max Mustermann") { profileName.textContent = "Privates Profil"; if (userName?.textContent.trim() === "Max") userName.textContent = "du"; if (initials?.textContent.trim() === "MM") initials.textContent = "P"; }
     const eyebrow = document.querySelector("#profilePage .profile-eyebrow"); if (eyebrow) eyebrow.innerHTML = '<i class="fa-solid fa-user"></i> Einzelnutzung';
     const profileCopy = document.querySelector("#profilePage .profile-page-header>div>p"); if (profileCopy) profileCopy.textContent = "Deine persönlichen Einstellungen und lokalen Daten.";
-    const status = document.querySelector("#profilePage .profile-status"); const workday = read("timeflow-workday-v2", null); if (status) status.innerHTML = `<i></i> ${workday?.isWorking ? "Im Dienst" : "Nicht im Dienst"}`;
+    const status = document.querySelector("#profilePage .profile-status"); const workday = currentWorkday(); if (status) status.innerHTML = `<i></i> ${workday?.isWorking ? "Im Dienst" : "Nicht im Dienst"}`;
   }
   function buildNotifications() {
     if (!isPrivate()) return;
-    const result = []; const now = new Date(); const shifts = schedule(); const next = shifts.find((entry) => working(entry) && new Date(`${entry.date}T${entry.start}:00`) > now); const workday = read("timeflow-workday-v2", null);
+    const result = []; const now = new Date(); const shifts = schedule(); const next = shifts.find((entry) => working(entry) && new Date(`${entry.date}T${entry.start}:00`) > now); const workday = currentWorkday();
     const updateNews = window.TimeFlowUpdateNews?.entry?.(); if (updateNews) result.push(updateNews);
     if (next) { const start = new Date(`${next.date}T${next.start}:00`); const hours = (start - now) / 3600000; if (hours <= 48) result.push({ id: `private-next-${next.date}-${next.start}`, type: "schedule", category: "schedule", title: "Geplanter Einsatz", body: `${dateText(next.date)} · ${next.start} – ${next.end} Uhr`, createdAt: new Date().toISOString(), read: false, action: "schedule" }); }
     const lastImport = read("timeflow-private-last-import-v1", null); if (lastImport?.at && Date.now() - new Date(lastImport.at).getTime() < 86400000) result.push({ id: `private-import-${lastImport.at}`, type: "success", category: "schedule", title: "Dienstplan übernommen", body: `${Number(lastImport.added || 0)} Tage ergänzt${lastImport.updated ? `, ${lastImport.updated} aktualisiert` : ""}.`, createdAt: lastImport.at, read: false, action: "schedule" });

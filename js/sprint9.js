@@ -2,6 +2,7 @@
 
 document.addEventListener("DOMContentLoaded", () => {
   const SYNC_KEYS = ["timeflow-profile-v1", "timeflow-settings-v1", "timeflow-profile-preferences-v1", "timeflow-custom-background-v1", "timeflow-private-schedule-v1", "timeflow-private-schedule-learning-v1", "timeflow-private-account-v1", "timeflow-worktime-audit-v1", "timeflow-monthly-targets-v1", "timeflow-private-setup-v1", "timeflow-beta-consent-v1", "timeflow-workday-v2", "timeflow-notifications-v1", "timeflow-notification-read-v1", "timeflow-quick-actions-v1"];
+  const WORK_TIME_SNAPSHOT_KEYS = new Set(["timeflow-workday-v2", "timeflow-workday-history-v1", "timeflow-private-account-v1", "timeflow-worktime-audit-v1", "timeflow-work-time-current-v1", "timeflow-work-time-meta-v1", "timeflow-work-time-pending-v1", "timeflow-work-time-conflict-v1", "timeflow-work-time-correction-pending-v1", "timeflow-work-time-sessions-v1"]);
   const META_KEY = "timeflow-sync-meta-v1";
   const settingsLayout = document.querySelector("#settingsPage .settings-layout");
   if (!settingsLayout) return;
@@ -30,9 +31,17 @@ document.addEventListener("DOMContentLoaded", () => {
     try { return JSON.parse(value) ?? fallback; } catch { return fallback; }
   }
 
+  function serverWorkTimeAuthority() {
+    // Unknown is deliberately treated as protected until the server feature
+    // explicitly reports that legacy mode is disabled.
+    return window.TimeFlowWorkTimeSnapshotAuthority?.() !== false;
+  }
+
+  function syncKeys() { return serverWorkTimeAuthority() ? SYNC_KEYS.filter((key) => !WORK_TIME_SNAPSHOT_KEYS.has(key)) : SYNC_KEYS; }
+
   function collectSnapshot() {
     const snapshot = {};
-    SYNC_KEYS.forEach((key) => {
+    syncKeys().forEach((key) => {
       const value = parseJson(window.TimeFlowPlatform.storage.getItem(key));
       if (value && typeof value === "object") snapshot[key] = value;
     });
@@ -41,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function applySnapshot(snapshot) {
     if (!snapshot || typeof snapshot !== "object") return;
-    SYNC_KEYS.forEach((key) => {
+    syncKeys().forEach((key) => {
       const value = snapshot[key];
       if (value && typeof value === "object") window.TimeFlowPlatform.storage.setItem(key, JSON.stringify(value));
       else window.TimeFlowPlatform.storage.removeItem(key);
@@ -177,6 +186,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function scheduleWorkdayUpload() {
+    if (serverWorkTimeAuthority()) return;
     const current = window.TimeFlowPlatform.storage.getItem("timeflow-workday-v2") || "";
     // The running clock emits a UI update every second. Only persist when the
     // stored workday itself changed (clock-in/out or pause), never on timer ticks.
@@ -205,6 +215,9 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("timeflow:private-account-updated", scheduleUpload);
   document.addEventListener("timeflow:private-schedule-updated", scheduleUpload);
   document.addEventListener("timeflow:workday-updated", scheduleWorkdayUpload);
+  document.addEventListener("timeflow:work-time-mode", (event) => {
+    if (event.detail?.mode === "disabled" && platformSession) initialSync();
+  });
   syncButton.addEventListener("click", () => upload(true));
   window.addEventListener("online", () => platformSession ? initialSync() : undefined);
   window.addEventListener("offline", () => renderStatus("error", "Offline – lokale Daten aktiv", "Änderungen bleiben auf diesem Gerät und können später synchronisiert werden.", "Offline"));

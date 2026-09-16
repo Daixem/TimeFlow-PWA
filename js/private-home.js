@@ -118,6 +118,9 @@ document.addEventListener("DOMContentLoaded", () => {
   function readJson(key) {
     try { return JSON.parse(window.TimeFlowPlatform.storage.getItem(key)); } catch { return null; }
   }
+  function currentWorkday() {
+    return readJson(window.TimeFlowWorkTimeSnapshotAuthority?.() !== false ? "timeflow-work-time-current-v1" : "timeflow-workday-v2");
+  }
   function scheduledEndFor(date) {
     const shifts = readJson("timeflow-private-schedule-v1");
     if (!Array.isArray(shifts) || !date) return null;
@@ -125,7 +128,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return shifts.find((entry) => entry.date === key && entry.start && entry.end && !/^(frei|krank|urlaub)$/i.test(entry.title || ""))?.end || null;
   }
   function renderPrivateClock() {
-    const workday = readJson("timeflow-workday-v2");
+    const workday = currentWorkday();
     const settings = readJson("timeflow-settings-v1") || {};
     const target = number(settings.dailyTargetMinutes, 480);
     const breakAfter = number(settings.autoBreakAfterMinutes, 360);
@@ -172,6 +175,7 @@ document.addEventListener("DOMContentLoaded", () => {
   renderPrivateClock();
   applyPrivateHome();
   document.addEventListener("timeflow:workday-updated", renderPrivateClock);
+  document.addEventListener("timeflow:work-time-mode", renderPrivateClock);
   document.addEventListener("timeflow:settings-updated", renderPrivateClock);
   document.addEventListener("timeflow:mode-changed", applyPrivateHome);
   new MutationObserver(applyPrivateHome).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });

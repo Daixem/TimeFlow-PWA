@@ -23,6 +23,9 @@ let workTimeApi;
 let workTimeServerMode;
 window.TimeFlowWorkTimeServerEnabled = () => workTimeServerMode === "enabled";
 window.TimeFlowWorkTimeReady = () => workTimeServerMode !== undefined;
+// Until the feature explicitly answers "disabled", legacy stamps are never
+// accepted as an authority. This closes the start-up race with general sync.
+window.TimeFlowWorkTimeSnapshotAuthority = () => workTimeServerMode !== "disabled";
 let workTimeReady;
 
 const quotes = [
@@ -69,9 +72,11 @@ function breakMinutes() {
 function workedMinutes() { return Math.max(0, elapsedMinutes() - breakMinutes()); }
 
 function saveWorkday() {
+  if (window.TimeFlowWorkTimeSnapshotAuthority()) return;
   window.TimeFlowPlatform.storage.setItem(STORAGE_KEY, JSON.stringify({ ...state, workStart: state.workStart?.toISOString() || null, workEnd: state.workEnd?.toISOString() || null }));
 }
 function saveCompletedWorkday() {
+  if (window.TimeFlowWorkTimeSnapshotAuthority()) return;
   if (!state.workStart || !state.workEnd) return;
   let history = [];
   try { const stored = JSON.parse(window.TimeFlowPlatform.storage.getItem(WORKDAY_HISTORY_KEY) || "[]"); history = Array.isArray(stored) ? stored : []; } catch { history = []; }
@@ -81,6 +86,7 @@ function saveCompletedWorkday() {
   window.TimeFlowPlatform.storage.setItem(WORKDAY_HISTORY_KEY, JSON.stringify(history.sort((a, b) => String(a.workEnd).localeCompare(String(b.workEnd))).slice(-366)));
 }
 function loadWorkday() {
+  if (window.TimeFlowWorkTimeSnapshotAuthority()) return;
   try {
     const saved = JSON.parse(window.TimeFlowPlatform.storage.getItem(STORAGE_KEY));
     if (!saved?.workStart) return;
@@ -113,9 +119,14 @@ async function initialiseWorkTime() {
     const enabled = await client.isEnabled();
     if (!enabled) {
       workTimeServerMode = "disabled";
+      document.dispatchEvent(new CustomEvent("timeflow:work-time-mode", { detail: { mode: workTimeServerMode } }));
+      loadWorkday();
+      updateWorkUi();
+      if (state.isWorking) startTimer();
       return workTimeServerMode;
     }
     workTimeServerMode = "enabled";
+    document.dispatchEvent(new CustomEvent("timeflow:work-time-mode", { detail: { mode: workTimeServerMode } }));
     {
       const current = await client.getCurrent();
       applyWorkTimeState(current.state);
@@ -123,7 +134,10 @@ async function initialiseWorkTime() {
   } catch (_error) {
     // A transport, authentication or storage failure must never turn an
     // intended server-authoritative work-time mode into a local fallback.
-    if (workTimeServerMode !== "enabled") workTimeServerMode = "unavailable";
+    if (workTimeServerMode !== "enabled") {
+      workTimeServerMode = "unavailable";
+      document.dispatchEvent(new CustomEvent("timeflow:work-time-mode", { detail: { mode: workTimeServerMode } }));
+    }
   }
   return workTimeServerMode;
 }
@@ -243,7 +257,7 @@ function initialise() {
     void (state.isWorking ? clockOut() : clockIn());
   });
   clockConfirmDialog.addEventListener("click", (event) => { if (event.target === clockConfirmDialog) window.TimeFlowPlatform.dialog.close(clockConfirmDialog); });
-  loadWorkday(); updateDateTime(); workTimeReady = initialiseWorkTime();
+  updateDateTime(); workTimeReady = initialiseWorkTime();
   const day = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
   elements.dailyQuote.textContent = quotes[day % quotes.length];
   elements.teamNews.textContent = teamUpdates[day % teamUpdates.length];
@@ -292,9 +306,9 @@ function initialise() {
 document.addEventListener("DOMContentLoaded", initialise);
 document.addEventListener("timeflow:toggle-clock", requestClockConfirmation);
 document.addEventListener("timeflow:settings-updated", updateWorkUi);
-document.addEventListener("timeflow:device-resumed", () => { loadWorkday(); updateDateTime(); updateWorkUi(); if (state.isWorking) startTimer(); });
+document.addEventListener("timeflow:device-resumed", () => { if (!window.TimeFlowWorkTimeSnapshotAuthority()) loadWorkday(); updateDateTime(); updateWorkUi(); if (state.isWorking) startTimer(); });
 document.addEventListener("timeflow:sync-restored", () => {
-  loadWorkday(); updateDateTime(); updateWorkUi();
+  if (!window.TimeFlowWorkTimeSnapshotAuthority()) loadWorkday(); updateDateTime(); updateWorkUi();
   if (state.isWorking) startTimer(); else stopTimer();
 });
 window.addEventListener("online", async () => {
