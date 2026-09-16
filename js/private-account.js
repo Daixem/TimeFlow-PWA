@@ -6,6 +6,7 @@
   const ARCHIVE_KEY = "timeflow-private-account-archive-v1";
   const STATE_KEY = "timeflow-private-account-state-v1";
   const SERVER_PENDING_KEY = "timeflow-work-time-correction-pending-v1";
+  const SERVER_SESSIONS_KEY = "timeflow-work-time-sessions-v1";
   const SCHEDULE_KEY = "timeflow-private-schedule-v1";
   const platform = () => window.TimeFlowPlatform;
   const read = () => {
@@ -13,6 +14,15 @@
     try { const value = JSON.parse(platform().storage.getItem(KEY) || "[]"); entries = Array.isArray(value) ? value : []; } catch (_error) { entries = []; }
     if (!window.TimeFlowWorkTimeServerEnabled?.()) return entries;
     try {
+      // In server mode completed stamps never come from the legacy local
+      // workday history. The last server response is merely an offline cache.
+      entries = entries.filter((entry) => entry.source !== "stamp");
+      const sessionCache = JSON.parse(platform().storage.getItem(SERVER_SESSIONS_KEY) || "null");
+      const sessions = Array.isArray(sessionCache?.sessions) ? sessionCache.sessions : [];
+      sessions.forEach((session) => {
+        if (!session?.id || !session.work_date || !Number.isFinite(Number(session.net_minutes))) return;
+        entries.push({ id: `server-session-${session.id}`, date: session.work_date, minutes: Number(session.net_minutes), target: 0, adjustment: 0, note: "Serverseitige Stempelung", source: "server_session", entryType: "stamped_work", serverSession: true });
+      });
       const cached = JSON.parse(platform().storage.getItem("timeflow-work-time-current-v1") || "null");
       const serverEntries = Array.isArray(cached?.manualCorrections) ? cached.manualCorrections : [];
       const known = new Set(entries.map((entry) => entry.id));
@@ -34,6 +44,15 @@
   const entryType = (entry) => entry.entryType || (entry.source === "stamp" ? "stamped_work" : "time_correction");
   const isWork = (entry) => entry.source === "stamp" || entryType(entry) === "manual_work";
   const isCorrection = (entry) => ["opening_balance", "time_correction"].includes(entryType(entry));
+  async function refreshServerSessions(month = currentMonth()) {
+    if (!window.TimeFlowWorkTimeServerEnabled?.() || !window.TimeFlowWorkTimeApi || !window.TimeFlowPlatform) return false;
+    try {
+      const result = await window.TimeFlowWorkTimeApi.create({ storage: platform().storage }).getSessions(month);
+      if (!Array.isArray(result?.sessions)) return false;
+      platform().storage.setItem(SERVER_SESSIONS_KEY, JSON.stringify({ month, sessions: result.sessions, updatedAt: new Date().toISOString() }));
+      return true;
+    } catch (_error) { return false; }
+  }
   const schedule = () => { try { const value = JSON.parse(platform().storage.getItem(SCHEDULE_KEY) || "[]"); return Array.isArray(value) ? value : []; } catch (_error) { return []; } };
   const scheduleType = (entry) => String(entry?.title || "").trim().toLocaleLowerCase("de-DE");
   const isFreeScheduleDay = (entry) => /^(frei|free|off|a|f|-)$/i.test(scheduleType(entry));
@@ -205,10 +224,10 @@
       }
       const entries = read(); entries.push(entry); audit("create", entry); reopenArchivedMonth(entry.date); write(entries); form.elements.hours.value = "0"; form.elements.minutes.value = "0"; form.elements.note.value = ""; render(); document.dispatchEvent(new CustomEvent("timeflow:private-account-updated")); });
     dialog.querySelector("[data-account-list]").addEventListener("click", (event) => { const remove = event.target.closest("[data-delete-account]"); const edit = event.target.closest("[data-edit-account]"); if (remove) { const entries = read(); const entry = entries.find((item) => item.id === remove.dataset.deleteAccount); if (!entry || !window.confirm("Diesen Arbeitszeiteintrag wirklich löschen?")) return; audit("delete", entry, entry); reopenArchivedMonth(entry.date); write(entries.filter((item) => item.id !== entry.id)); render(); document.dispatchEvent(new CustomEvent("timeflow:private-account-updated")); return; } if (edit) { const entries = read(); const entry = entries.find((item) => item.id === edit.dataset.editAccount); if (!entry) return; const work = isWork(entry); const current = work ? Number(entry.minutes || 0) : Math.abs(Number(entry.adjustment || 0)); const answer = window.prompt("Korrigierte Dauer in Minuten:", String(current)); if (answer === null || !Number.isFinite(Number(answer)) || Number(answer) < 0) return; const before = { ...entry }; if (work) entry.minutes = Number(answer); else entry.adjustment = Math.sign(Number(entry.adjustment || 1)) * Number(answer); entry.note = `${entry.note || "Arbeitszeit"} · korrigiert`; audit("edit", entry, before); reopenArchivedMonth(entry.date); write(entries); render(); document.dispatchEvent(new CustomEvent("timeflow:private-account-updated")); } });
-    monthPicker.addEventListener("change", render); dialog.querySelector("[data-account-csv]").addEventListener("click", () => downloadCsv(read().filter((entry) => String(entry.date || "").startsWith(monthPicker.value)))); dialog.querySelector("[data-account-pdf]").addEventListener("click", () => printPdf(read().filter((entry) => String(entry.date || "").startsWith(monthPicker.value)))); dialog.querySelector("[data-account-audit]").addEventListener("click", () => { const list = dialog.querySelector("[data-account-audit-list]"); list.hidden = !list.hidden; const events = (readObject(AUDIT_KEY).events || []).slice().reverse(); list.innerHTML = events.length ? events.map((item) => `<article><strong>${item.action === "edit" ? "Korrigiert" : item.action === "delete" ? "Gelöscht" : "Erstellt"}</strong><span>${escapeHtml(item.date)} · ${new Date(item.at).toLocaleString(locale())}</span></article>`).join("") : "<p>Noch keine manuellen Änderungen protokolliert.</p>"; });
+    monthPicker.addEventListener("change", () => { render(); void refreshServerSessions(monthPicker.value).then(render); }); dialog.querySelector("[data-account-csv]").addEventListener("click", () => downloadCsv(read().filter((entry) => String(entry.date || "").startsWith(monthPicker.value)))); dialog.querySelector("[data-account-pdf]").addEventListener("click", () => printPdf(read().filter((entry) => String(entry.date || "").startsWith(monthPicker.value)))); dialog.querySelector("[data-account-audit]").addEventListener("click", () => { const list = dialog.querySelector("[data-account-audit-list]"); list.hidden = !list.hidden; const events = (readObject(AUDIT_KEY).events || []).slice().reverse(); list.innerHTML = events.length ? events.map((item) => `<article><strong>${item.action === "edit" ? "Korrigiert" : item.action === "delete" ? "Gelöscht" : "Erstellt"}</strong><span>${escapeHtml(item.date)} · ${new Date(item.at).toLocaleString(locale())}</span></article>`).join("") : "<p>Noch keine manuellen Änderungen protokolliert.</p>"; });
     dialog.querySelector("[data-close-private-account]").addEventListener("click", () => platform().dialog.close(dialog)); dialog.addEventListener("click", (event) => { if (event.target === dialog) platform().dialog.close(dialog); });
-    document.addEventListener("timeflow:open-private-account", () => { render(); platform().dialog.open(dialog); }); document.addEventListener("timeflow:workday-updated", render); document.addEventListener("timeflow:settings-updated", render); document.addEventListener("timeflow:private-schedule-updated", render); render(); window.setTimeout(render, 0);
+    document.addEventListener("timeflow:open-private-account", () => { render(); platform().dialog.open(dialog); void refreshServerSessions(monthPicker.value).then(render); }); document.addEventListener("timeflow:workday-updated", () => { render(); void refreshServerSessions(monthPicker.value).then(render); }); document.addEventListener("timeflow:settings-updated", render); document.addEventListener("timeflow:private-schedule-updated", render); render(); window.setTimeout(() => { render(); void refreshServerSessions(currentMonth()).then(render); }, 0);
   }
-  window.TimeFlowPrivateAccount = { refreshHome: renderHomeMonth, captureCompletedWorkday, targetDueForMonth, scheduleDueForMonth };
+  window.TimeFlowPrivateAccount = { refreshHome: renderHomeMonth, captureCompletedWorkday, targetDueForMonth, scheduleDueForMonth, refreshServerSessions };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", install); else install();
 }());

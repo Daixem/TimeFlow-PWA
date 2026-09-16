@@ -33,6 +33,7 @@ const client = create({
   storage,
   request: async (path, options = {}) => {
     calls.push({ path, options, payload: options.body ? JSON.parse(options.body) : null });
+    if (options.method === "GET" && path.includes("/sessions")) return response(200, { sessions: [{ id: "session-a", work_date: "2026-09-16", net_minutes: 450 }] });
     if (options.method === "GET" && path.endsWith("/journal")) return response(200, { events: [] });
     if (options.method === "GET") return response(200, { state: { isWorking: false }, revision, updatedAt: "2026-09-10T12:00:00.000Z" });
     const payload = JSON.parse(options.body);
@@ -58,6 +59,8 @@ await client.writeChange({ eventType: "ADMIN_CORRECTION", userId: "other-user", 
 const adminPayload = calls.at(-1).payload;
 if (adminPayload.userId !== "other-user" || adminPayload.adjustmentMinutes !== -15 || "state" in adminPayload) throw new Error("Client admin correction must send only the narrow command.");
 await client.getJournal();
+const sessions = await client.getSessions("2026-09");
+if (!Array.isArray(sessions.sessions) || !calls.at(-1).path.endsWith("/sessions?month=2026-09")) throw new Error("Session history API was not requested with a bounded month filter.");
 if (client.getMeta().revision !== 14) throw new Error("Server responses did not update the separate work-time revision.");
 
 let conflictWrites = 0;

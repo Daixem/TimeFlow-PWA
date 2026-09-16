@@ -8,7 +8,9 @@ class WorkTimeTestD1 {
   constructor() {
     this.current = new Map();
     this.journal = [];
+    this.sessions = [];
     this.failJournalOnce = false;
+    this.failSessionOnce = false;
   }
 
   prepare(sql) {
@@ -39,6 +41,10 @@ class WorkTimeTestD1 {
   }
 
   readAll(sql, values) {
+    if (sql.includes("FROM timeflow_work_time_sessions")) {
+      const prefix = values[1] ? String(values[1]).replace("%", "") : null;
+      return { results: this.sessions.filter((session) => session.user_id === values[0] && (!prefix || session.work_date.startsWith(prefix))).map((session) => ({ ...session })) };
+    }
     if (sql.includes("FROM timeflow_work_time_journal")) {
       return { results: this.journal.filter((event) => event.user_id === values[0]).sort((a, b) => b.revision - a.revision).map((event) => ({ ...event })) };
     }
@@ -48,6 +54,7 @@ class WorkTimeTestD1 {
   async batch(statements) {
     const nextCurrent = new Map([...this.current.entries()].map(([id, row]) => [id, { ...row }]));
     const nextJournal = this.journal.map((event) => ({ ...event }));
+    const nextSessions = this.sessions.map((session) => ({ ...session }));
     const results = [];
     for (const statement of statements) {
       const { sql, values } = statement;
@@ -69,6 +76,12 @@ class WorkTimeTestD1 {
         const row = { ...old, state_json: stateJson, revision: old.revision + 1, last_actor_user_id: actorUserId, last_event_type: eventType, last_source: source, effective_timestamp: effectiveTimestamp, server_updated_at: serverUpdatedAt };
         nextCurrent.set(userId, row);
         nextJournal.push({ id: `journal-${userId}-${row.revision}`, user_id: userId, actor_user_id: actorUserId, event_type: eventType, source, revision: row.revision, effective_timestamp: effectiveTimestamp, server_timestamp: serverUpdatedAt, previous_state_json: old.state_json, new_state_json: stateJson });
+        if (eventType === "CLOCK_OUT") {
+          if (this.failSessionOnce) { this.failSessionOnce = false; throw new Error("isolated session trigger failed"); }
+          const state = JSON.parse(stateJson), start = Date.parse(state.workStart), end = Date.parse(serverUpdatedAt);
+          const gross = Math.max(0, Math.floor((end - start) / 60000)), pause = Math.max(0, Math.floor(Number(state.pauseAccumulatedMs || 0) / 60000));
+          nextSessions.push({ id: `session-${userId}-${row.revision}`, user_id: userId, work_date: String(state.workStart).slice(0, 10), clock_in: state.workStart, clock_out: serverUpdatedAt, pause_minutes: pause, gross_minutes: gross, net_minutes: Math.max(0, gross - pause), status: "completed", start_revision: state.workStartRevision || row.revision - 1, end_revision: row.revision, created_at: serverUpdatedAt, updated_at: serverUpdatedAt });
+        }
         results.push({ meta: { changes: 1 } });
         continue;
       }
@@ -76,6 +89,7 @@ class WorkTimeTestD1 {
     }
     this.current = nextCurrent;
     this.journal = nextJournal;
+    this.sessions = nextSessions;
     return results;
   }
 }
@@ -126,6 +140,13 @@ response = await put(normalUserId, { expectedRevision: 2, eventType: "PAUSE_END"
 if ((await response.json()).revision !== 3) throw new Error("PAUSE_END revision invalid.");
 response = await put(normalUserId, { expectedRevision: 3, eventType: "CLOCK_OUT" });
 if ((await response.json()).revision !== 4) throw new Error("CLOCK_OUT revision invalid.");
+if (database.sessions.length !== 1 || database.sessions[0].user_id !== normalUserId || database.sessions[0].end_revision !== 4 || database.sessions[0].net_minutes < 0) throw new Error("CLOCK_OUT did not create exactly one valid completed server session.");
+await expectStatus("/api/work-time", 409, { method: "PUT", headers: { ...headersFor(normalUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ expectedRevision: 4, eventType: "CLOCK_OUT" }) });
+if (database.sessions.length !== 1) throw new Error("Duplicate CLOCK_OUT created a duplicate session.");
+const ownSessions = await expectStatus("/api/work-time/sessions?month=2026-09", 200, { headers: headersFor(normalUserId) });
+if ((await ownSessions.json()).sessions.length !== 1) throw new Error("Own completed session was not readable after reload.");
+await expectStatus("/api/work-time/sessions?month=not-a-month", 400, { headers: headersFor(normalUserId) });
+await expectStatus("/api/work-time/sessions", 401);
 
 const correction = { expectedRevision: 4, eventType: "TIME_CORRECTION", correctionId: "correction-1", date: "2026-09-16", adjustmentMinutes: 30, note: "corrected" };
 response = await put(normalUserId, correction);
@@ -161,15 +182,32 @@ const journalAfterWinner = database.journal.length;
 await expectStatus("/api/work-time", 409, { method: "PUT", headers: { ...headersFor(normalUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ ...manualEntry, note: "parallel-b", expectedRevision: 5 }) });
 if (database.current.get(normalUserId).revision !== 6 || JSON.parse(database.current.get(normalUserId).state_json).manualEntries.at(-1).note !== "manual entry" || database.journal.length !== journalAfterWinner) throw new Error("Parallel loser overwrote state or added journal event.");
 if (database.journal.filter((event) => event.user_id === normalUserId).length !== 6) throw new Error("Successful writes did not produce exactly one journal event each.");
+await put(normalUserId, { expectedRevision: 6, eventType: "CLOCK_IN" });
+await put(normalUserId, { expectedRevision: 7, eventType: "CLOCK_OUT" });
+if (database.sessions.filter((session) => session.user_id === normalUserId).length !== 2) throw new Error("Multiple completed days were not retained as separate server sessions.");
+const reloadedSessions = await expectStatus("/api/work-time/sessions?month=2026-09", 200, { headers: headersFor(normalUserId) });
+if ((await reloadedSessions.json()).sessions.length !== 2) throw new Error("A second client or reload cannot see all completed server sessions.");
 
 const failureUser = "work-time-journal-failure";
 database.failJournalOnce = true;
 await expectStatus("/api/work-time", 500, { method: "PUT", headers: { ...headersFor(failureUser), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ expectedRevision: 0, eventType: "CLOCK_IN" }) });
 if (database.current.has(failureUser) || database.journal.some((event) => event.user_id === failureUser)) throw new Error("Journal failure left partial data.");
 
+const sessionFailureUser = "work-time-session-failure";
+// This user is authorized by the isolated D1 adapter below through the normal account path.
+database.readFirst = ((original) => function (sql, values) {
+  if (sql.includes("FROM timeflow_beta_access") && values[0] === sessionFailureUser) return { user_id: sessionFailureUser };
+  return original.call(this, sql, values);
+})(database.readFirst);
+await expectStatus("/api/work-time", 201, { method: "PUT", headers: { ...headersFor(sessionFailureUser), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ expectedRevision: 0, eventType: "CLOCK_IN" }) });
+database.failSessionOnce = true;
+await expectStatus("/api/work-time", 500, { method: "PUT", headers: { ...headersFor(sessionFailureUser), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ expectedRevision: 1, eventType: "CLOCK_OUT" }) });
+if (database.current.get(sessionFailureUser).revision !== 1 || database.journal.filter((event) => event.user_id === sessionFailureUser).length !== 1 || database.sessions.some((session) => session.user_id === sessionFailureUser)) throw new Error("Session trigger failure left a partial current or journal write.");
+
 await expectStatus("/api/work-time/journal", 200, { headers: headersFor(normalUserId) });
 await expectStatus(`/api/work-time/journal?userId=${otherUserId}`, 403, { headers: headersFor(normalUserId) });
 await expectStatus(`/api/work-time/journal?userId=${otherUserId}`, 200, { headers: headersFor(adminUserId) });
 await expectStatus("/api/work-time/journal", 405, { method: "DELETE", headers: headersFor(normalUserId) });
+await expectStatus("/api/work-time/sessions", 405, { method: "DELETE", headers: headersFor(normalUserId) });
 
 console.log("Work-time API: authenticated current state, transitions, own/admin corrections, 401/403, conflicts, actor/time manipulation and isolated journal rollback verified.");

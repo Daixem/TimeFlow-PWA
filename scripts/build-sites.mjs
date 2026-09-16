@@ -216,7 +216,9 @@ function serverWorkTimeState(command, currentState, now) {
   const eventType = command.eventType;
   if (eventType === "CLOCK_IN") {
     if (currentState?.isWorking) return null;
-    return { isWorking: true, workStart: now, workEnd: null, isPaused: false, pauseStartedAt: null, pauseAccumulatedMs: 0, hasManualPause: false };
+    const manualCorrections = Array.isArray(currentState?.manualCorrections) ? currentState.manualCorrections : [];
+    const manualEntries = Array.isArray(currentState?.manualEntries) ? currentState.manualEntries : [];
+    return { isWorking: true, workStart: now, workEnd: null, isPaused: false, pauseStartedAt: null, pauseAccumulatedMs: 0, hasManualPause: false, workStartRevision: command.expectedRevision + 1, ...(manualCorrections.length ? { manualCorrections } : {}), ...(manualEntries.length ? { manualEntries } : {}) };
   }
   if (eventType === "CLOCK_OUT") {
     if (!currentState?.isWorking) return null;
@@ -525,6 +527,22 @@ async function handleWorkTimeJournal(request, env, url) {
   return jsonResponse({ events: rows?.results || [] });
 }
 
+async function handleWorkTimeSessions(request, env, url) {
+  const user = authenticatedUser(request);
+  if (!user.authenticated || !user.id) return jsonResponse({ error: "authentication_required" }, 401);
+  if (!workTimeServerEnabled(env)) return jsonResponse({ error: "work_time_feature_disabled" }, 503);
+  if (!(await betaAccess(user, env)).allowed) return jsonResponse({ error: "beta_access_required" }, 403);
+  if (!env?.DB) return jsonResponse({ error: "storage_unavailable" }, 503);
+  if (request.method !== "GET") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "GET" });
+  const month = String(url.searchParams.get("month") || "");
+  if (month && !/^\\d{4}-\\d{2}$/.test(month)) return jsonResponse({ error: "invalid_work_time_month" }, 400);
+  const query = month
+    ? env.DB.prepare("SELECT id, work_date, clock_in, clock_out, pause_minutes, gross_minutes, net_minutes, status, start_revision, end_revision, created_at, updated_at FROM timeflow_work_time_sessions WHERE user_id = ? AND work_date LIKE ? ORDER BY clock_out DESC LIMIT 100").bind(user.id, month + "%")
+    : env.DB.prepare("SELECT id, work_date, clock_in, clock_out, pause_minutes, gross_minutes, net_minutes, status, start_revision, end_revision, created_at, updated_at FROM timeflow_work_time_sessions WHERE user_id = ? ORDER BY clock_out DESC LIMIT 100").bind(user.id);
+  const rows = await query.all();
+  return jsonResponse({ sessions: rows?.results || [] });
+}
+
 async function handleSync(request, env, url) {
   const user = authenticatedUser(request);
   if (!user.authenticated || !user.id) return jsonResponse({ error: "authentication_required" }, 401);
@@ -580,6 +598,7 @@ export default {
     }
     if (url.pathname === "/api/sync") return handleSync(request, env, url);
     if (url.pathname === "/api/work-time") return handleWorkTime(request, env, url);
+    if (url.pathname === "/api/work-time/sessions") return handleWorkTimeSessions(request, env, url);
     if (url.pathname === "/api/work-time/journal") return handleWorkTimeJournal(request, env, url);
     if (url.pathname === "/api/team-access") return handleTeamAccess(request, env, url);
     if (url.pathname === "/api/account-data") return handleAccountData(request, env, url);

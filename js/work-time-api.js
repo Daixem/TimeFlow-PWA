@@ -40,6 +40,7 @@
     }
     async function getCurrent() { var result = await api(baseUrl, "GET"); if (result.state) saveCurrent(result); return result; }
     async function getJournal() { return api(baseUrl + "/journal", "GET"); }
+    async function getSessions(month) { var suffix = typeof month === "string" && month ? "?month=" + encodeURIComponent(month) : ""; return api(baseUrl + "/sessions" + suffix, "GET"); }
     async function isEnabled() { try { await getCurrent(); return true; } catch (error) { if (error.status === 503 && error.result && error.result.error === "work_time_feature_disabled") return false; throw error; } }
     function preserveConflict(change, response) { var conflict = { active: true, localChange: change, serverState: response.state || null, serverRevision: Number(response.revision || 0), updatedAt: response.updatedAt || null }; write(CONFLICT_KEY, conflict); return conflict; }
     async function send(change, revision) { var result = await api(baseUrl, "PUT", safeChange(change, revision)); saveCurrent(result); clear(PENDING_KEY); clear(CONFLICT_KEY); return result; }
@@ -60,7 +61,7 @@
     }
     async function loadServerConflictVersion(applyLocalState) { var conflict = read(CONFLICT_KEY, null); if (!conflict || !conflict.active) return null; if (typeof applyLocalState === "function") await applyLocalState(conflict.serverState); saveCurrent({ state: conflict.serverState, revision: conflict.serverRevision, updatedAt: conflict.updatedAt }); clear(CONFLICT_KEY); return conflict.serverState; }
     async function reapplyLocalConflictVersion() { var conflict = read(CONFLICT_KEY, null); if (!conflict || !conflict.active) return null; try { return await send(conflict.localChange, conflict.serverRevision); } catch (error) { if (error.status === 409) error.conflict = preserveConflict(conflict.localChange, error.result || {}); throw error; } }
-    return { getCurrent: getCurrent, getJournal: getJournal, isEnabled: isEnabled, writeChange: writeChange, reconnectPending: reconnectPending, loadServerConflictVersion: loadServerConflictVersion, reapplyLocalConflictVersion: reapplyLocalConflictVersion, getMeta: meta, getPending: function () { return read(PENDING_KEY, null); }, getConflict: function () { return read(CONFLICT_KEY, null); } };
+    return { getCurrent: getCurrent, getJournal: getJournal, getSessions: getSessions, isEnabled: isEnabled, writeChange: writeChange, reconnectPending: reconnectPending, loadServerConflictVersion: loadServerConflictVersion, reapplyLocalConflictVersion: reapplyLocalConflictVersion, getMeta: meta, getPending: function () { return read(PENDING_KEY, null); }, getConflict: function () { return read(CONFLICT_KEY, null); } };
   }
   root.TimeFlowWorkTimeApi = { create: create };
 }(globalThis));
