@@ -2,7 +2,7 @@
 
 Stand: Version 1.0.1, Build 0040
 
-Realer Gerätestatus: **iPhone, iPad, Windows und macOS abgenommen. App, Darstellung und angemeldete Nutzung zeigen auf den geprüften Geräten keine festgestellten Mängel. Android bleibt mangels Testgerät offen.**
+Realer Gerätestatus: **iPhone, iPad, Windows und macOS abgenommen. Android bleibt mangels physischem Testgerät BLOCKED.** Eine Emulatorprüfung ersetzt keinen realen Android-PWA-, Offline-, Update- oder Dateiimport-Nachweis.
 
 ## Unterstützte Plattformen
 
@@ -10,7 +10,7 @@ Realer Gerätestatus: **iPhone, iPad, Windows und macOS abgenommen. App, Darstel
 | --- | --- | --- | --- |
 | Smartphone | iOS / iPhoneOS | Safari und installierte PWA | Voller aktueller Funktionsstand |
 | Tablet | iPadOS | Safari und installierte PWA | Voller aktueller Funktionsstand |
-| Smartphone / Tablet | Android | Chrome, Edge und installierte PWA | Voller aktueller Funktionsstand |
+| Smartphone / Tablet | Android | Chrome, Edge und installierte PWA | BLOCKED – reale Geräteprüfung erforderlich |
 | Desktop / Notebook | Windows | Edge, Chrome und installierte PWA | Voller aktueller Funktionsstand |
 | Desktop / Notebook | macOS | Safari, Chrome, Edge und installierte PWA | Voller aktueller Funktionsstand |
 | Desktop / Notebook | Linux | Chrome, Edge oder Firefox im Browser | Voller aktueller Funktionsstand; Installation abhängig vom Browser |

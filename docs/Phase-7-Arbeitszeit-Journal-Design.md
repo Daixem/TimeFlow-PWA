@@ -70,6 +70,10 @@ Der heutige Client schreibt `CLOCK_IN`, `CLOCK_OUT` und die manuelle Pause in `j
 
 `js/work-time-api.js` ist ein fachlicher Adapter für die spätere API. Er hält eine **eigene** Arbeitszeitrevision unter `timeflow-work-time-meta-v1`, einen Offline-Pending-Vorgang und einen separaten Konfliktzustand. Er kennt weder die allgemeine Sync-Revision noch das Theme oder die UI. Der Adapter ist in dieser Phase absichtlich noch nicht an die vorhandenen Stempelfunktionen gebunden.
 
+## Offene Mandantentrennung
+
+Die Tabellen aus Migration 0003/0004 enthalten derzeit noch keine `organization_id`. Damit ist die serverautoritative Arbeitszeitarchitektur für die geschlossene Einzel-Beta vorbereitet, aber **nicht** als Multi-Tenant-Modell freigegeben. Vor einem organisationsübergreifenden Betrieb braucht es eine separat getestete Migration, serverseitig geprüfte Membership für jede Lese-/Schreiboperation und eine explizite Zuordnung vorhandener Daten. Es darf keine erfundene Default-Organisation geben.
+
 Der Worker akzeptiert den neuen Pfad nur bei `TIMEFLOW_WORK_TIME_SERVER_ENABLED === "true"`. Fehlt die serverseitige Variable oder ist sie anders gesetzt, geben `/api/work-time` und `/api/work-time/journal` `503 work_time_feature_disabled` zurück. Dadurch kann kein Client- oder LocalStorage-Wert den Pfad vor einer Migration aktivieren.
 
 Der spätere Cutover braucht einen klaren Umschaltpunkt: Entweder schreibt eine Aktion ausschließlich lokal in den bisherigen Snapshot **oder** ausschließlich über die Work-Time-API. Dauerhaftes Double-Write ist verboten. Erst nach echter Test-D1-Migration, einem aktivierten Server-Gate, verifizierter Client-Übernahme und einer bewusst abgeschlossenen Legacy-Übernahme darf `timeflow-workday-v2` aus `SYNC_KEYS` entfernt werden. Bis dahin bleibt die lokale Arbeitszeit unverändert führend.
