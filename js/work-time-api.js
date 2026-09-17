@@ -10,7 +10,12 @@
     function write(key, value) { storage.setItem(key, JSON.stringify(value)); }
     function clear(key) { storage.removeItem(key); }
     function meta() { return read(META_KEY, { revision: 0, updatedAt: null }); }
-    function saveCurrent(result) { write(CACHE_KEY, result.state); write(META_KEY, { revision: result.revision, updatedAt: result.updatedAt || null }); return result; }
+    function saveCurrent(result) {
+      if (!result || !result.state || typeof result.state !== "object" || !Number.isInteger(Number(result.revision)) || Number(result.revision) < 1) {
+        var invalid = new Error("work_time_invalid_response"); invalid.uncertain = true; throw invalid;
+      }
+      write(CACHE_KEY, result.state); write(META_KEY, { revision: Number(result.revision), updatedAt: result.updatedAt || null }); return result;
+    }
     async function api(path, method, body) {
       var response;
       try { response = await request(path, { method: method, cache: "no-store", headers: body ? { "Content-Type": "application/json", Accept: "application/json" } : { Accept: "application/json" }, body: body ? JSON.stringify(body) : undefined }); }
@@ -22,18 +27,18 @@
     function safeChange(change, revision) {
       var result = { eventType: change && change.eventType, expectedRevision: revision };
       var eventType = result.eventType;
-      if (change && (eventType === "TIME_CORRECTION" || eventType === "ADMIN_CORRECTION")) {
+      if (change && (eventType === "TIME_CORRECTION" || eventType === "ADMIN_CORRECTION" || eventType === "CORRECTION_UPDATED")) {
         result.correctionId = change.correctionId;
         result.date = change.date;
         result.adjustmentMinutes = change.adjustmentMinutes;
         result.note = change.note;
       }
+      if (change && eventType === "CORRECTION_REVOKED") { result.correctionId = change.correctionId; result.note = change.note; }
       if (change && eventType === "ADMIN_CORRECTION") result.userId = change.userId;
       if (change && eventType === "MANUAL_ENTRY") {
+        result.entryId = change.entryId;
         result.date = change.date;
-        result.start = change.start;
-        result.end = change.end;
-        result.breakMinutes = change.breakMinutes;
+        result.minutes = change.minutes;
         result.note = change.note;
       }
       return result;
@@ -45,10 +50,12 @@
     function preserveConflict(change, response) { var conflict = { active: true, localChange: change, serverState: response.state || null, serverRevision: Number(response.revision || 0), updatedAt: response.updatedAt || null }; write(CONFLICT_KEY, conflict); return conflict; }
     async function send(change, revision) { var result = await api(baseUrl, "PUT", safeChange(change, revision)); saveCurrent(result); clear(PENDING_KEY); clear(CONFLICT_KEY); return result; }
     async function writeChange(change) {
+      var existing = read(PENDING_KEY, null);
+      if (existing && existing.change) return { pending: true, ...existing };
       var revision = Number(meta().revision || 0);
       try { return await send(change, revision); } catch (error) {
         if (error.status === 409) { error.conflict = preserveConflict(change, error.result || {}); throw error; }
-        if (error.network) { var pending = { change: safeChange(change, revision), queuedAt: new Date().toISOString() }; write(PENDING_KEY, pending); return { pending: true, ...pending }; }
+        if (error.network || error.uncertain) { var pending = { change: safeChange(change, revision), queuedAt: new Date().toISOString() }; write(PENDING_KEY, pending); return { pending: true, ...pending }; }
         throw error;
       }
     }
@@ -56,7 +63,15 @@
       if (reconnectInFlight) return reconnectInFlight;
       var pending = read(PENDING_KEY, null);
       if (!pending || !pending.change) return { pending: false };
-      reconnectInFlight = writeChange(pending.change);
+      // Keep the original resource revision. Re-reading meta here could turn a
+      // stale offline command into a different command after another device won.
+      reconnectInFlight = (async function () {
+        try { return await send(pending.change, Number(pending.change.expectedRevision)); }
+        catch (error) {
+          if (error.status === 409) error.conflict = preserveConflict(pending.change, error.result || {});
+          throw error;
+        }
+      }());
       try { return await reconnectInFlight; } finally { reconnectInFlight = null; }
     }
     async function loadServerConflictVersion(applyLocalState) { var conflict = read(CONFLICT_KEY, null); if (!conflict || !conflict.active) return null; if (typeof applyLocalState === "function") await applyLocalState(conflict.serverState); saveCurrent({ state: conflict.serverState, revision: conflict.serverRevision, updatedAt: conflict.updatedAt }); clear(CONFLICT_KEY); return conflict.serverState; }

@@ -109,6 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return { isWorking: false, workStart: null, workEnd: null };
     }
   }
+  function pausePolicy(saved, fallback) { const policy = serverWorkTimeAuthority() ? saved?.workTimePolicy : null; return policy && typeof policy === "object" ? { enabled: policy.automaticPauseEnabled !== false, after: Number(policy.thresholdMinutes) || 360, minutes: Number(policy.pauseMinutes) || 0 } : { enabled: true, after: fallback.autoBreakAfterMinutes, minutes: fallback.autoBreakMinutes }; }
 
   function formatTime(date) {
     return date.toLocaleTimeString(window.TimeFlowLocalization?.locale?.() || "de-DE", { hour: "2-digit", minute: "2-digit" });
@@ -134,7 +135,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const elapsedSeconds = start && end ? Math.max(0, Math.floor((end - start) / 1000)) : 0;
     const grossMinutes = Math.floor(elapsedSeconds / 60);
     const runningPause = saved.isPaused && saved.pauseStartedAt ? Math.max(0, now - new Date(saved.pauseStartedAt)) : 0;
-    const breakMinutes = saved.hasManualPause ? Math.floor((Number(saved.pauseAccumulatedMs || 0) + runningPause) / 60000) : grossMinutes >= settings.autoBreakAfterMinutes ? settings.autoBreakMinutes : 0;
+    const policy = pausePolicy(saved, settings); const breakMinutes = saved.hasManualPause ? Math.floor((Number(saved.pauseAccumulatedMs || 0) + runningPause) / 60000) : policy.enabled && grossMinutes >= policy.after ? policy.minutes : 0;
     const netMinutes = Math.max(0, grossMinutes - breakMinutes);
     const progress = Math.min(100, Math.round((netMinutes / settings.dailyTargetMinutes) * 100));
 

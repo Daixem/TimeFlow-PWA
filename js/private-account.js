@@ -11,10 +11,11 @@
   const platform = () => window.TimeFlowPlatform;
   const serverMode = () => Boolean(window.TimeFlowWorkTimeSnapshotAuthority?.());
   const currentWorkday = () => serverMode() ? readObject("timeflow-work-time-current-v1") : readObject("timeflow-workday-v2");
+  const workTimePause = (workday, gross, runningPause = 0) => { if (workday?.hasManualPause) return Math.floor((Number(workday.pauseAccumulatedMs || 0) + runningPause) / 60000); const policy = serverMode() ? workday?.workTimePolicy : null; const threshold = Number(policy?.thresholdMinutes || settings().autoBreakAfterMinutes || 360); const minutes = Number(policy?.pauseMinutes ?? settings().autoBreakMinutes ?? 30); return (policy ? policy.automaticPauseEnabled !== false : true) && gross >= threshold ? minutes : 0; };
   const read = () => {
     let entries = [];
     try { const value = JSON.parse(platform().storage.getItem(KEY) || "[]"); entries = Array.isArray(value) ? value : []; } catch (_error) { entries = []; }
-    if (!window.TimeFlowWorkTimeServerEnabled?.()) return entries;
+    if (!serverMode()) return entries;
     try {
       // In server mode completed stamps never come from the legacy local
       // workday history. The last server response is merely an offline cache.
@@ -28,7 +29,9 @@
       const cached = JSON.parse(platform().storage.getItem("timeflow-work-time-current-v1") || "null");
       const serverEntries = Array.isArray(cached?.manualCorrections) ? cached.manualCorrections : [];
       const known = new Set(entries.map((entry) => entry.id));
-      serverEntries.forEach((entry) => { if (entry && entry.id && !known.has(entry.id)) entries.push(entry); });
+      serverEntries.forEach((entry) => { if (entry && entry.id && !entry.revoked && !known.has(entry.id)) entries.push({ ...entry, adjustment: entry.adjustmentMinutes, source: "server_correction", entryType: "time_correction" }); });
+      const manualEntries = Array.isArray(cached?.manualEntries) ? cached.manualEntries : [];
+      manualEntries.forEach((entry) => { if (entry && entry.id && !known.has(entry.id)) entries.push({ ...entry, source: "server_manual", entryType: "manual_work", target: 0, adjustment: 0 }); });
       const pending = JSON.parse(platform().storage.getItem(SERVER_PENDING_KEY) || "null");
       if (pending?.entry && pending.entry.id && !entries.some((entry) => entry.id === pending.entry.id)) entries.push({ ...pending.entry, pending: true });
     } catch (_error) { /* Lokalen Cache weiterverwenden. */ }
@@ -47,7 +50,7 @@
   const isWork = (entry) => entry.source === "stamp" || entryType(entry) === "manual_work";
   const isCorrection = (entry) => ["opening_balance", "time_correction"].includes(entryType(entry));
   async function refreshServerSessions(month = currentMonth()) {
-    if (!window.TimeFlowWorkTimeServerEnabled?.() || !window.TimeFlowWorkTimeApi || !window.TimeFlowPlatform) return false;
+    if (!serverMode() || !window.TimeFlowWorkTimeApi || !window.TimeFlowPlatform) return false;
     try {
       const result = await window.TimeFlowWorkTimeApi.create({ storage: platform().storage }).getSessions(month);
       if (!Array.isArray(result?.sessions)) return false;
@@ -143,7 +146,7 @@
     let workday; try { workday = JSON.parse(platform().storage.getItem("timeflow-workday-v2") || "null"); } catch (_error) { return; }
     if (!workday?.workStart || !workday.workEnd || workday.isWorking) return;
     const entries = read(); const id = `stamp-${workday.workEnd}`; if (entries.some((entry) => entry.id === id)) return;
-    const gross = Math.max(0, Math.floor((new Date(workday.workEnd) - new Date(workday.workStart)) / 60000)); const config = settings(); const pause = workday.hasManualPause ? Math.floor(Number(workday.pauseAccumulatedMs || 0) / 60000) : gross >= Number(config.autoBreakAfterMinutes || 360) ? Number(config.autoBreakMinutes || 30) : 0; const net = Math.max(0, gross - pause); const date = new Date(workday.workStart).toLocaleDateString("sv-SE"); const target = scheduleTargetForDate(date, config);
+    const gross = Math.max(0, Math.floor((new Date(workday.workEnd) - new Date(workday.workStart)) / 60000)); const config = settings(); const pause = workTimePause(workday, gross); const net = Math.max(0, gross - pause); const date = new Date(workday.workStart).toLocaleDateString("sv-SE"); const target = scheduleTargetForDate(date, config);
     entries.push({ id, date, minutes: net, target, adjustment: 0, note: "Stempelung", source: "stamp", entryType: "stamped_work" }); write(entries); document.dispatchEvent(new CustomEvent("timeflow:private-account-updated"));
   }
   function monthlyValues(month = currentMonth()) {
@@ -156,7 +159,7 @@
       const gross = Math.max(0, Math.floor((Date.now() - new Date(workday.workStart).getTime()) / 60000));
       const config = settings();
       const runningPause = workday.isPaused && workday.pauseStartedAt ? Math.max(0, Date.now() - new Date(workday.pauseStartedAt).getTime()) : 0;
-      const pause = workday.hasManualPause ? Math.floor((Number(workday.pauseAccumulatedMs || 0) + runningPause) / 60000) : gross >= Number(config.autoBreakAfterMinutes || 360) ? Number(config.autoBreakMinutes || 30) : 0;
+      const pause = workTimePause(workday, gross, runningPause);
       stamped += Math.max(0, gross - pause);
     }
     const targets = readObject(TARGETS_KEY);
@@ -183,7 +186,7 @@
     if (!workday?.isWorking || String(workday.workStart || "").slice(0, 7) !== month) return completed;
     const gross = Math.max(0, Math.floor((Date.now() - new Date(workday.workStart).getTime()) / 60000));
     const runningPause = workday.isPaused && workday.pauseStartedAt ? Math.max(0, Date.now() - new Date(workday.pauseStartedAt).getTime()) : 0;
-    const pause = workday.hasManualPause ? Math.floor((Number(workday.pauseAccumulatedMs || 0) + runningPause) / 60000) : gross >= Number(settings().autoBreakAfterMinutes || 360) ? Number(settings().autoBreakMinutes || 30) : 0;
+    const pause = workTimePause(workday, gross, runningPause);
     const date = new Date(workday.workStart).toLocaleDateString("sv-SE");
     return completed + Math.max(0, gross - pause - scheduleTargetForDate(date));
   }
@@ -218,15 +221,15 @@
       dialog.querySelector("[data-account-list]").innerHTML = monthEntries.length ? monthEntries.map((entry) => { const work = isWork(entry); const typeLabel = entryType(entry) === "opening_balance" ? "Anfangssaldo" : entryType(entry) === "manual_work" ? "Manuelle Arbeitszeit" : entry.source === "stamp" ? "Automatisch" : "Zeitkorrektur"; return `<article><span><strong>${escapeHtml(entry.note || (work ? "Arbeitszeit" : "Korrektur"))}</strong><small>${new Date(`${entry.date}T12:00:00`).toLocaleDateString(locale(), { day: "2-digit", month: "2-digit", year: "numeric" })} · ${typeLabel}</small></span><b>${work ? format(entry.minutes) : format(entry.adjustment, true)}</b><span class="account-row-actions"><button type="button" data-edit-account="${entry.id}" aria-label="Eintrag korrigieren"><i class="fa-solid fa-pen"></i></button><button type="button" data-delete-account="${entry.id}" aria-label="Eintrag löschen"><i class="fa-regular fa-trash-can"></i></button></span></article>`; }).join("") : '<p class="private-import-empty">Für diesen Monat sind noch keine Arbeitszeiten vorhanden.</p>';
     }
     form.addEventListener("submit", async (event) => { event.preventDefault(); const hours = Number(form.elements.hours.value || 0); const minuteValue = Number(form.elements.minutes.value || 0); const value = hours * 60 + minuteValue; if (!value) return; const type = form.elements.entryType.value; const work = type === "manual_work"; const adjustment = work ? 0 : Number(form.elements.direction.value) * value; const entry = { id: `manual-${Date.now()}`, date: form.elements.date.value, minutes: work ? value : 0, target: 0, adjustment, note: form.elements.note.value.trim() || (work ? "Manuell erfasste Arbeitszeit" : type === "opening_balance" ? "Anfangssaldo" : "Manuelle Korrektur"), source: "manual", entryType: type };
-      if (window.TimeFlowWorkTimeServerEnabled?.() && !work) {
+      if (serverMode()) {
         try {
-          const client = window.TimeFlowWorkTimeApi.create({ storage: platform().storage }); const result = await client.writeChange({ eventType: "TIME_CORRECTION", correctionId: entry.id, date: entry.date, adjustmentMinutes: entry.adjustment, note: entry.note });
+          const client = window.TimeFlowWorkTimeApi.create({ storage: platform().storage }); const result = await client.writeChange(work ? { eventType: "MANUAL_ENTRY", entryId: entry.id, date: entry.date, minutes: entry.minutes, note: entry.note } : { eventType: "TIME_CORRECTION", correctionId: entry.id, date: entry.date, adjustmentMinutes: entry.adjustment, note: entry.note });
           if (result.pending) platform().storage.setItem(SERVER_PENDING_KEY, JSON.stringify({ entry, queuedAt: new Date().toISOString() })); else { platform().storage.removeItem(SERVER_PENDING_KEY); }
           render(); document.dispatchEvent(new CustomEvent("timeflow:private-account-updated")); form.elements.hours.value = "0"; form.elements.minutes.value = "0"; form.elements.note.value = ""; return;
-        } catch (error) { if (error.status === 409) { platform().storage.setItem(SERVER_PENDING_KEY, JSON.stringify({ entry, queuedAt: new Date().toISOString(), conflict: true })); render(); return; } }
+        } catch (error) { platform().storage.setItem(SERVER_PENDING_KEY, JSON.stringify({ entry, queuedAt: new Date().toISOString(), conflict: error.status === 409 })); render(); return; }
       }
       const entries = read(); entries.push(entry); audit("create", entry); reopenArchivedMonth(entry.date); write(entries); form.elements.hours.value = "0"; form.elements.minutes.value = "0"; form.elements.note.value = ""; render(); document.dispatchEvent(new CustomEvent("timeflow:private-account-updated")); });
-    dialog.querySelector("[data-account-list]").addEventListener("click", (event) => { const remove = event.target.closest("[data-delete-account]"); const edit = event.target.closest("[data-edit-account]"); if (remove) { const entries = read(); const entry = entries.find((item) => item.id === remove.dataset.deleteAccount); if (!entry || !window.confirm("Diesen Arbeitszeiteintrag wirklich löschen?")) return; audit("delete", entry, entry); reopenArchivedMonth(entry.date); write(entries.filter((item) => item.id !== entry.id)); render(); document.dispatchEvent(new CustomEvent("timeflow:private-account-updated")); return; } if (edit) { const entries = read(); const entry = entries.find((item) => item.id === edit.dataset.editAccount); if (!entry) return; const work = isWork(entry); const current = work ? Number(entry.minutes || 0) : Math.abs(Number(entry.adjustment || 0)); const answer = window.prompt("Korrigierte Dauer in Minuten:", String(current)); if (answer === null || !Number.isFinite(Number(answer)) || Number(answer) < 0) return; const before = { ...entry }; if (work) entry.minutes = Number(answer); else entry.adjustment = Math.sign(Number(entry.adjustment || 1)) * Number(answer); entry.note = `${entry.note || "Arbeitszeit"} · korrigiert`; audit("edit", entry, before); reopenArchivedMonth(entry.date); write(entries); render(); document.dispatchEvent(new CustomEvent("timeflow:private-account-updated")); } });
+    dialog.querySelector("[data-account-list]").addEventListener("click", async (event) => { const remove = event.target.closest("[data-delete-account]"); const edit = event.target.closest("[data-edit-account]"); const entries = read(); const entry = entries.find((item) => item.id === (remove?.dataset.deleteAccount || edit?.dataset.editAccount)); if (!entry) return; if (serverMode()) { if (entry.source === "server_session" || entryType(entry) === "manual_work") return; const client = window.TimeFlowWorkTimeApi.create({ storage: platform().storage }); try { if (remove) { if (!window.confirm("Diesen Arbeitszeiteintrag wirklich stornieren?")) return; await client.writeChange({ eventType: "CORRECTION_REVOKED", correctionId: entry.id, note: "Vom Benutzer storniert" }); } else { const current = Math.abs(Number(entry.adjustment || 0)); const answer = window.prompt("Korrigierte Dauer in Minuten:", String(current)); if (answer === null || !Number.isFinite(Number(answer)) || Number(answer) < 0) return; await client.writeChange({ eventType: "CORRECTION_UPDATED", correctionId: entry.id, date: entry.date, adjustmentMinutes: Math.sign(Number(entry.adjustment || 1)) * Number(answer), note: `${entry.note || "Arbeitszeit"} · korrigiert` }); } render(); document.dispatchEvent(new CustomEvent("timeflow:private-account-updated")); return; } catch (_error) { render(); return; } } if (remove) { if (!window.confirm("Diesen Arbeitszeiteintrag wirklich löschen?")) return; audit("delete", entry, entry); reopenArchivedMonth(entry.date); write(entries.filter((item) => item.id !== entry.id)); render(); document.dispatchEvent(new CustomEvent("timeflow:private-account-updated")); return; } const work = isWork(entry); const current = work ? Number(entry.minutes || 0) : Math.abs(Number(entry.adjustment || 0)); const answer = window.prompt("Korrigierte Dauer in Minuten:", String(current)); if (answer === null || !Number.isFinite(Number(answer)) || Number(answer) < 0) return; const before = { ...entry }; if (work) entry.minutes = Number(answer); else entry.adjustment = Math.sign(Number(entry.adjustment || 1)) * Number(answer); entry.note = `${entry.note || "Arbeitszeit"} · korrigiert`; audit("edit", entry, before); reopenArchivedMonth(entry.date); write(entries); render(); document.dispatchEvent(new CustomEvent("timeflow:private-account-updated")); });
     monthPicker.addEventListener("change", () => { render(); void refreshServerSessions(monthPicker.value).then(render); }); dialog.querySelector("[data-account-csv]").addEventListener("click", () => downloadCsv(read().filter((entry) => String(entry.date || "").startsWith(monthPicker.value)))); dialog.querySelector("[data-account-pdf]").addEventListener("click", () => printPdf(read().filter((entry) => String(entry.date || "").startsWith(monthPicker.value)))); dialog.querySelector("[data-account-audit]").addEventListener("click", () => { const list = dialog.querySelector("[data-account-audit-list]"); list.hidden = !list.hidden; const events = (readObject(AUDIT_KEY).events || []).slice().reverse(); list.innerHTML = events.length ? events.map((item) => `<article><strong>${item.action === "edit" ? "Korrigiert" : item.action === "delete" ? "Gelöscht" : "Erstellt"}</strong><span>${escapeHtml(item.date)} · ${new Date(item.at).toLocaleString(locale())}</span></article>`).join("") : "<p>Noch keine manuellen Änderungen protokolliert.</p>"; });
     dialog.querySelector("[data-close-private-account]").addEventListener("click", () => platform().dialog.close(dialog)); dialog.addEventListener("click", (event) => { if (event.target === dialog) platform().dialog.close(dialog); });
     document.addEventListener("timeflow:open-private-account", () => { render(); platform().dialog.open(dialog); void refreshServerSessions(monthPicker.value).then(render); }); document.addEventListener("timeflow:workday-updated", () => { render(); void refreshServerSessions(monthPicker.value).then(render); }); document.addEventListener("timeflow:settings-updated", render); document.addEventListener("timeflow:private-schedule-updated", render); render(); window.setTimeout(() => { render(); void refreshServerSessions(currentMonth()).then(render); }, 0);

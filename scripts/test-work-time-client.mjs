@@ -52,9 +52,9 @@ await client.writeChange({ eventType: "PAUSE_END" });
 await client.writeChange({ eventType: "TIME_CORRECTION", correctionId: "client-correction", date: "2026-09-16", adjustmentMinutes: 15, note: "own", state: { isWorking: false }, actor_user_id: "forged" });
 const correctionPayload = calls.at(-1).payload;
 if (correctionPayload.correctionId !== "client-correction" || correctionPayload.adjustmentMinutes !== 15 || "state" in correctionPayload || "actor_user_id" in correctionPayload) throw new Error("Client correction must send only the narrow command.");
-await client.writeChange({ eventType: "MANUAL_ENTRY", date: "2026-09-16", start: "08:00", end: "16:00", breakMinutes: 30, note: "manual", state: { isWorking: true } });
+await client.writeChange({ eventType: "MANUAL_ENTRY", entryId: "manual-client-entry", date: "2026-09-16", minutes: 450, note: "manual", state: { isWorking: true } });
 const manualPayload = calls.at(-1).payload;
-if (manualPayload.start !== "08:00" || manualPayload.breakMinutes !== 30 || "state" in manualPayload) throw new Error("Client manual entry must send only the narrow command.");
+if (manualPayload.entryId !== "manual-client-entry" || manualPayload.minutes !== 450 || "state" in manualPayload || "start" in manualPayload) throw new Error("Client manual entry must send only the narrow command.");
 await client.writeChange({ eventType: "ADMIN_CORRECTION", userId: "other-user", correctionId: "admin-client-correction", date: "2026-09-16", adjustmentMinutes: -15, note: "admin", state: { isWorking: false } });
 const adminPayload = calls.at(-1).payload;
 if (adminPayload.userId !== "other-user" || adminPayload.adjustmentMinutes !== -15 || "state" in adminPayload) throw new Error("Client admin correction must send only the narrow command.");
@@ -118,7 +118,7 @@ for (const status of [401, 403]) {
 for (const status of [500, 409]) {
   let writes = 0;
   const rejected = create({ storage: new MemoryStorage(), request: async (_path, options = {}) => {
-    if (options.method === "GET") return response(200, { state: { isWorking: false }, revision: 0 });
+    if (options.method === "GET") return response(200, { state: { isWorking: false }, revision: 1 });
     writes += 1;
     return response(status, { error: status === 409 ? "work_time_conflict" : "storage_unavailable", state: { isWorking: false }, revision: 1 });
   } });
@@ -143,5 +143,14 @@ const reconnectClient = create({ storage: reconnectStorage, request: async (_pat
 reconnectStorage.setItem("timeflow-work-time-pending-v1", JSON.stringify({ change: { eventType: "CLOCK_IN", expectedRevision: 1 } }));
 await Promise.all([reconnectClient.reconnectPending(), reconnectClient.reconnectPending()]);
 if (simultaneousWrites !== 1) throw new Error("Reconnect must perform one controlled write, not a double-write.");
+
+// A reload shares the same persistent store. Its pending command must retain
+// its original revision, become a conflict if another device wrote first, and
+// never retry by itself.
+const restartStorage = new MemoryStorage({ "timeflow-work-time-meta-v1": JSON.stringify({ revision: 12 }), "timeflow-work-time-pending-v1": JSON.stringify({ change: { eventType: "CLOCK_OUT", expectedRevision: 11 }, queuedAt: "offline" }) });
+let restartWrites = 0;
+const reloadedClient = create({ storage: restartStorage, request: async (_path, options = {}) => { restartWrites += 1; const payload = JSON.parse(options.body); if (payload.expectedRevision !== 11) throw new Error("Reload changed the original pending revision."); return response(409, { error: "work_time_conflict", state: { isWorking: true }, revision: 12, updatedAt: "remote" }); } });
+try { await reloadedClient.reconnectPending(); throw new Error("Expected reconnect conflict."); } catch (error) { if (error.status !== 409) throw error; }
+if (restartWrites !== 1 || !reloadedClient.getPending()?.change || !reloadedClient.getConflict()?.active) throw new Error("Reload conflict lost pending data or retried automatically.");
 
 console.log("Work-time client: feature gate, dedicated revision, API actions, 401/403/409, offline pending, reconnect and no automatic conflict retry verified.");

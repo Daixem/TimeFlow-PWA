@@ -63,11 +63,16 @@ function timeSettings() {
     return { dailyTargetMinutes: TARGET_WORK_MINUTES, autoBreakMinutes: AUTO_BREAK_MINUTES, autoBreakAfterMinutes: BREAK_AFTER_MINUTES };
   }
 }
+function activeWorkTimePolicy() {
+  const policy = window.TimeFlowWorkTimeSnapshotAuthority?.() !== false ? state.workTimePolicy : null;
+  if (policy && typeof policy === "object") return { automaticPauseEnabled: policy.automaticPauseEnabled !== false, thresholdMinutes: Number(policy.thresholdMinutes) || BREAK_AFTER_MINUTES, pauseMinutes: Number(policy.pauseMinutes) || 0 };
+  const settings = timeSettings(); return { automaticPauseEnabled: true, thresholdMinutes: settings.autoBreakAfterMinutes, pauseMinutes: settings.autoBreakMinutes };
+}
 function breakMinutes() {
   const runningPause = state.isPaused && state.pauseStartedAt ? Math.max(0, new Date() - state.pauseStartedAt) : 0;
   if (state.hasManualPause) return Math.floor((Number(state.pauseAccumulatedMs || 0) + runningPause) / 60000);
-  const settings = timeSettings();
-  return elapsedMinutes() >= settings.autoBreakAfterMinutes ? settings.autoBreakMinutes : 0;
+  const policy = activeWorkTimePolicy();
+  return policy.automaticPauseEnabled && elapsedMinutes() >= policy.thresholdMinutes ? policy.pauseMinutes : 0;
 }
 function workedMinutes() { return Math.max(0, elapsedMinutes() - breakMinutes()); }
 
@@ -103,7 +108,7 @@ function loadWorkday() {
 function defaultWorkdayState() { return { isWorking: false, workStart: null, workEnd: null, isPaused: false, pauseStartedAt: null, pauseAccumulatedMs: 0, hasManualPause: false }; }
 function applyWorkTimeState(next) {
   const value = next && typeof next === "object" ? next : defaultWorkdayState();
-  state = { isWorking: Boolean(value.isWorking), workStart: value.workStart ? new Date(value.workStart) : null, workEnd: value.workEnd ? new Date(value.workEnd) : null, isPaused: Boolean(value.isPaused), pauseStartedAt: value.pauseStartedAt ? new Date(value.pauseStartedAt) : null, pauseAccumulatedMs: Number(value.pauseAccumulatedMs || 0), hasManualPause: Boolean(value.hasManualPause) };
+  state = { isWorking: Boolean(value.isWorking), workStart: value.workStart ? new Date(value.workStart) : null, workEnd: value.workEnd ? new Date(value.workEnd) : null, isPaused: Boolean(value.isPaused), pauseStartedAt: value.pauseStartedAt ? new Date(value.pauseStartedAt) : null, pauseAccumulatedMs: Number(value.pauseAccumulatedMs || 0), hasManualPause: Boolean(value.hasManualPause), workTimePolicy: value.workTimePolicy || null };
   saveWorkday();
   updateWorkUi();
   if (state.isWorking) startTimer(); else stopTimer();

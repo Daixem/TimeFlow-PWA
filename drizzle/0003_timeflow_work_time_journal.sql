@@ -7,7 +7,7 @@ CREATE TABLE timeflow_work_time_current (
   state_json TEXT NOT NULL,
   revision INTEGER NOT NULL CHECK (revision > 0),
   last_actor_user_id TEXT NOT NULL,
-  last_event_type TEXT NOT NULL CHECK (last_event_type IN ('CLOCK_IN', 'CLOCK_OUT', 'PAUSE_START', 'PAUSE_END', 'TIME_CORRECTION', 'ADMIN_CORRECTION', 'MANUAL_ENTRY', 'SYNC_IMPORT')),
+  last_event_type TEXT NOT NULL CHECK (last_event_type IN ('CLOCK_IN', 'CLOCK_OUT', 'PAUSE_START', 'PAUSE_END', 'TIME_CORRECTION', 'ADMIN_CORRECTION', 'CORRECTION_UPDATED', 'CORRECTION_REVOKED', 'MANUAL_ENTRY', 'SYNC_IMPORT')),
   last_source TEXT NOT NULL,
   effective_timestamp TEXT,
   server_updated_at TEXT NOT NULL,

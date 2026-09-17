@@ -169,11 +169,11 @@ response = await expectStatus("/api/work-time", 201, { method: "PUT", headers: {
 if ((await response.json()).revision !== 1 || database.journal.at(-1).actor_user_id !== adminUserId || database.journal.at(-1).event_type !== "ADMIN_CORRECTION") throw new Error("Admin correction actor binding invalid.");
 
 const beforeStale = database.journal.length;
-const manualEntry = { eventType: "MANUAL_ENTRY", date: "2026-09-16", start: "08:00", end: "16:00", breakMinutes: 30, note: "manual entry" };
+const manualEntry = { eventType: "MANUAL_ENTRY", entryId: "manual-entry-1", date: "2026-09-16", minutes: 450, note: "manual entry" };
 await expectStatus("/api/work-time", 409, { method: "PUT", headers: { ...headersFor(normalUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ ...manualEntry, expectedRevision: 4 }) });
 if (database.current.get(normalUserId).revision !== 5 || database.journal.length !== beforeStale) throw new Error("Stale revision wrote current or journal.");
 
-for (const invalidManual of [{ start: "28:00" }, { end: "07:00" }, { breakMinutes: -1 }, { actor_user_id: adminUserId }, { extra: true }]) {
+for (const invalidManual of [{ minutes: 0 }, { minutes: 1000 }, { actor_user_id: adminUserId }, { extra: true }]) {
   await expectStatus("/api/work-time", 400, { method: "PUT", headers: { ...headersFor(normalUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ ...manualEntry, expectedRevision: 5, ...invalidManual }) });
 }
 response = await put(normalUserId, { ...manualEntry, expectedRevision: 5 });
@@ -182,8 +182,13 @@ const journalAfterWinner = database.journal.length;
 await expectStatus("/api/work-time", 409, { method: "PUT", headers: { ...headersFor(normalUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ ...manualEntry, note: "parallel-b", expectedRevision: 5 }) });
 if (database.current.get(normalUserId).revision !== 6 || JSON.parse(database.current.get(normalUserId).state_json).manualEntries.at(-1).note !== "manual entry" || database.journal.length !== journalAfterWinner) throw new Error("Parallel loser overwrote state or added journal event.");
 if (database.journal.filter((event) => event.user_id === normalUserId).length !== 6) throw new Error("Successful writes did not produce exactly one journal event each.");
-await put(normalUserId, { expectedRevision: 6, eventType: "CLOCK_IN" });
-await put(normalUserId, { expectedRevision: 7, eventType: "CLOCK_OUT" });
+response = await put(normalUserId, { expectedRevision: 6, eventType: "CORRECTION_UPDATED", correctionId: "correction-1", date: "2026-09-16", adjustmentMinutes: 45, note: "updated" });
+if ((await response.json()).revision !== 7 || JSON.parse(database.current.get(normalUserId).state_json).manualCorrections[0].adjustmentMinutes !== 45 || database.journal.at(-1).event_type !== "CORRECTION_UPDATED") throw new Error("Correction update was not server-authoritative or journaled.");
+response = await put(normalUserId, { expectedRevision: 7, eventType: "CORRECTION_REVOKED", correctionId: "correction-1", note: "revoked" });
+if ((await response.json()).revision !== 8 || !JSON.parse(database.current.get(normalUserId).state_json).manualCorrections[0].revoked || database.journal.at(-1).event_type !== "CORRECTION_REVOKED") throw new Error("Correction revoke must retain an append-only audit event.");
+await expectStatus("/api/work-time", 409, { method: "PUT", headers: { ...headersFor(normalUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ expectedRevision: 8, eventType: "CORRECTION_REVOKED", correctionId: "correction-1", note: "again" }) });
+await put(normalUserId, { expectedRevision: 8, eventType: "CLOCK_IN" });
+await put(normalUserId, { expectedRevision: 9, eventType: "CLOCK_OUT" });
 if (database.sessions.filter((session) => session.user_id === normalUserId).length !== 2) throw new Error("Multiple completed days were not retained as separate server sessions.");
 const reloadedSessions = await expectStatus("/api/work-time/sessions?month=2026-09", 200, { headers: headersFor(normalUserId) });
 if ((await reloadedSessions.json()).sessions.length !== 2) throw new Error("A second client or reload cannot see all completed server sessions.");

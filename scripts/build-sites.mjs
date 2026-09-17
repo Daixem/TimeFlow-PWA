@@ -145,7 +145,7 @@ function validatedSnapshot(value, env) {
   return snapshot;
 }
 
-const WORK_TIME_EVENT_TYPES = new Set(["CLOCK_IN", "CLOCK_OUT", "PAUSE_START", "PAUSE_END", "TIME_CORRECTION", "ADMIN_CORRECTION", "MANUAL_ENTRY"]);
+const WORK_TIME_EVENT_TYPES = new Set(["CLOCK_IN", "CLOCK_OUT", "PAUSE_START", "PAUSE_END", "TIME_CORRECTION", "ADMIN_CORRECTION", "CORRECTION_UPDATED", "CORRECTION_REVOKED", "MANUAL_ENTRY"]);
 
 function validExpectedRevision(value) {
   return typeof value === "number" && Number.isInteger(value) && value >= 0;
@@ -157,7 +157,9 @@ const WORK_TIME_COMMAND_FIELDS = {
   PAUSE_START: ["eventType", "expectedRevision"],
   PAUSE_END: ["eventType", "expectedRevision"],
   TIME_CORRECTION: ["eventType", "expectedRevision", "correctionId", "date", "adjustmentMinutes", "note"],
-  MANUAL_ENTRY: ["eventType", "expectedRevision", "date", "start", "end", "breakMinutes", "note"],
+  CORRECTION_UPDATED: ["eventType", "expectedRevision", "correctionId", "date", "adjustmentMinutes", "note"],
+  CORRECTION_REVOKED: ["eventType", "expectedRevision", "correctionId", "note"],
+  MANUAL_ENTRY: ["eventType", "expectedRevision", "entryId", "date", "minutes", "note"],
   ADMIN_CORRECTION: ["eventType", "expectedRevision", "userId", "correctionId", "date", "adjustmentMinutes", "note"]
 };
 
@@ -185,16 +187,14 @@ function parsedWorkTimeCommand(body) {
   const allowed = WORK_TIME_COMMAND_FIELDS[eventType];
   if (!allowed || !validExpectedRevision(body.expectedRevision) || Object.keys(body).some((key) => !allowed.includes(key))) return null;
   if (["CLOCK_IN", "CLOCK_OUT", "PAUSE_START", "PAUSE_END"].includes(eventType)) return { eventType, expectedRevision: body.expectedRevision };
-  if (eventType === "TIME_CORRECTION" || eventType === "ADMIN_CORRECTION") {
+  if (eventType === "TIME_CORRECTION" || eventType === "ADMIN_CORRECTION" || eventType === "CORRECTION_UPDATED") {
     if (typeof body.correctionId !== "string" || !/^[A-Za-z0-9_-]{1,80}$/.test(body.correctionId) || !validWorkTimeDate(body.date) || !Number.isInteger(body.adjustmentMinutes) || body.adjustmentMinutes < -1440 || body.adjustmentMinutes > 1440 || !validWorkTimeNote(body.note)) return null;
     if (eventType === "ADMIN_CORRECTION" && (typeof body.userId !== "string" || !/^[A-Za-z0-9_-]{1,160}$/.test(body.userId))) return null;
     return { eventType, expectedRevision: body.expectedRevision, ...(eventType === "ADMIN_CORRECTION" ? { userId: body.userId } : {}), correctionId: body.correctionId, date: body.date, adjustmentMinutes: body.adjustmentMinutes, note: body.note.trim() };
   }
-  if (!validWorkTimeDate(body.date) || !validWorkTimeClock(body.start) || !validWorkTimeClock(body.end) || !Number.isInteger(body.breakMinutes) || body.breakMinutes < 0 || body.breakMinutes > 720 || !validWorkTimeNote(body.note)) return null;
-  const [startHours, startMinutes] = body.start.split(":").map(Number), [endHours, endMinutes] = body.end.split(":").map(Number);
-  const duration = (endHours * 60 + endMinutes) - (startHours * 60 + startMinutes);
-  if (duration <= 0 || duration > 16 * 60 || body.breakMinutes >= duration) return null;
-  return { eventType, expectedRevision: body.expectedRevision, date: body.date, start: body.start, end: body.end, breakMinutes: body.breakMinutes, note: body.note.trim() };
+  if (eventType === "CORRECTION_REVOKED") return typeof body.correctionId === "string" && /^[A-Za-z0-9_-]{1,80}$/.test(body.correctionId) && validWorkTimeNote(body.note) ? { eventType, expectedRevision: body.expectedRevision, correctionId: body.correctionId, note: body.note.trim() } : null;
+  if (!validWorkTimeDate(body.date) || typeof body.entryId !== "string" || !/^[A-Za-z0-9_-]{1,80}$/.test(body.entryId) || !Number.isInteger(body.minutes) || body.minutes < 1 || body.minutes > 16 * 60 || !validWorkTimeNote(body.note)) return null;
+  return { eventType, expectedRevision: body.expectedRevision, entryId: body.entryId, date: body.date, minutes: body.minutes, note: body.note.trim() };
 }
 
 function storedWorkTimeState(row) {
@@ -217,18 +217,30 @@ function workTimeServerEnabled(env) {
   return env?.TIMEFLOW_WORK_TIME_SERVER_ENABLED === "true";
 }
 
-function serverWorkTimeState(command, currentState, now) {
+function serverWorkTimePolicy(env) {
+  const threshold = Number(env?.TIMEFLOW_WORK_TIME_AUTO_BREAK_AFTER_MINUTES);
+  const minutes = Number(env?.TIMEFLOW_WORK_TIME_AUTO_BREAK_MINUTES);
+  return { version: String(env?.TIMEFLOW_WORK_TIME_POLICY_VERSION || "default-v1"), automaticPauseEnabled: env?.TIMEFLOW_WORK_TIME_AUTO_BREAK_ENABLED !== "false", thresholdMinutes: Number.isInteger(threshold) && threshold > 0 ? threshold : 360, pauseMinutes: Number.isInteger(minutes) && minutes >= 0 ? minutes : 30 };
+}
+
+function serverWorkTimeState(command, currentState, now, policy) {
   const eventType = command.eventType;
   if (eventType === "CLOCK_IN") {
     if (currentState?.isWorking) return null;
     const manualCorrections = Array.isArray(currentState?.manualCorrections) ? currentState.manualCorrections : [];
     const manualEntries = Array.isArray(currentState?.manualEntries) ? currentState.manualEntries : [];
-    return { isWorking: true, workStart: now, workEnd: null, isPaused: false, pauseStartedAt: null, pauseAccumulatedMs: 0, hasManualPause: false, workStartRevision: command.expectedRevision + 1, ...(manualCorrections.length ? { manualCorrections } : {}), ...(manualEntries.length ? { manualEntries } : {}) };
+    return { isWorking: true, workStart: now, workEnd: null, isPaused: false, pauseStartedAt: null, pauseAccumulatedMs: 0, hasManualPause: false, workStartRevision: command.expectedRevision + 1, workTimePolicy: policy, ...(manualCorrections.length ? { manualCorrections } : {}), ...(manualEntries.length ? { manualEntries } : {}) };
   }
   if (eventType === "CLOCK_OUT") {
     if (!currentState?.isWorking) return null;
     const pausedFor = currentState.isPaused && currentState.pauseStartedAt ? Math.max(0, Date.parse(now) - Date.parse(currentState.pauseStartedAt)) : 0;
-    return { ...currentState, isWorking: false, workEnd: now, isPaused: false, pauseStartedAt: null, pauseAccumulatedMs: Math.max(0, Number(currentState.pauseAccumulatedMs || 0)) + pausedFor };
+    const manualPauseMs = Math.max(0, Number(currentState.pauseAccumulatedMs || 0)) + pausedFor;
+    const grossMinutes = Math.max(0, Math.floor((Date.parse(now) - Date.parse(currentState.workStart)) / 60000));
+    const activePolicy = currentState.workTimePolicy || policy;
+    const automaticPauseMinutes = activePolicy.automaticPauseEnabled && grossMinutes >= activePolicy.thresholdMinutes ? activePolicy.pauseMinutes : 0;
+    // Manual and automatic breaks never stack: the legally relevant deduction
+    // is the larger of the recorded manual break and the server policy.
+    return { ...currentState, isWorking: false, workEnd: now, isPaused: false, pauseStartedAt: null, pauseAccumulatedMs: manualPauseMs, automaticPauseMinutes };
   }
   if (eventType === "PAUSE_START") {
     if (!currentState?.isWorking || currentState.isPaused) return null;
@@ -244,8 +256,23 @@ function serverWorkTimeState(command, currentState, now) {
     if (corrections.some((item) => item.id === command.correctionId)) return null;
     return { ...base, manualCorrections: [...corrections, { id: command.correctionId, date: command.date, adjustmentMinutes: command.adjustmentMinutes, note: command.note }].slice(-366) };
   }
+  if (eventType === "CORRECTION_UPDATED") {
+    const corrections = Array.isArray(base.manualCorrections) ? base.manualCorrections.filter((item) => item && typeof item === "object") : [];
+    const index = corrections.findIndex((item) => item.id === command.correctionId && !item.revoked);
+    if (index < 0) return null;
+    corrections[index] = { ...corrections[index], date: command.date, adjustmentMinutes: command.adjustmentMinutes, note: command.note, updated: true };
+    return { ...base, manualCorrections: corrections };
+  }
+  if (eventType === "CORRECTION_REVOKED") {
+    const corrections = Array.isArray(base.manualCorrections) ? base.manualCorrections.filter((item) => item && typeof item === "object") : [];
+    const index = corrections.findIndex((item) => item.id === command.correctionId && !item.revoked);
+    if (index < 0) return null;
+    corrections[index] = { ...corrections[index], revoked: true, revokeNote: command.note };
+    return { ...base, manualCorrections: corrections };
+  }
   const entries = Array.isArray(base.manualEntries) ? base.manualEntries.filter((item) => item && typeof item === "object") : [];
-  return { ...base, manualEntries: [...entries, { date: command.date, start: command.start, end: command.end, breakMinutes: command.breakMinutes, note: command.note }].slice(-366) };
+  if (entries.some((item) => item.id === command.entryId)) return null;
+  return { ...base, manualEntries: [...entries, { id: command.entryId, date: command.date, minutes: command.minutes, note: command.note, entryType: "manual_work" }].slice(-366) };
 }
 
 async function ensureTeamTables(database) {
@@ -480,7 +507,7 @@ async function handleWorkTime(request, env, url) {
   const row = await env.DB.prepare("SELECT state_json, revision, server_updated_at FROM timeflow_work_time_current WHERE user_id = ?").bind(target.userId).first();
   const currentState = row ? storedWorkTimeState(row) : null;
   if (row && !currentState) return jsonResponse({ error: "stored_work_time_invalid" }, 500);
-  const nextState = serverWorkTimeState(command, currentState, now);
+  const nextState = serverWorkTimeState(command, currentState, now, serverWorkTimePolicy(env));
   if (!nextState) return jsonResponse({ error: "invalid_work_time_transition" }, 409);
   const stateJson = JSON.stringify(nextState);
   const source = workTimeSource(eventType, target.adminCorrection);

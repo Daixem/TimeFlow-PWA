@@ -121,6 +121,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function currentWorkday() {
     return readJson(window.TimeFlowWorkTimeSnapshotAuthority?.() !== false ? "timeflow-work-time-current-v1" : "timeflow-workday-v2");
   }
+  function pausePolicy(workday, fallback) { const policy = window.TimeFlowWorkTimeSnapshotAuthority?.() !== false ? workday?.workTimePolicy : null; return policy && typeof policy === "object" ? { enabled: policy.automaticPauseEnabled !== false, after: Number(policy.thresholdMinutes) || 360, minutes: Number(policy.pauseMinutes) || 0 } : { enabled: true, after: fallback.autoBreakAfterMinutes, minutes: fallback.autoBreakMinutes }; }
   function scheduledEndFor(date) {
     const shifts = readJson("timeflow-private-schedule-v1");
     if (!Array.isArray(shifts) || !date) return null;
@@ -133,11 +134,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const target = number(settings.dailyTargetMinutes, 480);
     const breakAfter = number(settings.autoBreakAfterMinutes, 360);
     const breakLength = number(settings.autoBreakMinutes, 30);
+    const policy = pausePolicy(workday, { autoBreakAfterMinutes: breakAfter, autoBreakMinutes: breakLength });
     const start = workday?.workStart ? new Date(workday.workStart) : null;
     const end = workday?.isWorking ? new Date() : workday?.workEnd ? new Date(workday.workEnd) : null;
     const gross = start && end ? Math.max(0, Math.floor((end - start) / 60000)) : 0;
     const runningPause = workday?.isPaused && workday.pauseStartedAt ? Math.max(0, new Date() - new Date(workday.pauseStartedAt)) : 0;
-    const usedBreak = workday?.hasManualPause ? Math.floor((Number(workday.pauseAccumulatedMs || 0) + runningPause) / 60000) : gross >= breakAfter ? breakLength : 0;
+    const usedBreak = workday?.hasManualPause ? Math.floor((Number(workday.pauseAccumulatedMs || 0) + runningPause) / 60000) : policy.enabled && gross >= policy.after ? policy.minutes : 0;
     const net = Math.max(0, gross - usedBreak);
     document.getElementById("privateHomeStart").textContent = start ? start.toLocaleTimeString(window.TimeFlowLocalization?.locale?.() || "de-DE", { hour: "2-digit", minute: "2-digit" }) : "--:--";
     document.getElementById("privateHomeBreakUsed").textContent = `${usedBreak} min`;
