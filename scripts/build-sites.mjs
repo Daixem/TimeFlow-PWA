@@ -55,7 +55,10 @@ for (const file of files) {
 const worker = `const FILES = ${JSON.stringify(payload)};
 const BUILD_METADATA = ${JSON.stringify(buildMetadata)};
 const BUILD_VERSION = ${JSON.stringify(buildVersion)};
-const MAIN_RELEASE_ORIGIN = "https://daixem.github.io/TimeFlow-PWA";
+// GitHub Pages is published below this repository path. Keep the trailing
+// slash and resolve only relative request paths so an index request cannot
+// drop the TimeFlow-PWA base path.
+const MAIN_RELEASE_ORIGIN = "https://daixem.github.io/TimeFlow-PWA/";
 const SYNC_KEYS = ["timeflow-profile-v1", "timeflow-settings-v1", "timeflow-profile-preferences-v1", "timeflow-custom-background-v1", "timeflow-private-schedule-v1", "timeflow-private-schedule-learning-v1", "timeflow-private-account-v1", "timeflow-worktime-audit-v1", "timeflow-monthly-targets-v1", "timeflow-private-setup-v1", "timeflow-beta-consent-v1", "timeflow-workday-v2", "timeflow-notifications-v1", "timeflow-notification-read-v1", "timeflow-quick-actions-v1"];
 const WORK_TIME_SNAPSHOT_KEYS = new Set(["timeflow-workday-v2", "timeflow-workday-history-v1", "timeflow-private-account-v1", "timeflow-worktime-audit-v1", "timeflow-work-time-current-v1", "timeflow-work-time-meta-v1", "timeflow-work-time-pending-v1", "timeflow-work-time-conflict-v1", "timeflow-work-time-correction-pending-v1", "timeflow-work-time-sessions-v1"]);
 
@@ -99,7 +102,8 @@ function jsonResponse(value, status = 200, extraHeaders = {}) {
 async function latestMainAsset(request, url) {
   if (!["GET", "HEAD"].includes(request.method) || url.pathname.startsWith("/api/") || url.pathname === "/version.json") return null;
   try {
-    const upstreamUrl = new URL(url.pathname + url.search, MAIN_RELEASE_ORIGIN);
+    const relativePath = url.pathname.replace(/^\\/+/, "");
+    const upstreamUrl = new URL(relativePath + url.search, MAIN_RELEASE_ORIGIN);
     if (["/", "/index.html", "/sw.js"].includes(url.pathname)) upstreamUrl.searchParams.set("timeflow_release", String(Math.floor(Date.now() / 60000)));
     const upstream = await fetch(upstreamUrl, {
       method: request.method,

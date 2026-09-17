@@ -16,7 +16,7 @@ Stand: September 2026. Diese Anleitung enthält keine Zugangsdaten und ersetzt k
 
 ## Verbleibende Grenzen
 
-Die Ratenbegrenzung läuft im bestehenden Worker und ist daher eine zusätzliche Schutzschicht, kein Ersatz für einen zentralen WAF-/Rate-Limit-Dienst. Eine vollständige D1-Sicherung oder ein datenbankweiter Restore ist über die in diesem Projekt verfügbare Sites-Schnittstelle **nicht automatisierbar**. Vor einem Produktivbetrieb mit sensiblen Daten muss die Hosting-Plattform eine dokumentierte D1-Export- und Restore-Funktion bereitstellen.
+Die Ratenbegrenzung läuft im bestehenden Worker und ist daher eine zusätzliche Schutzschicht, kein Ersatz für einen zentralen WAF-/Rate-Limit-Dienst. Der offizielle Cloudflare-D1-Export und -Import wurde mit getrennten synthetischen Test-D1s erfolgreich nachgewiesen. Das ist noch kein Produktiv-Restore-Nachweis: Produktive Migrationen und ein Produktiv-Restore bleiben bis zu einer ausdrücklich freigegebenen Recovery-Übung gesperrt. Der konkrete Ablauf steht in [D1-Backup-Restore.md](D1-Backup-Restore.md).
 
 ## Was gesichert wird
 
