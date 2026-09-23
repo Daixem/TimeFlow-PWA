@@ -1,0 +1,33 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "timeflow-preprod",
+  "main": "dist/server/index.js",
+  "compatibility_date": "2026-09-23",
+  "workers_dev": true,
+  "vars": {
+    "TIMEFLOW_WORK_TIME_SERVER_ENABLED": "true",
+    "TIMEFLOW_WORK_TIME_POLICY_VERSION": "preprod-v1",
+    "TIMEFLOW_WORK_TIME_AUTO_BREAK_ENABLED": "true",
+    "TIMEFLOW_WORK_TIME_AUTO_BREAK_AFTER_MINUTES": "360",
+    "TIMEFLOW_WORK_TIME_AUTO_BREAK_MINUTES": "30"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "timeflow-migration-test-20260917",
+      "database_id": "4826b07d-8a23-4098-80d7-ee6a6469bcab",
+      "migrations_dir": "drizzle"
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 1
+    }
+  }
+}
