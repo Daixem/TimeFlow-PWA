@@ -22,6 +22,7 @@ nachfolgende reine Dokumentations-Commit verändert den deployten Code nicht.
 - Access-Anwendung: `TimeFlow Pre-Production`
 - Geschütztes Ziel: `timeflow-preprod.wvzv2wd4zj.workers.dev`
 - Richtlinie: `Dimitri only`, Aktion `Allow`, Sitzungsdauer 24 Stunden
+- Anmeldemethoden: Cloudflare-Konto und E-Mail-Einmalcode
 - Identität: serverseitig über `ctx.access.getIdentity()` übernommen
 
 Im Access-Modus entfernt der Worker ungeprüfte eingehende Identitätsheader und
@@ -55,7 +56,7 @@ Restore-Test-D1 ist ebenfalls nicht an den Worker gebunden.
 | Automatisierte Tests | **PASS** | Vollständige `npm test`-Suite erfolgreich. |
 | Monitoring | **PASS** | Logs und Traces aktiv; bei der Abnahme keine 5xx-Fehler festgestellt. |
 | Browser-Anmeldung mit echter Identität | **PASS** | Cloudflare Access schützt die URL; Dimitris geprüfte Identität wird von TimeFlow übernommen. |
-| Browser-E2E mit zwei Identitäten | **PARTIAL** | Dimitri ist verifiziert; eine zweite zugelassene Testidentität fehlt noch. |
+| Browser-E2E mit zwei Identitäten | **PASS** | Zweite temporäre Identität erkannt; eigener Server-Akteur und getrennte D1-Zeile verifiziert. |
 | Offline/Pending/Reconnect im Browser | **PARTIAL** | Der Authentifizierungsblocker ist gelöst; der vollständige Browser-Ablauf steht noch aus. |
 | Service-Worker Build A → B | **PARTIAL** | Authentifizierter Browserzugang steht; der Test über zwei eindeutig zugeordnete Builds fehlt. |
 | Entfernung von Demo-Daten | **PARTIAL** | Private Bereinigungstests bestehen; der öffentliche Demo-Modus zeigt weiterhin Beispieldaten. |
@@ -66,6 +67,12 @@ Die `workers.dev`-Adresse ist durch Cloudflare Access geschützt. Der Worker
 akzeptiert im Pre-Prod-Access-Modus nur den von Cloudflare bereitgestellten
 Access-Kontext; direkt gesendete Identitätsheader werden entfernt.
 Test-Identitäten und Testdaten bleiben ausschließlich in der Test-D1.
+
+Die temporäre zweite E-Mail-Freigabe wurde nach dem Test aus Access entfernt.
+Beta-Zugang, Current-State, Sync- und Organisationsdaten wurden aus der Test-D1
+gelöscht. Der einzelne `CLOCK_IN`-Journal-Eintrag bleibt entsprechend der
+verifizierten Append-only-Regel als unveränderbarer Testnachweis erhalten;
+die temporäre E-Mail-Adresse wird in diesem Repository nicht dokumentiert.
 
 Kein produktiver Cutover wurde durchgeführt. Produktive D1, produktive
 Bindings und produktive Feature-Gates wurden nicht verändert.
