@@ -132,11 +132,11 @@ async function initialiseWorkTime() {
       return workTimeServerMode;
     }
     workTimeServerMode = "enabled";
-    document.dispatchEvent(new CustomEvent("timeflow:work-time-mode", { detail: { mode: workTimeServerMode } }));
     {
       const current = await client.getCurrent();
       applyWorkTimeState(current.state);
     }
+    document.dispatchEvent(new CustomEvent("timeflow:work-time-mode", { detail: { mode: workTimeServerMode } }));
   } catch (_error) {
     // A transport, authentication or storage failure must never turn an
     // intended server-authoritative work-time mode into a local fallback.
@@ -204,6 +204,8 @@ function updateWorkUi() {
   elements.workStatus.textContent = state.isWorking ? "Im Dienst" : "Nicht im Dienst";
   elements.clockHint.textContent = state.isWorking ? "Tippen zum Ausstempeln" : "Tippen zum Einstempeln";
   elements.clockButton.classList.toggle("is-working", state.isWorking);
+  elements.clockButton.disabled = workTimeServerMode !== "enabled" && workTimeServerMode !== "disabled";
+  elements.clockButton.setAttribute("aria-busy", String(workTimeServerMode === undefined));
   elements.clockButton.setAttribute("aria-pressed", String(state.isWorking));
   elements.clockIcon.className = `fa-solid ${state.isWorking ? "fa-right-from-bracket" : "fa-right-to-bracket"}`;
   const privateMode = document.documentElement.classList.contains("timeflow-private-mode") || document.body.dataset.appMode === "private";

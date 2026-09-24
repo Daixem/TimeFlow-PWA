@@ -20,7 +20,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <time class="clock-live-time" id="clockLiveTime">--:--</time>
         <p class="clock-live-date" id="clockLiveDate">–</p>
 
-        <button class="clock-action-button" id="clockActionButton" type="button" aria-pressed="false">
+        <button class="clock-action-button" id="clockActionButton" type="button" aria-pressed="false" disabled>
           <span class="clock-action-ring"><i class="fa-solid fa-right-to-bracket" id="clockActionIcon"></i></span>
           <strong id="clockActionLabel">Einstempeln</strong>
           <small id="clockActionHint">Arbeitszeit jetzt starten</small>
@@ -68,6 +68,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const AUTO_BREAK_MINUTES = 30;
   const elements = {
     page: document.getElementById("clockPage"),
+    connection: document.querySelector("#clockPage .clock-connection"),
     state: document.getElementById("clockState"),
     liveTime: document.getElementById("clockLiveTime"),
     liveDate: document.getElementById("clockLiveDate"),
@@ -152,6 +153,10 @@ document.addEventListener("DOMContentLoaded", () => {
     elements.state.classList.toggle("is-working", Boolean(saved.isWorking));
     elements.state.querySelector("span").textContent = saved.isPaused ? "In Pause" : saved.isWorking ? "Im Dienst" : start ? "Dienst beendet" : "Nicht im Dienst";
     elements.action.classList.toggle("is-working", Boolean(saved.isWorking));
+    const ready = window.TimeFlowWorkTimeReady?.() && (window.TimeFlowWorkTimeServerEnabled?.() || window.TimeFlowWorkTimeSnapshotAuthority?.() === false);
+    elements.action.disabled = !ready;
+    elements.connection.textContent = ready ? "Bereit" : window.TimeFlowWorkTimeReady?.() ? "Nicht erreichbar" : "Wird verbunden …";
+    elements.connection.classList.toggle("is-offline", !ready);
     elements.action.setAttribute("aria-pressed", String(Boolean(saved.isWorking)));
     elements.actionIcon.className = `fa-solid ${saved.isWorking ? "fa-right-from-bracket" : "fa-right-to-bracket"}`;
     elements.actionLabel.textContent = saved.isWorking ? "Ausstempeln" : "Einstempeln";

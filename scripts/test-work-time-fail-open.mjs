@@ -2,6 +2,9 @@ import { readFile } from "node:fs/promises";
 import vm from "node:vm";
 
 const source = await readFile(new URL("../js/script.js", import.meta.url), "utf8");
+if (!source.includes('elements.clockButton.disabled = workTimeServerMode !== "enabled" && workTimeServerMode !== "disabled"') || source.indexOf('applyWorkTimeState(current.state)') > source.indexOf('detail: { mode: workTimeServerMode }', source.indexOf('workTimeServerMode = "enabled"'))) {
+  throw new Error("Work-time controls must remain unavailable until the authoritative initial state has loaded.");
+}
 const storage = new Map();
 const element = () => ({ textContent: "", classList: { add() {}, remove() {}, toggle() {} }, style: { setProperty() {} }, setAttribute() {} });
 const sandbox = {
