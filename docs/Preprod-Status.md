@@ -7,13 +7,27 @@ Stand: 24. September 2026
 - Worker: `timeflow-preprod`
 - URL: `https://timeflow-preprod.wvzv2wd4zj.workers.dev`
 - Worker-ID: `34d459b368234910b7398f868ba60314`
-- Worker-Version: `9dd38c09-103c-4765-8473-abd01342365a`
-- Deployed Source Commit: `691d7b5df284036bb21b51ea2530a2a98fa10d40`
-- Build-ID: `691d7b5df284-20260924t151247057z`
+- Worker-Version: `ff3f7eeb-cc73-42ad-9008-17cf35d38751`
+- Deployed Source Commit: `5306d7316bdf79029404c07ed91a8aa9cfd0edab`
+- Build-ID: `5306d7316bdf-20260924t153430918z`
 - Konfiguration: `wrangler.preprod.jsonc`
 
 Die Worker-Version wurde aus dem dokumentierten Phase-D-Commit gebaut. Der
 nachfolgende reine Dokumentations-Commit verändert den deployten Code nicht.
+
+## Browser-Anmeldung
+
+- Cloudflare Zero Trust: `Free`
+- Team-Domain: `crimson-bird-5de5.cloudflareaccess.com`
+- Access-Anwendung: `TimeFlow Pre-Production`
+- Geschütztes Ziel: `timeflow-preprod.wvzv2wd4zj.workers.dev`
+- Richtlinie: `Dimitri only`, Aktion `Allow`, Sitzungsdauer 24 Stunden
+- Identität: serverseitig über `ctx.access.getIdentity()` übernommen
+
+Im Access-Modus entfernt der Worker ungeprüfte eingehende Identitätsheader und
+setzt die TimeFlow-Identität ausschließlich aus dem von Cloudflare geprüften
+Access-Kontext. Der reale Browser-Test hat die Anmeldung und das Überspringen
+der öffentlichen Demo-Kontoauswahl bestätigt.
 
 ## D1-Binding
 
@@ -40,19 +54,18 @@ Restore-Test-D1 ist ebenfalls nicht an den Worker gebunden.
 | Erstmaliger D1-Insert | **PASS** | Falscher HTTP-409-Fall behoben; erneuter Remote-Test liefert HTTP 201. |
 | Automatisierte Tests | **PASS** | Vollständige `npm test`-Suite erfolgreich. |
 | Monitoring | **PASS** | Logs und Traces aktiv; bei der Abnahme keine 5xx-Fehler festgestellt. |
-| Browser-E2E mit echten Identitäten | **BLOCKED** | `workers.dev` setzt keine vertrauenswürdig verifizierten `oai-authenticated-user-*`-Header. |
-| Offline/Pending/Reconnect im Browser | **BLOCKED** | Benötigt zuerst einen geschützten, serverseitig verifizierten Testzugang. |
-| Service-Worker Build A → B | **BLOCKED** | Authentifizierter Browser-Test und zwei eindeutig zugeordnete Builds fehlen. |
+| Browser-Anmeldung mit echter Identität | **PASS** | Cloudflare Access schützt die URL; Dimitris geprüfte Identität wird von TimeFlow übernommen. |
+| Browser-E2E mit zwei Identitäten | **PARTIAL** | Dimitri ist verifiziert; eine zweite zugelassene Testidentität fehlt noch. |
+| Offline/Pending/Reconnect im Browser | **PARTIAL** | Der Authentifizierungsblocker ist gelöst; der vollständige Browser-Ablauf steht noch aus. |
+| Service-Worker Build A → B | **PARTIAL** | Authentifizierter Browserzugang steht; der Test über zwei eindeutig zugeordnete Builds fehlt. |
 | Entfernung von Demo-Daten | **PARTIAL** | Private Bereinigungstests bestehen; der öffentliche Demo-Modus zeigt weiterhin Beispieldaten. |
 
 ## Sicherheitsgrenze
 
-Die öffentliche `workers.dev`-Adresse darf nicht als vertrauenswürdige
-Mehrbenutzer-Beta behandelt werden: direkt gesendete Identitätsheader sind dort
-nicht durch die vorgesehene Plattform authentifiziert. Für die verbleibenden
-Browser-Tests ist Cloudflare Access oder ein gleichwertiger, serverseitig
-verifizierter Pre-Prod-Zugang erforderlich. Test-Identitäten und Testdaten
-bleiben ausschließlich in der Test-D1.
+Die `workers.dev`-Adresse ist durch Cloudflare Access geschützt. Der Worker
+akzeptiert im Pre-Prod-Access-Modus nur den von Cloudflare bereitgestellten
+Access-Kontext; direkt gesendete Identitätsheader werden entfernt.
+Test-Identitäten und Testdaten bleiben ausschließlich in der Test-D1.
 
 Kein produktiver Cutover wurde durchgeführt. Produktive D1, produktive
 Bindings und produktive Feature-Gates wurden nicht verändert.
