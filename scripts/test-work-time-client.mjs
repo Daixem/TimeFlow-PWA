@@ -19,6 +19,23 @@ vm.runInNewContext(source, sandbox, { filename: "work-time-api.js" });
 const create = sandbox.TimeFlowWorkTimeApi?.create;
 if (typeof create !== "function") throw new Error("Work-time API adapter was not exposed.");
 
+const accountStorage = new MemoryStorage({
+  "timeflow-work-time-owner-v1": "user-a",
+  "timeflow-work-time-current-v1": JSON.stringify({ owner: "a" }),
+  "timeflow-work-time-meta-v1": JSON.stringify({ revision: 3 }),
+  "timeflow-work-time-pending-v1": JSON.stringify({ change: { eventType: "CLOCK_OUT", expectedRevision: 3 } })
+});
+if (!sandbox.TimeFlowWorkTimeApi.activateAccount(accountStorage, "user-b")) throw new Error("Account switch was not detected.");
+if (accountStorage.getItem("timeflow-work-time-current-v1") !== null || accountStorage.getItem("timeflow-work-time-pending-v1") !== null) throw new Error("Previous account work-time data remained visible after account switch.");
+accountStorage.setItem("timeflow-work-time-current-v1", JSON.stringify({ owner: "b" }));
+sandbox.TimeFlowWorkTimeApi.activateAccount(accountStorage, "user-a");
+if (JSON.parse(accountStorage.getItem("timeflow-work-time-current-v1")).owner !== "a" || !accountStorage.getItem("timeflow-work-time-pending-v1")) throw new Error("Returning account did not recover its isolated current state and pending change.");
+sandbox.TimeFlowWorkTimeApi.activateAccount(accountStorage, "user-b");
+if (JSON.parse(accountStorage.getItem("timeflow-work-time-current-v1")).owner !== "b" || accountStorage.getItem("timeflow-work-time-pending-v1") !== null) throw new Error("Second account received another account's pending work-time change.");
+const legacyStorage = new MemoryStorage({ "timeflow-work-time-current-v1": JSON.stringify({ owner: "unknown" }) });
+sandbox.TimeFlowWorkTimeApi.activateAccount(legacyStorage, "user-a");
+if (legacyStorage.getItem("timeflow-work-time-current-v1") !== null) throw new Error("Unowned legacy work-time data was assigned to the first authenticated account.");
+
 let calls = [];
 const disabledClient = create({
   storage: new MemoryStorage(),
@@ -153,4 +170,4 @@ const reloadedClient = create({ storage: restartStorage, request: async (_path, 
 try { await reloadedClient.reconnectPending(); throw new Error("Expected reconnect conflict."); } catch (error) { if (error.status !== 409) throw error; }
 if (restartWrites !== 1 || !reloadedClient.getPending()?.change || !reloadedClient.getConflict()?.active) throw new Error("Reload conflict lost pending data or retried automatically.");
 
-console.log("Work-time client: feature gate, dedicated revision, API actions, 401/403/409, offline pending, reconnect and no automatic conflict retry verified.");
+console.log("Work-time client: account isolation, feature gate, dedicated revision, API actions, 401/403/409, offline pending, reconnect and no automatic conflict retry verified.");

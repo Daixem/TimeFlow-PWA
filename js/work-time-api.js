@@ -1,6 +1,26 @@
 (function (root) {
   "use strict";
   var META_KEY = "timeflow-work-time-meta-v1", PENDING_KEY = "timeflow-work-time-pending-v1", CONFLICT_KEY = "timeflow-work-time-conflict-v1", CACHE_KEY = "timeflow-work-time-current-v1";
+  var ACCOUNT_OWNER_KEY = "timeflow-work-time-owner-v1";
+  var ACCOUNT_KEYS = [CACHE_KEY, META_KEY, PENDING_KEY, CONFLICT_KEY, "timeflow-work-time-correction-pending-v1", "timeflow-work-time-sessions-v1"];
+  function accountKey(userId, key) { return "timeflow-work-time-account-v1:" + encodeURIComponent(userId) + ":" + key; }
+  function activateAccount(storage, userId) {
+    var nextOwner = String(userId || "").trim();
+    if (!storage || !nextOwner) return false;
+    var previousOwner = storage.getItem(ACCOUNT_OWNER_KEY);
+    if (previousOwner === nextOwner) return false;
+    ACCOUNT_KEYS.forEach(function (key) {
+      var value = storage.getItem(key);
+      if (previousOwner) {
+        var previousKey = accountKey(previousOwner, key);
+        if (value === null) storage.removeItem(previousKey); else storage.setItem(previousKey, value);
+      }
+      var nextValue = storage.getItem(accountKey(nextOwner, key));
+      if (nextValue === null) storage.removeItem(key); else storage.setItem(key, nextValue);
+    });
+    storage.setItem(ACCOUNT_OWNER_KEY, nextOwner);
+    return true;
+  }
   function parse(value, fallback) { try { return JSON.parse(value) ?? fallback; } catch (_error) { return fallback; } }
   function errorFromResponse(status, result) { var error = new Error(result && result.error ? result.error : "work_time_" + status); error.status = status; error.result = result || {}; return error; }
   function create(options) {
@@ -78,5 +98,5 @@
     async function reapplyLocalConflictVersion() { var conflict = read(CONFLICT_KEY, null); if (!conflict || !conflict.active) return null; try { return await send(conflict.localChange, conflict.serverRevision); } catch (error) { if (error.status === 409) error.conflict = preserveConflict(conflict.localChange, error.result || {}); throw error; } }
     return { getCurrent: getCurrent, getJournal: getJournal, getSessions: getSessions, isEnabled: isEnabled, writeChange: writeChange, reconnectPending: reconnectPending, loadServerConflictVersion: loadServerConflictVersion, reapplyLocalConflictVersion: reapplyLocalConflictVersion, getMeta: meta, getPending: function () { return read(PENDING_KEY, null); }, getConflict: function () { return read(CONFLICT_KEY, null); } };
   }
-  root.TimeFlowWorkTimeApi = { create: create };
+  root.TimeFlowWorkTimeApi = { create: create, activateAccount: activateAccount };
 }(globalThis));

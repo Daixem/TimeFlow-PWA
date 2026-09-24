@@ -21,6 +21,7 @@ let state = { isWorking: false, workStart: null, workEnd: null, isPaused: false,
 let workTimer;
 let workTimeApi;
 let workTimeServerMode;
+let workTimeSessionIdentity;
 window.TimeFlowWorkTimeServerEnabled = () => workTimeServerMode === "enabled";
 window.TimeFlowWorkTimeReady = () => workTimeServerMode !== undefined;
 // Until the feature explicitly answers "disabled", legacy stamps are never
@@ -262,7 +263,7 @@ function initialise() {
     void (state.isWorking ? clockOut() : clockIn());
   });
   clockConfirmDialog.addEventListener("click", (event) => { if (event.target === clockConfirmDialog) window.TimeFlowPlatform.dialog.close(clockConfirmDialog); });
-  updateDateTime(); workTimeReady = initialiseWorkTime();
+  updateDateTime();
   const day = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
   elements.dailyQuote.textContent = quotes[day % quotes.length];
   elements.teamNews.textContent = teamUpdates[day % teamUpdates.length];
@@ -309,6 +310,14 @@ function initialise() {
   window.setInterval(updateDateTime, 1000);
 }
 document.addEventListener("DOMContentLoaded", initialise);
+document.addEventListener("timeflow:session-ready", (event) => {
+  const identity = `${event.detail?.source || "unknown"}:${event.detail?.user?.id || "anonymous"}`;
+  if (identity === workTimeSessionIdentity && workTimeReady) return;
+  workTimeSessionIdentity = identity;
+  workTimeApi = undefined;
+  workTimeServerMode = undefined;
+  workTimeReady = initialiseWorkTime();
+});
 document.addEventListener("timeflow:toggle-clock", requestClockConfirmation);
 document.addEventListener("timeflow:settings-updated", updateWorkUi);
 document.addEventListener("timeflow:device-resumed", () => { if (!window.TimeFlowWorkTimeSnapshotAuthority()) loadWorkday(); updateDateTime(); updateWorkUi(); if (state.isWorking) startTimer(); });

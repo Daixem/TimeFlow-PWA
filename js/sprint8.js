@@ -138,6 +138,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function showApp() {
     window.clearTimeout(authVisibilityFallback);
+    if (session?.source === "platform") window.TimeFlowWorkTimeApi?.activateAccount(window.TimeFlowPlatform.storage, session.user?.id);
     gate.hidden = true;
     document.documentElement.classList.remove("timeflow-auth-pending", "timeflow-auth-locked");
     renderSessionCard();
