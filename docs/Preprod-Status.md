@@ -7,14 +7,13 @@ Stand: 24. September 2026
 - Worker: `timeflow-preprod`
 - URL: `https://timeflow-preprod.wvzv2wd4zj.workers.dev`
 - Worker-ID: `34d459b368234910b7398f868ba60314`
-- Worker-Version: `a18dafa4-c169-4f32-8d28-a95ae085e0ec`
-- Deployed Source Commit: `1f9294b59e8c56226516d6ad13af7dc7d8fee3dc`
-- Build-ID: `1f9294b59e8c-20260923t211752290z`
+- Worker-Version: `9dd38c09-103c-4765-8473-abd01342365a`
+- Deployed Source Commit: `691d7b5df284036bb21b51ea2530a2a98fa10d40`
+- Build-ID: `691d7b5df284-20260924t151247057z`
 - Konfiguration: `wrangler.preprod.jsonc`
 
-Die Worker-Version enthält zusätzlich den noch zu committenden Phase-D-Fix für
-die Verifikation eines erstmaligen D1-Inserts. Commit und Build-ID bilden bis
-zum nächsten Deployment noch den vorherigen Repository-Stand ab.
+Die Worker-Version wurde aus dem dokumentierten Phase-D-Commit gebaut. Der
+nachfolgende reine Dokumentations-Commit verändert den deployten Code nicht.
 
 ## D1-Binding
 
