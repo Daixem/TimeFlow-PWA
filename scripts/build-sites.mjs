@@ -133,6 +133,22 @@ function authenticatedUser(request) {
   return { authenticated: Boolean(id || email), id, email, name };
 }
 
+async function withCloudflareAccessIdentity(request, env, ctx) {
+  if (env?.TIMEFLOW_CLOUDFLARE_ACCESS_ENABLED !== "true") return request;
+  const headers = new Headers(request.headers);
+  for (const header of ["oai-authenticated-user-id", "oai-authenticated-user-email", "oai-authenticated-user-full-name", "oai-authenticated-user-full-name-encoding"]) headers.delete(header);
+  const identity = await ctx?.access?.getIdentity?.();
+  const email = String(identity?.email || "").trim().toLowerCase();
+  if (!email) return new Request(request, { headers });
+  headers.set("oai-authenticated-user-id", "cf-access:" + email);
+  headers.set("oai-authenticated-user-email", email);
+  if (identity?.name) {
+    headers.set("oai-authenticated-user-full-name", encodeURIComponent(String(identity.name)));
+    headers.set("oai-authenticated-user-full-name-encoding", "percent-encoded-utf-8");
+  }
+  return new Request(request, { headers });
+}
+
 async function ensureSyncTable(database) {
   await database.prepare("CREATE TABLE IF NOT EXISTS timeflow_user_sync (user_id TEXT PRIMARY KEY NOT NULL, payload_json TEXT NOT NULL DEFAULT '{}', revision INTEGER NOT NULL DEFAULT 1 CHECK (revision > 0), updated_at TEXT NOT NULL)").run();
 }
@@ -636,7 +652,8 @@ async function handleSync(request, env, url) {
 }
 
 export default {
-  async fetch(request, env) {
+  async fetch(request, env, ctx) {
+    request = await withCloudflareAccessIdentity(request, env, ctx);
     const url = new URL(request.url);
     if (url.pathname === "/api/session") {
       const user = authenticatedUser(request);

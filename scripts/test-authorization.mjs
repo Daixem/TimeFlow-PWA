@@ -96,4 +96,22 @@ const missingFingerprintEnv = { DB: database };
 const missingFingerprintResponse = await worker.fetch(new Request("https://timeflow.test/api/beta/invites", { headers: adminHeaders }), missingFingerprintEnv);
 if (missingFingerprintResponse.status !== 403) throw new Error("Ohne Admin-Fingerprint muss der sichere Default 403 sein.");
 
+const accessEmail = "dimitri@example.test";
+const accessUserId = `cf-access:${accessEmail}`;
+const accessEnv = {
+  DB: database,
+  TIMEFLOW_CLOUDFLARE_ACCESS_ENABLED: "true",
+  TIMEFLOW_BETA_ADMIN_USER_FINGERPRINT: await fingerprint(accessUserId)
+};
+const spoofedAccessRequest = new Request("https://timeflow.test/api/session", { headers: headersFor(adminUserId) });
+const unauthenticatedAccessResponse = await worker.fetch(spoofedAccessRequest, accessEnv, {});
+if ((await unauthenticatedAccessResponse.json()).authenticated) throw new Error("Access-Modus muss ungeprüfte Identitätsheader entfernen.");
+const verifiedAccessResponse = await worker.fetch(spoofedAccessRequest, accessEnv, {
+  access: { getIdentity: async () => ({ email: accessEmail.toUpperCase(), name: "Dimitri" }) }
+});
+const verifiedAccessSession = await verifiedAccessResponse.json();
+if (!verifiedAccessSession.authenticated || verifiedAccessSession.user.id !== accessUserId || verifiedAccessSession.user.email !== accessEmail || verifiedAccessSession.user.name !== "Dimitri") {
+  throw new Error("Eine verifizierte Cloudflare-Access-Identität muss die ungeprüften Request-Header vollständig ersetzen.");
+}
+
 console.log("Autorisierung: 401, 403, Adminzugriff und Sync-Identitätsbindung mit isolierter D1-Attrappe geprüft.");
