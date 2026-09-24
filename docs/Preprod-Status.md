@@ -1,16 +1,20 @@
-# TimeFlow Pre-Production
+# TimeFlow Pre-Production – Phase D
 
-Stand: 23. September 2026
+Stand: 24. September 2026
 
 ## Umgebung
 
 - Worker: `timeflow-preprod`
 - URL: `https://timeflow-preprod.wvzv2wd4zj.workers.dev`
 - Worker-ID: `34d459b368234910b7398f868ba60314`
-- Worker-Version: `f180f9b5-480b-4659-84fc-4468d7e4031d`
-- Deployed Source Commit: `38ab531c726149e85c421342419cfa4dee544838`
-- Build-ID: `38ab531c7261-20260923t210558676z`
+- Worker-Version: `a18dafa4-c169-4f32-8d28-a95ae085e0ec`
+- Deployed Source Commit: `1f9294b59e8c56226516d6ad13af7dc7d8fee3dc`
+- Build-ID: `1f9294b59e8c-20260923t211752290z`
 - Konfiguration: `wrangler.preprod.jsonc`
+
+Die Worker-Version enthält zusätzlich den noch zu committenden Phase-D-Fix für
+die Verifikation eines erstmaligen D1-Inserts. Commit und Build-ID bilden bis
+zum nächsten Deployment noch den vorherigen Repository-Stand ab.
 
 ## D1-Binding
 
@@ -23,19 +27,33 @@ Stand: 23. September 2026
 Die produktive D1 ist nicht gebunden und wurde nicht verändert. Die getrennte
 Restore-Test-D1 ist ebenfalls nicht an den Worker gebunden.
 
-## Feature-Gate und Beobachtbarkeit
+## Phase-D-Ergebnisse
 
-- `TIMEFLOW_WORK_TIME_SERVER_ENABLED=true`
-- Gate gilt ausschließlich für `timeflow-preprod`.
-- Workers Logs und Traces sind aktiviert.
-- `/api/work-time` antwortet ohne authentifizierte Identität mit HTTP 401.
+| Prüfung | Status | Ergebnis |
+| --- | --- | --- |
+| Isolierter Pre-Prod-Worker und Test-D1 | **PASS** | Ausschließlich die vorhandene Test-D1 ist gebunden. |
+| Work-Time-Gate | **PASS** | Nur in `timeflow-preprod` aktiviert. |
+| CLOCK_IN, Pausen und CLOCK_OUT | **PASS** | Zustände, fortlaufende Revisionen, Journal und Session in D1 verifiziert. |
+| Manueller Eintrag und Korrektur-Lebenszyklus | **PASS** | Erstellen, Ändern und Stornieren verifiziert. |
+| Gleichzeitige Änderungen | **PASS** | Veraltete Revision liefert HTTP 409 und erzeugt keinen Journal-Eintrag. |
+| Rollen und Fremdzugriff | **PASS** | Normaler Nutzer erhält HTTP 403; Admin-Aktion speichert den korrekten Akteur. |
+| Append-only-Journal | **PASS** | UPDATE und DELETE werden durch D1-Constraints abgewiesen. |
+| Erstmaliger D1-Insert | **PASS** | Falscher HTTP-409-Fall behoben; erneuter Remote-Test liefert HTTP 201. |
+| Automatisierte Tests | **PASS** | Vollständige `npm test`-Suite erfolgreich. |
+| Monitoring | **PASS** | Logs und Traces aktiv; bei der Abnahme keine 5xx-Fehler festgestellt. |
+| Browser-E2E mit echten Identitäten | **BLOCKED** | `workers.dev` setzt keine vertrauenswürdig verifizierten `oai-authenticated-user-*`-Header. |
+| Offline/Pending/Reconnect im Browser | **BLOCKED** | Benötigt zuerst einen geschützten, serverseitig verifizierten Testzugang. |
+| Service-Worker Build A → B | **BLOCKED** | Authentifizierter Browser-Test und zwei eindeutig zugeordnete Builds fehlen. |
+| Entfernung von Demo-Daten | **PARTIAL** | Private Bereinigungstests bestehen; der öffentliche Demo-Modus zeigt weiterhin Beispieldaten. |
 
-## Noch offen
+## Sicherheitsgrenze
 
-Die `workers.dev`-URL ist öffentlich erreichbar, stellt aber nicht automatisch
-die von der bestehenden ChatGPT-Sites-Beta gesetzten
-`oai-authenticated-user-*`-Header bereit. Die echte Browser-Abnahme mit zwei
-Benutzern benötigt deshalb vor Phase D eine isolierte Authentifizierung oder
-einen gleichwertigen, serverseitig verifizierten Testzugang.
+Die öffentliche `workers.dev`-Adresse darf nicht als vertrauenswürdige
+Mehrbenutzer-Beta behandelt werden: direkt gesendete Identitätsheader sind dort
+nicht durch die vorgesehene Plattform authentifiziert. Für die verbleibenden
+Browser-Tests ist Cloudflare Access oder ein gleichwertiger, serverseitig
+verifizierter Pre-Prod-Zugang erforderlich. Test-Identitäten und Testdaten
+bleiben ausschließlich in der Test-D1.
 
-Kein produktiver Cutover wurde durchgeführt.
+Kein produktiver Cutover wurde durchgeführt. Produktive D1, produktive
+Bindings und produktive Feature-Gates wurden nicht verändert.

@@ -523,6 +523,16 @@ async function handleWorkTime(request, env, url) {
       const statement = env.DB.prepare("INSERT INTO timeflow_work_time_current (user_id, state_json, revision, last_actor_user_id, last_event_type, last_source, effective_timestamp, server_updated_at, created_at) VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?) ON CONFLICT(user_id) DO NOTHING").bind(target.userId, stateJson, actorUserId, eventType, source, effectiveTimestamp, now, now);
       const result = await env.DB.batch([statement]);
       if ((result?.[0]?.meta?.changes || 0) === 1) return jsonResponse({ saved: true, revision: 1, state: nextState, updatedAt: now }, 201);
+      // Remote D1 can commit the insert while reporting meta.changes as zero.
+      // Verify the persisted row before returning a false conflict.
+      const committed = await env.DB.prepare("SELECT state_json, revision, last_actor_user_id, last_event_type, last_source, effective_timestamp, server_updated_at FROM timeflow_work_time_current WHERE user_id = ?").bind(target.userId).first();
+      if (Number(committed?.revision) === 1
+        && String(committed.state_json) === stateJson
+        && String(committed.last_actor_user_id) === actorUserId
+        && String(committed.last_event_type) === eventType
+        && String(committed.last_source) === source
+        && (committed.effective_timestamp || null) === (effectiveTimestamp || null)
+        && String(committed.server_updated_at) === now) return jsonResponse({ saved: true, revision: 1, state: nextState, updatedAt: now }, 201);
     } else {
       const statement = env.DB.prepare("UPDATE timeflow_work_time_current SET state_json = ?, revision = revision + 1, last_actor_user_id = ?, last_event_type = ?, last_source = ?, effective_timestamp = ?, server_updated_at = ? WHERE user_id = ? AND revision = ?").bind(stateJson, actorUserId, eventType, source, effectiveTimestamp, now, target.userId, command.expectedRevision);
       const result = await env.DB.batch([statement]);
