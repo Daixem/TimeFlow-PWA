@@ -7,13 +7,16 @@ Stand: 24. September 2026
 - Worker: `timeflow-preprod`
 - URL: `https://timeflow-preprod.wvzv2wd4zj.workers.dev`
 - Worker-ID: `34d459b368234910b7398f868ba60314`
-- Worker-Version: `ff3f7eeb-cc73-42ad-9008-17cf35d38751`
-- Deployed Source Commit: `5306d7316bdf79029404c07ed91a8aa9cfd0edab`
-- Build-ID: `5306d7316bdf-20260924t153430918z`
+- Worker-Version: `4cfef82d-fc56-41f8-9c85-b7b96d93bcdc`
+- Deployed Worker-Commit: `8e8e0bf737e2d4015f08b4bf20ef9864642460c8`
+- Worker-Build-ID: `8e8e0bf737e2-20260924t181645238z`
+- GitHub-Main-Commit: `5c37d7322b5f7b56c19acd2ddf9e7011fcc1aea7`
+- Browser-Build-ID: `5c37d7322b5f-20260924t182047581z`
 - Konfiguration: `wrangler.preprod.jsonc`
 
-Die Worker-Version wurde aus dem dokumentierten Phase-D-Commit gebaut. Der
-nachfolgende reine Dokumentations-Commit verändert den deployten Code nicht.
+Der Worker wurde aus dem lokalen Phase-D-Commit gebaut. GitHub erzeugte für
+denselben Dateibaum einen eigenen Commit, weil der Push über die GitHub-API
+erfolgte. Worker- und Browser-Build enthalten damit denselben geprüften Code.
 
 ## Browser-Anmeldung
 
@@ -57,8 +60,9 @@ Restore-Test-D1 ist ebenfalls nicht an den Worker gebunden.
 | Monitoring | **PASS** | Logs und Traces aktiv; bei der Abnahme keine 5xx-Fehler festgestellt. |
 | Browser-Anmeldung mit echter Identität | **PASS** | Cloudflare Access schützt die URL; Dimitris geprüfte Identität wird von TimeFlow übernommen. |
 | Browser-E2E mit zwei Identitäten | **PASS** | Zweite temporäre Identität erkannt; eigener Server-Akteur und getrennte D1-Zeile verifiziert. |
-| Offline/Pending/Reconnect im Browser | **PARTIAL** | Der Authentifizierungsblocker ist gelöst; der vollständige Browser-Ablauf steht noch aus. |
-| Service-Worker Build A → B | **PARTIAL** | Authentifizierter Browserzugang steht; der Test über zwei eindeutig zugeordnete Builds fehlt. |
+| Lokale Arbeitszeit-Isolation je Identität | **PASS** | Kontowechsel entfernt fremden Zustand aus der aktiven Ansicht; Zustand und offene Offline-Buchung bleiben im eigenen Kontobereich. Browser zeigte für Dimitri wieder `Nicht im Dienst`, `--:--` und `0 h 0 min`. |
+| Offline/Pending/Reconnect im Browser | **PARTIAL** | Pending, Reconnect, Reload und Konflikt sind automatisiert geprüft. Der In-App-Browser stellt keine Offline-Netzwerksimulation bereit; der manuelle Browserablauf fehlt. |
+| Service-Worker Build A → B | **PASS** | Browser wechselte von Build `eafa00ecb4d5-20260924t181020188z` auf `5c37d7322b5f-20260924t182047581z`; die neuen versionierten Assets und der korrigierte Zustand wurden sichtbar. |
 | Entfernung von Demo-Daten | **PARTIAL** | Private Bereinigungstests bestehen; der öffentliche Demo-Modus zeigt weiterhin Beispieldaten. |
 
 ## Sicherheitsgrenze
