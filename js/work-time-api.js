@@ -47,6 +47,7 @@
     function safeChange(change, revision) {
       var result = { eventType: change && change.eventType, expectedRevision: revision };
       var eventType = result.eventType;
+      if (change && ["CLOCK_IN", "CLOCK_OUT", "PAUSE_START", "PAUSE_END"].includes(eventType) && typeof change.occurredAt === "string") result.occurredAt = change.occurredAt;
       if (change && (eventType === "TIME_CORRECTION" || eventType === "ADMIN_CORRECTION" || eventType === "CORRECTION_UPDATED")) {
         result.correctionId = change.correctionId;
         result.date = change.date;
@@ -63,7 +64,7 @@
       }
       return result;
     }
-    async function getCurrent() { var result = await api(baseUrl, "GET"); if (result.state) saveCurrent(result); return result; }
+    async function getCurrent() { var result = await api(baseUrl, "GET"); if (result.state) saveCurrent(result); else if (Number(result.revision) === 0) { write(CACHE_KEY, { isWorking: false, workStart: null, workEnd: null, isPaused: false, pauseStartedAt: null, pauseAccumulatedMs: 0, hasManualPause: false }); write(META_KEY, { revision: 0, updatedAt: null }); } return result; }
     async function getJournal() { return api(baseUrl + "/journal", "GET"); }
     async function getSessions(month) { var suffix = typeof month === "string" && month ? "?month=" + encodeURIComponent(month) : ""; return api(baseUrl + "/sessions" + suffix, "GET"); }
     async function isEnabled() { try { await getCurrent(); return true; } catch (error) { if (error.status === 503 && error.result && error.result.error === "work_time_feature_disabled") return false; throw error; } }
@@ -73,9 +74,10 @@
       var existing = read(PENDING_KEY, null);
       if (existing && existing.change) return { pending: true, ...existing };
       var revision = Number(meta().revision || 0);
+      var attemptedAt = new Date().toISOString();
       try { return await send(change, revision); } catch (error) {
         if (error.status === 409) { error.conflict = preserveConflict(change, error.result || {}); throw error; }
-        if (error.network || error.uncertain) { var pending = { change: safeChange(change, revision), queuedAt: new Date().toISOString() }; write(PENDING_KEY, pending); return { pending: true, ...pending }; }
+        if (error.network || error.uncertain) { var pending = { change: safeChange({ ...change, occurredAt: attemptedAt }, revision), queuedAt: attemptedAt }; write(PENDING_KEY, pending); return { pending: true, ...pending }; }
         throw error;
       }
     }
@@ -96,7 +98,7 @@
     }
     async function loadServerConflictVersion(applyLocalState) { var conflict = read(CONFLICT_KEY, null); if (!conflict || !conflict.active) return null; if (typeof applyLocalState === "function") await applyLocalState(conflict.serverState); saveCurrent({ state: conflict.serverState, revision: conflict.serverRevision, updatedAt: conflict.updatedAt }); clear(CONFLICT_KEY); return conflict.serverState; }
     async function reapplyLocalConflictVersion() { var conflict = read(CONFLICT_KEY, null); if (!conflict || !conflict.active) return null; try { return await send(conflict.localChange, conflict.serverRevision); } catch (error) { if (error.status === 409) error.conflict = preserveConflict(conflict.localChange, error.result || {}); throw error; } }
-    return { getCurrent: getCurrent, getJournal: getJournal, getSessions: getSessions, isEnabled: isEnabled, writeChange: writeChange, reconnectPending: reconnectPending, loadServerConflictVersion: loadServerConflictVersion, reapplyLocalConflictVersion: reapplyLocalConflictVersion, getMeta: meta, getPending: function () { return read(PENDING_KEY, null); }, getConflict: function () { return read(CONFLICT_KEY, null); } };
+    return { getCurrent: getCurrent, getJournal: getJournal, getSessions: getSessions, isEnabled: isEnabled, writeChange: writeChange, reconnectPending: reconnectPending, loadServerConflictVersion: loadServerConflictVersion, reapplyLocalConflictVersion: reapplyLocalConflictVersion, getMeta: meta, getCachedCurrent: function () { return read(CACHE_KEY, null); }, getPending: function () { return read(PENDING_KEY, null); }, getConflict: function () { return read(CONFLICT_KEY, null); } };
   }
   root.TimeFlowWorkTimeApi = { create: create, activateAccount: activateAccount };
 }(globalThis));

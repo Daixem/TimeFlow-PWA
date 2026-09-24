@@ -120,13 +120,15 @@ if (disabled.status !== 503) throw new Error("The server work-time feature gate 
 await expectStatus("/api/work-time", 200, { headers: headersFor(normalUserId) });
 await expectStatus("/api/work-time", 400, { method: "PUT", headers: { ...headersFor(normalUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ expectedRevision: "0", eventType: "CLOCK_IN" }) });
 await expectStatus("/api/work-time", 400, { method: "PUT", headers: { ...headersFor(normalUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ expectedRevision: 0, eventType: "CLOCK_IN", server_timestamp: "2099-01-01T00:00:00.000Z" }) });
+await expectStatus("/api/work-time", 400, { method: "PUT", headers: { ...headersFor(normalUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ expectedRevision: 0, eventType: "CLOCK_IN", occurredAt: new Date(Date.now() + 10 * 60 * 1000).toISOString() }) });
 
+const offlineClockInAt = new Date(Date.now() - 60 * 1000).toISOString();
 let response = await expectStatus("/api/work-time", 201, {
   method: "PUT", headers: { ...headersFor(normalUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" },
-  body: JSON.stringify({ expectedRevision: 0, eventType: "CLOCK_IN" })
+  body: JSON.stringify({ expectedRevision: 0, eventType: "CLOCK_IN", occurredAt: offlineClockInAt })
 });
 let body = await response.json();
-if (body.revision !== 1 || database.journal.length !== 1 || database.journal[0].actor_user_id !== normalUserId) throw new Error("CLOCK_IN must use the authenticated server actor.");
+if (body.revision !== 1 || body.state.workStart !== offlineClockInAt || database.journal.length !== 1 || database.journal[0].actor_user_id !== normalUserId || database.journal[0].source !== "offline_clock" || database.journal[0].effective_timestamp !== offlineClockInAt) throw new Error("Offline CLOCK_IN must retain the local occurrence time while using the authenticated server actor.");
 
 await expectStatus("/api/work-time", 200, { headers: headersFor(normalUserId) });
 const beforeInvalidPayload = database.journal.length;

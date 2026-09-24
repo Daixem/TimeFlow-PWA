@@ -9,6 +9,7 @@ const storage = new Map();
 const element = () => ({ textContent: "", classList: { add() {}, remove() {}, toggle() {} }, style: { setProperty() {} }, setAttribute() {} });
 const sandbox = {
   console, Date, JSON, Number, Math, Promise, CustomEvent: class { constructor(type) { this.type = type; } },
+  navigator: { onLine: true },
   setTimeout: (callback) => { callback(); return 1; }, clearTimeout() {}, setInterval() { return 1; }, clearInterval() {},
   document: { getElementById: element, addEventListener() {}, querySelectorAll: () => [], querySelector: () => null, documentElement: { classList: { contains: () => false } }, body: { dataset: {}, insertAdjacentHTML() {} }, dispatchEvent() {} },
   window: { TimeFlowPlatform: { storage: { getItem: (key) => storage.get(key) || null, setItem: (key, value) => storage.set(key, String(value)), removeItem: (key) => storage.delete(key) }, dialog: {} }, addEventListener() {}, setTimeout: (callback) => { callback(); return 1; }, clearTimeout() {}, setInterval() { return 1; }, clearInterval() {}, TimeFlowPrivateAccount: null },

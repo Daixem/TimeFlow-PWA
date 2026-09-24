@@ -140,6 +140,13 @@ async function initialiseWorkTime() {
     }
     document.dispatchEvent(new CustomEvent("timeflow:work-time-mode", { detail: { mode: workTimeServerMode } }));
   } catch (_error) {
+    const cached = client.getCachedCurrent?.();
+    if (_error?.network && navigator.onLine === false && cached && typeof cached === "object") {
+      workTimeServerMode = "enabled";
+      applyWorkTimeState(cached);
+      document.dispatchEvent(new CustomEvent("timeflow:work-time-mode", { detail: { mode: workTimeServerMode, offline: true } }));
+      return workTimeServerMode;
+    }
     // A transport, authentication or storage failure must never turn an
     // intended server-authoritative work-time mode into a local fallback.
     if (workTimeServerMode !== "enabled") {
@@ -160,7 +167,7 @@ async function writeServerWorkTime(eventType) {
   try {
     const result = await client.writeChange({ eventType });
     if (result.pending) {
-      const now = new Date();
+      const now = new Date(result.change?.occurredAt || result.queuedAt || Date.now());
       workTimePendingEvent = eventType;
       if (eventType === "CLOCK_IN") applyWorkTimeState({ ...state, isWorking: true, workStart: now, workEnd: null });
       else if (eventType === "CLOCK_OUT") applyWorkTimeState({ ...state, isWorking: false, workEnd: now });

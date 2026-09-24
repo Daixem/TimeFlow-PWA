@@ -122,10 +122,10 @@ const pendingClient = create({
   }
 });
 const pending = await pendingClient.writeChange({ eventType: "CLOCK_IN" });
-if (!pending.pending || pendingClient.getPending()?.change.expectedRevision !== 8) throw new Error("Offline work-time change was not preserved as pending.");
+if (!pending.pending || pendingClient.getPending()?.change.expectedRevision !== 8 || !pending.change.occurredAt || pending.change.occurredAt !== pending.queuedAt) throw new Error("Offline work-time change did not preserve its local occurrence time as pending.");
 offline = false;
 await pendingClient.reconnectPending();
-if (pendingWrites.length !== 2 || pendingWrites[1].expectedRevision !== 8 || pendingClient.getPending() !== null) throw new Error("Reconnect did not perform exactly one controlled pending write.");
+if (pendingWrites.length !== 2 || pendingWrites[1].expectedRevision !== 8 || pendingWrites[1].occurredAt !== pending.queuedAt || pendingClient.getPending() !== null) throw new Error("Reconnect did not perform exactly one controlled timestamped pending write.");
 
 for (const status of [401, 403]) {
   const rejected = create({ storage: new MemoryStorage(), request: async () => response(status, { error: "rejected" }) });

@@ -10,6 +10,7 @@ const authVisibilityFallback = window.setTimeout(() => {
 
 document.addEventListener("DOMContentLoaded", () => {
   const SESSION_KEY = "timeflow-session-v1";
+  const PLATFORM_SESSION_CACHE_KEY = "timeflow-platform-session-cache-v1";
   const USERS_KEY = "timeflow-users-v1";
   const defaultUsers = [
     { id: "tf-2048", name: "Max Mustermann", email: "max.mustermann@timeflow.de", role: "Mitarbeiter", department: "Restaurant", active: true, initials: "MM" },
@@ -100,6 +101,17 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!stored?.userId) return null;
     const user = users.find((entry) => entry.id === stored.userId && entry.active);
     return user ? { source: "demo", user } : null;
+  }
+
+  function cachePlatformSession(value) {
+    storageSet(PLATFORM_SESSION_CACHE_KEY, JSON.stringify({ session: value, verifiedAt: new Date().toISOString() }));
+  }
+
+  function loadOfflinePlatformSession() {
+    const cached = parseJson(storageGet(PLATFORM_SESSION_CACHE_KEY), null);
+    const verifiedAt = Date.parse(cached?.verifiedAt || "");
+    if (!cached?.session?.user?.id || !Number.isFinite(verifiedAt) || Date.now() - verifiedAt > 24 * 60 * 60 * 1000) return null;
+    return { ...cached.session, offline: true };
   }
 
   function escapeText(value) {
@@ -222,6 +234,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (data.authenticated && data.user) {
             authMode = "platform";
             session = { source: "platform", user: { ...data.user, role: window.TimeFlowBetaAccess?.admin ? "Administrator" : data.user.role } };
+            cachePlatformSession(session);
             showApp();
             return;
           }
@@ -230,6 +243,15 @@ document.addEventListener("DOMContentLoaded", () => {
         // Ohne erreichbaren Identitätsdienst wird lokal weitergearbeitet.
       } finally {
         window.clearTimeout(requestTimeout);
+      }
+    }
+    if (navigator.onLine === false) {
+      const offlineSession = loadOfflinePlatformSession();
+      if (offlineSession) {
+        authMode = "platform";
+        session = offlineSession;
+        showApp();
+        return;
       }
     }
     const demoSession = loadDemoSession();
@@ -254,6 +276,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   document.querySelector("[data-sign-out]")?.addEventListener("click", () => {
     if (authMode === "platform") {
+      storageRemove(PLATFORM_SESSION_CACHE_KEY);
       window.location.assign("/signout-with-chatgpt?return_to=/");
       return;
     }
