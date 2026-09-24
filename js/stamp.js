@@ -154,9 +154,10 @@ document.addEventListener("DOMContentLoaded", () => {
     elements.state.querySelector("span").textContent = saved.isPaused ? "In Pause" : saved.isWorking ? "Im Dienst" : start ? "Dienst beendet" : "Nicht im Dienst";
     elements.action.classList.toggle("is-working", Boolean(saved.isWorking));
     const ready = window.TimeFlowWorkTimeReady?.() && (window.TimeFlowWorkTimeServerEnabled?.() || window.TimeFlowWorkTimeSnapshotAuthority?.() === false);
-    elements.action.disabled = !ready;
-    elements.connection.textContent = ready ? "Bereit" : window.TimeFlowWorkTimeReady?.() ? "Nicht erreichbar" : "Wird verbunden …";
-    elements.connection.classList.toggle("is-offline", !ready);
+    const pending = window.TimeFlowWorkTimePending?.();
+    elements.action.disabled = !ready || Boolean(pending);
+    elements.connection.textContent = pending ? "Offline vorgemerkt" : ready ? "Bereit" : window.TimeFlowWorkTimeReady?.() ? "Nicht erreichbar" : "Wird verbunden …";
+    elements.connection.classList.toggle("is-offline", !ready || Boolean(pending));
     elements.action.setAttribute("aria-pressed", String(Boolean(saved.isWorking)));
     elements.actionIcon.className = `fa-solid ${saved.isWorking ? "fa-right-from-bracket" : "fa-right-to-bracket"}`;
     elements.actionLabel.textContent = saved.isWorking ? "Ausstempeln" : "Einstempeln";
@@ -171,6 +172,7 @@ document.addEventListener("DOMContentLoaded", () => {
   elements.action.addEventListener("click", () => document.dispatchEvent(new CustomEvent("timeflow:toggle-clock")));
   document.addEventListener("timeflow:workday-updated", renderClock);
   document.addEventListener("timeflow:work-time-mode", renderClock);
+  document.addEventListener("timeflow:work-time-pending", renderClock);
   document.addEventListener("timeflow:settings-updated", renderClock);
   window.setInterval(renderClock, 1000);
   renderClock();

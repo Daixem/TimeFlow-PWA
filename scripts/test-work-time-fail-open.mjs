@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import vm from "node:vm";
 
 const source = await readFile(new URL("../js/script.js", import.meta.url), "utf8");
-if (!source.includes('elements.clockButton.disabled = workTimeServerMode !== "enabled" && workTimeServerMode !== "disabled"') || source.indexOf('applyWorkTimeState(current.state)') > source.indexOf('detail: { mode: workTimeServerMode }', source.indexOf('workTimeServerMode = "enabled"'))) {
+if (!source.includes('elements.clockButton.disabled = Boolean(workTimePendingEvent) || (workTimeServerMode !== "enabled" && workTimeServerMode !== "disabled")') || source.indexOf('applyWorkTimeState(current.state)') > source.indexOf('detail: { mode: workTimeServerMode }', source.indexOf('workTimeServerMode = "enabled"'))) {
   throw new Error("Work-time controls must remain unavailable until the authoritative initial state has loaded.");
 }
 const storage = new Map();
@@ -28,6 +28,7 @@ const harness = `
     clockIn, ensureWorkTimeReady,
     localWrites: () => __localWrites,
     mode: () => workTimeServerMode,
+    pending: () => workTimePendingEvent,
     toast: () => __toast
   };
 `;
@@ -53,5 +54,9 @@ api.setClient({ isEnabled: async () => true, getCurrent: async () => ({ state: {
 const beforeEnabledFailure = api.localWrites();
 await api.clockIn();
 if (api.mode() !== "enabled" || api.localWrites() !== beforeEnabledFailure) throw new Error("A failure after ENABLED detection must not switch to legacy.");
+
+api.setClient({ isEnabled: async () => true, getCurrent: async () => ({ state: {} }), writeChange: async () => ({ pending: true }) });
+await api.clockIn();
+if (api.pending() !== "CLOCK_IN" || !api.toast().includes("Offline gespeichert")) throw new Error("An offline command must be visibly retained as pending without using the legacy writer.");
 
 console.log("Work-time fail-open: only explicit feature disablement permits legacy; unavailable, auth, server and conflict failures never do.");

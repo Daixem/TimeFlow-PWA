@@ -22,8 +22,10 @@ let workTimer;
 let workTimeApi;
 let workTimeServerMode;
 let workTimeSessionIdentity;
+let workTimePendingEvent;
 window.TimeFlowWorkTimeServerEnabled = () => workTimeServerMode === "enabled";
 window.TimeFlowWorkTimeReady = () => workTimeServerMode !== undefined;
+window.TimeFlowWorkTimePending = () => workTimePendingEvent || null;
 // Until the feature explicitly answers "disabled", legacy stamps are never
 // accepted as an authority. This closes the start-up race with general sync.
 window.TimeFlowWorkTimeSnapshotAuthority = () => workTimeServerMode !== "disabled";
@@ -157,7 +159,18 @@ async function writeServerWorkTime(eventType) {
   if (!client || workTimeServerMode !== "enabled") return false;
   try {
     const result = await client.writeChange({ eventType });
-    if (result.pending) { showToast("Offline gespeichert – wird beim Reconnect gesendet."); return true; }
+    if (result.pending) {
+      const now = new Date();
+      workTimePendingEvent = eventType;
+      if (eventType === "CLOCK_IN") applyWorkTimeState({ ...state, isWorking: true, workStart: now, workEnd: null });
+      else if (eventType === "CLOCK_OUT") applyWorkTimeState({ ...state, isWorking: false, workEnd: now });
+      else if (eventType === "PAUSE_START") applyWorkTimeState({ ...state, isPaused: true, hasManualPause: true, pauseStartedAt: now });
+      else if (eventType === "PAUSE_END") applyWorkTimeState({ ...state, isPaused: false, pauseStartedAt: null });
+      document.dispatchEvent(new CustomEvent("timeflow:work-time-pending", { detail: { eventType } }));
+      showToast("Offline gespeichert – wird beim Reconnect gesendet.");
+      return true;
+    }
+    workTimePendingEvent = undefined;
     applyWorkTimeState(result.state);
     showToast(eventType === "CLOCK_IN" ? "Du bist eingestempelt." : eventType === "CLOCK_OUT" ? "Du bist ausgestempelt." : eventType === "PAUSE_START" ? "Pause gestartet." : "Pause beendet.");
     return true;
@@ -204,7 +217,7 @@ function updateWorkUi() {
   elements.workStatus.textContent = state.isWorking ? "Im Dienst" : "Nicht im Dienst";
   elements.clockHint.textContent = state.isWorking ? "Tippen zum Ausstempeln" : "Tippen zum Einstempeln";
   elements.clockButton.classList.toggle("is-working", state.isWorking);
-  elements.clockButton.disabled = workTimeServerMode !== "enabled" && workTimeServerMode !== "disabled";
+  elements.clockButton.disabled = Boolean(workTimePendingEvent) || (workTimeServerMode !== "enabled" && workTimeServerMode !== "disabled");
   elements.clockButton.setAttribute("aria-busy", String(workTimeServerMode === undefined));
   elements.clockButton.setAttribute("aria-pressed", String(state.isWorking));
   elements.clockIcon.className = `fa-solid ${state.isWorking ? "fa-right-from-bracket" : "fa-right-to-bracket"}`;
@@ -330,7 +343,7 @@ document.addEventListener("timeflow:sync-restored", () => {
 window.addEventListener("online", async () => {
   const mode = await ensureWorkTimeReady();
   if (mode !== "enabled" || !workTimeApi?.getPending?.()) return;
-  try { const result = await workTimeApi.reconnectPending(); if (result?.state) { applyWorkTimeState(result.state); window.TimeFlowPlatform.storage.removeItem("timeflow-work-time-correction-pending-v1"); } } catch (error) { if (error.status === 409) applyWorkTimeState(error.result?.state); }
+  try { const result = await workTimeApi.reconnectPending(); if (result?.state) { workTimePendingEvent = undefined; applyWorkTimeState(result.state); window.TimeFlowPlatform.storage.removeItem("timeflow-work-time-correction-pending-v1"); document.dispatchEvent(new CustomEvent("timeflow:work-time-pending", { detail: null })); } } catch (error) { if (error.status === 409) applyWorkTimeState(error.result?.state); }
 });
 
 document.addEventListener("DOMContentLoaded", () => {
