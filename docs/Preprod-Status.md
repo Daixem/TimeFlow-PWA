@@ -1,22 +1,22 @@
 # TimeFlow Pre-Production – Phase D
 
-Stand: 24. September 2026
+Stand: 25. September 2026
 
 ## Umgebung
 
 - Worker: `timeflow-preprod`
 - URL: `https://timeflow-preprod.wvzv2wd4zj.workers.dev`
 - Worker-ID: `34d459b368234910b7398f868ba60314`
-- Worker-Version: `4cfef82d-fc56-41f8-9c85-b7b96d93bcdc`
-- Deployed Worker-Commit: `8e8e0bf737e2d4015f08b4bf20ef9864642460c8`
-- Worker-Build-ID: `8e8e0bf737e2-20260924t181645238z`
-- GitHub-Main-Commit: `5c37d7322b5f7b56c19acd2ddf9e7011fcc1aea7`
-- Browser-Build-ID: `5c37d7322b5f-20260924t182047581z`
+- Worker-Version: `4d2d1ebb-82d0-43c3-abae-3b03645945a7`
+- Deployed Worker-Commit: `5c837e9efebde659f4cdcd1e3966805470043388`
+- Worker-Build-ID: `5c837e9efebd-20260925t205205526z`
+- GitHub-Main-Commit: `5c837e9efebde659f4cdcd1e3966805470043388`
+- Browser-Build-ID: `5c837e9efebd-20260924t214755293z`
 - Konfiguration: `wrangler.preprod.jsonc`
 
-Der Worker wurde aus dem lokalen Phase-D-Commit gebaut. GitHub erzeugte für
-denselben Dateibaum einen eigenen Commit, weil der Push über die GitHub-API
-erfolgte. Worker- und Browser-Build enthalten damit denselben geprüften Code.
+Worker und Browser-Build stammen aus demselben GitHub-Main-Commit. Die
+unterschiedlichen Build-Zeitstempel entstehen durch die getrennten Worker- und
+GitHub-Pages-Builds.
 
 ## Browser-Anmeldung
 
@@ -61,8 +61,8 @@ Restore-Test-D1 ist ebenfalls nicht an den Worker gebunden.
 | Browser-Anmeldung mit echter Identität | **PASS** | Cloudflare Access schützt die URL; Dimitris geprüfte Identität wird von TimeFlow übernommen. |
 | Browser-E2E mit zwei Identitäten | **PASS** | Zweite temporäre Identität erkannt; eigener Server-Akteur und getrennte D1-Zeile verifiziert. |
 | Lokale Arbeitszeit-Isolation je Identität | **PASS** | Kontowechsel entfernt fremden Zustand aus der aktiven Ansicht; Zustand und offene Offline-Buchung bleiben im eigenen Kontobereich. Browser zeigte für Dimitri wieder `Nicht im Dienst`, `--:--` und `0 h 0 min`. |
-| Offline/Pending/Reconnect im Browser | **PARTIAL** | Pending, Reconnect, Reload und Konflikt sind automatisiert geprüft. Der In-App-Browser stellt keine Offline-Netzwerksimulation bereit; der manuelle Browserablauf fehlt. |
-| Service-Worker Build A → B | **PASS** | Browser wechselte von Build `eafa00ecb4d5-20260924t181020188z` auf `5c37d7322b5f-20260924t182047581z`; die neuen versionierten Assets und der korrigierte Zustand wurden sichtbar. |
+| Offline/Pending/Reconnect im Browser | **PASS** | Manueller Browserablauf verifiziert: lokaler `CLOCK_IN` um `2026-09-25T20:57:04.255Z`, sofort laufende Anzeige, Reconnect um `20:57:49.973Z`, D1-Quelle `offline_clock`; der ursprüngliche Offline-Zeitpunkt blieb erhalten. Der anschließende Online-`CLOCK_OUT` erzeugte Revision 12 und beendete den Testzustand. |
+| Service-Worker Build A → B | **PASS** | Browser wechselte auf Build `5c837e9efebd-20260924t214755293z`; die neuen versionierten Assets und der korrigierte Zustand wurden sichtbar. |
 | Entfernung von Demo-Daten | **PARTIAL** | Private Bereinigungstests bestehen; der öffentliche Demo-Modus zeigt weiterhin Beispieldaten. |
 
 ## Sicherheitsgrenze
@@ -73,10 +73,10 @@ Access-Kontext; direkt gesendete Identitätsheader werden entfernt.
 Test-Identitäten und Testdaten bleiben ausschließlich in der Test-D1.
 
 Die temporäre zweite E-Mail-Freigabe wurde nach dem Test aus Access entfernt.
-Beta-Zugang, Current-State, Sync- und Organisationsdaten wurden aus der Test-D1
-gelöscht. Der einzelne `CLOCK_IN`-Journal-Eintrag bleibt entsprechend der
-verifizierten Append-only-Regel als unveränderbarer Testnachweis erhalten;
-die temporäre E-Mail-Adresse wird in diesem Repository nicht dokumentiert.
+Die Phase-D-Arbeitszeitereignisse bleiben entsprechend der verifizierten
+Append-only-Regel als unveränderbarer Testnachweis erhalten. Der aktuelle
+Testzustand ist nach Revision 12 beendet; die temporäre E-Mail-Adresse wird in
+diesem Repository nicht dokumentiert.
 
 Kein produktiver Cutover wurde durchgeführt. Produktive D1, produktive
 Bindings und produktive Feature-Gates wurden nicht verändert.
