@@ -2,7 +2,7 @@
 
 Stand: 26. September 2026
 
-Status: **ZUR FACHLICHEN FREIGABE – NICHT IMPLEMENTIERT**
+Status: **FACHLICH FREIGEGEBEN – NOCH NICHT IMPLEMENTIERT**
 
 ## Zweck
 
@@ -14,10 +14,12 @@ Löschläufe ausgeführt. Produktion und produktive Daten bleiben unverändert.
 
 ### Organisationsgebundene Arbeitszeit
 
-- `timeflow_work_time_sessions` und die zugehörigen Journal-Ereignisse bleiben
-  bis zum Ende des 24. Monats nach dem jeweiligen Arbeitszeitdatum
-  identifizierbar gespeichert.
-- Danach werden die Daten innerhalb von 30 Tagen gelöscht.
+- `timeflow_work_time_sessions`, der Current-State und die zugehörigen
+  Journal-Ereignisse bleiben während der gesamten aktiven Beschäftigung im
+  Unternehmen identifizierbar gespeichert.
+- Nach dem bestätigten Ende der Beschäftigung beginnt eine Nachhaltefrist. Die
+  Daten bleiben bis zum Ende des 24. Monats nach dem Austrittsdatum erhalten
+  und werden danach innerhalb von 30 Tagen gelöscht.
 - Eine längere Speicherung ist nur mit einem dokumentierten Grund und einem
   konkreten Enddatum zulässig, etwa für einen Rechtsstreit oder eine behördliche
   Prüfung. Ein solcher Legal Hold sperrt nur die betroffenen Datensätze.
@@ -28,15 +30,19 @@ Löschläufe ausgeführt. Produktion und produktive Daten bleiben unverändert.
 
 Das Arbeitszeitgesetz verlangt für die dort erfassten Nachweise mindestens zwei
 Jahre Aufbewahrung. Für bestimmte Beschäftigte und Branchen nennt auch das
-Mindestlohngesetz mindestens zwei Jahre. Die vorgeschlagene Monatsgrenze macht
-den Löschtermin vorhersehbar, ohne eine unbegrenzte Speicherung einzuführen.
+Mindestlohngesetz mindestens zwei Jahre. Die Beschäftigungsdauer bildet den
+laufenden betrieblichen Zweck; die anschließende Monatsgrenze macht den späteren
+Löschtermin vorhersehbar, ohne eine unbegrenzte Speicherung einzuführen.
 
 ### Private Arbeitszeit
 
 - Solange das private Konto aktiv ist, bleiben die Daten für die vom Nutzer
   angeforderte Zeiterfassung verfügbar.
-- Bei einer Cloud-Kontolöschung werden Current-State, Sessions, Journal und die
-  direkte Kontozuordnung innerhalb von 30 Tagen gelöscht.
+- Bei einer Cloud-Kontolöschung beginnt eine 30-tägige Wiederherstellungsfrist.
+  Meldet sich der Nutzer in dieser Zeit erneut an und bestätigt die
+  Wiederherstellung, wird die Löschung abgebrochen.
+- Nach Ablauf der 30 Tage werden Current-State, Sessions, Journal und die
+  direkte Kontozuordnung gelöscht.
 - Besteht ausnahmsweise ein dokumentierter Legal Hold, wird die Löschung nur für
   die konkret betroffenen Datensätze und nur bis zu dessen Enddatum ausgesetzt.
 - Lokale Daten auf dem Endgerät werden getrennt behandelt und nur durch eine
@@ -78,14 +84,18 @@ Weiterhaltung nach der Kontolöschung.
    Ein separater, serverseitig autorisierter Retention-Lauf darf ausschließlich
    fällige Datensätze nach dokumentierter Prüfung bereinigen.
 6. `DELETE /api/account-data` muss künftig zwischen privaten Daten und noch
-   aufbewahrungspflichtigen Teamdaten unterscheiden und das Ergebnis sichtbar
-   zurückgeben.
+   aufzubewahrenden Teamdaten unterscheiden. Für private Daten legt der Aufruf
+   zunächst einen widerrufbaren Löschauftrag mit 30-tägigem Ablaufdatum an.
+   Teamdaten bleiben an der Organisation, sind über das gelöschte persönliche
+   Konto aber nicht mehr erreichbar.
 7. Jeder Löschlauf benötigt ein minimales, personenbezugsfreies Protokoll mit
    Lauf-ID, Regelversion, Zeitraum, Anzahl und Ergebnis.
 
 ## Freigabekriterien
 
-- Die 24-Monats-Regel und die 30-Tage-Ausführungsfrist sind fachlich bestätigt.
+- Die Speicherung während der aktiven Beschäftigung, die 24-monatige
+  Nachhaltefrist und die 30-tägige private Wiederherstellungsfrist sind
+  fachlich bestätigt.
 - Abweichende Branchen- oder Tarifregeln können organisationsbezogen ergänzt
   werden, ohne die globale Mindestregel still zu verändern.
 - Datenschutzinformation und Auftragsverarbeitung beschreiben Verantwortliche,
