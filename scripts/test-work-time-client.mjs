@@ -13,11 +13,13 @@ function response(status, body) {
 }
 
 const source = await readFile(new URL("../js/work-time-api.js", import.meta.url), "utf8");
+const stampSource = await readFile(new URL("../js/stamp.js", import.meta.url), "utf8");
 const sandbox = { URL, console, globalThis: null };
 sandbox.globalThis = sandbox;
 vm.runInNewContext(source, sandbox, { filename: "work-time-api.js" });
 const create = sandbox.TimeFlowWorkTimeApi?.create;
 if (typeof create !== "function") throw new Error("Work-time API adapter was not exposed.");
+if (!stampSource.includes("TimeFlowCurrentWorkTimeState") || stampSource.includes('serverWorkTimeAuthority() ? "timeflow-work-time-current-v1"')) throw new Error("Stamp view must read the active contextual work-time state instead of the private base cache.");
 
 const accountStorage = new MemoryStorage({
   "timeflow-work-time-owner-v1": "user-a",

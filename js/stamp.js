@@ -102,9 +102,12 @@ document.addEventListener("DOMContentLoaded", () => {
   function serverWorkTimeAuthority() { return window.TimeFlowWorkTimeSnapshotAuthority?.() !== false; }
 
   function readState() {
+    if (serverWorkTimeAuthority()) {
+      const current = window.TimeFlowCurrentWorkTimeState?.();
+      return current && typeof current === "object" ? current : { isWorking: false, workStart: null, workEnd: null };
+    }
     try {
-      const key = serverWorkTimeAuthority() ? "timeflow-work-time-current-v1" : STORAGE_KEY;
-      const saved = JSON.parse(window.TimeFlowPlatform.storage.getItem(key));
+      const saved = JSON.parse(window.TimeFlowPlatform.storage.getItem(STORAGE_KEY));
       return saved && saved.workStart ? saved : { isWorking: false, workStart: null, workEnd: null };
     } catch {
       return { isWorking: false, workStart: null, workEnd: null };

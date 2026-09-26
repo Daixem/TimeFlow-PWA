@@ -18,6 +18,7 @@ const elements = {
 };
 
 let state = { isWorking: false, workStart: null, workEnd: null, isPaused: false, pauseStartedAt: null, pauseAccumulatedMs: 0, hasManualPause: false };
+window.TimeFlowCurrentWorkTimeState = () => state;
 let workTimer;
 let workTimeApi;
 let workTimeServerMode;

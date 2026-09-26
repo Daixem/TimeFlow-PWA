@@ -57,7 +57,8 @@ Der Browserclient übermittelt den bestätigten Organisationskontext als Header.
 Private Daten und jede Organisation verwenden getrennte lokale Current-,
 Revision-, Pending- und Konfliktspeicher. Beim Wechsel zwischen Privat- und
 Teammodus wird der jeweilige Serverstand neu geladen; eine abweichende
-Kontextantwort wird verworfen.
+Kontextantwort wird verworfen. Dashboard und Stempelansicht lesen denselben
+aktiven Kontextzustand und greifen nicht direkt auf den privaten Basiscache zu.
 
 ## Lokale Validierung
 
