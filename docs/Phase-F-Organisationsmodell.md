@@ -2,7 +2,7 @@
 
 Stand: 26. September 2026
 
-Status: **SCHEMA UND WORKER LOKAL VALIDIERT – NOCH NICHT AUF D1 ANGEWENDET**
+Status: **TEST-D1 MIGRIERT – TEAM-E2E NOCH AUSSTEHEND**
 
 ## Modell
 
@@ -80,5 +80,34 @@ und `0005` ausschließlich auf eine flüchtige SQLite-Datenbank an. Geprüft sin
 | Organisations-ID im Request-Body abgewiesen | **PASS** |
 | Private und Team-Sessions API-seitig getrennt | **PASS** |
 
-Produktion, produktive D1, Test-D1, Worker-Bindings und Feature-Gates wurden
-durch diesen Entwurf nicht verändert.
+## Remote-Validierung
+
+- Worker-Commit: `10d5459aa42356a5076be74d2e1dd594aaf67107`
+- Pre-Prod-Version nach Migration: `64f24f36-d1e0-4b8d-8f17-41961847f0ce`
+- Worker: `timeflow-preprod`
+- Gebundene Test-D1: `timeflow-migration-test-20260917`
+- Test-D1-ID: `4826b07d-8a23-4098-80d7-ee6a6469bcab`
+- Ungebundene Migrationskopie: `timeflow-phase-e-restore-20260926`
+- Kopie-ID: `c2e61847-7edd-40ac-89ad-57b80756a353`
+- Export vor Migration: 49.345 Byte
+- Export-SHA-256:
+  `10cfdb543d6c85c173fe067ee441fb2a0eb084ad3c08128ffc87595e58254456`
+
+Migration `0005` wurde zuerst auf die ungebundene Kopie und anschließend in
+einem Work-Time-Wartungsfenster auf die gebundene Test-D1 angewendet. In beiden
+Fällen wurden 35 Abfragen erfolgreich ausgeführt. Vor und nach der Migration
+blieben 8 Current-, 34 Journal- und 10 Session-Zeilen erhalten. Neun eindeutige
+private Subjekte wurden aus allen vorhandenen Arbeitszeitdaten gebildet; die
+Zahl ist höher als Current, weil ein historischer Benutzer nur in Journal oder
+Sessions vorkommt. Es wurde keine Organisation erzeugt.
+
+Auf der ungebundenen Kopie wurden Journal-UPDATE, Scope-Änderung am
+Current-State und ein Organisationssubjekt ohne `organization_id` remote durch
+Trigger beziehungsweise CHECK-Constraint abgewiesen. Die Fehlversuche
+veränderten keine Zeilenzahl. Nach der Migration wurde das Work-Time-Gate wieder
+aktiviert; der angemeldete Pre-Prod-Client lud den privaten Arbeitszeitstand und
+gab die Stempelfunktion frei.
+
+Produktion, produktive D1 und produktive Bindings wurden nicht verändert. Die
+SQL-Exporte liegen nur im lokalen temporären Verzeichnis und werden nicht
+versioniert.
