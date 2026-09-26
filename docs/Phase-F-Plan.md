@@ -69,7 +69,7 @@ produktive D1-ID, die Recovery-D1-ID, das Backup und den Rückfallplan nennen.
 | --- | --- |
 | Phase E vorläufig abgeschlossen | **PASS** |
 | Retention-Entscheidung | **PASS – Beschäftigungsdauer plus 24 Monate; privat 30 Tage Wiederherstellung** |
-| Organisationsmodell | **PARTIAL – Grundregeln dokumentiert** |
+| Organisationsmodell | **PASS – Migration lokal validiert** |
 | Lösch-/Anonymisierungsablauf | **PARTIAL – technische Umsetzung ausstehend** |
-| Tenant-Testmigration | **BLOCKED – Datenmodell erforderlich** |
+| Tenant-Testmigration | **PARTIAL – lokaler Entwurf PASS; kompatibler Worker fehlt** |
 | Produktiver Cutover | **BLOCKED – keine Freigabe** |
