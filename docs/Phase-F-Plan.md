@@ -69,7 +69,7 @@ produktive D1-ID, die Recovery-D1-ID, das Backup und den Rückfallplan nennen.
 | --- | --- |
 | Phase E vorläufig abgeschlossen | **PASS** |
 | Retention-Entscheidung | **PASS – Beschäftigungsdauer plus 24 Monate; privat 30 Tage Wiederherstellung** |
-| Organisationsmodell | **PASS – Migration lokal validiert** |
+| Organisationsmodell | **PASS – Test-D1 migriert; Clientkontext und lokale Trennung validiert** |
 | Lösch-/Anonymisierungsablauf | **PARTIAL – technische Umsetzung ausstehend** |
 | Tenant-Testmigration | **PASS – Kopie und gebundene Test-D1 migriert; Daten vollständig** |
 | Team-E2E auf Test-D1 | **PARTIAL – kontrollierte Organisation und zwei Testnutzer ausstehend** |

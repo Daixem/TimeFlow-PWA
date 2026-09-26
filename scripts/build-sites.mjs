@@ -398,7 +398,7 @@ async function handleTeamAccess(request, env, url) {
   await ensureTeamTables(env.DB);
   const member = await env.DB.prepare("SELECT m.organization_id, m.role, o.name FROM timeflow_organization_members m JOIN timeflow_organizations o ON o.id = m.organization_id WHERE m.user_id = ? LIMIT 1").bind(user.id).first();
   const invite = user.email ? await env.DB.prepare("SELECT i.id, i.organization_id, i.role, o.name FROM timeflow_organization_invites i JOIN timeflow_organizations o ON o.id = i.organization_id WHERE lower(i.email) = lower(?) AND i.status = 'pending' ORDER BY i.created_at DESC LIMIT 1").bind(user.email).first() : null;
-  if (request.method === "GET") return jsonResponse({ allowed: true, membership: member || { organization_id: null, role: "admin", name: "TimeFlow" }, invitation: invite || null });
+  if (request.method === "GET") return jsonResponse({ allowed: true, membership: member || { organization_id: null, role: "admin", name: "TimeFlow" }, invitation: invite || null, admin: true });
   if (request.method === "POST") {
     const origin = request.headers.get("Origin");
     if (origin !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
@@ -408,7 +408,7 @@ async function handleTeamAccess(request, env, url) {
     const joinedAt = new Date().toISOString();
     await env.DB.prepare("INSERT OR IGNORE INTO timeflow_organization_members (organization_id, user_id, role, joined_at) VALUES (?, ?, ?, ?)").bind(invite.organization_id, user.id, invite.role, joinedAt).run();
     await env.DB.prepare("UPDATE timeflow_organization_invites SET status = 'accepted', accepted_at = ? WHERE id = ? AND status = 'pending'").bind(joinedAt, invite.id).run();
-    return jsonResponse({ allowed: true, membership: { organization_id: invite.organization_id, role: invite.role, name: invite.name }, invitation: null });
+    return jsonResponse({ allowed: true, admin: true, membership: { organization_id: invite.organization_id, role: invite.role, name: invite.name }, invitation: null });
   }
   return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "GET, POST" });
 }

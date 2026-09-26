@@ -32,14 +32,11 @@ Vorhandene Datensätze aus Migration `0003` und `0004` werden vollständig als
 - erhält Revisionen, Ereignisse und Sitzungswerte;
 - erhält den Append-only-Schutz des Journals.
 
-## Rollout-Sperre
+## Pre-Production-Rollout
 
 Migration `0005` ersetzt den Primärschlüssel des Current-State durch
-`subject_id`. Der aktuelle Worker schreibt noch ausschließlich anhand von
-`user_id`. Deshalb darf `0005` noch nicht auf die laufende Test-D1 angewendet
-werden.
-
-Der kompatible Worker-Schreibpfad ist lokal implementiert und getestet. Er:
+`subject_id`. Der kompatible Worker-Schreibpfad wurde deshalb vor der Migration
+auf Pre-Production ausgerollt. Er:
 
 1. den Kontext serverseitig aus Benutzer und bestätigter Mitgliedschaft löst;
 2. `subject_id`, `scope_type` und `organization_id` selbst setzt;
@@ -52,10 +49,15 @@ Der kompatible Worker-Schreibpfad ist lokal implementiert und getestet. Er:
    für Fremdkorrekturen zusätzlich eine Admin- oder Owner-Rolle derselben
    Organisation.
 
-Für den Remote-Test wird dieser kompatible Worker zuerst auf Pre-Prod
-ausgerollt. Migration `0005` läuft anschließend zunächst auf einer ungebundenen
-Kopie der Test-D1. Erst nach Export, Schema-/Zeilenvergleich und Smoke-Test darf
-die gebundene Test-D1 in einem kontrollierten Wartungsfenster folgen.
+Migration `0005` lief anschließend zuerst auf einer ungebundenen Kopie der
+Test-D1 und nach Export, Schema-/Zeilenvergleich und Smoke-Test in einem
+kontrollierten Wartungsfenster auf der gebundenen Test-D1.
+
+Der Browserclient übermittelt den bestätigten Organisationskontext als Header.
+Private Daten und jede Organisation verwenden getrennte lokale Current-,
+Revision-, Pending- und Konfliktspeicher. Beim Wechsel zwischen Privat- und
+Teammodus wird der jeweilige Serverstand neu geladen; eine abweichende
+Kontextantwort wird verworfen.
 
 ## Lokale Validierung
 
@@ -79,6 +81,9 @@ und `0005` ausschließlich auf eine flüchtige SQLite-Datenbank an. Geprüft sin
 | Adminzugriff auf dieselbe Organisation begrenzt | **PASS** |
 | Organisations-ID im Request-Body abgewiesen | **PASS** |
 | Private und Team-Sessions API-seitig getrennt | **PASS** |
+| Organisationsheader im Client gesetzt | **PASS** |
+| Private und Team-Offlinedaten lokal getrennt | **PASS** |
+| Kontextwechsel lädt den getrennten Serverstand | **PASS** |
 
 ## Remote-Validierung
 

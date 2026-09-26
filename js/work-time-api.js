@@ -22,13 +22,23 @@
     return true;
   }
   function parse(value, fallback) { try { return JSON.parse(value) ?? fallback; } catch (_error) { return fallback; } }
+  function validOrganizationId(value) { return typeof value === "string" && /^[A-Za-z0-9_-]{1,160}$/.test(value); }
+  function organizationStorageKey(storage, organizationId, key) {
+    if (!organizationId) return key;
+    var owner = String(storage.getItem(ACCOUNT_OWNER_KEY) || "anonymous");
+    return "timeflow-work-time-context-v1:" + encodeURIComponent(owner) + ":" + encodeURIComponent(organizationId) + ":" + key;
+  }
   function errorFromResponse(status, result) { var error = new Error(result && result.error ? result.error : "work_time_" + status); error.status = status; error.result = result || {}; return error; }
   function create(options) {
     var storage = options.storage, request = options.request || root.fetch.bind(root), baseUrl = options.baseUrl || new URL("api/work-time", root.document ? root.document.baseURI : "https://timeflow.invalid/").toString();
+    var requestedOrganizationId = options.organizationId === undefined ? root.TimeFlowWorkTimeContext?.organizationId : options.organizationId;
+    var organizationId = requestedOrganizationId === null || requestedOrganizationId === undefined || requestedOrganizationId === "" ? null : String(requestedOrganizationId).trim();
+    if (organizationId && !validOrganizationId(organizationId)) throw new Error("work_time_invalid_organization_context");
     var reconnectInFlight = null;
-    function read(key, fallback) { return parse(storage.getItem(key), fallback); }
-    function write(key, value) { storage.setItem(key, JSON.stringify(value)); }
-    function clear(key) { storage.removeItem(key); }
+    function storageKey(key) { return organizationStorageKey(storage, organizationId, key); }
+    function read(key, fallback) { return parse(storage.getItem(storageKey(key)), fallback); }
+    function write(key, value) { storage.setItem(storageKey(key), JSON.stringify(value)); }
+    function clear(key) { storage.removeItem(storageKey(key)); }
     function meta() { return read(META_KEY, { revision: 0, updatedAt: null }); }
     function saveCurrent(result) {
       if (!result || !result.state || typeof result.state !== "object" || !Number.isInteger(Number(result.revision)) || Number(result.revision) < 1) {
@@ -38,10 +48,16 @@
     }
     async function api(path, method, body) {
       var response;
-      try { response = await request(path, { method: method, cache: "no-store", headers: body ? { "Content-Type": "application/json", Accept: "application/json" } : { Accept: "application/json" }, body: body ? JSON.stringify(body) : undefined }); }
+      var headers = body ? { "Content-Type": "application/json", Accept: "application/json" } : { Accept: "application/json" };
+      if (organizationId) headers["X-TimeFlow-Organization-Id"] = organizationId;
+      try { response = await request(path, { method: method, cache: "no-store", headers: headers, body: body ? JSON.stringify(body) : undefined }); }
       catch (_error) { var networkError = new Error("work_time_network_error"); networkError.network = true; throw networkError; }
       var result = await response.json().catch(function () { return {}; });
       if (!response.ok) throw errorFromResponse(response.status, result);
+      if (result && result.context) {
+        var responseOrganizationId = result.context.organizationId || null;
+        if (responseOrganizationId !== organizationId) throw new Error("work_time_context_mismatch");
+      }
       return result;
     }
     function safeChange(change, revision) {
@@ -98,7 +114,7 @@
     }
     async function loadServerConflictVersion(applyLocalState) { var conflict = read(CONFLICT_KEY, null); if (!conflict || !conflict.active) return null; if (typeof applyLocalState === "function") await applyLocalState(conflict.serverState); saveCurrent({ state: conflict.serverState, revision: conflict.serverRevision, updatedAt: conflict.updatedAt }); clear(CONFLICT_KEY); return conflict.serverState; }
     async function reapplyLocalConflictVersion() { var conflict = read(CONFLICT_KEY, null); if (!conflict || !conflict.active) return null; try { return await send(conflict.localChange, conflict.serverRevision); } catch (error) { if (error.status === 409) error.conflict = preserveConflict(conflict.localChange, error.result || {}); throw error; } }
-    return { getCurrent: getCurrent, getJournal: getJournal, getSessions: getSessions, isEnabled: isEnabled, writeChange: writeChange, reconnectPending: reconnectPending, loadServerConflictVersion: loadServerConflictVersion, reapplyLocalConflictVersion: reapplyLocalConflictVersion, getMeta: meta, getCachedCurrent: function () { return read(CACHE_KEY, null); }, getPending: function () { return read(PENDING_KEY, null); }, getConflict: function () { return read(CONFLICT_KEY, null); } };
+    return { organizationId: organizationId, getCurrent: getCurrent, getJournal: getJournal, getSessions: getSessions, isEnabled: isEnabled, writeChange: writeChange, reconnectPending: reconnectPending, loadServerConflictVersion: loadServerConflictVersion, reapplyLocalConflictVersion: reapplyLocalConflictVersion, getMeta: meta, getCachedCurrent: function () { return read(CACHE_KEY, null); }, getPending: function () { return read(PENDING_KEY, null); }, getConflict: function () { return read(CONFLICT_KEY, null); } };
   }
   root.TimeFlowWorkTimeApi = { create: create, activateAccount: activateAccount };
 }(globalThis));

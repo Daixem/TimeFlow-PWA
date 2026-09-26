@@ -36,6 +36,29 @@ const legacyStorage = new MemoryStorage({ "timeflow-work-time-current-v1": JSON.
 sandbox.TimeFlowWorkTimeApi.activateAccount(legacyStorage, "user-a");
 if (legacyStorage.getItem("timeflow-work-time-current-v1") !== null) throw new Error("Unowned legacy work-time data was assigned to the first authenticated account.");
 
+const contextStorage = new MemoryStorage({ "timeflow-work-time-owner-v1": "user-a", "timeflow-work-time-current-v1": JSON.stringify({ scope: "private" }), "timeflow-work-time-meta-v1": JSON.stringify({ revision: 4 }) });
+let contextHeaders = null;
+const teamClient = create({
+  storage: contextStorage,
+  organizationId: "organization-a",
+  request: async (_path, options = {}) => {
+    contextHeaders = options.headers;
+    return response(200, { state: { scope: "team" }, revision: 1, context: { scope: "organization", organizationId: "organization-a" } });
+  }
+});
+await teamClient.getCurrent();
+if (contextHeaders?.["X-TimeFlow-Organization-Id"] !== "organization-a") throw new Error("Organization context header was not sent.");
+if (teamClient.getCachedCurrent()?.scope !== "team" || teamClient.getMeta().revision !== 1) throw new Error("Organization context did not retain its own server state.");
+const privateClient = create({ storage: contextStorage, organizationId: null, request: async () => response(500, {}) });
+if (privateClient.getCachedCurrent()?.scope !== "private" || privateClient.getMeta().revision !== 4) throw new Error("Private state was overwritten by the organization context.");
+const otherOrganization = create({ storage: contextStorage, organizationId: "organization-b", request: async () => response(500, {}) });
+if (otherOrganization.getCachedCurrent() !== null || otherOrganization.getMeta().revision !== 0) throw new Error("Organization caches were not isolated from each other.");
+try {
+  const mismatched = create({ storage: contextStorage, organizationId: "organization-a", request: async () => response(200, { state: {}, revision: 1, context: { scope: "organization", organizationId: "organization-b" } }) });
+  await mismatched.getCurrent();
+  throw new Error("Expected a context mismatch.");
+} catch (error) { if (error.message !== "work_time_context_mismatch") throw error; }
+
 let calls = [];
 const disabledClient = create({
   storage: new MemoryStorage(),

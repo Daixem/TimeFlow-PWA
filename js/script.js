@@ -22,6 +22,8 @@ let workTimer;
 let workTimeApi;
 let workTimeServerMode;
 let workTimeSessionIdentity;
+let workTimeContextIdentity;
+let workTimeContextGeneration = 0;
 let workTimePendingEvent;
 window.TimeFlowWorkTimeServerEnabled = () => workTimeServerMode === "enabled";
 window.TimeFlowWorkTimeReady = () => workTimeServerMode !== undefined;
@@ -120,11 +122,30 @@ function workTimeClient() {
   if (!workTimeApi && window.TimeFlowWorkTimeApi && window.TimeFlowPlatform) workTimeApi = window.TimeFlowWorkTimeApi.create({ storage: window.TimeFlowPlatform.storage });
   return workTimeApi;
 }
+function activeWorkTimeOrganizationId() {
+  if (document.body?.dataset.appMode !== "team") return null;
+  const value = String(window.TimeFlowTeamAccess?.membership?.organization_id || "").trim();
+  return /^[A-Za-z0-9_-]{1,160}$/.test(value) ? value : null;
+}
+function refreshWorkTimeContext() {
+  const organizationId = activeWorkTimeOrganizationId();
+  const identity = organizationId ? `organization:${organizationId}` : "private";
+  window.TimeFlowWorkTimeContext = { scope: organizationId ? "organization" : "private", organizationId };
+  if (identity === workTimeContextIdentity && workTimeReady) return;
+  workTimeContextIdentity = identity;
+  workTimeContextGeneration += 1;
+  workTimeApi = undefined;
+  workTimeServerMode = undefined;
+  workTimePendingEvent = undefined;
+  workTimeReady = initialiseWorkTime();
+}
 async function initialiseWorkTime() {
+  const generation = workTimeContextGeneration;
   const client = workTimeClient();
   if (!client) { workTimeServerMode = "unavailable"; return workTimeServerMode; }
   try {
     const enabled = await client.isEnabled();
+    if (generation !== workTimeContextGeneration) return workTimeServerMode;
     if (!enabled) {
       workTimeServerMode = "disabled";
       document.dispatchEvent(new CustomEvent("timeflow:work-time-mode", { detail: { mode: workTimeServerMode } }));
@@ -136,10 +157,12 @@ async function initialiseWorkTime() {
     workTimeServerMode = "enabled";
     {
       const current = await client.getCurrent();
+      if (generation !== workTimeContextGeneration) return workTimeServerMode;
       applyWorkTimeState(current.state);
     }
     document.dispatchEvent(new CustomEvent("timeflow:work-time-mode", { detail: { mode: workTimeServerMode } }));
   } catch (_error) {
+    if (generation !== workTimeContextGeneration) return workTimeServerMode;
     const cached = client.getCachedCurrent?.();
     if (_error?.network && navigator.onLine === false && cached && typeof cached === "object") {
       workTimeServerMode = "enabled";
@@ -336,10 +359,11 @@ document.addEventListener("timeflow:session-ready", (event) => {
   const identity = `${event.detail?.source || "unknown"}:${event.detail?.user?.id || "anonymous"}`;
   if (identity === workTimeSessionIdentity && workTimeReady) return;
   workTimeSessionIdentity = identity;
-  workTimeApi = undefined;
-  workTimeServerMode = undefined;
-  workTimeReady = initialiseWorkTime();
+  workTimeContextIdentity = undefined;
+  refreshWorkTimeContext();
 });
+document.addEventListener("timeflow:mode-changed", refreshWorkTimeContext);
+document.addEventListener("timeflow:work-time-context-changed", refreshWorkTimeContext);
 document.addEventListener("timeflow:toggle-clock", requestClockConfirmation);
 document.addEventListener("timeflow:settings-updated", updateWorkUi);
 document.addEventListener("timeflow:device-resumed", () => { if (!window.TimeFlowWorkTimeSnapshotAuthority()) loadWorkday(); updateDateTime(); updateWorkUi(); if (state.isWorking) startTimer(); });

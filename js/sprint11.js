@@ -49,7 +49,10 @@ document.addEventListener("DOMContentLoaded", () => {
   let teamAccessAllowed = false;
 
   function updateTeamAccess(access = {}) {
-    teamAccessAllowed = Boolean(access.allowed);
+    const organizationId = String(access.membership?.organization_id || "").trim();
+    const hasOrganization = /^[A-Za-z0-9_-]{1,160}$/.test(organizationId);
+    teamAccessAllowed = Boolean(access.allowed && hasOrganization);
+    window.TimeFlowTeamAccess = access;
     document.querySelectorAll('[data-select-mode="team"], [data-mode-setting="team"]').forEach((button) => {
       // Team ist in der Einzel-Beta eine ausschließlich administrative Ansicht.
       // Das Ausblenden ergänzt die serverseitige 403-Sperre, ersetzt sie aber nicht.
@@ -60,7 +63,8 @@ document.addEventListener("DOMContentLoaded", () => {
       const copy = button.querySelector("small");
       if (copy && !teamAccessAllowed) copy.textContent = access.invitation ? `Einladung von ${access.invitation.name} annehmen` : "Nur nach Einladung eines Unternehmens";
     });
-    if (!teamAccessAllowed && currentMode() === "team") saveMode("private", false);
+    if (access.resolved && !teamAccessAllowed && currentMode() === "team") saveMode("private", false);
+    document.dispatchEvent(new CustomEvent("timeflow:work-time-context-changed", { detail: { organizationId: teamAccessAllowed ? organizationId : null } }));
   }
 
   function readSettings() {
@@ -257,14 +261,13 @@ document.addEventListener("DOMContentLoaded", () => {
   dialog.addEventListener("cancel", (event) => event.preventDefault());
   settingsPage.querySelectorAll("[data-mode-setting]").forEach((button) => button.addEventListener("click", () => saveMode(button.dataset.modeSetting)));
   document.addEventListener("timeflow:team-access", (event) => updateTeamAccess(event.detail || {}));
-  updateTeamAccess(window.TimeFlowTeamAccess || {});
+  updateTeamAccess(window.TimeFlowTeamAccess || { resolved: false });
 
   async function loadTeamAccess() {
     try {
       const response = await fetch(new URL("api/team-access", document.baseURI), { cache: "no-store", headers: { Accept: "application/json" } });
-      if (!response.ok) return updateTeamAccess({ allowed: false });
-      const access = await response.json();
-      window.TimeFlowTeamAccess = access;
+      if (!response.ok) return updateTeamAccess({ allowed: false, resolved: true });
+      const access = { ...(await response.json()), resolved: true };
       updateTeamAccess(access);
       if (access.invitation) {
         const teamButton = settingsPage.querySelector('[data-mode-setting="team"]');
@@ -273,10 +276,10 @@ document.addEventListener("DOMContentLoaded", () => {
           event.preventDefault(); event.stopImmediatePropagation();
           if (!window.confirm(`Einladung von ${access.invitation.name} annehmen und Teammodus freischalten?`)) return;
           const accepted = await fetch(new URL("api/team-access", document.baseURI), { method: "POST", headers: { "Content-Type": "application/json", Accept: "application/json" }, body: JSON.stringify({ action: "accept", invitationId: access.invitation.id }) });
-          if (accepted.ok) { updateTeamAccess(await accepted.json()); saveMode("team"); }
+          if (accepted.ok) { updateTeamAccess({ ...(await accepted.json()), resolved: true }); saveMode("team"); }
         };
       }
-    } catch { updateTeamAccess({ allowed: false }); }
+    } catch { updateTeamAccess({ allowed: false, resolved: true }); }
   }
   document.addEventListener("timeflow:session-ready", (event) => event.detail?.source === "platform" ? loadTeamAccess() : updateTeamAccess({ allowed: false }));
   document.addEventListener("timeflow:session-ready", (event) => {
