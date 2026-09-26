@@ -2,7 +2,7 @@
 
 Stand: 26. September 2026
 
-Status: **IN BEOBACHTUNG**
+Status: **VORLÄUFIG ABGESCHLOSSEN**
 
 ## Umfang
 
@@ -58,15 +58,19 @@ bis zu einem verfügbaren Testgerät **PARTIAL**.
 ## Beobachtungsphase
 
 - Worker: `timeflow-preprod`
-- Zeitraum: 26. September 2026, 00:40 Uhr bis 28. September 2026, 00:40 Uhr
-  Europe/Berlin
-- Automatisierung: `timeflow-phase-e-beobachten`
+- Ursprünglich geplanter Zeitraum: 26. September 2026, 00:40 Uhr bis
+  28. September 2026, 00:40 Uhr Europe/Berlin
+- Tatsächlicher Abschluss: 26. September 2026; die restliche Beobachtungszeit
+  wurde bewusst als nicht blockierend akzeptiert
+- Automatisierung `timeflow-phase-e-beobachten`: beendet
 - Erste Stichprobe: 834 HTTP-200-Antworten, eine HTTP-404-Antwort, keine 5xx
   und ausschließlich Worker-Outcome `ok`
+- Letzte Stichprobe: 73 HTTP-200-Antworten, keine 5xx, 403, 409, D1-,
+  Pending- oder Reconnect-Fehler
 
-Die Automatisierung prüft alle sechs Stunden Worker-Fehler, 5xx, D1-Fehler,
-auffällige 403/409 sowie Pending-/Reconnect-Fehler. Sie meldet sich nur bei
-einer Verschlechterung oder mit dem Abschlussbericht.
+Die verkürzte Beobachtung zeigte keine Verschlechterung. Das verbleibende
+Zeitfenster und der echte Android-PWA-Test bleiben dokumentierte Restpunkte,
+verhindern aber nicht den Beginn der vorbereitenden Phase F.
 
 ## Status
 
@@ -80,7 +84,7 @@ einer Verschlechterung oder mit dem Abschlussbericht.
 | Android-Smartphone-Layout | **PASS** | Emulation mit 412 × 915 ohne sichtbaren Layoutfehler. |
 | Android-Tablet-Layout | **PASS** | Emulation mit 800 × 1280 ohne sichtbaren Layoutfehler. |
 | Echter Android-PWA-Test | **PARTIAL** | Kein Android-Testgerät verfügbar. |
-| 48-Stunden-Beobachtung | **PARTIAL** | Läuft bis 28. September 2026, 00:40 Uhr. |
+| 48-Stunden-Beobachtung | **PARTIAL** | Bewusst vorzeitig beendet; alle erfassten Stichproben waren unauffällig. |
 | Produktiver Cutover | **BLOCKED** | Retention und Organisationszuordnung sind noch nicht verbindlich festgelegt. |
 
 Produktion, produktive D1, produktive Bindings und produktive Feature-Gates
