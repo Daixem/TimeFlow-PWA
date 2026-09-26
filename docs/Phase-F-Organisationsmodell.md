@@ -2,7 +2,7 @@
 
 Stand: 26. September 2026
 
-Status: **LOKAL VALIDIERT – NOCH NICHT AUF D1 ANGEWENDET**
+Status: **SCHEMA UND WORKER LOKAL VALIDIERT – NOCH NICHT AUF D1 ANGEWENDET**
 
 ## Modell
 
@@ -39,16 +39,23 @@ Migration `0005` ersetzt den Primärschlüssel des Current-State durch
 `user_id`. Deshalb darf `0005` noch nicht auf die laufende Test-D1 angewendet
 werden.
 
-Vor der Test-D1-Migration ist ein kompatibler Worker-Schreibpfad erforderlich,
-der:
+Der kompatible Worker-Schreibpfad ist lokal implementiert und getestet. Er:
 
 1. den Kontext serverseitig aus Benutzer und bestätigter Mitgliedschaft löst;
 2. `subject_id`, `scope_type` und `organization_id` selbst setzt;
 3. keine Organisations-ID aus dem Request übernimmt;
 4. Lesen, Schreiben, Journal und Sessions immer auf das aufgelöste Subjekt
    begrenzt;
-5. während der koordinierten Migration mit deaktiviertem Work-Time-Gate
-   ausgerollt und erst nach dem Schema-Smoke-Test aktiviert wird.
+5. erkennt das bisherige und das neue Schema, ohne Teamdaten in das alte Schema
+   zu schreiben;
+6. verlangt für Teamzugriffe eine serverseitig bestätigte Mitgliedschaft und
+   für Fremdkorrekturen zusätzlich eine Admin- oder Owner-Rolle derselben
+   Organisation.
+
+Für den Remote-Test wird dieser kompatible Worker zuerst auf Pre-Prod
+ausgerollt. Migration `0005` läuft anschließend zunächst auf einer ungebundenen
+Kopie der Test-D1. Erst nach Export, Schema-/Zeilenvergleich und Smoke-Test darf
+die gebundene Test-D1 in einem kontrollierten Wartungsfenster folgen.
 
 ## Lokale Validierung
 
@@ -67,7 +74,11 @@ und `0005` ausschließlich auf eine flüchtige SQLite-Datenbank an. Geprüft sin
 | Cross-Tenant-Subjektfehler abgewiesen | **PASS** |
 | Organisation in Journal und Session erhalten | **PASS** |
 | Append-only-Journal weiterhin geschützt | **PASS** |
+| Bisheriges Schema weiterhin unterstützt | **PASS** |
+| Teamkontext nur mit bestätigter Mitgliedschaft | **PASS** |
+| Adminzugriff auf dieselbe Organisation begrenzt | **PASS** |
+| Organisations-ID im Request-Body abgewiesen | **PASS** |
+| Private und Team-Sessions API-seitig getrennt | **PASS** |
 
 Produktion, produktive D1, Test-D1, Worker-Bindings und Feature-Gates wurden
 durch diesen Entwurf nicht verändert.
-

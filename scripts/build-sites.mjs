@@ -485,16 +485,75 @@ async function handleSupport(request, env, url) {
   return jsonResponse({ ticket: await supportTicketWithMessages(env.DB, await env.DB.prepare("SELECT * FROM timeflow_support_tickets WHERE id = ?").bind(ticketId).first()) });
 }
 
-async function workTimeTarget(user, access, value, env) {
+function requestedWorkTimeOrganization(request, url) {
+  const headerValue = String(request.headers.get("X-TimeFlow-Organization-Id") || "").trim();
+  const queryValue = String(url.searchParams.get("organizationId") || "").trim();
+  if (headerValue && queryValue && headerValue !== queryValue) return { error: "invalid_work_time_context", status: 400 };
+  const value = headerValue || queryValue;
+  if (!value) return { organizationId: null };
+  return /^[A-Za-z0-9_-]{1,160}$/.test(value)
+    ? { organizationId: value }
+    : { error: "invalid_work_time_context", status: 400 };
+}
+
+async function workTimeSubjectSchema(database) {
+  try {
+    const row = await database.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'timeflow_work_time_subjects'").first();
+    return Boolean(row);
+  } catch {
+    return null;
+  }
+}
+
+async function organizationMembership(database, userId, organizationId) {
+  return database.prepare("SELECT organization_id, user_id, role, joined_at FROM timeflow_organization_members WHERE user_id = ? AND organization_id = ? LIMIT 1").bind(userId, organizationId).first();
+}
+
+async function workTimeTarget(request, user, access, value, env, url) {
   const requested = typeof value === "string" ? value.trim() : "";
-  if (!requested || requested === user.id) return { userId: user.id, adminCorrection: false };
-  if (!access.admin) return null;
-  // TimeFlow currently has a single closed-beta tenant. A cross-user admin
-  // correction is nevertheless restricted to a server-verified beta account;
-  // arbitrary external IDs can never become work-time targets.
-  const targetAccess = await betaAccess({ authenticated: true, id: requested }, env);
-  if (!targetAccess.allowed) return null;
-  return { userId: requested, adminCorrection: true };
+  const userId = requested || user.id;
+  const adminCorrection = userId !== user.id;
+  if (adminCorrection && !access.admin) return { error: "work_time_forbidden", status: 403 };
+  if (adminCorrection) {
+    const targetAccess = await betaAccess({ authenticated: true, id: userId }, env);
+    if (!targetAccess.allowed) return { error: "work_time_forbidden", status: 403 };
+  }
+
+  const requestedOrganization = requestedWorkTimeOrganization(request, url);
+  if (requestedOrganization.error) return requestedOrganization;
+  const organizationId = requestedOrganization.organizationId;
+  const subjectSchema = await workTimeSubjectSchema(env.DB);
+  if (subjectSchema === null) return { error: "storage_unavailable", status: 503 };
+
+  if (organizationId) {
+    if (!subjectSchema) return { error: "work_time_tenant_schema_required", status: 503 };
+    const actorMembership = await organizationMembership(env.DB, user.id, organizationId);
+    if (!actorMembership) return { error: "work_time_forbidden", status: 403 };
+    if (adminCorrection && !["admin", "administrator", "owner"].includes(String(actorMembership.role || "").toLowerCase())) return { error: "work_time_forbidden", status: 403 };
+    const targetMembership = adminCorrection ? await organizationMembership(env.DB, userId, organizationId) : actorMembership;
+    if (!targetMembership) return { error: "work_time_forbidden", status: 403 };
+    const subject = await env.DB.prepare("SELECT id, user_id, scope_type, organization_id, employment_started_at FROM timeflow_work_time_subjects WHERE user_id = ? AND organization_id = ? AND scope_type = 'organization' AND employment_ended_at IS NULL LIMIT 1").bind(userId, organizationId).first();
+    return { userId, adminCorrection, subjectSchema, subjectId: subject?.id || null, scopeType: "organization", organizationId, membershipStartedAt: targetMembership.joined_at || null };
+  }
+
+  if (!subjectSchema) return { userId, adminCorrection, subjectSchema: false, subjectId: null, scopeType: "private", organizationId: null };
+  const subject = await env.DB.prepare("SELECT id, user_id, scope_type, organization_id FROM timeflow_work_time_subjects WHERE user_id = ? AND scope_type = 'private' LIMIT 1").bind(userId).first();
+  return { userId, adminCorrection, subjectSchema, subjectId: subject?.id || null, scopeType: "private", organizationId: null };
+}
+
+async function ensureWorkTimeSubject(database, target, now) {
+  if (!target.subjectSchema || target.subjectId) return target;
+  const subjectId = crypto.randomUUID();
+  const employmentStartedAt = target.scopeType === "organization" ? (target.membershipStartedAt || now) : null;
+  await database.prepare("INSERT INTO timeflow_work_time_subjects (id, user_id, scope_type, organization_id, employment_started_at, employment_ended_at, private_deletion_requested_at, delete_after, created_at, updated_at) VALUES (?, ?, ?, ?, ?, NULL, NULL, NULL, ?, ?) ON CONFLICT DO NOTHING").bind(subjectId, target.userId, target.scopeType, target.organizationId, employmentStartedAt, now, now).run();
+  const subject = target.scopeType === "organization"
+    ? await database.prepare("SELECT id FROM timeflow_work_time_subjects WHERE user_id = ? AND organization_id = ? AND scope_type = 'organization' AND employment_ended_at IS NULL LIMIT 1").bind(target.userId, target.organizationId).first()
+    : await database.prepare("SELECT id FROM timeflow_work_time_subjects WHERE user_id = ? AND scope_type = 'private' LIMIT 1").bind(target.userId).first();
+  return { ...target, subjectId: subject?.id || null };
+}
+
+function workTimeContext(target) {
+  return { scope: target.scopeType, organizationId: target.organizationId || null };
 }
 
 async function handleWorkTime(request, env, url) {
@@ -506,13 +565,15 @@ async function handleWorkTime(request, env, url) {
   if (!env?.DB) return jsonResponse({ error: "storage_unavailable" }, 503);
 
   if (request.method === "GET") {
-    const target = await workTimeTarget(user, access, url.searchParams.get("userId"), env);
-    if (!target) return jsonResponse({ error: "work_time_forbidden" }, 403);
-    const row = await env.DB.prepare("SELECT state_json, revision, server_updated_at FROM timeflow_work_time_current WHERE user_id = ?").bind(target.userId).first();
-    if (!row) return jsonResponse({ state: null, revision: 0, updatedAt: null });
+    const target = await workTimeTarget(request, user, access, url.searchParams.get("userId"), env, url);
+    if (target.error) return jsonResponse({ error: target.error }, target.status);
+    const row = target.subjectSchema
+      ? (target.subjectId ? await env.DB.prepare("SELECT state_json, revision, server_updated_at FROM timeflow_work_time_current WHERE subject_id = ?").bind(target.subjectId).first() : null)
+      : await env.DB.prepare("SELECT state_json, revision, server_updated_at FROM timeflow_work_time_current WHERE user_id = ?").bind(target.userId).first();
+    if (!row) return jsonResponse({ state: null, revision: 0, updatedAt: null, context: workTimeContext(target) });
     const state = storedWorkTimeState(row);
     if (!state) return jsonResponse({ error: "stored_work_time_invalid" }, 500);
-    return jsonResponse({ state, revision: row.revision, updatedAt: row.server_updated_at });
+    return jsonResponse({ state, revision: row.revision, updatedAt: row.server_updated_at, context: workTimeContext(target) });
   }
 
   if (request.method !== "PUT") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "GET, PUT" });
@@ -524,8 +585,8 @@ async function handleWorkTime(request, env, url) {
   const command = parsedWorkTimeCommand(body);
   if (!command) return jsonResponse({ error: "invalid_work_time_command" }, 400);
   const eventType = command.eventType;
-  const target = await workTimeTarget(user, access, command.userId, env);
-  if (!target) return jsonResponse({ error: "work_time_forbidden" }, 403);
+  let target = await workTimeTarget(request, user, access, command.userId, env, url);
+  if (target.error) return jsonResponse({ error: target.error }, target.status);
   if (target.adminCorrection && eventType !== "ADMIN_CORRECTION") return jsonResponse({ error: "admin_correction_event_required" }, 400);
   if (!target.adminCorrection && eventType === "ADMIN_CORRECTION") return jsonResponse({ error: "admin_required" }, 403);
   const now = new Date().toISOString();
@@ -534,7 +595,11 @@ async function handleWorkTime(request, env, url) {
     if (occurredAt > serverNow + 2 * 60 * 1000 || occurredAt < serverNow - 7 * 24 * 60 * 60 * 1000) return jsonResponse({ error: "invalid_work_time_timestamp" }, 400);
   }
   const effectiveTimestamp = command.occurredAt || command.date || null;
-  const row = await env.DB.prepare("SELECT state_json, revision, server_updated_at FROM timeflow_work_time_current WHERE user_id = ?").bind(target.userId).first();
+  if (target.subjectSchema && !target.subjectId && command.expectedRevision === 0) target = await ensureWorkTimeSubject(env.DB, target, now);
+  if (target.subjectSchema && !target.subjectId) return jsonResponse({ error: "work_time_subject_unavailable" }, 503);
+  const row = target.subjectSchema
+    ? await env.DB.prepare("SELECT state_json, revision, server_updated_at FROM timeflow_work_time_current WHERE subject_id = ?").bind(target.subjectId).first()
+    : await env.DB.prepare("SELECT state_json, revision, server_updated_at FROM timeflow_work_time_current WHERE user_id = ?").bind(target.userId).first();
   const currentState = row ? storedWorkTimeState(row) : null;
   if (row && !currentState) return jsonResponse({ error: "stored_work_time_invalid" }, 500);
   const nextState = serverWorkTimeState(command, currentState, command.occurredAt || now, serverWorkTimePolicy(env));
@@ -546,43 +611,53 @@ async function handleWorkTime(request, env, url) {
   try {
     if (!row) {
       if (command.expectedRevision !== 0) return jsonResponse({ error: "work_time_conflict", revision: 0, state: null, updatedAt: null }, 409);
-      const statement = env.DB.prepare("INSERT INTO timeflow_work_time_current (user_id, state_json, revision, last_actor_user_id, last_event_type, last_source, effective_timestamp, server_updated_at, created_at) VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?) ON CONFLICT(user_id) DO NOTHING").bind(target.userId, stateJson, actorUserId, eventType, source, effectiveTimestamp, now, now);
+      const statement = target.subjectSchema
+        ? env.DB.prepare("INSERT INTO timeflow_work_time_current (subject_id, user_id, scope_type, organization_id, state_json, revision, last_actor_user_id, last_event_type, last_source, effective_timestamp, server_updated_at, created_at) VALUES (?, ?, ?, ?, ?, 1, ?, ?, ?, ?, ?, ?) ON CONFLICT(subject_id) DO NOTHING").bind(target.subjectId, target.userId, target.scopeType, target.organizationId, stateJson, actorUserId, eventType, source, effectiveTimestamp, now, now)
+        : env.DB.prepare("INSERT INTO timeflow_work_time_current (user_id, state_json, revision, last_actor_user_id, last_event_type, last_source, effective_timestamp, server_updated_at, created_at) VALUES (?, ?, 1, ?, ?, ?, ?, ?, ?) ON CONFLICT(user_id) DO NOTHING").bind(target.userId, stateJson, actorUserId, eventType, source, effectiveTimestamp, now, now);
       const result = await env.DB.batch([statement]);
-      if ((result?.[0]?.meta?.changes || 0) === 1) return jsonResponse({ saved: true, revision: 1, state: nextState, updatedAt: now }, 201);
+      if ((result?.[0]?.meta?.changes || 0) === 1) return jsonResponse({ saved: true, revision: 1, state: nextState, updatedAt: now, context: workTimeContext(target) }, 201);
       // Remote D1 can commit the insert while reporting meta.changes as zero.
       // Verify the persisted row before returning a false conflict.
-      const committed = await env.DB.prepare("SELECT state_json, revision, last_actor_user_id, last_event_type, last_source, effective_timestamp, server_updated_at FROM timeflow_work_time_current WHERE user_id = ?").bind(target.userId).first();
+      const committed = target.subjectSchema
+        ? await env.DB.prepare("SELECT state_json, revision, last_actor_user_id, last_event_type, last_source, effective_timestamp, server_updated_at FROM timeflow_work_time_current WHERE subject_id = ?").bind(target.subjectId).first()
+        : await env.DB.prepare("SELECT state_json, revision, last_actor_user_id, last_event_type, last_source, effective_timestamp, server_updated_at FROM timeflow_work_time_current WHERE user_id = ?").bind(target.userId).first();
       if (Number(committed?.revision) === 1
         && String(committed.state_json) === stateJson
         && String(committed.last_actor_user_id) === actorUserId
         && String(committed.last_event_type) === eventType
         && String(committed.last_source) === source
         && (committed.effective_timestamp || null) === (effectiveTimestamp || null)
-        && String(committed.server_updated_at) === now) return jsonResponse({ saved: true, revision: 1, state: nextState, updatedAt: now }, 201);
+        && String(committed.server_updated_at) === now) return jsonResponse({ saved: true, revision: 1, state: nextState, updatedAt: now, context: workTimeContext(target) }, 201);
     } else {
-      const statement = env.DB.prepare("UPDATE timeflow_work_time_current SET state_json = ?, revision = revision + 1, last_actor_user_id = ?, last_event_type = ?, last_source = ?, effective_timestamp = ?, server_updated_at = ? WHERE user_id = ? AND revision = ?").bind(stateJson, actorUserId, eventType, source, effectiveTimestamp, now, target.userId, command.expectedRevision);
+      const statement = target.subjectSchema
+        ? env.DB.prepare("UPDATE timeflow_work_time_current SET state_json = ?, revision = revision + 1, last_actor_user_id = ?, last_event_type = ?, last_source = ?, effective_timestamp = ?, server_updated_at = ? WHERE subject_id = ? AND revision = ?").bind(stateJson, actorUserId, eventType, source, effectiveTimestamp, now, target.subjectId, command.expectedRevision)
+        : env.DB.prepare("UPDATE timeflow_work_time_current SET state_json = ?, revision = revision + 1, last_actor_user_id = ?, last_event_type = ?, last_source = ?, effective_timestamp = ?, server_updated_at = ? WHERE user_id = ? AND revision = ?").bind(stateJson, actorUserId, eventType, source, effectiveTimestamp, now, target.userId, command.expectedRevision);
       const result = await env.DB.batch([statement]);
-      if ((result?.[0]?.meta?.changes || 0) === 1) return jsonResponse({ saved: true, revision: command.expectedRevision + 1, state: nextState, updatedAt: now });
+      if ((result?.[0]?.meta?.changes || 0) === 1) return jsonResponse({ saved: true, revision: command.expectedRevision + 1, state: nextState, updatedAt: now, context: workTimeContext(target) });
       // Remote D1 preview can report an unreliable meta.changes value; verify
       // the committed row before classifying an otherwise successful write as a conflict.
       if ((result?.[0]?.meta?.changes || 0) !== 1) {
-        const committed = await env.DB.prepare("SELECT state_json, revision, last_actor_user_id, last_event_type, last_source, effective_timestamp, server_updated_at FROM timeflow_work_time_current WHERE user_id = ?").bind(target.userId).first();
+        const committed = target.subjectSchema
+          ? await env.DB.prepare("SELECT state_json, revision, last_actor_user_id, last_event_type, last_source, effective_timestamp, server_updated_at FROM timeflow_work_time_current WHERE subject_id = ?").bind(target.subjectId).first()
+          : await env.DB.prepare("SELECT state_json, revision, last_actor_user_id, last_event_type, last_source, effective_timestamp, server_updated_at FROM timeflow_work_time_current WHERE user_id = ?").bind(target.userId).first();
         if (Number(committed?.revision) === command.expectedRevision + 1
           && String(committed.state_json) === stateJson
           && String(committed.last_actor_user_id) === actorUserId
           && String(committed.last_event_type) === eventType
           && String(committed.last_source) === source
           && (committed.effective_timestamp || null) === (effectiveTimestamp || null)
-          && String(committed.server_updated_at) === now) return jsonResponse({ saved: true, revision: command.expectedRevision + 1, state: nextState, updatedAt: now });
+          && String(committed.server_updated_at) === now) return jsonResponse({ saved: true, revision: command.expectedRevision + 1, state: nextState, updatedAt: now, context: workTimeContext(target) });
       }
     }
   } catch {
     return jsonResponse({ error: "work_time_write_failed" }, 500);
   }
 
-  const current = await env.DB.prepare("SELECT state_json, revision, server_updated_at FROM timeflow_work_time_current WHERE user_id = ?").bind(target.userId).first();
+  const current = target.subjectSchema
+    ? await env.DB.prepare("SELECT state_json, revision, server_updated_at FROM timeflow_work_time_current WHERE subject_id = ?").bind(target.subjectId).first()
+    : await env.DB.prepare("SELECT state_json, revision, server_updated_at FROM timeflow_work_time_current WHERE user_id = ?").bind(target.userId).first();
   const state = storedWorkTimeState(current);
-  return jsonResponse({ error: "work_time_conflict", revision: current?.revision || 0, state, updatedAt: current?.server_updated_at || null }, 409);
+  return jsonResponse({ error: "work_time_conflict", revision: current?.revision || 0, state, updatedAt: current?.server_updated_at || null, context: workTimeContext(target) }, 409);
 }
 
 async function handleWorkTimeJournal(request, env, url) {
@@ -593,26 +668,36 @@ async function handleWorkTimeJournal(request, env, url) {
   if (!access.allowed) return jsonResponse({ error: "beta_access_required" }, 403);
   if (!env?.DB) return jsonResponse({ error: "storage_unavailable" }, 503);
   if (request.method !== "GET") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "GET" });
-  const target = await workTimeTarget(user, access, url.searchParams.get("userId"), env);
-  if (!target) return jsonResponse({ error: "work_time_forbidden" }, 403);
-  const rows = await env.DB.prepare("SELECT id, user_id, actor_user_id, event_type, source, revision, effective_timestamp, server_timestamp, previous_state_json, new_state_json FROM timeflow_work_time_journal WHERE user_id = ? ORDER BY revision DESC LIMIT 200").bind(target.userId).all();
-  return jsonResponse({ events: rows?.results || [] });
+  const target = await workTimeTarget(request, user, access, url.searchParams.get("userId"), env, url);
+  if (target.error) return jsonResponse({ error: target.error }, target.status);
+  const rows = target.subjectSchema
+    ? (target.subjectId ? await env.DB.prepare("SELECT id, user_id, actor_user_id, event_type, source, revision, effective_timestamp, server_timestamp, previous_state_json, new_state_json FROM timeflow_work_time_journal WHERE subject_id = ? ORDER BY revision DESC LIMIT 200").bind(target.subjectId).all() : { results: [] })
+    : await env.DB.prepare("SELECT id, user_id, actor_user_id, event_type, source, revision, effective_timestamp, server_timestamp, previous_state_json, new_state_json FROM timeflow_work_time_journal WHERE user_id = ? ORDER BY revision DESC LIMIT 200").bind(target.userId).all();
+  return jsonResponse({ events: rows?.results || [], context: workTimeContext(target) });
 }
 
 async function handleWorkTimeSessions(request, env, url) {
   const user = authenticatedUser(request);
   if (!user.authenticated || !user.id) return jsonResponse({ error: "authentication_required" }, 401);
   if (!workTimeServerEnabled(env)) return jsonResponse({ error: "work_time_feature_disabled" }, 503);
-  if (!(await betaAccess(user, env)).allowed) return jsonResponse({ error: "beta_access_required" }, 403);
+  const access = await betaAccess(user, env);
+  if (!access.allowed) return jsonResponse({ error: "beta_access_required" }, 403);
   if (!env?.DB) return jsonResponse({ error: "storage_unavailable" }, 503);
   if (request.method !== "GET") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "GET" });
   const month = String(url.searchParams.get("month") || "");
   if (month && !/^\\d{4}-\\d{2}$/.test(month)) return jsonResponse({ error: "invalid_work_time_month" }, 400);
-  const query = month
-    ? env.DB.prepare("SELECT id, work_date, clock_in, clock_out, pause_minutes, gross_minutes, net_minutes, status, start_revision, end_revision, created_at, updated_at FROM timeflow_work_time_sessions WHERE user_id = ? AND work_date LIKE ? ORDER BY clock_out DESC LIMIT 100").bind(user.id, month + "%")
-    : env.DB.prepare("SELECT id, work_date, clock_in, clock_out, pause_minutes, gross_minutes, net_minutes, status, start_revision, end_revision, created_at, updated_at FROM timeflow_work_time_sessions WHERE user_id = ? ORDER BY clock_out DESC LIMIT 100").bind(user.id);
-  const rows = await query.all();
-  return jsonResponse({ sessions: rows?.results || [] });
+  const target = await workTimeTarget(request, user, access, url.searchParams.get("userId"), env, url);
+  if (target.error) return jsonResponse({ error: target.error }, target.status);
+  let rows = { results: [] };
+  if (!target.subjectSchema || target.subjectId) {
+    const column = target.subjectSchema ? "subject_id" : "user_id";
+    const value = target.subjectSchema ? target.subjectId : target.userId;
+    const query = month
+      ? env.DB.prepare("SELECT id, work_date, clock_in, clock_out, pause_minutes, gross_minutes, net_minutes, status, start_revision, end_revision, created_at, updated_at FROM timeflow_work_time_sessions WHERE " + column + " = ? AND work_date LIKE ? ORDER BY clock_out DESC LIMIT 100").bind(value, month + "%")
+      : env.DB.prepare("SELECT id, work_date, clock_in, clock_out, pause_minutes, gross_minutes, net_minutes, status, start_revision, end_revision, created_at, updated_at FROM timeflow_work_time_sessions WHERE " + column + " = ? ORDER BY clock_out DESC LIMIT 100").bind(value);
+    rows = await query.all();
+  }
+  return jsonResponse({ sessions: rows?.results || [], context: workTimeContext(target) });
 }
 
 async function handleSync(request, env, url) {

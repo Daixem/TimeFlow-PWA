@@ -71,5 +71,5 @@ produktive D1-ID, die Recovery-D1-ID, das Backup und den Rückfallplan nennen.
 | Retention-Entscheidung | **PASS – Beschäftigungsdauer plus 24 Monate; privat 30 Tage Wiederherstellung** |
 | Organisationsmodell | **PASS – Migration lokal validiert** |
 | Lösch-/Anonymisierungsablauf | **PARTIAL – technische Umsetzung ausstehend** |
-| Tenant-Testmigration | **PARTIAL – lokaler Entwurf PASS; kompatibler Worker fehlt** |
+| Tenant-Testmigration | **PARTIAL – Schema und kompatibler Worker lokal PASS; Remote-Test ausstehend** |
 | Produktiver Cutover | **BLOCKED – keine Freigabe** |
