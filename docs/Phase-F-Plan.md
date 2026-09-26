@@ -2,7 +2,7 @@
 
 Stand: 26. September 2026
 
-Status: **GESTARTET – KEIN PRODUKTIV-CUTOVER**
+Status: **IN ARBEIT – KEIN PRODUKTIV-CUTOVER**
 
 ## Ziel
 
@@ -68,7 +68,7 @@ produktive D1-ID, die Recovery-D1-ID, das Backup und den Rückfallplan nennen.
 | Punkt | Status |
 | --- | --- |
 | Phase E vorläufig abgeschlossen | **PASS** |
-| Retention-Entscheidung | **BLOCKED – Entscheidung offen** |
+| Retention-Entscheidung | **PARTIAL – konkreter Entwurf zur fachlichen Freigabe** |
 | Organisationsmodell | **PARTIAL – Grundregeln dokumentiert** |
 | Lösch-/Anonymisierungsablauf | **BLOCKED – Retention erforderlich** |
 | Tenant-Testmigration | **BLOCKED – Datenmodell erforderlich** |
