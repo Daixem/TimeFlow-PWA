@@ -1,6 +1,6 @@
 # TimeFlow – Phase F: Datenregeln und Cutover-Vorbereitung
 
-Stand: 26. September 2026
+Stand: 27. September 2026
 
 Status: **IN ARBEIT – KEIN PRODUKTIV-CUTOVER**
 
@@ -72,5 +72,5 @@ produktive D1-ID, die Recovery-D1-ID, das Backup und den Rückfallplan nennen.
 | Organisationsmodell | **PASS – Test-D1 migriert; Clientkontext und lokale Trennung validiert** |
 | Lösch-/Anonymisierungsablauf | **PARTIAL – technische Umsetzung ausstehend** |
 | Tenant-Testmigration | **PASS – Kopie und gebundene Test-D1 migriert; Daten vollständig** |
-| Team-E2E auf Test-D1 | **PARTIAL – kontrollierte Organisation und zwei Testnutzer ausstehend** |
+| Team-E2E auf Test-D1 | **PASS – zwei Access-Identitäten, Mitgliedsrolle, getrennte Teamdaten und private Isolation im Browser verifiziert** |
 | Produktiver Cutover | **BLOCKED – keine Freigabe** |

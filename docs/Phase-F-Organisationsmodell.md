@@ -1,8 +1,8 @@
 # TimeFlow – Phase F: Organisationsmodell
 
-Stand: 26. September 2026
+Stand: 27. September 2026
 
-Status: **TEST-D1 MIGRIERT – TEAM-E2E NOCH AUSSTEHEND**
+Status: **TEST-D1 MIGRIERT – TEAM-E2E PASS**
 
 ## Modell
 
@@ -88,8 +88,9 @@ und `0005` ausschließlich auf eine flüchtige SQLite-Datenbank an. Geprüft sin
 
 ## Remote-Validierung
 
-- Worker-Commit: `10d5459aa42356a5076be74d2e1dd594aaf67107`
-- Pre-Prod-Version nach Migration: `64f24f36-d1e0-4b8d-8f17-41961847f0ce`
+- Worker-Commit: `176bf66937e764995c5538846ff9388aeaed58dc`
+- Pre-Prod-Version: `373e98df-6d86-4a67-9b58-24aafba6b9ea`
+- Worker-Build-ID: `176bf66937e7-20260927t175955699z`
 - Worker: `timeflow-preprod`
 - Gebundene Test-D1: `timeflow-migration-test-20260917`
 - Test-D1-ID: `4826b07d-8a23-4098-80d7-ee6a6469bcab`
@@ -113,6 +114,15 @@ Trigger beziehungsweise CHECK-Constraint abgewiesen. Die Fehlversuche
 veränderten keine Zeilenzahl. Nach der Migration wurde das Work-Time-Gate wieder
 aktiviert; der angemeldete Pre-Prod-Client lud den privaten Arbeitszeitstand und
 gab die Stempelfunktion frei.
+
+Der abschließende Team-E2E-Test verwendete eine kontrollierte Organisation und
+zwei durch Cloudflare Access bestätigte Identitäten. Die zweite Identität wurde
+als normales Mitglied mit `admin: false` aufgelöst, konnte den Teammodus öffnen
+und im Browser ein- und ausstempeln. D1 speicherte für dieses Mitglied eine
+eigene Team-Session mit getrenntem Subjekt und den Revisionen 1 und 2. Die
+bereits vorhandene Team-Session des Administrators blieb davon getrennt; sein
+privater Current-State blieb unverändert auf Revision 12. Damit sind
+Mitgliedsrolle, Team-Stempelpfad und Privat-/Team-Isolation remote **PASS**.
 
 Produktion, produktive D1 und produktive Bindings wurden nicht verändert. Die
 SQL-Exporte liegen nur im lokalen temporären Verzeichnis und werden nicht

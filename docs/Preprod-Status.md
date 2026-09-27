@@ -1,17 +1,17 @@
-# TimeFlow Pre-Production – Phase D
+# TimeFlow Pre-Production – Phase D bis F
 
-Stand: 25. September 2026
+Stand: 27. September 2026
 
 ## Umgebung
 
 - Worker: `timeflow-preprod`
 - URL: `https://timeflow-preprod.wvzv2wd4zj.workers.dev`
 - Worker-ID: `34d459b368234910b7398f868ba60314`
-- Worker-Version: `4d2d1ebb-82d0-43c3-abae-3b03645945a7`
-- Deployed Worker-Commit: `5c837e9efebde659f4cdcd1e3966805470043388`
-- Worker-Build-ID: `5c837e9efebd-20260925t205205526z`
-- GitHub-Main-Commit: `5c837e9efebde659f4cdcd1e3966805470043388`
-- Browser-Build-ID: `5c837e9efebd-20260924t214755293z`
+- Worker-Version: `373e98df-6d86-4a67-9b58-24aafba6b9ea`
+- Deployed Worker-Commit: `176bf66937e764995c5538846ff9388aeaed58dc`
+- Worker-Build-ID: `176bf66937e7-20260927t175955699z`
+- GitHub-Main-Commit: `176bf66937e764995c5538846ff9388aeaed58dc`
+- Browser-Build: GitHub-Pages-Workflow für Commit `176bf66937e764995c5538846ff9388aeaed58dc` erfolgreich
 - Konfiguration: `wrangler.preprod.jsonc`
 
 Worker und Browser-Build stammen aus demselben GitHub-Main-Commit. Die
@@ -40,6 +40,8 @@ der öffentlichen Demo-Kontoauswahl bestätigt.
 - Datenbank-ID: `4826b07d-8a23-4098-80d7-ee6a6469bcab`
 - Migration `0003_timeflow_work_time_journal.sql`: vorhanden und verifiziert
 - Migration `0004_timeflow_work_time_sessions.sql`: vorhanden und verifiziert
+- Migration `0005_timeflow_work_time_subjects.sql`: ausschließlich auf der
+  Test-D1 und einer ungebundenen Restore-Kopie vorhanden und verifiziert
 
 Die produktive D1 ist nicht gebunden und wurde nicht verändert. Die getrennte
 Restore-Test-D1 ist ebenfalls nicht an den Worker gebunden.
@@ -64,6 +66,7 @@ Restore-Test-D1 ist ebenfalls nicht an den Worker gebunden.
 | Offline/Pending/Reconnect im Browser | **PASS** | Manueller Browserablauf verifiziert: lokaler `CLOCK_IN` um `2026-09-25T20:57:04.255Z`, sofort laufende Anzeige, Reconnect um `20:57:49.973Z`, D1-Quelle `offline_clock`; der ursprüngliche Offline-Zeitpunkt blieb erhalten. Der anschließende Online-`CLOCK_OUT` erzeugte Revision 12 und beendete den Testzustand. |
 | Service-Worker Build A → B | **PASS** | Browser wechselte auf Build `5c837e9efebd-20260924t214755293z`; die neuen versionierten Assets und der korrigierte Zustand wurden sichtbar. |
 | Entfernung von Demo-Daten | **PARTIAL** | Private Bereinigungstests bestehen; der öffentliche Demo-Modus zeigt weiterhin Beispieldaten. |
+| Team-E2E mit Mitgliedsrolle | **PASS** | Zweite Access-Identität als normales Mitglied erkannt; eigene Team-Session und getrennte Revisionen in der Test-D1 verifiziert. Der private Administratorzustand blieb auf Revision 12 unverändert. |
 
 ## Sicherheitsgrenze
 
