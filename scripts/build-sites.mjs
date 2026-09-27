@@ -370,7 +370,11 @@ async function handleRecoveryExport(request, env) {
   if (request.method !== "GET") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "GET" });
   if (!env?.DB || !(await betaAdmin(user, env))) return jsonResponse({ error: "admin_required" }, 403);
   if (!allowRate(user, "recovery-export", 3, 60 * 60 * 1000)) return jsonResponse({ error: "rate_limited" }, 429, { "Retry-After": "3600" });
-  const schema = await env.DB.prepare("SELECT type, name, tbl_name, sql FROM sqlite_schema WHERE name LIKE 'timeflow_%' AND sql IS NOT NULL ORDER BY type, name").all();
+  const schemaPlaceholders = RECOVERY_EXPORT_TABLES.map(() => "?").join(", ");
+  const schema = await env.DB
+    .prepare("SELECT type, name, tbl_name, sql FROM sqlite_schema WHERE tbl_name IN (" + schemaPlaceholders + ") AND sql IS NOT NULL ORDER BY type, name")
+    .bind(...RECOVERY_EXPORT_TABLES)
+    .all();
   const tables = {};
   for (const table of RECOVERY_EXPORT_TABLES) {
     const result = await env.DB.prepare("SELECT * FROM " + table).all();
