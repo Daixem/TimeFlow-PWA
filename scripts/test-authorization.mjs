@@ -8,6 +8,9 @@ function resultFor(sql, values) {
   if (sql.includes("FROM timeflow_beta_access")) {
     return { first: async () => values[0] === normalUserId ? { user_id: normalUserId } : null };
   }
+  if (sql.includes("FROM timeflow_organization_members")) {
+    return { first: async () => values[0] === normalUserId ? { organization_id: "test-organization", role: "member", name: "Testteam" } : null };
+  }
   if (sql.includes("SELECT payload_json, revision, updated_at FROM timeflow_user_sync")) {
     return { first: async () => ({ payload_json: "{}", revision: 1, updated_at: "2026-01-01T00:00:00.000Z" }) };
   }
@@ -64,7 +67,11 @@ const normalFingerprintResponse = await expectStatus("/api/beta/identity-fingerp
 const normalFingerprint = (await normalFingerprintResponse.json()).fingerprint;
 if (normalFingerprint !== await fingerprint(normalUserId) || normalFingerprint === adminFingerprint) throw new Error("Der eigene Identitätsfingerprint muss deterministisch sein und darf keinen Adminzugriff erzeugen.");
 await expectStatus("/api/beta/invites", 403, { headers: normalHeaders });
-await expectStatus("/api/team-access", 403, { headers: normalHeaders });
+const normalTeamAccess = await expectStatus("/api/team-access", 200, { headers: normalHeaders });
+const normalTeamAccessBody = await normalTeamAccess.json();
+if (!normalTeamAccessBody.allowed || normalTeamAccessBody.admin || normalTeamAccessBody.membership?.organization_id !== "test-organization" || normalTeamAccessBody.membership?.role !== "member") {
+  throw new Error("Ein bestätigtes Mitglied muss ausschließlich seinen eigenen Teamkontext ohne Adminrechte erhalten.");
+}
 await expectStatus("/api/sync", 200, { headers: normalHeaders });
 await expectStatus("/api/support?admin=1", 200, { headers: normalHeaders });
 await expectStatus("/api/support", 403, {
@@ -91,7 +98,8 @@ await expectStatus("/api/support?admin=1", 200, { headers: adminHeaders });
 
 const clientFingerprintHeaders = { ...normalHeaders, "x-timeflow-admin-fingerprint": adminFingerprint };
 await expectStatus("/api/beta/invites", 403, { headers: clientFingerprintHeaders });
-await expectStatus("/api/team-access", 403, { headers: clientFingerprintHeaders });
+const spoofedTeamAccess = await expectStatus("/api/team-access", 200, { headers: clientFingerprintHeaders });
+if ((await spoofedTeamAccess.json()).admin) throw new Error("Ein clientseitiger Admin-Fingerprint darf keine Adminrechte erzeugen.");
 const missingFingerprintEnv = { DB: database };
 const missingFingerprintResponse = await worker.fetch(new Request("https://timeflow.test/api/beta/invites", { headers: adminHeaders }), missingFingerprintEnv);
 if (missingFingerprintResponse.status !== 403) throw new Error("Ohne Admin-Fingerprint muss der sichere Default 403 sein.");
