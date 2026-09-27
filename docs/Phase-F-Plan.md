@@ -73,4 +73,5 @@ produktive D1-ID, die Recovery-D1-ID, das Backup und den Rückfallplan nennen.
 | Lösch-/Anonymisierungsablauf | **PARTIAL – technische Umsetzung ausstehend** |
 | Tenant-Testmigration | **PASS – Kopie und gebundene Test-D1 migriert; Daten vollständig** |
 | Team-E2E auf Test-D1 | **PASS – zwei Access-Identitäten, Mitgliedsrolle, getrennte Teamdaten und private Isolation im Browser verifiziert** |
-| Produktiver Cutover | **BLOCKED – keine Freigabe** |
+| Produktiver Code- und Schema-Rollout | **PASS – Sites-Version 65; Migrationen 0003–0005 vorhanden; neue Arbeitszeittabellen leer** |
+| Produktive Arbeitszeit-Aktivierung | **BLOCKED – Gate bleibt bis zum verifizierten Backup-/Restore-Test aus** |

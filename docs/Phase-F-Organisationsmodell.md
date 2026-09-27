@@ -124,6 +124,12 @@ bereits vorhandene Team-Session des Administrators blieb davon getrennt; sein
 privater Current-State blieb unverändert auf Revision 12. Damit sind
 Mitgliedsrolle, Team-Stempelpfad und Privat-/Team-Isolation remote **PASS**.
 
-Produktion, produktive D1 und produktive Bindings wurden nicht verändert. Die
-SQL-Exporte liegen nur im lokalen temporären Verzeichnis und werden nicht
-versioniert.
+Der geprüfte Code wurde anschließend als TimeFlow-Connect-Version 65
+veröffentlicht. Sites wendete dabei die versionierten Migrationen `0003` bis
+`0005` automatisch auf die produktive D1 an. Die vier Arbeitszeittabellen waren
+nach dem Rollout leer, und die produktive Umgebung enthielt weiterhin keine
+Variable `TIMEFLOW_WORK_TIME_SERVER_ENABLED`; die Arbeitszeit-API bleibt daher
+serverseitig deaktiviert. Eine breite Aktivierung bleibt bis zum verifizierten
+produktiven Backup-/Restore-Test gesperrt. Produktive Bindings und bestehende
+fachliche Datensätze wurden nicht verändert. Die SQL-Exporte liegen nur im
+lokalen temporären Verzeichnis und werden nicht versioniert.

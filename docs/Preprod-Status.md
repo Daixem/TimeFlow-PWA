@@ -81,5 +81,8 @@ Append-only-Regel als unveränderbarer Testnachweis erhalten. Der aktuelle
 Testzustand ist nach Revision 12 beendet; die temporäre E-Mail-Adresse wird in
 diesem Repository nicht dokumentiert.
 
-Kein produktiver Cutover wurde durchgeführt. Produktive D1, produktive
-Bindings und produktive Feature-Gates wurden nicht verändert.
+Am 27. September 2026 wurde der geprüfte Code als TimeFlow-Connect-Version 65
+veröffentlicht. Sites wendete dabei die Migrationen `0003` bis `0005`
+automatisch auf die produktive D1 an. Die neuen Arbeitszeittabellen waren nach
+dem Rollout leer. Das produktive Arbeitszeit-Gate blieb aus; produktive
+Bindings und bestehende fachliche Daten wurden nicht verändert.
