@@ -57,7 +57,7 @@ const expectStatus = async (path, expected, options) => {
   return response;
 };
 
-for (const path of ["/api/sync", "/api/team-access", "/api/beta/invites", "/api/support", "/api/account-data"]) {
+for (const path of ["/api/sync", "/api/team-access", "/api/beta/invites", "/api/support", "/api/account-data", "/api/admin/recovery-export"]) {
   await expectStatus(path, 401);
 }
 await expectStatus("/api/beta/identity-fingerprint", 401);
@@ -95,6 +95,12 @@ const adminHeaders = headersFor(adminUserId);
 await expectStatus("/api/beta/invites", 200, { headers: adminHeaders });
 await expectStatus("/api/team-access", 200, { headers: adminHeaders });
 await expectStatus("/api/support?admin=1", 200, { headers: adminHeaders });
+const recoveryExport = await expectStatus("/api/admin/recovery-export", 200, { headers: adminHeaders });
+const recoveryBody = await recoveryExport.json();
+if (recoveryBody.format !== "timeflow-d1-recovery-v1" || !Array.isArray(recoveryBody.schema) || Object.keys(recoveryBody.tables || {}).length !== 12) {
+  throw new Error("Der Recovery-Export muss ausschließlich dem Administrator das vollständige feste Tabellenset liefern.");
+}
+await expectStatus("/api/admin/recovery-export", 403, { headers: normalHeaders });
 
 const clientFingerprintHeaders = { ...normalHeaders, "x-timeflow-admin-fingerprint": adminFingerprint };
 await expectStatus("/api/beta/invites", 403, { headers: clientFingerprintHeaders });

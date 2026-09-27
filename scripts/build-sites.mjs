@@ -70,6 +70,20 @@ function decode(value) {
 }
 
 const RATE_WINDOWS = new Map();
+const RECOVERY_EXPORT_TABLES = [
+  "timeflow_beta_access",
+  "timeflow_beta_invites",
+  "timeflow_organization_invites",
+  "timeflow_organization_members",
+  "timeflow_organizations",
+  "timeflow_support_messages",
+  "timeflow_support_tickets",
+  "timeflow_user_sync",
+  "timeflow_work_time_current",
+  "timeflow_work_time_journal",
+  "timeflow_work_time_sessions",
+  "timeflow_work_time_subjects"
+];
 const SECURITY_CSP = "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: blob:; connect-src 'self'; worker-src 'self' blob: https://cdnjs.cloudflare.com; manifest-src 'self'";
 
 function securityHeaders(initial = {}) {
@@ -348,6 +362,26 @@ async function handleBetaIdentityFingerprint(request) {
   const user = authenticatedUser(request);
   if (!user.authenticated || !user.id) return jsonResponse({ error: "authentication_required" }, 401);
   return jsonResponse({ fingerprint: await userIdentityFingerprint(user.id) });
+}
+
+async function handleRecoveryExport(request, env) {
+  const user = authenticatedUser(request);
+  if (!user.authenticated || !user.id) return jsonResponse({ error: "authentication_required" }, 401);
+  if (request.method !== "GET") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "GET" });
+  if (!env?.DB || !(await betaAdmin(user, env))) return jsonResponse({ error: "admin_required" }, 403);
+  if (!allowRate(user, "recovery-export", 3, 60 * 60 * 1000)) return jsonResponse({ error: "rate_limited" }, 429, { "Retry-After": "3600" });
+  const schema = await env.DB.prepare("SELECT type, name, tbl_name, sql FROM sqlite_schema WHERE name LIKE 'timeflow_%' AND sql IS NOT NULL ORDER BY type, name").all();
+  const tables = {};
+  for (const table of RECOVERY_EXPORT_TABLES) {
+    const result = await env.DB.prepare("SELECT * FROM " + table).all();
+    tables[table] = result?.results || [];
+  }
+  const stamp = new Date().toISOString().replace(/[-:.]/g, "").replace("Z", "Z");
+  return jsonResponse(
+    { format: "timeflow-d1-recovery-v1", capturedAt: new Date().toISOString(), schema: schema?.results || [], tables },
+    200,
+    { "Content-Disposition": "attachment; filename=timeflow-recovery-" + stamp + ".json" }
+  );
 }
 
 async function handleBetaInvite(request, env, url) {
@@ -761,6 +795,7 @@ export default {
     if (url.pathname === "/api/account-data") return handleAccountData(request, env, url);
     if (url.pathname === "/api/beta/access") return handleBetaAccess(request, env);
     if (url.pathname === "/api/beta/identity-fingerprint") return handleBetaIdentityFingerprint(request);
+    if (url.pathname === "/api/admin/recovery-export") return handleRecoveryExport(request, env);
     if (url.pathname === "/api/beta/invite") return handleBetaInvite(request, env, url);
     if (url.pathname === "/api/beta/invites") return handleBetaInvites(request, env, url);
     if (url.pathname === "/api/support") return handleSupport(request, env, url);
