@@ -492,6 +492,7 @@ async function handleWorkTimeRetention(request, env, url) {
   if (request.method === "GET") return jsonResponse({ ruleVersion: WORK_TIME_RETENTION_RULE_VERSION, eligibleCount: rows.length, limited: rows.length === 100 });
   if (request.method !== "POST") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "GET, POST" });
   if (request.headers.get("Origin") !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
+  if (env?.TIMEFLOW_RETENTION_EXECUTE_ENABLED !== "true") return jsonResponse({ error: "retention_execution_disabled" }, 503);
   let body; try { body = await request.json(); } catch { return jsonResponse({ error: "invalid_json" }, 400); }
   if (body?.action !== "run_due_retention") return jsonResponse({ error: "invalid_retention_action" }, 400);
 

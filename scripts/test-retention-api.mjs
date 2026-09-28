@@ -54,7 +54,8 @@ const database = {
 const env = {
   DB: database,
   TIMEFLOW_BETA_ADMIN_USER_FINGERPRINT: await fingerprint(adminUserId),
-  TIMEFLOW_RETENTION_ADMIN_ENABLED: "true"
+  TIMEFLOW_RETENTION_ADMIN_ENABLED: "true",
+  TIMEFLOW_RETENTION_EXECUTE_ENABLED: "true"
 };
 const headersFor = (id) => ({ "oai-authenticated-user-id": id, "oai-authenticated-user-email": `${id}@example.test` });
 const call = (path, options = {}, environment = env) => worker.fetch(new Request(`https://timeflow.test${path}`, options), environment);
@@ -67,6 +68,7 @@ let response = await call("/api/admin/retention", { headers: headersFor(adminUse
 let body = await response.json();
 if (response.status !== 200 || body.eligibleCount !== 1 || body.ruleVersion !== "2026-09-v1") throw new Error("Retention dry-run summary is invalid.");
 if ((await call("/api/admin/retention", { method: "POST", headers: { ...headersFor(adminUserId), Origin: "https://attacker.test", "Content-Type": "application/json" }, body: JSON.stringify({ action: "run_due_retention" }) })).status !== 403) throw new Error("Cross-origin retention run was not rejected.");
+if ((await call("/api/admin/retention", { method: "POST", headers: { ...headersFor(adminUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ action: "run_due_retention" }) }, { ...env, TIMEFLOW_RETENTION_EXECUTE_ENABLED: "false" })).status !== 503) throw new Error("Disabled retention execution gate did not fail closed.");
 
 response = await call("/api/admin/retention", { method: "POST", headers: { ...headersFor(adminUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ action: "run_due_retention" }) });
 body = await response.json();
