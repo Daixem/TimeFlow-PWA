@@ -332,15 +332,27 @@ async function userIdentityFingerprint(userId) {
 }
 
 async function betaAdmin(user, env) {
-  if (!user?.id || !env?.TIMEFLOW_BETA_ADMIN_USER_FINGERPRINT) return false;
-  return (await userIdentityFingerprint(user.id)) === env.TIMEFLOW_BETA_ADMIN_USER_FINGERPRINT;
+  if (user?.id && env?.TIMEFLOW_BETA_ADMIN_USER_FINGERPRINT
+      && (await userIdentityFingerprint(user.id)) === env.TIMEFLOW_BETA_ADMIN_USER_FINGERPRINT) return true;
+  const email = String(user?.email || "").trim().toLowerCase();
+  return Boolean(email && env?.TIMEFLOW_BETA_ADMIN_EMAIL_FINGERPRINT
+    && (await userIdentityFingerprint(email)) === env.TIMEFLOW_BETA_ADMIN_EMAIL_FINGERPRINT);
+}
+
+async function workTimeIdentity(user, env) {
+  if (env?.TIMEFLOW_WORK_TIME_ADMIN_ONLY !== "true" || !(await betaAdmin(user, env))) return user;
+  if (user?.id) return user;
+  const email = String(user?.email || "").trim().toLowerCase();
+  if (!email) return user;
+  return { ...user, id: "admin-email-sha256:" + await userIdentityFingerprint(email) };
 }
 async function tokenHash(token) { const bytes = new TextEncoder().encode(token); const digest = await crypto.subtle.digest("SHA-256", bytes); return [...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, "0")).join(""); }
 function randomToken() { const bytes = new Uint8Array(24); crypto.getRandomValues(bytes); let token = btoa(String.fromCharCode(...bytes)).split("+").join("-").split("/").join("_"); while (token.endsWith("=")) token = token.slice(0, -1); return token; }
 
 async function betaAccess(user, env) {
-  if (!user.authenticated || !user.id || !env?.DB) return { allowed: false, admin: false };
+  if (!user.authenticated || !env?.DB) return { allowed: false, admin: false };
   await ensureBetaTables(env.DB); if (await betaAdmin(user, env)) return { allowed: true, admin: true };
+  if (!user.id) return { allowed: false, admin: false };
   const row = await env.DB.prepare("SELECT user_id FROM timeflow_beta_access WHERE user_id = ? AND revoked_at IS NULL").bind(user.id).first();
   return { allowed: Boolean(row), admin: false };
 }
@@ -562,9 +574,11 @@ function workTimeContext(target) {
 }
 
 async function handleWorkTime(request, env, url) {
-  const user = authenticatedUser(request);
-  if (!user.authenticated || !user.id) return jsonResponse({ error: "authentication_required" }, 401);
+  let user = authenticatedUser(request);
+  if (!user.authenticated) return jsonResponse({ error: "authentication_required" }, 401);
   if (!(await workTimeServerEnabledForUser(user, env))) return jsonResponse({ error: "work_time_feature_disabled" }, 503);
+  user = await workTimeIdentity(user, env);
+  if (!user.id) return jsonResponse({ error: "authentication_required" }, 401);
   const access = await betaAccess(user, env);
   if (!access.allowed) return jsonResponse({ error: "beta_access_required" }, 403);
   if (!env?.DB) return jsonResponse({ error: "storage_unavailable" }, 503);
@@ -666,9 +680,11 @@ async function handleWorkTime(request, env, url) {
 }
 
 async function handleWorkTimeJournal(request, env, url) {
-  const user = authenticatedUser(request);
-  if (!user.authenticated || !user.id) return jsonResponse({ error: "authentication_required" }, 401);
+  let user = authenticatedUser(request);
+  if (!user.authenticated) return jsonResponse({ error: "authentication_required" }, 401);
   if (!(await workTimeServerEnabledForUser(user, env))) return jsonResponse({ error: "work_time_feature_disabled" }, 503);
+  user = await workTimeIdentity(user, env);
+  if (!user.id) return jsonResponse({ error: "authentication_required" }, 401);
   const access = await betaAccess(user, env);
   if (!access.allowed) return jsonResponse({ error: "beta_access_required" }, 403);
   if (!env?.DB) return jsonResponse({ error: "storage_unavailable" }, 503);
@@ -682,9 +698,11 @@ async function handleWorkTimeJournal(request, env, url) {
 }
 
 async function handleWorkTimeSessions(request, env, url) {
-  const user = authenticatedUser(request);
-  if (!user.authenticated || !user.id) return jsonResponse({ error: "authentication_required" }, 401);
+  let user = authenticatedUser(request);
+  if (!user.authenticated) return jsonResponse({ error: "authentication_required" }, 401);
   if (!(await workTimeServerEnabledForUser(user, env))) return jsonResponse({ error: "work_time_feature_disabled" }, 503);
+  user = await workTimeIdentity(user, env);
+  if (!user.id) return jsonResponse({ error: "authentication_required" }, 401);
   const access = await betaAccess(user, env);
   if (!access.allowed) return jsonResponse({ error: "beta_access_required" }, 403);
   if (!env?.DB) return jsonResponse({ error: "storage_unavailable" }, 503);
