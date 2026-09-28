@@ -2,15 +2,15 @@
 
 Stand: 28. September 2026
 
-Status: **CODE UND SCHEMA LIVE – RECOVERY VERIFIZIERT – ARBEITSZEIT-GATE AUS**
+Status: **KONTROLLIERTER ADMIN-ROLLOUT AKTIV**
 
 ## Veröffentlichter Stand
 
-- GitHub-Bereinigungscommit: `083cafb91a7f114cfc43d8e77a97a3fe868c154a`
-- GitHub-Pages-Build: `083cafb91a7f-20260928t134713636z`
-- TimeFlow Connect: Version 69
-- Sites-Quellcommit: `d425c89b114b54dddee248dfc69a3d6244d3a5cf`
-- Sites-Build: `d425c89b114b-20260928t135521515z`
+- GitHub-Rolloutcommit: `400b834a9a5bb90ae420b1fdeef09678d1b92597`
+- Zuletzt verifizierter GitHub-Pages-Build vor dem Rollout: `083cafb91a7f-20260928t134713636z`
+- TimeFlow Connect: Version 70
+- Sites-Quellcommit: `c4e0b10cbc0d7a3a010663874e5db2bd09b2c292`
+- Sites-Build: `c4e0b10cbc0d-20260928t144824860z`
 - Produktions-URL: `https://timeflow-connect.daixem.chatgpt.site`
 
 ## Recovery-Nachweis
@@ -34,17 +34,21 @@ Status: **CODE UND SCHEMA LIVE – RECOVERY VERIFIZIERT – ARBEITSZEIT-GATE AUS
 | --- | --- | --- |
 | Vollständige Test-Suite | **PASS** | Alle Client-, API-, Tenant-, Offline-, Sicherheits- und Build-Tests erfolgreich. |
 | GitHub Pages | **PASS** | Live-Version liefert den dokumentierten Bereinigungscommit. |
-| TimeFlow Connect | **PASS** | Version 69 erfolgreich veröffentlicht; Live-Version liefert den dokumentierten Sites-Build. |
+| TimeFlow Connect | **PASS** | Version 70 erfolgreich veröffentlicht; Live-Version liefert den dokumentierten Sites-Build. |
 | Produktive D1-Migrationen 0003–0005 | **PASS** | Vier Arbeitszeittabellen vorhanden; Current, Journal, Sessions und Subjects nach Rollout leer. |
 | Produktive Recovery-Sicherung | **PASS** | Vollständige Daten und vollständiges Schema einschließlich Indizes und Trigger erfasst. |
 | Isolierter Remote-Restore | **PASS** | 26 Datensätze und alle erwarteten Schemaobjekte in separater Recovery-D1 verifiziert. |
 | Temporärer Sicherungszugang | **PASS** | Export-Endpunkt entfernt; HTTP 404 bestätigt. |
 | Bestehende produktive Bindings | **PASS** | Weiterhin ausschließlich das bestehende Binding `DB`; Recovery-D1 ist nicht an die Produktion gebunden. |
 | Produktionslogs | **PASS** | Nach der bereinigten Veröffentlichung keine Fehlerereignisse festgestellt. |
-| Produktive Arbeitszeit-Aktivierung | **PARTIAL** | Technische Recovery-Voraussetzung erfüllt; `TIMEFLOW_WORK_TIME_SERVER_ENABLED` bleibt für einen getrennten kontrollierten Aktivierungsschritt ungesetzt. |
+| Admin-only-Rolloutschutz | **PASS** | API und Sync trennen kontrolliertes Administratorkonto von allen übrigen Beta-Konten; vollständige Test-Suite erfolgreich. |
+| Produktive Arbeitszeit-Aktivierung | **PARTIAL** | Env-Revision 4 aktiviert Servermodus und `TIMEFLOW_WORK_TIME_ADMIN_ONLY`; schreibender CLOCK_IN-/CLOCK_OUT-E2E steht noch aus. |
 | Lösch-/Anonymisierungsroutine | **PARTIAL** | Fachliche Regel beschlossen; technische Routine noch nicht umgesetzt. |
 
 Die produktive Datenbank wurde weder ersetzt noch aus der Recovery-D1
 zurückgespielt. Die Recovery-D1 ist eine getrennte, nicht produktiv gebundene
-Wiederherstellungskopie. Der Arbeitszeit-Schreibpfad bleibt bis zum nächsten
-kontrollierten Aktivierungsschritt ausgeschaltet.
+Wiederherstellungskopie. Der serverseitige Arbeitszeitpfad ist ausschließlich
+für das Administratorkonto aktiv. Alle anderen Beta-Konten verwenden weiterhin
+den bisherigen lokalen Pfad. Eine breitere Aktivierung bleibt bis zum
+vollständigen produktiven E2E und einer dokumentierten Beobachtungsphase
+gesperrt.
