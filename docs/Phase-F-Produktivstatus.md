@@ -2,7 +2,7 @@
 
 Stand: 28. September 2026
 
-Status: **KONTROLLIERTER ADMIN-ROLLOUT AKTIV**
+Status: **ADMIN-ROLLOUT VORBEREITET – GATE NACH 401-TEST ZURÜCKGEROLLT**
 
 ## Veröffentlichter Stand
 
@@ -42,13 +42,14 @@ Status: **KONTROLLIERTER ADMIN-ROLLOUT AKTIV**
 | Bestehende produktive Bindings | **PASS** | Weiterhin ausschließlich das bestehende Binding `DB`; Recovery-D1 ist nicht an die Produktion gebunden. |
 | Produktionslogs | **PASS** | Nach der bereinigten Veröffentlichung keine Fehlerereignisse festgestellt. |
 | Admin-only-Rolloutschutz | **PASS** | API und Sync trennen kontrolliertes Administratorkonto von allen übrigen Beta-Konten; vollständige Test-Suite erfolgreich. |
-| Produktive Arbeitszeit-Aktivierung | **PARTIAL** | Env-Revision 4 aktiviert Servermodus und `TIMEFLOW_WORK_TIME_ADMIN_ONLY`; schreibender CLOCK_IN-/CLOCK_OUT-E2E steht noch aus. |
+| Produktive Arbeitszeit-Aktivierung | **BLOCKED** | Env-Revision 4 wurde admin-only aktiviert, der Browser erhielt für Work-Time-API-Aufrufe jedoch HTTP 401. Gemäß STOP-Kriterium wurde `TIMEFLOW_WORK_TIME_SERVER_ENABLED` in Env-Revision 5 wieder auf `false` gesetzt und Version 70 erneut veröffentlicht. |
 | Lösch-/Anonymisierungsroutine | **PARTIAL** | Fachliche Regel beschlossen; technische Routine noch nicht umgesetzt. |
 
 Die produktive Datenbank wurde weder ersetzt noch aus der Recovery-D1
 zurückgespielt. Die Recovery-D1 ist eine getrennte, nicht produktiv gebundene
-Wiederherstellungskopie. Der serverseitige Arbeitszeitpfad ist ausschließlich
-für das Administratorkonto aktiv. Alle anderen Beta-Konten verwenden weiterhin
-den bisherigen lokalen Pfad. Eine breitere Aktivierung bleibt bis zum
-vollständigen produktiven E2E und einer dokumentierten Beobachtungsphase
-gesperrt.
+Wiederherstellungskopie. Der Admin-only-Code ist produktiv vorhanden, der
+serverseitige Arbeitszeitpfad ist jedoch wieder ausgeschaltet. Nach dem
+Rollback war der lokale Stempelknopf wieder bedienbar. Alle Beta-Konten
+verwenden weiterhin den bisherigen lokalen Pfad. Vor einer erneuten Aktivierung
+muss die fehlende stabile Nutzer-ID bei den authentifizierten API-Folgeaufrufen
+behoben und anschließend der vollständige produktive E2E wiederholt werden.
