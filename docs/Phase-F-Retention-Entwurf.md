@@ -81,10 +81,11 @@ abweist.
 
 Die Anwendung plant bei einer privaten Kontolöschung einmalig einen Termin in
 30 Tagen. Wiederholte Löschanforderungen verlängern diese Frist nicht. Eine
-Wiederherstellung vor Ablauf hebt den Termin auf. Der eigentliche Löschlauf ist
-nur für Administratoren erreichbar, standardmäßig ausgeschaltet und entfernt
-fällige Daten in der Reihenfolge Journal, Sessions, Current-State und
-Arbeitszeitsubjekt.
+Wiederherstellung vor Ablauf hebt den Termin auf. Vorschau und tatsächliche
+Ausführung besitzen getrennte Schalter. In Pre-Prod ist nur die Vorschau für
+Administratoren aktiv; die Ausführung bleibt gesperrt. Ein später ausdrücklich
+freigegebener Löschlauf entfernt fällige Daten in der Reihenfolge Journal,
+Sessions, Current-State und Arbeitszeitsubjekt.
 
 Die automatisierten Tests decken private und organisatorische Fristen, Legal
 Holds, offene Schichten, die Reihenfolge, das Protokoll und wiederholte Läufe

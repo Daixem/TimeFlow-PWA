@@ -6,10 +6,10 @@ Status: **IN ARBEIT – KEIN PRODUKTIV-CUTOVER**
 
 ## Ziel
 
-Phase F legt die fachlichen Datenregeln fest und bereitet eine testbare
-Tenant-Migration vor. Änderungen werden zuerst ausschließlich als Entwurf und
-auf getrennten Test-D1s geprüft. Produktion, produktive D1, produktive Bindings
-und produktive Feature-Gates bleiben unverändert.
+Phase F legt die fachlichen Datenregeln fest und prüft sie zuerst auf getrennten
+Test-D1s. Die Arbeitszeiterfassung wurde zuvor kontrolliert für das
+Produktions-Administratorkonto aktiviert. Die neuen Retention-Regeln und ihre
+Migration bleiben weiterhin ausschließlich in Pre-Prod und auf der Test-D1.
 
 ## Arbeitspakete
 
@@ -70,8 +70,8 @@ produktive D1-ID, die Recovery-D1-ID, das Backup und den Rückfallplan nennen.
 | Phase E vorläufig abgeschlossen | **PASS** |
 | Retention-Entscheidung | **PASS – Beschäftigungsdauer plus 24 Monate; privat 30 Tage Wiederherstellung** |
 | Organisationsmodell | **PASS – Test-D1 migriert; Clientkontext und lokale Trennung validiert** |
-| Lösch-/Anonymisierungsablauf | **PARTIAL – technisch umgesetzt und auf der Test-D1 geprüft; Pre-Prod-Löschlauf bleibt ausgeschaltet, Produktion unverändert** |
+| Lösch-/Anonymisierungsablauf | **PARTIAL – sichere Vorschau in Pre-Prod aktiv; tatsächlicher Löschlauf bleibt gesperrt, Produktion unverändert** |
 | Tenant-Testmigration | **PASS – Kopie und gebundene Test-D1 migriert; Daten vollständig** |
 | Team-E2E auf Test-D1 | **PASS – zwei Access-Identitäten, Mitgliedsrolle, getrennte Teamdaten und private Isolation im Browser verifiziert** |
 | Produktiver Code- und Schema-Rollout | **PASS – Sites-Version 65; Migrationen 0003–0005 vorhanden; neue Arbeitszeittabellen leer** |
-| Produktive Arbeitszeit-Aktivierung | **BLOCKED – Gate bleibt bis zum verifizierten Backup-/Restore-Test aus** |
+| Produktive Arbeitszeit-Aktivierung | **PASS – kontrolliert nur für das Administratorkonto aktiviert und im Browser geprüft** |

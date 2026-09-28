@@ -7,14 +7,15 @@ Stand: 28. September 2026
 - Worker: `timeflow-preprod`
 - URL: `https://timeflow-preprod.wvzv2wd4zj.workers.dev`
 - Worker-ID: `34d459b368234910b7398f868ba60314`
-- Worker-Version: `8e3c8878-1dcd-4883-9bf2-f34357077b0e`
-- Deployed Worker-Commit: `17ccc92b3f0b306b6aba7ed3681c9d64a5f550f9`
-- Worker-Build-ID: `17ccc92b3f0b-20260928t193451873z`
+- Worker-Version: `55a50868-b6d9-442b-836c-756b7d225040`
+- Deployed Worker-Commit: `117945f109a7a8cc7ae1dab3c61728125dde6d1a`
+- Worker-Build-ID: `117945f109a7-20260928t200623055z`
 - Konfiguration: `wrangler.preprod.jsonc`
 
-Der Worker wurde aus dem dokumentierten Retention-Commit gebaut. Der
-produktive Browser-Build wurde bei dieser Pre-Prod-Veröffentlichung nicht
-verändert.
+Der Worker wurde aus dem dokumentierten Retention-Commit gebaut. Die Vorschau
+für fällige Löschungen ist in Pre-Prod aktiv. Die tatsächliche Löschung bleibt
+über einen zweiten Schalter gesperrt. Der produktive Browser-Build wurde bei
+dieser Pre-Prod-Veröffentlichung nicht verändert.
 
 ## Browser-Anmeldung
 
@@ -68,7 +69,8 @@ Restore-Test-D1 ist ebenfalls nicht an den Worker gebunden.
 | Entfernung von Demo-Daten | **PARTIAL** | Private Bereinigungstests bestehen; der öffentliche Demo-Modus zeigt weiterhin Beispieldaten. |
 | Team-E2E mit Mitgliedsrolle | **PASS** | Zweite Access-Identität als normales Mitglied erkannt; eigene Team-Session und getrennte Revisionen in der Test-D1 verifiziert. Der private Administratorzustand blieb auf Revision 12 unverändert. |
 | Retention-Schema und Schutzregeln | **PASS** | Legal Holds, Löschprotokoll und Datenbank-Sperre sind auf der Test-D1 vorhanden; vorhandene 11 Subjects, 10 Current-States, 12 Sessions und 38 Journalereignisse blieben erhalten. |
-| Automatischer Retention-Lauf | **PARTIAL** | Code und Tests sind vorhanden, das Pre-Prod-Gate `TIMEFLOW_RETENTION_ADMIN_ENABLED` bleibt bewusst auf `false`. Es wurde kein Löschlauf ausgeführt. |
+| Retention-Vorschau | **PARTIAL** | Die sichere Vorschau ist in Pre-Prod aktiv. Eine direkte Prüfung der Test-D1 ergab 0 fällige Datensätze; die Bestätigung über den geschützten Browser-Endpunkt steht noch aus. |
+| Automatischer Retention-Lauf | **PARTIAL** | Code und Tests sind vorhanden. Der getrennte Ausführungsschalter bleibt bewusst aus; es wurde kein Löschlauf ausgeführt. |
 
 ## Sicherheitsgrenze
 
