@@ -69,7 +69,7 @@ Restore-Test-D1 ist ebenfalls nicht an den Worker gebunden.
 | Entfernung von Demo-Daten | **PARTIAL** | Private Bereinigungstests bestehen; der öffentliche Demo-Modus zeigt weiterhin Beispieldaten. |
 | Team-E2E mit Mitgliedsrolle | **PASS** | Zweite Access-Identität als normales Mitglied erkannt; eigene Team-Session und getrennte Revisionen in der Test-D1 verifiziert. Der private Administratorzustand blieb auf Revision 12 unverändert. |
 | Retention-Schema und Schutzregeln | **PASS** | Legal Holds, Löschprotokoll und Datenbank-Sperre sind auf der Test-D1 vorhanden; vorhandene 11 Subjects, 10 Current-States, 12 Sessions und 38 Journalereignisse blieben erhalten. |
-| Retention-Vorschau | **PARTIAL** | Die sichere Vorschau ist in Pre-Prod aktiv. Eine direkte Prüfung der Test-D1 ergab 0 fällige Datensätze; die Bestätigung über den geschützten Browser-Endpunkt steht noch aus. |
+| Retention-Vorschau | **PASS** | Der geschützte Browser-Endpunkt bestätigte Regelversion `2026-09-v1` und 0 fällige Datensätze. |
 | Automatischer Retention-Lauf | **PARTIAL** | Code und Tests sind vorhanden. Der getrennte Ausführungsschalter bleibt bewusst aus; es wurde kein Löschlauf ausgeführt. |
 
 ## Sicherheitsgrenze
