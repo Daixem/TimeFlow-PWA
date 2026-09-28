@@ -153,12 +153,12 @@ async function ensureSyncTable(database) {
   await database.prepare("CREATE TABLE IF NOT EXISTS timeflow_user_sync (user_id TEXT PRIMARY KEY NOT NULL, payload_json TEXT NOT NULL DEFAULT '{}', revision INTEGER NOT NULL DEFAULT 1 CHECK (revision > 0), updated_at TEXT NOT NULL)").run();
 }
 
-function snapshotKeys(env) { return workTimeServerEnabled(env) ? SYNC_KEYS.filter((key) => !WORK_TIME_SNAPSHOT_KEYS.has(key)) : SYNC_KEYS; }
+function snapshotKeys(serverWorkTimeEnabled) { return serverWorkTimeEnabled ? SYNC_KEYS.filter((key) => !WORK_TIME_SNAPSHOT_KEYS.has(key)) : SYNC_KEYS; }
 
-function validatedSnapshot(value, env) {
+function validatedSnapshot(value, serverWorkTimeEnabled) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const snapshot = {};
-  for (const key of snapshotKeys(env)) {
+  for (const key of snapshotKeys(serverWorkTimeEnabled)) {
     const item = value[key];
     if (item && typeof item === "object") snapshot[key] = item;
   }
@@ -239,6 +239,12 @@ function workTimeSource(eventType, adminCorrection, offline) {
 
 function workTimeServerEnabled(env) {
   return env?.TIMEFLOW_WORK_TIME_SERVER_ENABLED === "true";
+}
+
+async function workTimeServerEnabledForUser(user, env) {
+  if (!workTimeServerEnabled(env)) return false;
+  if (env?.TIMEFLOW_WORK_TIME_ADMIN_ONLY === "true") return betaAdmin(user, env);
+  return true;
 }
 
 function serverWorkTimePolicy(env) {
@@ -558,7 +564,7 @@ function workTimeContext(target) {
 async function handleWorkTime(request, env, url) {
   const user = authenticatedUser(request);
   if (!user.authenticated || !user.id) return jsonResponse({ error: "authentication_required" }, 401);
-  if (!workTimeServerEnabled(env)) return jsonResponse({ error: "work_time_feature_disabled" }, 503);
+  if (!(await workTimeServerEnabledForUser(user, env))) return jsonResponse({ error: "work_time_feature_disabled" }, 503);
   const access = await betaAccess(user, env);
   if (!access.allowed) return jsonResponse({ error: "beta_access_required" }, 403);
   if (!env?.DB) return jsonResponse({ error: "storage_unavailable" }, 503);
@@ -662,7 +668,7 @@ async function handleWorkTime(request, env, url) {
 async function handleWorkTimeJournal(request, env, url) {
   const user = authenticatedUser(request);
   if (!user.authenticated || !user.id) return jsonResponse({ error: "authentication_required" }, 401);
-  if (!workTimeServerEnabled(env)) return jsonResponse({ error: "work_time_feature_disabled" }, 503);
+  if (!(await workTimeServerEnabledForUser(user, env))) return jsonResponse({ error: "work_time_feature_disabled" }, 503);
   const access = await betaAccess(user, env);
   if (!access.allowed) return jsonResponse({ error: "beta_access_required" }, 403);
   if (!env?.DB) return jsonResponse({ error: "storage_unavailable" }, 503);
@@ -678,7 +684,7 @@ async function handleWorkTimeJournal(request, env, url) {
 async function handleWorkTimeSessions(request, env, url) {
   const user = authenticatedUser(request);
   if (!user.authenticated || !user.id) return jsonResponse({ error: "authentication_required" }, 401);
-  if (!workTimeServerEnabled(env)) return jsonResponse({ error: "work_time_feature_disabled" }, 503);
+  if (!(await workTimeServerEnabledForUser(user, env))) return jsonResponse({ error: "work_time_feature_disabled" }, 503);
   const access = await betaAccess(user, env);
   if (!access.allowed) return jsonResponse({ error: "beta_access_required" }, 403);
   if (!env?.DB) return jsonResponse({ error: "storage_unavailable" }, 503);
@@ -705,12 +711,13 @@ async function handleSync(request, env, url) {
   if (!(await betaAccess(user, env)).allowed) return jsonResponse({ error: "beta_access_required" }, 403);
   if (!env?.DB) return jsonResponse({ error: "storage_unavailable" }, 503);
   await ensureSyncTable(env.DB);
+  const serverWorkTimeEnabled = await workTimeServerEnabledForUser(user, env);
 
   if (request.method === "GET") {
     const row = await env.DB.prepare("SELECT payload_json, revision, updated_at FROM timeflow_user_sync WHERE user_id = ?").bind(user.id).first();
     if (!row) return jsonResponse({ snapshot: null, revision: 0, updatedAt: null });
     try {
-      return jsonResponse({ snapshot: validatedSnapshot(JSON.parse(row.payload_json), env) || {}, revision: row.revision, updatedAt: row.updated_at });
+      return jsonResponse({ snapshot: validatedSnapshot(JSON.parse(row.payload_json), serverWorkTimeEnabled) || {}, revision: row.revision, updatedAt: row.updated_at });
     } catch {
       return jsonResponse({ error: "stored_data_invalid" }, 500);
     }
@@ -724,7 +731,7 @@ async function handleSync(request, env, url) {
     if (contentLength > 1048576) return jsonResponse({ error: "payload_too_large" }, 413);
     let body;
     try { body = await request.json(); } catch { return jsonResponse({ error: "invalid_json" }, 400); }
-    const snapshot = validatedSnapshot(body?.snapshot, env);
+    const snapshot = validatedSnapshot(body?.snapshot, serverWorkTimeEnabled);
     if (!snapshot) return jsonResponse({ error: "invalid_snapshot" }, 400);
     const expectedRevision = Number(body?.expectedRevision);
     if (!Number.isInteger(expectedRevision) || expectedRevision < 0) return jsonResponse({ error: "invalid_expected_revision" }, 400);
@@ -738,7 +745,7 @@ async function handleSync(request, env, url) {
     const updated = await env.DB.prepare("UPDATE timeflow_user_sync SET payload_json = ?, revision = revision + 1, updated_at = ? WHERE user_id = ? AND revision = ?").bind(payloadJson, updatedAt, user.id, expectedRevision).run();
     if ((updated?.meta?.changes || 0) === 1) return jsonResponse({ saved: true, revision: expectedRevision + 1, updatedAt });
     const current = await env.DB.prepare("SELECT payload_json, revision, updated_at FROM timeflow_user_sync WHERE user_id = ?").bind(user.id).first();
-    let data = null; try { data = current ? (validatedSnapshot(JSON.parse(current.payload_json), env) || {}) : null; } catch {}
+    let data = null; try { data = current ? (validatedSnapshot(JSON.parse(current.payload_json), serverWorkTimeEnabled) || {}) : null; } catch {}
     return jsonResponse({ error: "sync_conflict", revision: current?.revision || 0, data, updatedAt: current?.updated_at || null }, 409);
   }
 
