@@ -1,8 +1,8 @@
 # TimeFlow – Phase F: Retention-Entwurf
 
-Stand: 26. September 2026
+Stand: 28. September 2026
 
-Status: **FACHLICH FREIGEGEBEN – NOCH NICHT IMPLEMENTIERT**
+Status: **AUF TEST-D1 IMPLEMENTIERT UND GEPRÜFT – PRODUKTION UNVERÄNDERT**
 
 ## Zweck
 
@@ -70,6 +70,27 @@ Weiterhaltung nach der Kontolöschung.
 - Ein Restore darf gelöschte Datensätze nicht dauerhaft wieder aktivieren. Nach
   einem Restore muss der Löschlauf anhand seiner Protokolle erneut ausgeführt
   werden.
+
+## Technische Umsetzung
+
+Die Migration `0006_timeflow_work_time_retention.sql` ist ausschließlich auf
+der Test-D1 aktiv. Sie ergänzt befristete Legal Holds, ein
+personenbezugsfreies Löschprotokoll und eine Datenbank-Sperre, die Löschungen
+vor Ablauf der Frist, während eines Legal Holds oder bei einer offenen Schicht
+abweist.
+
+Die Anwendung plant bei einer privaten Kontolöschung einmalig einen Termin in
+30 Tagen. Wiederholte Löschanforderungen verlängern diese Frist nicht. Eine
+Wiederherstellung vor Ablauf hebt den Termin auf. Der eigentliche Löschlauf ist
+nur für Administratoren erreichbar, standardmäßig ausgeschaltet und entfernt
+fällige Daten in der Reihenfolge Journal, Sessions, Current-State und
+Arbeitszeitsubjekt.
+
+Die automatisierten Tests decken private und organisatorische Fristen, Legal
+Holds, offene Schichten, die Reihenfolge, das Protokoll und wiederholte Läufe
+ab. Vor der Test-D1-Änderung wurde ein vollständiger SQL-Export erstellt; die
+Zähler der vorhandenen Subjects, Current-States, Sessions und
+Journalereignisse waren vor und nach der Änderung identisch.
 
 ## Technische Konsequenzen
 

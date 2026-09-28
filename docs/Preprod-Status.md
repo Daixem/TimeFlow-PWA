@@ -1,22 +1,20 @@
 # TimeFlow Pre-Production – Phase D bis F
 
-Stand: 27. September 2026
+Stand: 28. September 2026
 
 ## Umgebung
 
 - Worker: `timeflow-preprod`
 - URL: `https://timeflow-preprod.wvzv2wd4zj.workers.dev`
 - Worker-ID: `34d459b368234910b7398f868ba60314`
-- Worker-Version: `373e98df-6d86-4a67-9b58-24aafba6b9ea`
-- Deployed Worker-Commit: `176bf66937e764995c5538846ff9388aeaed58dc`
-- Worker-Build-ID: `176bf66937e7-20260927t175955699z`
-- GitHub-Main-Commit: `176bf66937e764995c5538846ff9388aeaed58dc`
-- Browser-Build: GitHub-Pages-Workflow für Commit `176bf66937e764995c5538846ff9388aeaed58dc` erfolgreich
+- Worker-Version: `8e3c8878-1dcd-4883-9bf2-f34357077b0e`
+- Deployed Worker-Commit: `17ccc92b3f0b306b6aba7ed3681c9d64a5f550f9`
+- Worker-Build-ID: `17ccc92b3f0b-20260928t193451873z`
 - Konfiguration: `wrangler.preprod.jsonc`
 
-Worker und Browser-Build stammen aus demselben GitHub-Main-Commit. Die
-unterschiedlichen Build-Zeitstempel entstehen durch die getrennten Worker- und
-GitHub-Pages-Builds.
+Der Worker wurde aus dem dokumentierten Retention-Commit gebaut. Der
+produktive Browser-Build wurde bei dieser Pre-Prod-Veröffentlichung nicht
+verändert.
 
 ## Browser-Anmeldung
 
@@ -42,6 +40,8 @@ der öffentlichen Demo-Kontoauswahl bestätigt.
 - Migration `0004_timeflow_work_time_sessions.sql`: vorhanden und verifiziert
 - Migration `0005_timeflow_work_time_subjects.sql`: ausschließlich auf der
   Test-D1 und einer ungebundenen Restore-Kopie vorhanden und verifiziert
+- Migration `0006_timeflow_work_time_retention.sql`: gezielt auf der Test-D1
+  ausgeführt; vorhandene Zeitzähler blieben unverändert
 
 Die produktive D1 ist nicht gebunden und wurde nicht verändert. Die getrennte
 Restore-Test-D1 ist ebenfalls nicht an den Worker gebunden.
@@ -67,6 +67,8 @@ Restore-Test-D1 ist ebenfalls nicht an den Worker gebunden.
 | Service-Worker Build A → B | **PASS** | Browser wechselte auf Build `5c837e9efebd-20260924t214755293z`; die neuen versionierten Assets und der korrigierte Zustand wurden sichtbar. |
 | Entfernung von Demo-Daten | **PARTIAL** | Private Bereinigungstests bestehen; der öffentliche Demo-Modus zeigt weiterhin Beispieldaten. |
 | Team-E2E mit Mitgliedsrolle | **PASS** | Zweite Access-Identität als normales Mitglied erkannt; eigene Team-Session und getrennte Revisionen in der Test-D1 verifiziert. Der private Administratorzustand blieb auf Revision 12 unverändert. |
+| Retention-Schema und Schutzregeln | **PASS** | Legal Holds, Löschprotokoll und Datenbank-Sperre sind auf der Test-D1 vorhanden; vorhandene 11 Subjects, 10 Current-States, 12 Sessions und 38 Journalereignisse blieben erhalten. |
+| Automatischer Retention-Lauf | **PARTIAL** | Code und Tests sind vorhanden, das Pre-Prod-Gate `TIMEFLOW_RETENTION_ADMIN_ENABLED` bleibt bewusst auf `false`. Es wurde kein Löschlauf ausgeführt. |
 
 ## Sicherheitsgrenze
 

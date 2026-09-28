@@ -43,7 +43,7 @@ Status: **ADMIN-ROLLOUT AKTIV – LESE- UND SCHREIBTEST BESTANDEN**
 | Produktionslogs | **PASS** | Wiederholte Admin-Lesezugriffe auf Current und Sessions liefern HTTP 200 mit Worker-Outcome `ok`; keine D1-Fehler. Erwartete HTTP 503 aus einer älteren Hintergrundseite ohne Admin-Freigabe bestätigen die Abgrenzung. |
 | Admin-only-Rolloutschutz | **PASS** | Die Freigabe erkennt das kontrollierte Administratorkonto auch dann stabil, wenn Sites bei Folgeaufrufen nur die E-Mail-Identität liefert. Andere Konten bleiben ausgeschlossen. |
 | Produktive Arbeitszeit-Aktivierung | **PASS** | Env-Revision 6 aktiviert den Serverpfad ausschließlich für das Administratorkonto. Wiederholte Lesetests sowie ein bewusstes CLOCK_IN/CLOCK_OUT wurden ohne Fehler abgeschlossen. |
-| Lösch-/Anonymisierungsroutine | **PARTIAL** | Fachliche Regel beschlossen; technische Routine noch nicht umgesetzt. |
+| Lösch-/Anonymisierungsroutine | **PARTIAL** | Technisch umgesetzt und auf der getrennten Test-D1 verifiziert; in Pre-Prod ausgeschaltet und noch nicht auf die produktive D1 angewendet. |
 
 Die produktive Datenbank wurde weder ersetzt noch aus der Recovery-D1
 zurückgespielt. Die Recovery-D1 ist eine getrennte, nicht produktiv gebundene

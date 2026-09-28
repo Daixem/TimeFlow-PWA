@@ -431,20 +431,92 @@ async function handleTeamAccess(request, env, url) {
 }
 
 async function handleAccountData(request, env, url) {
-  const user = authenticatedUser(request);
-  if (!user.authenticated || !user.id) return jsonResponse({ error: "authentication_required" }, 401);
+  let user = authenticatedUser(request);
+  if (!user.authenticated) return jsonResponse({ error: "authentication_required" }, 401);
+  user = await workTimeIdentity(user, env);
+  if (!user.id) return jsonResponse({ error: "authentication_required" }, 401);
   if (!(await betaAccess(user, env)).allowed) return jsonResponse({ error: "beta_access_required" }, 403);
-  if (request.method !== "DELETE") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "DELETE" });
+  if (!["DELETE", "POST"].includes(request.method)) return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "DELETE, POST" });
   const origin = request.headers.get("Origin");
-  if (origin && origin !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
+  if (origin !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
   if (!env?.DB) return jsonResponse({ error: "storage_unavailable" }, 503);
   await ensureSyncTable(env.DB); await ensureTeamTables(env.DB); await ensureSupportTables(env.DB);
+  const subjectSchema = await workTimeSubjectSchema(env.DB);
+  if (subjectSchema === null) return jsonResponse({ error: "storage_unavailable" }, 503);
+
+  if (request.method === "POST") {
+    let body; try { body = await request.json(); } catch { return jsonResponse({ error: "invalid_json" }, 400); }
+    if (body?.action !== "restore_private_work_time") return jsonResponse({ error: "invalid_account_data_action" }, 400);
+    if (!subjectSchema) return jsonResponse({ restored: false, reason: "no_private_work_time" }, 409);
+    const pending = await env.DB.prepare("SELECT id, delete_after FROM timeflow_work_time_subjects WHERE user_id = ? AND scope_type = 'private' AND private_deletion_requested_at IS NOT NULL LIMIT 1").bind(user.id).first();
+    if (!pending || Date.parse(pending.delete_after) <= Date.now()) return jsonResponse({ restored: false, reason: "restoration_window_closed" }, 409);
+    const restoredAt = new Date().toISOString();
+    await env.DB.prepare("UPDATE timeflow_work_time_subjects SET private_deletion_requested_at = NULL, delete_after = NULL, updated_at = ? WHERE id = ? AND delete_after > ?").bind(restoredAt, pending.id, restoredAt).run();
+    return jsonResponse({ restored: true });
+  }
+
+  let privateWorkTimeDeletion = { scheduled: false, deleteAfter: null };
+  if (subjectSchema) {
+    const requestedAt = new Date();
+    const deleteAfter = new Date(requestedAt.getTime() + 30 * 24 * 60 * 60 * 1000).toISOString();
+    await env.DB.prepare("UPDATE timeflow_work_time_subjects SET private_deletion_requested_at = COALESCE(private_deletion_requested_at, ?), delete_after = COALESCE(delete_after, ?), updated_at = ? WHERE user_id = ? AND scope_type = 'private'").bind(requestedAt.toISOString(), deleteAfter, requestedAt.toISOString(), user.id).run();
+    const pending = await env.DB.prepare("SELECT delete_after FROM timeflow_work_time_subjects WHERE user_id = ? AND scope_type = 'private' AND private_deletion_requested_at IS NOT NULL LIMIT 1").bind(user.id).first();
+    privateWorkTimeDeletion = { scheduled: Boolean(pending?.delete_after), deleteAfter: pending?.delete_after || null };
+  }
   const tickets = await env.DB.prepare("SELECT id FROM timeflow_support_tickets WHERE user_id = ?").bind(user.id).all();
   for (const ticket of tickets?.results || []) await env.DB.prepare("DELETE FROM timeflow_support_messages WHERE ticket_id = ?").bind(ticket.id).run();
   await env.DB.prepare("DELETE FROM timeflow_support_tickets WHERE user_id = ?").bind(user.id).run();
   await env.DB.prepare("DELETE FROM timeflow_user_sync WHERE user_id = ?").bind(user.id).run();
   await env.DB.prepare("DELETE FROM timeflow_organization_members WHERE user_id = ?").bind(user.id).run();
-  return jsonResponse({ deleted: true });
+  return jsonResponse({ deleted: true, privateWorkTimeDeletion });
+}
+
+const WORK_TIME_RETENTION_RULE_VERSION = "2026-09-v1";
+
+async function retentionEligibleSubjects(database) {
+  return database.prepare("SELECT subject.id FROM timeflow_work_time_subjects AS subject LEFT JOIN timeflow_work_time_current AS current ON current.subject_id = subject.id WHERE ((subject.scope_type = 'private' AND subject.delete_after IS NOT NULL AND julianday(subject.delete_after) <= julianday('now')) OR (subject.scope_type = 'organization' AND subject.employment_ended_at IS NOT NULL AND julianday(subject.employment_ended_at, '+24 months') <= julianday('now'))) AND NOT EXISTS (SELECT 1 FROM timeflow_work_time_legal_holds AS hold WHERE hold.subject_id = subject.id AND julianday(hold.starts_at) <= julianday('now') AND julianday(hold.ends_at) > julianday('now')) AND coalesce(json_extract(current.state_json, '$.isWorking'), 0) != 1 ORDER BY subject.id LIMIT 100").all();
+}
+
+async function handleWorkTimeRetention(request, env, url) {
+  let user = authenticatedUser(request);
+  if (!user.authenticated) return jsonResponse({ error: "authentication_required" }, 401);
+  user = await workTimeIdentity(user, env);
+  if (!user.id) return jsonResponse({ error: "authentication_required" }, 401);
+  const access = await betaAccess(user, env);
+  if (!access.admin) return jsonResponse({ error: "admin_required" }, 403);
+  if (env?.TIMEFLOW_RETENTION_ADMIN_ENABLED !== "true") return jsonResponse({ error: "retention_disabled" }, 503);
+  if (!env?.DB || !(await workTimeSubjectSchema(env.DB))) return jsonResponse({ error: "retention_schema_required" }, 503);
+
+  const eligible = await retentionEligibleSubjects(env.DB);
+  const rows = eligible?.results || [];
+  if (request.method === "GET") return jsonResponse({ ruleVersion: WORK_TIME_RETENTION_RULE_VERSION, eligibleCount: rows.length, limited: rows.length === 100 });
+  if (request.method !== "POST") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "GET, POST" });
+  if (request.headers.get("Origin") !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
+  let body; try { body = await request.json(); } catch { return jsonResponse({ error: "invalid_json" }, 400); }
+  if (body?.action !== "run_due_retention") return jsonResponse({ error: "invalid_retention_action" }, 400);
+
+  const runId = crypto.randomUUID();
+  const startedAt = new Date().toISOString();
+  await env.DB.prepare("INSERT INTO timeflow_work_time_retention_runs (id, rule_version, started_at, dry_run, eligible_count, deleted_count, status) VALUES (?, ?, ?, 0, ?, 0, 'running')").bind(runId, WORK_TIME_RETENTION_RULE_VERSION, startedAt, rows.length).run();
+  let deletedCount = 0;
+  try {
+    for (const row of rows) {
+      await env.DB.batch([
+        env.DB.prepare("DELETE FROM timeflow_work_time_journal WHERE subject_id = ?").bind(row.id),
+        env.DB.prepare("DELETE FROM timeflow_work_time_sessions WHERE subject_id = ?").bind(row.id),
+        env.DB.prepare("DELETE FROM timeflow_work_time_current WHERE subject_id = ?").bind(row.id),
+        env.DB.prepare("DELETE FROM timeflow_work_time_subjects WHERE id = ?").bind(row.id)
+      ]);
+      deletedCount += 1;
+    }
+    const completedAt = new Date().toISOString();
+    await env.DB.prepare("UPDATE timeflow_work_time_retention_runs SET completed_at = ?, deleted_count = ?, status = 'completed' WHERE id = ?").bind(completedAt, deletedCount, runId).run();
+    return jsonResponse({ completed: true, ruleVersion: WORK_TIME_RETENTION_RULE_VERSION, eligibleCount: rows.length, deletedCount, limited: rows.length === 100 });
+  } catch {
+    const failedAt = new Date().toISOString();
+    await env.DB.prepare("UPDATE timeflow_work_time_retention_runs SET completed_at = ?, deleted_count = ?, status = 'failed', error_code = 'retention_delete_failed' WHERE id = ?").bind(failedAt, deletedCount, runId).run();
+    return jsonResponse({ error: "retention_delete_failed" }, 500);
+  }
 }
 
 async function supportTicketWithMessages(database, ticket) {
@@ -784,6 +856,7 @@ export default {
     if (url.pathname === "/api/work-time/journal") return handleWorkTimeJournal(request, env, url);
     if (url.pathname === "/api/team-access") return handleTeamAccess(request, env, url);
     if (url.pathname === "/api/account-data") return handleAccountData(request, env, url);
+    if (url.pathname === "/api/admin/retention") return handleWorkTimeRetention(request, env, url);
     if (url.pathname === "/api/beta/access") return handleBetaAccess(request, env);
     if (url.pathname === "/api/beta/identity-fingerprint") return handleBetaIdentityFingerprint(request);
     if (url.pathname === "/api/beta/invite") return handleBetaInvite(request, env, url);
