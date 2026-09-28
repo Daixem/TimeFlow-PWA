@@ -3,6 +3,7 @@ import worker from "../dist/server/index.js";
 const normalUserId = "work-time-user-a";
 const otherUserId = "work-time-user-b";
 const adminUserId = "work-time-admin";
+const adminEmail = "admin-only@example.test";
 
 class WorkTimeTestD1 {
   constructor() {
@@ -101,8 +102,14 @@ const fingerprint = async (value) => {
 };
 
 const database = new WorkTimeTestD1();
-const env = { DB: database, TIMEFLOW_BETA_ADMIN_USER_FINGERPRINT: await fingerprint(adminUserId), TIMEFLOW_WORK_TIME_SERVER_ENABLED: "true" };
+const env = {
+  DB: database,
+  TIMEFLOW_BETA_ADMIN_USER_FINGERPRINT: await fingerprint(adminUserId),
+  TIMEFLOW_BETA_ADMIN_EMAIL_FINGERPRINT: await fingerprint(adminEmail),
+  TIMEFLOW_WORK_TIME_SERVER_ENABLED: "true"
+};
 const headersFor = (id) => ({ "oai-authenticated-user-id": id, "oai-authenticated-user-email": `${id}@example.test` });
+const emailOnlyHeaders = (email) => ({ "oai-authenticated-user-email": email });
 const request = (path, options = {}) => worker.fetch(new Request(`https://timeflow.test${path}`, options), env);
 const expectStatus = async (path, status, options) => {
   const response = await request(path, options);
@@ -122,6 +129,13 @@ const adminOnlyNormal = await worker.fetch(new Request("https://timeflow.test/ap
 if (adminOnlyNormal.status !== 503) throw new Error("Admin-only work-time rollout exposed the API to a normal beta user.");
 const adminOnlyAdmin = await worker.fetch(new Request("https://timeflow.test/api/work-time", { headers: headersFor(adminUserId) }), adminOnlyEnv);
 if (adminOnlyAdmin.status !== 200) throw new Error("Admin-only work-time rollout did not enable the controlled admin account.");
+const emailOnlyAdmin = await worker.fetch(new Request("https://timeflow.test/api/work-time", { headers: emailOnlyHeaders(adminEmail.toUpperCase()) }), adminOnlyEnv);
+if (emailOnlyAdmin.status !== 200) throw new Error("Admin-only work-time rollout did not support the normalized email-only identity supplied by Sites.");
+const emailOnlyAccess = await worker.fetch(new Request("https://timeflow.test/api/beta/access", { headers: emailOnlyHeaders(adminEmail) }), adminOnlyEnv);
+const emailOnlyAccessBody = await emailOnlyAccess.json();
+if (emailOnlyAccess.status !== 200 || !emailOnlyAccessBody.allowed || !emailOnlyAccessBody.admin) throw new Error("Email-only admin identity did not receive beta admin access.");
+const emailOnlyNormal = await worker.fetch(new Request("https://timeflow.test/api/work-time", { headers: emailOnlyHeaders("normal-only@example.test") }), adminOnlyEnv);
+if (emailOnlyNormal.status !== 503) throw new Error("Admin-only work-time rollout exposed the API to a non-admin email-only identity.");
 await expectStatus("/api/work-time", 503, { headers: { ...headersFor(normalUserId), "X-TimeFlow-Organization-Id": "org-a" } });
 await expectStatus("/api/work-time", 200, { headers: headersFor(normalUserId) });
 await expectStatus("/api/work-time", 400, { method: "PUT", headers: { ...headersFor(normalUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ expectedRevision: "0", eventType: "CLOCK_IN" }) });
