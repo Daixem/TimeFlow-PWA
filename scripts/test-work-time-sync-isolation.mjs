@@ -67,6 +67,12 @@ assert((await put(legacyEnv, authoritySnapshot)).status === 200, "Legacy sync wr
 const legacyStored = JSON.parse(legacyDb.rows.get(userId).payload_json);
 assert(legacyStored["timeflow-workday-v2"]?.isWorking, "Explicitly disabled legacy mode lost its workday sync.");
 
+const excludedDb = database();
+const excludedEnv = { DB: excludedDb, TIMEFLOW_WORK_TIME_SERVER_ENABLED: "true", TIMEFLOW_WORK_TIME_ADMIN_ONLY: "true", TIMEFLOW_BETA_ADMIN_USER_FINGERPRINT: "not-this-user" };
+assert((await put(excludedEnv, authoritySnapshot)).status === 200, "Admin-only excluded-user sync write failed.");
+const excludedStored = JSON.parse(excludedDb.rows.get(userId).payload_json);
+assert(excludedStored["timeflow-workday-v2"]?.isWorking, "Admin-only rollout removed legacy work-time data for an excluded account.");
+
 const [syncSource, scriptSource, accountSource, stampSource, homeSource, cleanSource, reminderSource] = await Promise.all([
   readFile(new URL("../js/sprint9.js", import.meta.url), "utf8"),
   readFile(new URL("../js/script.js", import.meta.url), "utf8"),
