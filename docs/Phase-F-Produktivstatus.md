@@ -2,7 +2,7 @@
 
 Stand: 28. September 2026
 
-Status: **ADMIN-ROLLOUT AKTIV – LESETEST BESTANDEN, SCHREIBTEST AUSSTEHEND**
+Status: **ADMIN-ROLLOUT AKTIV – LESE- UND SCHREIBTEST BESTANDEN**
 
 ## Veröffentlichter Stand
 
@@ -42,15 +42,17 @@ Status: **ADMIN-ROLLOUT AKTIV – LESETEST BESTANDEN, SCHREIBTEST AUSSTEHEND**
 | Bestehende produktive Bindings | **PASS** | Weiterhin ausschließlich das bestehende Binding `DB`; Recovery-D1 ist nicht an die Produktion gebunden. |
 | Produktionslogs | **PASS** | Wiederholte Admin-Lesezugriffe auf Current und Sessions liefern HTTP 200 mit Worker-Outcome `ok`; keine D1-Fehler. Erwartete HTTP 503 aus einer älteren Hintergrundseite ohne Admin-Freigabe bestätigen die Abgrenzung. |
 | Admin-only-Rolloutschutz | **PASS** | Die Freigabe erkennt das kontrollierte Administratorkonto auch dann stabil, wenn Sites bei Folgeaufrufen nur die E-Mail-Identität liefert. Andere Konten bleiben ausgeschlossen. |
-| Produktive Arbeitszeit-Aktivierung | **PARTIAL** | Env-Revision 6 aktiviert den Serverpfad ausschließlich für das Administratorkonto. Der wiederholte, schreibfreie Browsertest ist bestanden; der bewusste CLOCK_IN/CLOCK_OUT-Schreibtest steht noch aus. |
+| Produktive Arbeitszeit-Aktivierung | **PASS** | Env-Revision 6 aktiviert den Serverpfad ausschließlich für das Administratorkonto. Wiederholte Lesetests sowie ein bewusstes CLOCK_IN/CLOCK_OUT wurden ohne Fehler abgeschlossen. |
 | Lösch-/Anonymisierungsroutine | **PARTIAL** | Fachliche Regel beschlossen; technische Routine noch nicht umgesetzt. |
 
 Die produktive Datenbank wurde weder ersetzt noch aus der Recovery-D1
 zurückgespielt. Die Recovery-D1 ist eine getrennte, nicht produktiv gebundene
 Wiederherstellungskopie. Der serverseitige Arbeitszeitpfad ist ausschließlich
 für das kontrollierte Administratorkonto aktiv. Die vier produktiven
-Arbeitszeittabellen sind nach den schreibfreien Prüfungen weiterhin leer. Alle
-anderen Beta-Konten verwenden weiterhin den bisherigen lokalen Pfad. Als
-nächster bewusster Schritt folgt ein reales Ein- und Ausstempeln mit dem
-Administratorkonto; dadurch entstehen die ersten unveränderlichen
-Arbeitszeitnachweise in der produktiven D1.
+Arbeitszeittabellen enthalten nach dem bewussten Produktionstest genau ein
+privates Arbeitssubjekt, einen aktuellen Zustand mit Revision 2, zwei
+unveränderliche Journalereignisse und eine abgeschlossene Sitzung. CLOCK_IN
+und CLOCK_OUT wurden jeweils genau einmal gespeichert; es gab keine Fehler
+oder doppelten Einträge. Die kurze Testdauer von rund 23 Sekunden wird korrekt
+als 0 Minuten ausgewiesen. Alle anderen Beta-Konten verwenden weiterhin den
+bisherigen lokalen Pfad.
