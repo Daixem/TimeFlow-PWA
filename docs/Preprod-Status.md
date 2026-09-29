@@ -1,15 +1,15 @@
 # TimeFlow Pre-Production – Phase D bis F
 
-Stand: 28. September 2026
+Stand: 29. September 2026
 
 ## Umgebung
 
 - Worker: `timeflow-preprod`
 - URL: `https://timeflow-preprod.wvzv2wd4zj.workers.dev`
 - Worker-ID: `34d459b368234910b7398f868ba60314`
-- Worker-Version: `55a50868-b6d9-442b-836c-756b7d225040`
-- Deployed Worker-Commit: `117945f109a7a8cc7ae1dab3c61728125dde6d1a`
-- Worker-Build-ID: `117945f109a7-20260928t200623055z`
+- Worker-Version: `c958a53b-72af-4656-9d57-0bfb7fcad1dc`
+- Deployed Worker-Commit: `298420ce84b24ffc423604742d6159952e67dc90`
+- Worker-Build-ID: `298420ce84b2-20260929t190213743z`
 - Konfiguration: `wrangler.preprod.jsonc`
 
 Der Worker wurde aus dem dokumentierten Retention-Commit gebaut. Die Vorschau
@@ -69,8 +69,8 @@ Restore-Test-D1 ist ebenfalls nicht an den Worker gebunden.
 | Entfernung von Demo-Daten | **PARTIAL** | Private Bereinigungstests bestehen; der öffentliche Demo-Modus zeigt weiterhin Beispieldaten. |
 | Team-E2E mit Mitgliedsrolle | **PASS** | Zweite Access-Identität als normales Mitglied erkannt; eigene Team-Session und getrennte Revisionen in der Test-D1 verifiziert. Der private Administratorzustand blieb auf Revision 12 unverändert. |
 | Retention-Schema und Schutzregeln | **PASS** | Legal Holds, Löschprotokoll und Datenbank-Sperre sind auf der Test-D1 vorhanden; vorhandene 11 Subjects, 10 Current-States, 12 Sessions und 38 Journalereignisse blieben erhalten. |
-| Retention-Vorschau | **PASS** | Der geschützte Browser-Endpunkt bestätigte Regelversion `2026-09-v1` und 0 fällige Datensätze. |
-| Automatischer Retention-Lauf | **PARTIAL** | Code und Tests sind vorhanden. Der getrennte Ausführungsschalter bleibt bewusst aus; es wurde kein Löschlauf ausgeführt. |
+| Retention-Vorschau | **PASS** | Der geschützte Browser-Endpunkt bestätigte vor dem Test genau 1 fälligen Wegwerf-Datensatz und danach wieder 0 fällige Datensätze. |
+| Automatischer Retention-Lauf | **PASS** | Nach vollständigem Test-D1-Export wurde genau 1 eigens angelegter Wegwerf-Datensatz gelöscht. Der Lauf meldete 1 von 1 gelöscht und wurde als abgeschlossen protokolliert. Die ursprünglichen Zähler von 11 Subjects, 10 Current-States, 12 Sessions und 38 Journalereignissen wurden danach bestätigt. Der Ausführungsschalter ist wieder aus. |
 
 ## Sicherheitsgrenze
 
@@ -88,5 +88,7 @@ diesem Repository nicht dokumentiert.
 Am 27. September 2026 wurde der geprüfte Code als TimeFlow-Connect-Version 65
 veröffentlicht. Sites wendete dabei die Migrationen `0003` bis `0005`
 automatisch auf die produktive D1 an. Die neuen Arbeitszeittabellen waren nach
-dem Rollout leer. Das produktive Arbeitszeit-Gate blieb aus; produktive
-Bindings und bestehende fachliche Daten wurden nicht verändert.
+dem Rollout leer. Die Arbeitszeit wurde später kontrolliert nur für das
+Administratorkonto aktiviert und im Browser geprüft. Produktive Bindings und
+bestehende fachliche Daten wurden dabei nicht verändert. Die Retention-
+Migration und Retention-Ausführung bleiben außerhalb der Produktion.

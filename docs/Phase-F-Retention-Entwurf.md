@@ -93,6 +93,13 @@ ab. Vor der Test-D1-Änderung wurde ein vollständiger SQL-Export erstellt; die
 Zähler der vorhandenen Subjects, Current-States, Sessions und
 Journalereignisse waren vor und nach der Änderung identisch.
 
+Am 29. September 2026 wurde zusätzlich der echte Pre-Prod-Ablauf mit genau
+einem eigens angelegten, fälligen Wegwerf-Datensatz geprüft. Vorschau,
+vollständige Löschung und Laufprotokoll meldeten jeweils 1 von 1. Danach waren
+die ursprünglichen Datenzähler unverändert, die Vorschau wieder leer und der
+Ausführungsschalter wieder gesperrt. Produktion war an diesem Test nicht
+beteiligt.
+
 ## Technische Konsequenzen
 
 1. Jeder Arbeitszeitdatensatz benötigt einen Modus `private` oder `organization`.
