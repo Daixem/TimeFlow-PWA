@@ -78,6 +78,7 @@
 .settings-card-copy { padding: 13px 14px 6px; color: #788da5; font-size: .5rem; line-height: 1.55; }
 .data-actions { padding: 0 14px 12px; }
 .data-actions button { display: grid; grid-template-columns: 34px 1fr auto; gap: 9px; align-items: center; width: 100%; min-height: 54px; padding: 7px 0; border: 0; border-bottom: 1px solid rgba(91, 139, 190, .08); color: #cbd8e7; background: transparent; text-align: left; }
+.data-actions button[hidden] { display: none; }
 .data-actions button:last-child { border-bottom: 0; }
 .data-action-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; color: #75a6ff; background: rgba(52, 111, 226, .12); }
 .data-actions button > span:nth-child(2) { display: grid; gap: 3px; }

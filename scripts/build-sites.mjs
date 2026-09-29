@@ -436,13 +436,18 @@ async function handleAccountData(request, env, url) {
   user = await workTimeIdentity(user, env);
   if (!user.id) return jsonResponse({ error: "authentication_required" }, 401);
   if (!(await betaAccess(user, env)).allowed) return jsonResponse({ error: "beta_access_required" }, 403);
-  if (!["DELETE", "POST"].includes(request.method)) return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "DELETE, POST" });
-  const origin = request.headers.get("Origin");
-  if (origin !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
+  if (!["GET", "DELETE", "POST"].includes(request.method)) return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "GET, DELETE, POST" });
+  if (request.method !== "GET" && request.headers.get("Origin") !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
   if (!env?.DB) return jsonResponse({ error: "storage_unavailable" }, 503);
   await ensureSyncTable(env.DB); await ensureTeamTables(env.DB); await ensureSupportTables(env.DB);
   const subjectSchema = await workTimeSubjectSchema(env.DB);
   if (subjectSchema === null) return jsonResponse({ error: "storage_unavailable" }, 503);
+
+  if (request.method === "GET") {
+    if (!subjectSchema) return jsonResponse({ privateWorkTimeDeletion: { scheduled: false, deleteAfter: null } });
+    const pending = await env.DB.prepare("SELECT delete_after FROM timeflow_work_time_subjects WHERE user_id = ? AND scope_type = 'private' AND private_deletion_requested_at IS NOT NULL LIMIT 1").bind(user.id).first();
+    return jsonResponse({ privateWorkTimeDeletion: { scheduled: Boolean(pending?.delete_after), deleteAfter: pending?.delete_after || null } });
+  }
 
   if (request.method === "POST") {
     let body; try { body = await request.json(); } catch { return jsonResponse({ error: "invalid_json" }, 400); }

@@ -77,16 +77,25 @@ if (batches.length !== 1 || batches[0].length !== 4 || !batches[0][0].sql.includ
 if (!statements.some(({ sql }) => sql.includes("retention_runs") && sql.includes("'running'")) || !statements.some(({ sql }) => sql.includes("retention_runs SET") && sql.includes("'completed'"))) throw new Error("Retention run was not audited.");
 
 const deleteOptions = { method: "DELETE", headers: { ...headersFor(normalUserId), Origin: "https://timeflow.test" } };
+response = await call("/api/account-data", { headers: headersFor(normalUserId) });
+body = await response.json();
+if (response.status !== 200 || body.privateWorkTimeDeletion?.scheduled) throw new Error("Account deletion status was not empty before scheduling.");
 response = await call("/api/account-data", deleteOptions);
 body = await response.json();
 if (response.status !== 200 || !body.deleted || !body.privateWorkTimeDeletion?.scheduled || !body.privateWorkTimeDeletion.deleteAfter) throw new Error("Account deletion did not schedule private work-time deletion.");
 const firstDeadline = body.privateWorkTimeDeletion.deleteAfter;
+response = await call("/api/account-data", { headers: headersFor(normalUserId) });
+body = await response.json();
+if (response.status !== 200 || !body.privateWorkTimeDeletion?.scheduled || body.privateWorkTimeDeletion.deleteAfter !== firstDeadline) throw new Error("Scheduled account deletion was not readable.");
 response = await call("/api/account-data", deleteOptions);
 body = await response.json();
 if (body.privateWorkTimeDeletion.deleteAfter !== firstDeadline) throw new Error("Repeated account deletion extended the recovery window.");
 
 response = await call("/api/account-data", { method: "POST", headers: { ...headersFor(normalUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ action: "restore_private_work_time" }) });
 if (response.status !== 200 || !(await response.json()).restored || pendingDeletion) throw new Error("Private work-time restoration failed inside the recovery window.");
+response = await call("/api/account-data", { headers: headersFor(normalUserId) });
+body = await response.json();
+if (response.status !== 200 || body.privateWorkTimeDeletion?.scheduled) throw new Error("Restored account deletion status was not cleared.");
 if ((await call("/api/account-data", { method: "POST", headers: { ...headersFor(normalUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ action: "restore_private_work_time" }) })).status !== 409) throw new Error("Restoration without a pending deletion did not fail safely.");
 
 console.log("Retention API: admin gate, dry run, ordered deletion, audit, 30-day scheduling and restoration verified.");

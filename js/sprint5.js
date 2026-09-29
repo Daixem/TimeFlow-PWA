@@ -57,7 +57,8 @@ document.addEventListener("DOMContentLoaded", () => {
           <p class="settings-card-copy">In der privaten Site werden Profil und Einstellungen geschützt synchronisiert. Chats, Zeiterfassung und sensible Schnellaktionen bleiben lokal in diesem Browser.</p>
           <div class="data-actions">
             <button type="button" data-export-data><span class="data-action-icon"><i class="fa-solid fa-file-arrow-down"></i></span><span><strong>Datensicherung erstellen</strong><small>Alle lokalen TimeFlow-Daten als JSON</small></span><i class="fa-solid fa-chevron-right"></i></button>
-            <button type="button" data-delete-cloud><span class="data-action-icon"><i class="fa-solid fa-cloud-arrow-down"></i></span><span><strong>Cloud-Daten löschen</strong><small>Synchronisierte TimeFlow-Daten und Teamzuordnung entfernen</small></span><i class="fa-solid fa-chevron-right"></i></button>
+            <button type="button" data-delete-cloud><span class="data-action-icon"><i class="fa-solid fa-cloud-arrow-down"></i></span><span><strong>Cloud-Daten löschen</strong><small>Synchronisierte Daten entfernen; private Arbeitszeit 30 Tage wiederherstellbar</small></span><i class="fa-solid fa-chevron-right"></i></button>
+            <button type="button" data-restore-cloud hidden><span class="data-action-icon"><i class="fa-solid fa-clock-rotate-left"></i></span><span><strong>Private Arbeitszeit wiederherstellen</strong><small data-restore-cloud-deadline>Innerhalb der 30-Tage-Frist möglich</small></span><i class="fa-solid fa-chevron-right"></i></button>
             <button type="button" data-beta-privacy><span class="data-action-icon"><i class="fa-solid fa-shield-halved"></i></span><span><strong>Beta & Datenschutz</strong><small>Gespeicherte Daten, Grenzen und Einwilligung ansehen</small></span><i class="fa-solid fa-chevron-right"></i></button>
             <button class="danger" type="button" data-open-reset><span class="data-action-icon"><i class="fa-solid fa-trash-can"></i></span><span><strong>Lokale Daten löschen</strong><small>TimeFlow auf diesem Gerät zurücksetzen</small></span><i class="fa-solid fa-chevron-right"></i></button>
           </div>
@@ -227,6 +228,31 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  const cloudDeleteButton = page.querySelector("[data-delete-cloud]");
+  const cloudRestoreButton = page.querySelector("[data-restore-cloud]");
+  const cloudRestoreDeadline = page.querySelector("[data-restore-cloud-deadline]");
+
+  function readableDeletionDeadline(value) {
+    const deadline = new Date(value || "");
+    if (Number.isNaN(deadline.getTime())) return "Innerhalb der 30-Tage-Frist möglich";
+    return `Wiederherstellbar bis ${deadline.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })}`;
+  }
+
+  function renderCloudDeletionStatus(status) {
+    const scheduled = Boolean(status?.scheduled && status?.deleteAfter);
+    cloudRestoreButton.hidden = !scheduled;
+    cloudRestoreDeadline.textContent = scheduled ? readableDeletionDeadline(status.deleteAfter) : "Innerhalb der 30-Tage-Frist möglich";
+  }
+
+  async function refreshCloudDeletionStatus() {
+    try {
+      const response = await fetch(new URL("api/account-data", document.baseURI), { headers: { Accept: "application/json" } });
+      if (!response.ok) return;
+      const result = await response.json();
+      renderCloudDeletionStatus(result.privateWorkTimeDeletion);
+    } catch {}
+  }
+
   page.querySelectorAll("[data-setting]").forEach((control) => control.addEventListener("change", () => {
     settings[control.dataset.setting] = control.type === "checkbox" ? control.checked : Number(control.value);
     saveSettings();
@@ -235,7 +261,36 @@ document.addEventListener("DOMContentLoaded", () => {
   page.querySelector("[data-settings-back]").addEventListener("click", () => document.dispatchEvent(new CustomEvent("timeflow:open-profile")));
   page.querySelector("[data-check-update]").addEventListener("click", (event) => checkForUpdate(event.currentTarget));
   page.querySelector("[data-export-data]").addEventListener("click", exportData);
-  page.querySelector("[data-delete-cloud]").addEventListener("click", async (event) => { if (!window.confirm("Synchronisierte TimeFlow-Daten und eine mögliche Teamzuordnung wirklich löschen? Lokale Daten bleiben zunächst erhalten.")) return; const button = event.currentTarget; button.disabled = true; try { const response = await fetch(new URL("api/account-data", document.baseURI), { method: "DELETE", headers: { Accept: "application/json" } }); if (!response.ok) throw new Error("delete_failed"); notify("Deine synchronisierten TimeFlow-Daten wurden gelöscht."); } catch { notify("Cloud-Daten konnten hier nicht gelöscht werden. Nutze dafür die geschützte Beta."); } finally { button.disabled = false; } });
+  cloudDeleteButton.addEventListener("click", async () => {
+    if (!window.confirm("Synchronisierte TimeFlow-Daten und den Teamzugang entfernen? Private Arbeitszeiten bleiben 30 Tage wiederherstellbar. Lokale Daten bleiben auf diesem Gerät.")) return;
+    cloudDeleteButton.disabled = true;
+    try {
+      const response = await fetch(new URL("api/account-data", document.baseURI), { method: "DELETE", headers: { Accept: "application/json" } });
+      if (!response.ok) throw new Error("delete_failed");
+      const result = await response.json();
+      renderCloudDeletionStatus(result.privateWorkTimeDeletion);
+      notify(result.privateWorkTimeDeletion?.scheduled
+        ? `Cloud-Daten wurden entfernt. Deine private Arbeitszeit ist bis ${new Date(result.privateWorkTimeDeletion.deleteAfter).toLocaleDateString("de-DE")} wiederherstellbar.`
+        : "Deine synchronisierten Cloud-Daten wurden entfernt.");
+    } catch {
+      notify("Cloud-Daten konnten hier nicht gelöscht werden. Nutze dafür die geschützte Beta.");
+    } finally {
+      cloudDeleteButton.disabled = false;
+    }
+  });
+  cloudRestoreButton.addEventListener("click", async () => {
+    cloudRestoreButton.disabled = true;
+    try {
+      const response = await fetch(new URL("api/account-data", document.baseURI), { method: "POST", headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ action: "restore_private_work_time" }) });
+      if (!response.ok) throw new Error("restore_failed");
+      renderCloudDeletionStatus({ scheduled: false, deleteAfter: null });
+      notify("Deine private Arbeitszeit wurde wiederhergestellt.");
+    } catch {
+      notify("Die private Arbeitszeit konnte gerade nicht wiederhergestellt werden.");
+    } finally {
+      cloudRestoreButton.disabled = false;
+    }
+  });
   page.querySelector("[data-open-reset]").addEventListener("click", () => window.TimeFlowPlatform.dialog.open(resetDialog));
   page.querySelector("[data-close-reset]").addEventListener("click", () => window.TimeFlowPlatform.dialog.close(resetDialog));
   page.querySelector("[data-confirm-reset]").addEventListener("click", () => {
@@ -254,4 +309,5 @@ document.addEventListener("DOMContentLoaded", () => {
   renderControls();
   updateConnection();
   updateOfflineStatus();
+  refreshCloudDeletionStatus();
 });
