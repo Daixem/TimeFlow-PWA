@@ -9,7 +9,8 @@ for (const marker of ["npm test", "GITHUB_SHA", "actions/deploy-pages@v4", "canc
 }
 
 if (!worker.includes('const MAIN_RELEASE_ORIGIN = "https://daixem.github.io/TimeFlow-PWA/"')) throw new Error("Der gemeinsame Main-Release der Private Beta fehlt.");
-if (!worker.includes("latestMainAsset(request, url)")) throw new Error("Die Private Beta übernimmt den Main-Stand nicht.");
+if (!worker.includes("latestMainAsset(request, url, env)")) throw new Error("Die Private Beta übernimmt standardmäßig den Main-Stand nicht.");
+if (!worker.includes('env?.TIMEFLOW_ASSET_SOURCE === "bundled"')) throw new Error("Eine isolierte Pre-Prod-Oberfläche kann nicht ausgewählt werden.");
 if (!worker.includes("timeflow_release")) throw new Error("Die Private Beta umgeht veraltete Main-Release-Caches nicht.");
 if (!worker.includes('url.pathname === "/version.json"')) throw new Error("Build-Nachweis der Private Beta fehlt.");
 if (!worker.includes("const BUILD_VERSION =") || !worker.includes("const BUILD_METADATA =")) throw new Error("Vollständige Commit-Version fehlt im Hosting-Build.");

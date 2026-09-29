@@ -99,7 +99,8 @@ function jsonResponse(value, status = 200, extraHeaders = {}) {
   });
 }
 
-async function latestMainAsset(request, url) {
+async function latestMainAsset(request, url, env) {
+  if (env?.TIMEFLOW_ASSET_SOURCE === "bundled") return null;
   if (!["GET", "HEAD"].includes(request.method) || url.pathname.startsWith("/api/") || url.pathname === "/version.json") return null;
   try {
     const relativePath = url.pathname.replace(/^\\/+/, "");
@@ -868,7 +869,7 @@ export default {
     if (url.pathname === "/api/beta/invite") return handleBetaInvite(request, env, url);
     if (url.pathname === "/api/beta/invites") return handleBetaInvites(request, env, url);
     if (url.pathname === "/api/support") return handleSupport(request, env, url);
-    const currentMainAsset = await latestMainAsset(request, url);
+    const currentMainAsset = await latestMainAsset(request, url, env);
     if (currentMainAsset) return currentMainAsset;
     if (url.pathname === "/version.json") return jsonResponse(BUILD_METADATA);
     let path;
