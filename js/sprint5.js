@@ -54,7 +54,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         <section class="settings-card" aria-labelledby="dataSettingsTitle">
           <header><span class="settings-card-icon amber"><i class="fa-solid fa-database"></i></span><div><small>Selbstbestimmt</small><h2 id="dataSettingsTitle">Daten & Datenschutz</h2></div></header>
-          <p class="settings-card-copy">In der privaten Site werden Profil und Einstellungen geschützt synchronisiert. Chats, Zeiterfassung und sensible Schnellaktionen bleiben lokal in diesem Browser.</p>
+          <p class="settings-card-copy">TimeFlow speichert einige Daten auf diesem Gerät und synchronisiert freigegebene Konto- und Arbeitszeitdaten geschützt. Du entscheidest getrennt über lokale Daten und Cloud-Daten.</p>
           <div class="data-actions">
             <button type="button" data-export-data><span class="data-action-icon"><i class="fa-solid fa-file-arrow-down"></i></span><span><strong>Datensicherung erstellen</strong><small>Alle lokalen TimeFlow-Daten als JSON</small></span><i class="fa-solid fa-chevron-right"></i></button>
             <button type="button" data-delete-cloud><span class="data-action-icon"><i class="fa-solid fa-cloud-arrow-down"></i></span><span><strong>Cloud-Daten löschen</strong><small>Synchronisierte Daten entfernen; private Arbeitszeit 30 Tage wiederherstellbar</small></span><i class="fa-solid fa-chevron-right"></i></button>
@@ -262,7 +262,7 @@ document.addEventListener("DOMContentLoaded", () => {
   page.querySelector("[data-check-update]").addEventListener("click", (event) => checkForUpdate(event.currentTarget));
   page.querySelector("[data-export-data]").addEventListener("click", exportData);
   cloudDeleteButton.addEventListener("click", async () => {
-    if (!window.confirm("Synchronisierte TimeFlow-Daten und den Teamzugang entfernen? Private Arbeitszeiten bleiben 30 Tage wiederherstellbar. Lokale Daten bleiben auf diesem Gerät.")) return;
+    if (!window.confirm("Cloud-Daten wirklich löschen?\n\nSofort entfernt werden dein Profil, die Synchronisierung und dein Teamzugang.\n\nDeine private Arbeitszeit bleibt 30 Tage wiederherstellbar. Team-Arbeitszeiten bleiben für das Unternehmen während der Beschäftigung und danach 24 Monate erhalten.\n\nDaten auf diesem Gerät werden nicht gelöscht.")) return;
     cloudDeleteButton.disabled = true;
     try {
       const response = await fetch(new URL("api/account-data", document.baseURI), { method: "DELETE", headers: { Accept: "application/json" } });

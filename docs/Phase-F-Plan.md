@@ -72,6 +72,7 @@ produktive D1-ID, die Recovery-D1-ID, das Backup und den Rückfallplan nennen.
 | Organisationsmodell | **PASS – Test-D1 migriert; Clientkontext und lokale Trennung validiert** |
 | Lösch-/Anonymisierungsablauf | **PASS – Vorschau und echter Lauf mit einem Wegwerf-Datensatz auf der Test-D1 geprüft; Ausführung anschließend wieder gesperrt, Produktion unverändert** |
 | 30-Tage-Wiederherstellung | **PASS – Frist und Wiederherstellungsknopf in Pre-Prod sichtbar; Vormerkung im Browser aufgehoben und Daten unverändert** |
+| Verständliche Löschhinweise | **PASS – App erklärt sofortige Löschung, 30-Tage-Wiederherstellung, Team-Aufbewahrung, lokale Daten und Sicherungen in Alltagssprache** |
 | Tenant-Testmigration | **PASS – Kopie und gebundene Test-D1 migriert; Daten vollständig** |
 | Team-E2E auf Test-D1 | **PASS – zwei Access-Identitäten, Mitgliedsrolle, getrennte Teamdaten und private Isolation im Browser verifiziert** |
 | Produktiver Code- und Schema-Rollout | **PASS – Sites-Version 65; Migrationen 0003–0005 vorhanden; neue Arbeitszeittabellen leer** |

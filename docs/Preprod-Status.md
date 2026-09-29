@@ -74,6 +74,7 @@ Restore-Test-D1 ist ebenfalls nicht an den Worker gebunden.
 | Retention-Vorschau | **PASS** | Der geschützte Browser-Endpunkt bestätigte vor dem Test genau 1 fälligen Wegwerf-Datensatz und danach wieder 0 fällige Datensätze. |
 | Automatischer Retention-Lauf | **PASS** | Nach vollständigem Test-D1-Export wurde genau 1 eigens angelegter Wegwerf-Datensatz gelöscht. Der Lauf meldete 1 von 1 gelöscht und wurde als abgeschlossen protokolliert. Die ursprünglichen Zähler von 11 Subjects, 10 Current-States, 12 Sessions und 38 Journalereignissen wurden danach bestätigt. Der Ausführungsschalter ist wieder aus. |
 | 30-Tage-Wiederherstellung | **PASS** | Die App zeigte für das vorgemerkte private Testkonto den 29. Oktober 2026 als Frist und einen verständlichen Wiederherstellungsknopf. Der echte Browseraufruf entfernte die Vormerkung; Arbeitszeiten, Journal und Teamzuordnung blieben unverändert. |
+| Verständliche Löschhinweise | **PASS** | Die Beta-Hinweise und die Bestätigung vor einer Cloud-Löschung erklären klar, welche Daten sofort entfernt werden, welche 30 Tage wiederherstellbar bleiben, wie lange Team-Arbeitszeiten bestehen und dass lokale Daten getrennt gelöscht werden. |
 | Isolierte Pre-Prod-Oberfläche | **PASS** | Pre-Prod verwendet den gebündelten Teststand. Der produktive Browser-Build und die produktive D1 wurden nicht verändert. |
 
 ## Sicherheitsgrenze
