@@ -100,6 +100,12 @@ die ursprünglichen Datenzähler unverändert, die Vorschau wieder leer und der
 Ausführungsschalter wieder gesperrt. Produktion war an diesem Test nicht
 beteiligt.
 
+Die 30-tägige Wiederherstellung wurde ebenfalls im echten Pre-Prod-Browser
+geprüft. Die App zeigte das Fristende und den neuen Knopf „Private Arbeitszeit
+wiederherstellen“. Nach dem Aufruf waren Löschvormerkung und Frist aufgehoben;
+11 Subjects, 10 Current-States, 12 Sessions, 38 Journalereignisse und die
+Administrator-Teamzuordnung blieben unverändert.
+
 ## Technische Konsequenzen
 
 1. Jeder Arbeitszeitdatensatz benötigt einen Modus `private` oder `organization`.

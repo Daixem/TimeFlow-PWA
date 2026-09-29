@@ -7,15 +7,17 @@ Stand: 29. September 2026
 - Worker: `timeflow-preprod`
 - URL: `https://timeflow-preprod.wvzv2wd4zj.workers.dev`
 - Worker-ID: `34d459b368234910b7398f868ba60314`
-- Worker-Version: `c958a53b-72af-4656-9d57-0bfb7fcad1dc`
-- Deployed Worker-Commit: `298420ce84b24ffc423604742d6159952e67dc90`
-- Worker-Build-ID: `298420ce84b2-20260929t190213743z`
+- Worker-Version: `f69aab23-1b69-4e20-8896-fff5bb280002`
+- Deployed Worker-Commit: `3dd4e5cd6b89676fd045c79ba09ec178144b94ef`
+- Worker-Build-ID: `3dd4e5cd6b89-20260929t191541040z`
 - Konfiguration: `wrangler.preprod.jsonc`
 
 Der Worker wurde aus dem dokumentierten Retention-Commit gebaut. Die Vorschau
 für fällige Löschungen ist in Pre-Prod aktiv. Die tatsächliche Löschung bleibt
 über einen zweiten Schalter gesperrt. Der produktive Browser-Build wurde bei
-dieser Pre-Prod-Veröffentlichung nicht verändert.
+dieser Pre-Prod-Veröffentlichung nicht verändert. Pre-Prod lädt jetzt bewusst
+die im Worker enthaltene Testoberfläche, damit neue Funktionen vor einer
+Produktivveröffentlichung sichtbar geprüft werden können.
 
 ## Browser-Anmeldung
 
@@ -71,6 +73,8 @@ Restore-Test-D1 ist ebenfalls nicht an den Worker gebunden.
 | Retention-Schema und Schutzregeln | **PASS** | Legal Holds, Löschprotokoll und Datenbank-Sperre sind auf der Test-D1 vorhanden; vorhandene 11 Subjects, 10 Current-States, 12 Sessions und 38 Journalereignisse blieben erhalten. |
 | Retention-Vorschau | **PASS** | Der geschützte Browser-Endpunkt bestätigte vor dem Test genau 1 fälligen Wegwerf-Datensatz und danach wieder 0 fällige Datensätze. |
 | Automatischer Retention-Lauf | **PASS** | Nach vollständigem Test-D1-Export wurde genau 1 eigens angelegter Wegwerf-Datensatz gelöscht. Der Lauf meldete 1 von 1 gelöscht und wurde als abgeschlossen protokolliert. Die ursprünglichen Zähler von 11 Subjects, 10 Current-States, 12 Sessions und 38 Journalereignissen wurden danach bestätigt. Der Ausführungsschalter ist wieder aus. |
+| 30-Tage-Wiederherstellung | **PASS** | Die App zeigte für das vorgemerkte private Testkonto den 29. Oktober 2026 als Frist und einen verständlichen Wiederherstellungsknopf. Der echte Browseraufruf entfernte die Vormerkung; Arbeitszeiten, Journal und Teamzuordnung blieben unverändert. |
+| Isolierte Pre-Prod-Oberfläche | **PASS** | Pre-Prod verwendet den gebündelten Teststand. Der produktive Browser-Build und die produktive D1 wurden nicht verändert. |
 
 ## Sicherheitsgrenze
 
