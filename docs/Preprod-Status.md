@@ -7,12 +7,12 @@ Stand: 29. September 2026
 - Worker: `timeflow-preprod`
 - URL: `https://timeflow-preprod.wvzv2wd4zj.workers.dev`
 - Worker-ID: `34d459b368234910b7398f868ba60314`
-- Worker-Version: `f69aab23-1b69-4e20-8896-fff5bb280002`
-- Deployed Worker-Commit: `3dd4e5cd6b89676fd045c79ba09ec178144b94ef`
-- Worker-Build-ID: `3dd4e5cd6b89-20260929t191541040z`
+- Worker-Version: `3435a8f9-a21d-4d43-bb6f-92fc582ab046`
+- Deployed Worker-Commit: `35ab6bc682fe8a6be4975136cbcb71840693a8f2`
+- Worker-Build-ID: `35ab6bc682fe-20260929t192213868z`
 - Konfiguration: `wrangler.preprod.jsonc`
 
-Der Worker wurde aus dem dokumentierten Retention-Commit gebaut. Die Vorschau
+Der Worker wurde aus dem dokumentierten Datenschutz- und Retention-Commit gebaut. Die Vorschau
 für fällige Löschungen ist in Pre-Prod aktiv. Die tatsächliche Löschung bleibt
 über einen zweiten Schalter gesperrt. Der produktive Browser-Build wurde bei
 dieser Pre-Prod-Veröffentlichung nicht verändert. Pre-Prod lädt jetzt bewusst
