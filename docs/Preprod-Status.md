@@ -7,9 +7,9 @@ Stand: 29. September 2026
 - Worker: `timeflow-preprod`
 - URL: `https://timeflow-preprod.wvzv2wd4zj.workers.dev`
 - Worker-ID: `34d459b368234910b7398f868ba60314`
-- Worker-Version: `3435a8f9-a21d-4d43-bb6f-92fc582ab046`
-- Deployed Worker-Commit: `35ab6bc682fe8a6be4975136cbcb71840693a8f2`
-- Worker-Build-ID: `35ab6bc682fe-20260929t192213868z`
+- Worker-Version: `1c1f1a86-88ff-44d3-9872-e618f5ba2495`
+- Deployed Worker-Commit: `6e7485598e68eafd71fbb073097053b015be52e6`
+- Worker-Build-ID: `6e7485598e68-20260929t192609808z`
 - Konfiguration: `wrangler.preprod.jsonc`
 
 Der Worker wurde aus dem dokumentierten Datenschutz- und Retention-Commit gebaut. Die Vorschau
@@ -74,7 +74,7 @@ Restore-Test-D1 ist ebenfalls nicht an den Worker gebunden.
 | Retention-Vorschau | **PASS** | Der geschützte Browser-Endpunkt bestätigte vor dem Test genau 1 fälligen Wegwerf-Datensatz und danach wieder 0 fällige Datensätze. |
 | Automatischer Retention-Lauf | **PASS** | Nach vollständigem Test-D1-Export wurde genau 1 eigens angelegter Wegwerf-Datensatz gelöscht. Der Lauf meldete 1 von 1 gelöscht und wurde als abgeschlossen protokolliert. Die ursprünglichen Zähler von 11 Subjects, 10 Current-States, 12 Sessions und 38 Journalereignissen wurden danach bestätigt. Der Ausführungsschalter ist wieder aus. |
 | 30-Tage-Wiederherstellung | **PASS** | Die App zeigte für das vorgemerkte private Testkonto den 29. Oktober 2026 als Frist und einen verständlichen Wiederherstellungsknopf. Der echte Browseraufruf entfernte die Vormerkung; Arbeitszeiten, Journal und Teamzuordnung blieben unverändert. |
-| Verständliche Löschhinweise | **PASS** | Die Beta-Hinweise und die Bestätigung vor einer Cloud-Löschung erklären klar, welche Daten sofort entfernt werden, welche 30 Tage wiederherstellbar bleiben, wie lange Team-Arbeitszeiten bestehen und dass lokale Daten getrennt gelöscht werden. |
+| Verständliche Löschhinweise | **PASS** | Die Beta-Hinweise und die Bestätigung vor einer Cloud-Löschung erklären klar, welche Daten sofort entfernt werden, welche 30 Tage wiederherstellbar bleiben, wie lange Team-Arbeitszeiten bestehen und dass lokale Daten getrennt gelöscht werden. Der Hinweis wurde im Browser geöffnet und vollständig geprüft. |
 | Isolierte Pre-Prod-Oberfläche | **PASS** | Pre-Prod verwendet den gebündelten Teststand. Der produktive Browser-Build und die produktive D1 wurden nicht verändert. |
 
 ## Sicherheitsgrenze
