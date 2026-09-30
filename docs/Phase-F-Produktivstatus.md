@@ -1,6 +1,6 @@
 # TimeFlow – Phase F: Produktivstatus
 
-Stand: 28. September 2026
+Stand: 30. September 2026
 
 Status: **ADMIN-ROLLOUT AKTIV – LESE- UND SCHREIBTEST BESTANDEN**
 
@@ -8,9 +8,9 @@ Status: **ADMIN-ROLLOUT AKTIV – LESE- UND SCHREIBTEST BESTANDEN**
 
 - GitHub-Rolloutcommit: `d223432de938fd47c9c9694adc54e2c1df6afe57`
 - Verifizierter GitHub-Pages-Build: `d223432de938-20260928t182451561z`
-- TimeFlow Connect: Version 71
-- Sites-Quellcommit: `973ff004683a105f67f8883bc05068293b5846bc`
-- Sites-Build: `973ff004683a-20260928t182436221z`
+- TimeFlow Connect: Version 72
+- Sites-Quellcommit: `3abed08304d2efbc93422040d52b0d3002e3463b`
+- Sites-Build: `3abed08304d2-20260930t180541679z`
 - Produktions-URL: `https://timeflow-connect.daixem.chatgpt.site`
 
 ## Recovery-Nachweis
@@ -43,6 +43,7 @@ Status: **ADMIN-ROLLOUT AKTIV – LESE- UND SCHREIBTEST BESTANDEN**
 | Produktionslogs | **PASS** | Wiederholte Admin-Lesezugriffe auf Current und Sessions liefern HTTP 200 mit Worker-Outcome `ok`; keine D1-Fehler. Erwartete HTTP 503 aus einer älteren Hintergrundseite ohne Admin-Freigabe bestätigen die Abgrenzung. |
 | Admin-only-Rolloutschutz | **PASS** | Die Freigabe erkennt das kontrollierte Administratorkonto auch dann stabil, wenn Sites bei Folgeaufrufen nur die E-Mail-Identität liefert. Andere Konten bleiben ausgeschlossen. |
 | Produktive Arbeitszeit-Aktivierung | **PASS** | Env-Revision 6 aktiviert den Serverpfad ausschließlich für das Administratorkonto. Wiederholte Lesetests sowie ein bewusstes CLOCK_IN/CLOCK_OUT wurden ohne Fehler abgeschlossen. |
+| Verständliche Datenschutz- und Löschhinweise | **PASS** | Version 72 erklärt den aktuellen Produktionsstand, die geplante 30-Tage-Wiederherstellung, die Aufbewahrung von Team-Arbeitszeiten sowie die getrennte Löschung lokaler Daten. Der Datenschutzdialog wird zuverlässig geladen. |
 | Lösch-/Anonymisierungsroutine | **PARTIAL** | Technisch umgesetzt und auf der getrennten Test-D1 verifiziert; in Pre-Prod ausgeschaltet und noch nicht auf die produktive D1 angewendet. |
 
 Die produktive Datenbank wurde weder ersetzt noch aus der Recovery-D1
@@ -56,3 +57,9 @@ und CLOCK_OUT wurden jeweils genau einmal gespeichert; es gab keine Fehler
 oder doppelten Einträge. Die kurze Testdauer von rund 23 Sekunden wird korrekt
 als 0 Minuten ausgewiesen. Alle anderen Beta-Konten verwenden weiterhin den
 bisherigen lokalen Pfad.
+
+Version 72 enthält ausschließlich verständlichere Datenschutztexte und die
+zuverlässige frühe Einbindung des Datenschutzdialogs. Migration 0006, der
+Retention-Administrationspfad und die automatische 30-Tage-Löschung sind in
+diesem Produktionsartefakt nicht enthalten. Die produktive D1, ihre Bindings
+und die bestehende Env-Revision 6 blieben unverändert.
