@@ -20,6 +20,7 @@ const theme = await readFile(new URL("../css/theme-personalization.css", import.
 const schedule = await readFile(new URL("../js/private-schedule-import.js", import.meta.url), "utf8");
 
 for (const marker of ["/api/team-access", "valid_invitation_required", "timeflow_organization_members", "timeflow_organization_invites"]) if (!worker.includes(marker)) throw new Error(`Team-API fehlt: ${marker}`);
+for (const marker of ["/api/team-invites", "valid_email_required", "invitation_already_pending", "team-invite-create"]) if (!worker.includes(marker)) throw new Error(`Team-Einladung fehlt: ${marker}`);
 for (const marker of ["teamAccessAllowed", "Nur nach Einladung eines Unternehmens", "loadTeamAccess", 'saveMode("private", false)']) if (!mode.includes(marker)) throw new Error(`Team-Sperre fehlt: ${marker}`);
 for (const marker of ["timeflow-private-schedule-v1", "timeflow-private-account-v1", "timeflow-workday-v2", "timeflow-notification-read-v1", "timeflow-profile-v1", "timeflow-settings-v1", "timeflow-custom-background-v1"]) if (!worker.includes(marker) || !sync.includes(marker)) throw new Error(`Cloud-Datensatz fehlt: ${marker}`);
 for (const marker of ["queuedWorkdaySnapshot", "scheduleWorkdayUpload", "current === queuedWorkdaySnapshot"]) if (!sync.includes(marker)) throw new Error(`Stabile laufende Synchronisierung fehlt: ${marker}`);
@@ -35,6 +36,7 @@ for (const marker of ["Löschvorschau", "/api/admin/retention", "data-retention-
 for (const marker of ["supportsPrivateWorkTimeRecovery", "data-delete-cloud-summary", "Arbeitszeiten werden durch diesen Schritt nicht gelöscht", "Daten auf diesem Gerät werden nicht gelöscht"]) if (!settings.includes(marker)) throw new Error(`Umgebungsabhängiger Löschhinweis fehlt: ${marker}`);
 for (const marker of ["timeflow_beta_invites", "token_hash", "crypto.randomUUID", "invitation_already_claimed", "TIMEFLOW_BETA_ADMIN_USER_FINGERPRINT", "beta_access_required"]) if (!worker.includes(marker)) throw new Error(`Persönliche Einladung fehlt: ${marker}`);
 for (const marker of ["signin-with-chatgpt", "Einladungslink erstellen", "navigator.share", "api/beta/invite", "api/beta/access", "Einladung wird aktiviert", "claimInvitation", "Erneut versuchen"]) if (!betaAccess.includes(marker)) throw new Error(`Einladungsoberfläche fehlt: ${marker}`);
+for (const marker of ["Person zum Team einladen", "api/team-invites", "data-share-team-invite", "Zum Team einladen"]) if (!betaAccess.includes(marker)) throw new Error(`Team-Einladungsoberfläche fehlt: ${marker}`);
 for (const marker of ["private-beta-access.css?v=__TIMEFLOW_BUILD__", "defer src=\"js/private-beta-access.js?v=__TIMEFLOW_BUILD__\"", "data-beta-access=\"true\""]) if (!index.includes(marker)) throw new Error(`Einladungsstartseite fehlt: ${marker}`);
 if (betaAccess.includes("window.scrollTo")) throw new Error("Die Anmeldung erzwingt noch einen Sprung an den Seitenanfang.");
 for (const marker of ["private-beta-personalization.css?v=__TIMEFLOW_BUILD__", "private-beta-personalization.js?v=__TIMEFLOW_BUILD__", "register(\"sw.js\""]) if (!index.includes(marker)) throw new Error(`Beta-Erweiterung fehlt: ${marker}`);

@@ -355,7 +355,13 @@ async function betaAccess(user, env) {
   await ensureBetaTables(env.DB); if (await betaAdmin(user, env)) return { allowed: true, admin: true };
   if (!user.id) return { allowed: false, admin: false };
   const row = await env.DB.prepare("SELECT user_id FROM timeflow_beta_access WHERE user_id = ? AND revoked_at IS NULL").bind(user.id).first();
-  return { allowed: Boolean(row), admin: false };
+  if (row) return { allowed: true, admin: false };
+  if (!user.email) return { allowed: false, admin: false };
+  await ensureTeamTables(env.DB);
+  const teamInvitation = await env.DB.prepare("SELECT id FROM timeflow_organization_invites WHERE lower(email) = lower(?) AND status = 'pending' ORDER BY created_at DESC LIMIT 1").bind(user.email).first();
+  if (!teamInvitation) return { allowed: false, admin: false };
+  await env.DB.prepare("INSERT INTO timeflow_beta_access (user_id, invite_id, granted_at, revoked_at) VALUES (?, ?, ?, NULL) ON CONFLICT(user_id) DO UPDATE SET invite_id = excluded.invite_id, granted_at = excluded.granted_at, revoked_at = NULL").bind(user.id, teamInvitation.id, new Date().toISOString()).run();
+  return { allowed: true, admin: false };
 }
 
 async function handleBetaAccess(request, env) {
@@ -429,6 +435,32 @@ async function handleTeamAccess(request, env, url) {
     return jsonResponse({ allowed: true, admin: access.admin, membership: { organization_id: invite.organization_id, role: invite.role, name: invite.name }, invitation: null });
   }
   return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "GET, POST" });
+}
+
+async function handleTeamInvites(request, env, url) {
+  const user = authenticatedUser(request);
+  if (!user.authenticated || !user.id) return jsonResponse({ error: "authentication_required" }, 401);
+  if (!env?.DB || !(await betaAdmin(user, env))) return jsonResponse({ error: "admin_required" }, 403);
+  await ensureBetaTables(env.DB); await ensureTeamTables(env.DB);
+  if (request.method !== "POST") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "POST" });
+  if (request.headers.get("Origin") !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
+  if (!allowRate(user, "team-invite-create", 20, 60 * 60 * 1000)) return jsonResponse({ error: "rate_limited" }, 429, { "Retry-After": "3600" });
+  let body; try { body = await request.json(); } catch { return jsonResponse({ error: "invalid_json" }, 400); }
+  const email = String(body?.email || "").trim().toLowerCase().slice(0, 254);
+  const teamName = String(body?.teamName || "").trim().slice(0, 80);
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return jsonResponse({ error: "valid_email_required" }, 400);
+  if (teamName.length < 2) return jsonResponse({ error: "team_name_required" }, 400);
+  let organization = await env.DB.prepare("SELECT id, name FROM timeflow_organizations WHERE created_by = ? ORDER BY created_at ASC LIMIT 1").bind(user.id).first();
+  if (!organization) {
+    organization = { id: crypto.randomUUID(), name: teamName };
+    await env.DB.prepare("INSERT INTO timeflow_organizations (id, name, created_by, created_at) VALUES (?, ?, ?, ?)").bind(organization.id, organization.name, user.id, new Date().toISOString()).run();
+    await env.DB.prepare("INSERT INTO timeflow_organization_members (organization_id, user_id, role, joined_at) VALUES (?, ?, 'admin', ?)").bind(organization.id, user.id, new Date().toISOString()).run();
+  }
+  const duplicate = await env.DB.prepare("SELECT id FROM timeflow_organization_invites WHERE organization_id = ? AND lower(email) = lower(?) AND status = 'pending' LIMIT 1").bind(organization.id, email).first();
+  if (duplicate) return jsonResponse({ error: "invitation_already_pending" }, 409);
+  const id = crypto.randomUUID(); const createdAt = new Date().toISOString();
+  await env.DB.prepare("INSERT INTO timeflow_organization_invites (id, organization_id, email, role, status, created_at, accepted_at) VALUES (?, ?, ?, 'member', 'pending', ?, NULL)").bind(id, organization.id, email, createdAt).run();
+  return jsonResponse({ invitation: { id, email, organizationName: organization.name, url: url.origin + "/" } }, 201);
 }
 
 async function handleAccountData(request, env, url) {
@@ -862,6 +894,7 @@ export default {
     if (url.pathname === "/api/work-time/sessions") return handleWorkTimeSessions(request, env, url);
     if (url.pathname === "/api/work-time/journal") return handleWorkTimeJournal(request, env, url);
     if (url.pathname === "/api/team-access") return handleTeamAccess(request, env, url);
+    if (url.pathname === "/api/team-invites") return handleTeamInvites(request, env, url);
     if (url.pathname === "/api/account-data") return handleAccountData(request, env, url);
     if (url.pathname === "/api/admin/retention") return handleWorkTimeRetention(request, env, url);
     if (url.pathname === "/api/beta/access") return handleBetaAccess(request, env);
