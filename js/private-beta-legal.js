@@ -12,6 +12,31 @@
     document.addEventListener("click", (event) => { if (event.target.closest("[data-beta-privacy]")) open(false); });
     document.addEventListener("timeflow:session-ready", (event) => { if (event.detail?.source === "platform" && read()?.version !== VERSION) open(true); });
   };
+  const refreshRetentionPreview = async () => {
+    const dialog = document.getElementById("betaPrivacyDialog");
+    if (!dialog) return;
+    let panel = dialog.querySelector("[data-retention-preview]");
+    if (!panel) {
+      const label = dialog.querySelector("label");
+      if (!label) return;
+      label.insertAdjacentHTML("beforebegin", `<section data-retention-preview hidden><h3>Löschvorschau</h3><p data-retention-preview-status>Die Vorschau wird geprüft …</p></section>`);
+      panel = dialog.querySelector("[data-retention-preview]");
+    }
+    try {
+      const response = await fetch("/api/admin/retention", { headers: { Accept: "application/json" }, cache: "no-store" });
+      if (!response.ok) return;
+      const preview = await response.json();
+      const count = Number(preview?.eligibleCount || 0);
+      panel.hidden = false;
+      panel.querySelector("[data-retention-preview-status]").textContent = count === 0
+        ? "Derzeit wäre keine Arbeitszeit von einer späteren Löschung betroffen. Es wird nichts gelöscht."
+        : `${count} Arbeitszeitkonto bzw. Arbeitszeitkonten wären nach Ablauf der jeweiligen Frist betroffen. Es wird nichts gelöscht.`;
+    } catch (_error) {
+      // Die Vorschau bleibt für nicht berechtigte oder nicht verbundene Konten unsichtbar.
+    }
+  };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
   else init();
+  document.addEventListener("click", (event) => { if (event.target.closest("[data-beta-privacy]")) window.setTimeout(refreshRetentionPreview, 0); });
+  document.addEventListener("timeflow:session-ready", () => window.setTimeout(refreshRetentionPreview, 0));
 }());
