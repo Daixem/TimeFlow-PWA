@@ -360,7 +360,7 @@ async function betaAccess(user, env) {
   await ensureTeamTables(env.DB);
   const teamInvitation = await env.DB.prepare("SELECT id FROM timeflow_organization_invites WHERE lower(email) = lower(?) AND status = 'pending' ORDER BY created_at DESC LIMIT 1").bind(user.email).first();
   if (!teamInvitation) return { allowed: false, admin: false };
-  await env.DB.prepare("INSERT INTO timeflow_beta_access (user_id, invite_id, granted_at, revoked_at) VALUES (?, ?, ?, NULL) ON CONFLICT(user_id) DO UPDATE SET invite_id = excluded.invite_id, granted_at = excluded.granted_at, revoked_at = NULL").bind(user.id, teamInvitation.id, new Date().toISOString()).run();
+  await env.DB.prepare("INSERT INTO timeflow_beta_access (user_id, invite_id, granted_at, revoked_at) VALUES (?, NULL, ?, NULL) ON CONFLICT(user_id) DO UPDATE SET granted_at = excluded.granted_at, revoked_at = NULL").bind(user.id, new Date().toISOString()).run();
   return { allowed: true, admin: false };
 }
 
