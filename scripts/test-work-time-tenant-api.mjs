@@ -128,6 +128,7 @@ const write = (userId, body, organizationId = null) => expect("/api/work-time", 
   headers: { Origin: "https://timeflow.test", "Content-Type": "application/json" },
   body: JSON.stringify(body)
 }, organizationId);
+const sessionMonth = new Date().toISOString().slice(0, 7);
 
 let response = await expect("/api/work-time", userA, 200);
 let body = await response.json();
@@ -167,10 +168,10 @@ if ((await response.json()).events.length !== 1) throw new Error("Organization a
 await expect("/api/work-time", admin, 403, {}, orgB);
 
 await write(userA, { expectedRevision: 1, eventType: "CLOCK_OUT" }, orgA);
-response = await expect("/api/work-time/sessions?month=2026-09", userA, 200, {}, orgA);
+response = await expect(`/api/work-time/sessions?month=${sessionMonth}`, userA, 200, {}, orgA);
 body = await response.json();
 if (body.sessions.length !== 1 || body.context.organizationId !== orgA) throw new Error("Organization sessions were not isolated by subject.");
-response = await expect("/api/work-time/sessions?month=2026-09", userA, 200);
+response = await expect(`/api/work-time/sessions?month=${sessionMonth}`, userA, 200);
 if ((await response.json()).sessions.length !== 0) throw new Error("Organization session leaked into private context.");
 
 console.log("Work-time tenant API: private/team subjects, verified membership, admin scope, body spoofing and cross-tenant isolation verified.");

@@ -143,6 +143,7 @@ await expectStatus("/api/work-time", 400, { method: "PUT", headers: { ...headers
 await expectStatus("/api/work-time", 400, { method: "PUT", headers: { ...headersFor(normalUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ expectedRevision: 0, eventType: "CLOCK_IN", occurredAt: new Date(Date.now() + 10 * 60 * 1000).toISOString() }) });
 
 const offlineClockInAt = new Date(Date.now() - 60 * 1000).toISOString();
+const sessionMonth = offlineClockInAt.slice(0, 7);
 let response = await expectStatus("/api/work-time", 201, {
   method: "PUT", headers: { ...headersFor(normalUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" },
   body: JSON.stringify({ expectedRevision: 0, eventType: "CLOCK_IN", occurredAt: offlineClockInAt })
@@ -165,7 +166,7 @@ if ((await response.json()).revision !== 4) throw new Error("CLOCK_OUT revision 
 if (database.sessions.length !== 1 || database.sessions[0].user_id !== normalUserId || database.sessions[0].end_revision !== 4 || database.sessions[0].net_minutes < 0) throw new Error("CLOCK_OUT did not create exactly one valid completed server session.");
 await expectStatus("/api/work-time", 409, { method: "PUT", headers: { ...headersFor(normalUserId), Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ expectedRevision: 4, eventType: "CLOCK_OUT" }) });
 if (database.sessions.length !== 1) throw new Error("Duplicate CLOCK_OUT created a duplicate session.");
-const ownSessions = await expectStatus("/api/work-time/sessions?month=2026-09", 200, { headers: headersFor(normalUserId) });
+const ownSessions = await expectStatus(`/api/work-time/sessions?month=${sessionMonth}`, 200, { headers: headersFor(normalUserId) });
 if ((await ownSessions.json()).sessions.length !== 1) throw new Error("Own completed session was not readable after reload.");
 await expectStatus("/api/work-time/sessions?month=not-a-month", 400, { headers: headersFor(normalUserId) });
 await expectStatus("/api/work-time/sessions", 401);
@@ -212,7 +213,7 @@ await expectStatus("/api/work-time", 409, { method: "PUT", headers: { ...headers
 await put(normalUserId, { expectedRevision: 8, eventType: "CLOCK_IN" });
 await put(normalUserId, { expectedRevision: 9, eventType: "CLOCK_OUT" });
 if (database.sessions.filter((session) => session.user_id === normalUserId).length !== 2) throw new Error("Multiple completed days were not retained as separate server sessions.");
-const reloadedSessions = await expectStatus("/api/work-time/sessions?month=2026-09", 200, { headers: headersFor(normalUserId) });
+const reloadedSessions = await expectStatus(`/api/work-time/sessions?month=${sessionMonth}`, 200, { headers: headersFor(normalUserId) });
 if ((await reloadedSessions.json()).sessions.length !== 2) throw new Error("A second client or reload cannot see all completed server sessions.");
 
 const failureUser = "work-time-journal-failure";
