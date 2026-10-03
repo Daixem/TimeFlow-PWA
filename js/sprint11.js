@@ -98,11 +98,10 @@ document.addEventListener("DOMContentLoaded", () => {
     element.textContent = document.documentElement.classList.contains("timeflow-private-mode") ? privateText : element.dataset.teamText;
   }
 
-  function updateNotificationCount(mode) {
+  function updateNotificationCount() {
     if (!notificationList || !notificationButton) return;
     const items = [...notificationList.querySelectorAll(".notification-item")];
-    const relevant = mode === "private" ? items.filter((item) => !item.classList.contains("chat") && !item.classList.contains("approval")) : items;
-    const unread = relevant.filter((item) => !item.classList.contains("is-read")).length;
+    const unread = items.filter((item) => !item.classList.contains("is-read")).length;
     const badge = notificationButton.querySelector(".notification-badge");
     if (badge) {
       badge.textContent = String(unread);
@@ -113,24 +112,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (label) label.textContent = unread ? `${unread} ungelesen` : "Alles gelesen";
   }
 
-  function adaptPeriodRows(mode) {
+  function adaptPeriodRows() {
     document.querySelectorAll(".period-day").forEach((day) => {
       if (!day.dataset.teamHtml) day.dataset.teamHtml = day.innerHTML;
-      if (mode === "team") {
-        if (day.dataset.teamHtml) day.innerHTML = day.dataset.teamHtml;
-        return;
-      }
-      const first = day.querySelector("p");
-      day.querySelectorAll("p").forEach((row) => { row.hidden = row !== first; });
-      if (first) {
-        first.classList.add("active");
-        const person = first.querySelector("span");
-        if (person) person.textContent = "Mein Dienstplan";
-      }
+      if (day.dataset.teamHtml) day.innerHTML = day.dataset.teamHtml;
     });
   }
 
-  function removeTeamDemoContent() {
+  function removeTeamDemoContent(hideSchedule) {
     const teamCard = document.querySelector(".team-card");
     if (teamCard && !teamCard.dataset.demoRemoved) {
       teamCard.dataset.demoRemoved = "true";
@@ -146,7 +135,7 @@ document.addEventListener("DOMContentLoaded", () => {
       teamToday.innerHTML = '<h2><i class="fa-solid fa-users"></i> Team heute</h2><p class="team-empty-state"><i class="fa-solid fa-cloud"></i><span>Es sind noch keine echten Teamdaten verbunden.</span></p>';
     }
     const schedule = document.getElementById("schedulePage");
-    if (schedule) schedule.classList.add("team-data-empty");
+    if (schedule) schedule.classList.toggle("team-data-empty", Boolean(hideSchedule));
     const chat = document.getElementById("chatPage");
     if (chat && !chat.dataset.demoRemoved) {
       chat.dataset.demoRemoved = "true";
@@ -172,16 +161,12 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  function updateProfilePresentation(isPrivate) {
+  function updateProfilePresentation() {
     const eyebrow = document.querySelector("#profilePage .profile-eyebrow");
     const profileCopy = document.querySelector("#profilePage .profile-page-header > div > p");
     const status = document.querySelector("#profilePage .profile-status");
-    if (eyebrow) eyebrow.innerHTML = isPrivate
-      ? '<i class="fa-solid fa-user"></i> Einzelnutzung'
-      : '<i class="fa-solid fa-people-group"></i> Teamzugang';
-    if (profileCopy) profileCopy.textContent = isPrivate
-      ? "Deine persönlichen Einstellungen und lokalen Daten."
-      : "Deine persönlichen Einstellungen und dein Teamzugang.";
+    if (eyebrow) eyebrow.innerHTML = '<i class="fa-solid fa-compass"></i> Mein TimeFlow';
+    if (profileCopy) profileCopy.textContent = "Deine Daten, Einstellungen und dein TimeFlow.";
     if (status) {
       const workStatus = document.getElementById("workStatus")?.textContent.trim();
       status.innerHTML = `<i></i> ${workStatus === "Im Dienst" ? "Im Dienst" : "Nicht im Dienst"}`;
@@ -193,22 +178,18 @@ document.addEventListener("DOMContentLoaded", () => {
     document.documentElement.classList.toggle("timeflow-private-mode", isPrivate);
     document.documentElement.classList.toggle("timeflow-team-mode", !isPrivate);
     document.body.dataset.appMode = mode;
-    if (!isPrivate) removeTeamDemoContent();
-    else document.getElementById("schedulePage")?.classList.remove("team-data-empty");
-    updateTeamSupport(!isPrivate);
-    updateProfilePresentation(isPrivate);
+    removeTeamDemoContent(!isPrivate);
+    updateTeamSupport(false);
+    updateProfilePresentation();
 
-    const quickActionsCard = document.querySelector(".quick-actions-card");
-    if (quickActionsCard) quickActionsCard.hidden = isPrivate;
-
-    textFor(".subtitle", "Dein persönlicher Arbeitstag im Überblick.", "Schön, dass du da bist.");
-    textFor('[data-target="schedule"] .nav-text', "Dienstplan", "Dienstpläne");
-    textFor("#schedulePage .schedule-header h1", "Mein Dienstplan", "Dienstpläne");
-    textFor(".quick-actions-card > header p", "Urlaub und Abwesenheiten persönlich festhalten.", "Wichtige Anliegen in wenigen Sekunden erledigen.");
+    textFor(".subtitle", "Schön, dass du da bist.", "Schön, dass du da bist.");
+    textFor('[data-target="schedule"] .nav-text', "Dienstpläne", "Dienstpläne");
+    textFor("#schedulePage .schedule-header h1", "Dienstpläne", "Dienstpläne");
+    textFor(".quick-actions-card > header p", "Wichtige Anliegen in wenigen Sekunden erledigen.", "Wichtige Anliegen in wenigen Sekunden erledigen.");
     textFor('[data-quick-action="vacation"] strong', "Urlaub", "Urlaub");
-    textFor('[data-quick-action="vacation"] small', "Persönlich eintragen", "Antrag stellen");
-    textFor('[data-quick-action="sick"] strong', "Krankheit", "Krankmeldung");
-    textFor('[data-quick-action="sick"] small', "Persönlich eintragen", "Abwesenheit melden");
+    textFor('[data-quick-action="vacation"] small', "Antrag stellen", "Antrag stellen");
+    textFor('[data-quick-action="sick"] strong', "Krankmeldung", "Krankmeldung");
+    textFor('[data-quick-action="sick"] small', "Abwesenheit melden", "Abwesenheit melden");
 
     const personalApprovalText = document.querySelector("[data-personal-message]");
     if (personalApprovalText) {
@@ -221,20 +202,14 @@ document.addEventListener("DOMContentLoaded", () => {
       identityMeta.innerHTML = isPrivate ? '<span id="profileRole">Einzelperson</span> · <span id="profileDepartment">Private Nutzung</span>' : identityMeta.dataset.teamHtml;
     }
 
-    adaptPeriodRows(mode);
+    adaptPeriodRows();
     settingsPage.querySelectorAll("[data-mode-setting]").forEach((button) => {
       const selected = button.dataset.modeSetting === mode;
       button.setAttribute("aria-checked", String(selected));
       button.classList.toggle("is-selected", selected);
     });
-    note.querySelector("span").textContent = isPrivate
-      ? "Privatmodus aktiv: Teamfunktionen sind ausgeblendet, deine persönlichen Werkzeuge bleiben vollständig verfügbar."
-      : "Teammodus aktiv: Kommunikation, Freigaben, Rollen und gemeinsame Abläufe sind sichtbar.";
-    updateNotificationCount(mode);
-
-    if (isPrivate && document.querySelector('[data-target="chat"]')?.classList.contains("active")) {
-      document.querySelector('[data-target="home"]')?.click();
-    }
+    note.querySelector("span").textContent = "Navigation und Bedienung bleiben gleich. Teamdaten werden nur mit einem bestätigten Teamzugang verbunden.";
+    updateNotificationCount();
     document.dispatchEvent(new CustomEvent("timeflow:mode-changed", { detail: { mode } }));
   }
 
@@ -314,12 +289,12 @@ document.addEventListener("DOMContentLoaded", () => {
     if (identityMeta) delete identityMeta.dataset.teamHtml;
     applyMode(currentMode() || "team");
   });
-  document.addEventListener("timeflow:workday-updated", () => updateProfilePresentation(currentMode() === "private"));
+  document.addEventListener("timeflow:workday-updated", () => updateProfilePresentation());
   document.addEventListener("timeflow:open-settings", () => applyMode(currentMode() || "team"));
   document.addEventListener("timeflow:open-mode-selection", () => {
     if (!dialog.open) window.TimeFlowPlatform.dialog.open(dialog);
   });
-  if (notificationList) new MutationObserver(() => updateNotificationCount(currentMode() || "team")).observe(notificationList, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
+  if (notificationList) new MutationObserver(() => updateNotificationCount()).observe(notificationList, { childList: true, subtree: true, attributes: true, attributeFilter: ["class"] });
 
   const initialMode = currentMode();
   applyMode(initialMode || "team");

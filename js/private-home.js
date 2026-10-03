@@ -151,12 +151,12 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("privateHomePlannedEnd").textContent = workday?.workEnd ? workday.workEnd ? new Date(workday.workEnd).toLocaleTimeString(window.TimeFlowLocalization?.locale?.() || "de-DE", { hour: "2-digit", minute: "2-digit" }) : "--:--" : scheduledEnd || "--:--";
   }
   function applyPrivateHome() {
-    const isPrivate = document.documentElement.classList.contains("timeflow-private-mode") || document.body.dataset.appMode === "private";
-    if (isPrivate) {
-      privateClock.insertAdjacentElement("afterend", shiftGrid);
-    } else if (originalShiftAnchor.parentNode) {
-      originalShiftAnchor.after(shiftGrid);
-    }
+    // Both modes use the same home layout and primary navigation. The
+    // organisation context changes data access, never the way a person moves
+    // through TimeFlow.
+    if (originalShiftAnchor.parentNode) originalShiftAnchor.after(shiftGrid);
+    privateClock.hidden = true;
+    privateNav.hidden = true;
   }
 
   privateNav.querySelectorAll("[data-private-target]").forEach((button) => button.addEventListener("click", () => {

@@ -223,3 +223,9 @@ html[data-tf-background] :is(h1,h2,h3,h4,strong,b,.label,.settings-group-title,.
 html[data-tf-background] :is(.brand-splash,.beta-access-gate){background:radial-gradient(circle at 50% 22%,color-mix(in srgb,var(--tf-accent) 46%,var(--tf-surface-elevated)),var(--tf-app-background))!important;color:var(--tf-text-primary)!important}
 html[data-tf-background] :is(.brand-splash-content,.beta-access-gate>div){border-color:var(--tf-border)!important;background:color-mix(in srgb,var(--tf-surface-elevated) 82%,transparent)!important;color:var(--tf-text-primary)!important;box-shadow:var(--tf-shadow)!important}
 html[data-tf-background] :is(dialog,.notification-center,.mode-onboarding,.settings-dialog,.clock-confirm-dialog,.private-import-dialog,.private-absence-dialog)::backdrop{background:color-mix(in srgb,var(--tf-app-background) 82%,black)!important}
+
+/* Private and team access share one navigation and one home layout. The
+   selected context changes only the available data, never the visual route. */
+.timeflow-private-mode .private-home-clock,.timeflow-private-mode .private-quick-nav{display:none!important}
+.timeflow-private-mode .bottom-nav{display:flex!important}
+.timeflow-private-mode :is(.for-you-card,.overview-card,.team-card,#profilePage .account-section,#profilePage .statistics-section,.profile-identity>small,.month-card .month-header>button,.month-card .month-open-statistics){display:revert!important}
