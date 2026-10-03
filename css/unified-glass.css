@@ -186,3 +186,40 @@ html[data-tf-background] .timeflow-private-mode :is(.bottom-nav,.private-quick-n
 html[data-tf-background] .timeflow-private-mode :is(.bottom-nav,.private-quick-nav) :is(button.active,.nav-item.active){color:var(--tf-text-primary)!important}
 html[data-tf-background] .timeflow-private-mode :is(input,select,textarea,.settings-hours-input,.profile-language-select select){color:var(--tf-text-primary)!important;background-color:var(--tf-control)!important}
 html[data-tf-background] .timeflow-private-mode :is(input,textarea)::placeholder{color:var(--tf-text-muted)!important}
+
+/* Palette contract: a chosen colour belongs to the entire beta, not only to
+   the private start page. This also covers the team views and windows that
+   are created dynamically after the initial page has loaded. */
+html[data-tf-background]{color-scheme:dark}
+html[data-tf-background="light"]{color-scheme:light}
+html[data-tf-background].timeflow-team-mode :is(.dashboard,.schedule-page,.clock-page,.chat-page,.profile-page,.settings-page){color:var(--tf-text-primary)!important}
+html[data-tf-background] :is(body,.app,.dashboard,.schedule-page,.clock-page,.chat-page,.profile-page,.settings-page){color:var(--tf-text-primary)!important}
+html[data-tf-background] :is(
+  .card,.list-card,.shift-card,.approval-card,.quick-actions-card,.team-card,.team-today,
+  .schedule-tabs,.date-switch,.week-list,.week-summary,.month-card,.month-overview,
+  .profile-hero,.profile-menu-card,.settings-card,.cloud-sync-card,.release-readiness-card,
+  .clock-focus-card,.clock-shift-card,.clock-summary article,.clock-note,.clock-state,
+  .notification-center,.support-dialog,.home-detail-dialog,.quick-action-dialog,
+  .private-home-dialog,.private-account-dialog,.profile-dialog,.settings-dialog,
+  .clock-confirm-dialog,.device-check-dialog,.beta-privacy-dialog,.private-initial-setup,
+  .mode-onboarding,.private-import-dialog,.private-absence-dialog,dialog
+){border-color:var(--tf-border)!important;background:linear-gradient(145deg,var(--tf-surface-inset),transparent),var(--tf-card-background)!important;box-shadow:inset 0 1px 0 var(--tf-surface-inset),var(--tf-shadow)!important;color:var(--tf-text-primary)!important}
+html[data-tf-background] :is(
+  .settings-list>label,.settings-toggle,.settings-select,.support-consent,.vacation-balance span,
+  .app-status-list>div,.device-check-list li,.home-detail-content article,.profile-permission-card,
+  .notification-item,.team-update,.list-row,.week-row,.private-imported-shifts article
+){border-color:var(--tf-divider)!important;background:color-mix(in srgb,var(--tf-surface) 72%,transparent)!important;color:var(--tf-text-primary)!important}
+html[data-tf-background] :is(input,select,textarea){border-color:var(--tf-border)!important;background:var(--tf-input-background)!important;color:var(--tf-text-primary)!important;accent-color:var(--tf-accent)}
+html[data-tf-background] :is(input,textarea)::placeholder{color:var(--tf-text-muted)!important}
+html[data-tf-background] :is(button,[role="button"]){border-color:var(--tf-border)!important;background:color-mix(in srgb,var(--tf-accent) 20%,var(--tf-control))!important;color:var(--tf-text-primary)!important}
+html[data-tf-background] :is(button,[role="button"]):is(:hover,:focus-visible){border-color:var(--tf-accent)!important;background:color-mix(in srgb,var(--tf-accent) 42%,var(--tf-control))!important;outline-color:var(--tf-accent)!important}
+html[data-tf-background] :is(button,[role="button"]) :is(span,small,strong,b,i){color:inherit!important}
+html[data-tf-background] :is(form>button[type="submit"],.main-nav .nav-icon,.clock-action-button,.clock-confirm-submit,.confirm-reset,.confirm-restore){border-color:color-mix(in srgb,var(--tf-accent) 72%,white)!important;background:linear-gradient(135deg,color-mix(in srgb,var(--tf-accent) 84%,white),var(--tf-accent))!important;color:var(--tf-accent-contrast)!important}
+html[data-tf-background] :is(.bottom-nav,.private-quick-nav){border-color:var(--tf-border)!important;background:var(--tf-navigation-background)!important;color:var(--tf-text-secondary)!important}
+html[data-tf-background] :is(.bottom-nav,.private-quick-nav) :is(button,.nav-item){background:transparent!important;color:var(--tf-text-secondary)!important}
+html[data-tf-background] :is(.bottom-nav,.private-quick-nav) :is(button.active,.nav-item.active){background:color-mix(in srgb,var(--tf-accent) 20%,transparent)!important;color:var(--tf-text-primary)!important}
+html[data-tf-background] :is(p,small,label,.subtitle,.settings-card-copy,.profile-menu-link,.week-row small,.notification-item p,.notification-item small,.team-update p){color:var(--tf-text-secondary)!important}
+html[data-tf-background] :is(h1,h2,h3,h4,strong,b,.label,.settings-group-title,.profile-identity p,.notification-item strong,.team-update strong){color:var(--tf-text-primary)!important}
+html[data-tf-background] :is(.brand-splash,.beta-access-gate){background:radial-gradient(circle at 50% 22%,color-mix(in srgb,var(--tf-accent) 46%,var(--tf-surface-elevated)),var(--tf-app-background))!important;color:var(--tf-text-primary)!important}
+html[data-tf-background] :is(.brand-splash-content,.beta-access-gate>div){border-color:var(--tf-border)!important;background:color-mix(in srgb,var(--tf-surface-elevated) 82%,transparent)!important;color:var(--tf-text-primary)!important;box-shadow:var(--tf-shadow)!important}
+html[data-tf-background] :is(dialog,.notification-center,.mode-onboarding,.settings-dialog,.clock-confirm-dialog,.private-import-dialog,.private-absence-dialog)::backdrop{background:color-mix(in srgb,var(--tf-app-background) 82%,black)!important}

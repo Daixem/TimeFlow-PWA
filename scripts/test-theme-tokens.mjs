@@ -27,4 +27,11 @@ for (const [component, token] of [
   if (!glass.includes(token)) throw new Error(`Zentraler ${component}-Token wird nicht verwendet: ${token}`);
 }
 
-console.log("Theme-Tokens: zentrale Surface-, Navigation-, Control- und Textwerte sind konsolidiert.");
+for (const selector of [
+  "Palette contract", ".timeflow-team-mode", ".brand-splash,.beta-access-gate",
+  "dialog,.notification-center", "button,[role=\"button\"]"
+]) {
+  if (!glass.includes(selector)) throw new Error(`Palette ist nicht für ${selector} vollständig verbunden.`);
+}
+
+console.log("Theme-Tokens: Palette, Fenster, Navigation, Controls und Texte sind zentral verbunden.");
