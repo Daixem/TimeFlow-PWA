@@ -172,6 +172,22 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function updateProfilePresentation(isPrivate) {
+    const eyebrow = document.querySelector("#profilePage .profile-eyebrow");
+    const profileCopy = document.querySelector("#profilePage .profile-page-header > div > p");
+    const status = document.querySelector("#profilePage .profile-status");
+    if (eyebrow) eyebrow.innerHTML = isPrivate
+      ? '<i class="fa-solid fa-user"></i> Einzelnutzung'
+      : '<i class="fa-solid fa-people-group"></i> Teamzugang';
+    if (profileCopy) profileCopy.textContent = isPrivate
+      ? "Deine persönlichen Einstellungen und lokalen Daten."
+      : "Deine persönlichen Einstellungen und dein Teamzugang.";
+    if (status) {
+      const workStatus = document.getElementById("workStatus")?.textContent.trim();
+      status.innerHTML = `<i></i> ${workStatus === "Im Dienst" ? "Im Dienst" : "Nicht im Dienst"}`;
+    }
+  }
+
   function applyMode(mode) {
     const isPrivate = mode === "private";
     document.documentElement.classList.toggle("timeflow-private-mode", isPrivate);
@@ -180,6 +196,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!isPrivate) removeTeamDemoContent();
     else document.getElementById("schedulePage")?.classList.remove("team-data-empty");
     updateTeamSupport(!isPrivate);
+    updateProfilePresentation(isPrivate);
 
     const quickActionsCard = document.querySelector(".quick-actions-card");
     if (quickActionsCard) quickActionsCard.hidden = isPrivate;
@@ -297,6 +314,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (identityMeta) delete identityMeta.dataset.teamHtml;
     applyMode(currentMode() || "team");
   });
+  document.addEventListener("timeflow:workday-updated", () => updateProfilePresentation(currentMode() === "private"));
   document.addEventListener("timeflow:open-settings", () => applyMode(currentMode() || "team"));
   document.addEventListener("timeflow:open-mode-selection", () => {
     if (!dialog.open) window.TimeFlowPlatform.dialog.open(dialog);

@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 const requiredSnippets = new Map([
   ["index.html", ["css/sprint11.css?v=__TIMEFLOW_BUILD__", "js/sprint11.js?v=__TIMEFLOW_BUILD__", "register(\"sw.js\""]],
   ["sw.js", ["timeflow-", "css/sprint11.css?v=__TIMEFLOW_BUILD__", "js/sprint11.js?v=__TIMEFLOW_BUILD__"]],
-  ["js/sprint11.js", ["data-select-mode=\"private\"", "data-select-mode=\"team\"", "timeflow-private-mode", "timeflow:mode-changed"]],
+  ["js/sprint11.js", ["data-select-mode=\"private\"", "data-select-mode=\"team\"", "timeflow-private-mode", "timeflow:mode-changed", "Teamzugang", "timeflow:workday-updated"]],
   ["js/sprint9.js", ["function markReady()", "timeflow:sync-ready"]],
   ["js/sprint6.js", ["function privateMode()", "Persönlich erfasst", "action.makeMessage && !privateMode()"]],
   ["js/sprint10.js", ["function refreshCurrentSchedule()", "aria-current\", \"date"]],
