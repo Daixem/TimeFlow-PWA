@@ -76,9 +76,9 @@
    affordance; only the surrounding preference rows become visually quiet. */
 .timeflow-private-mode .personalization-settings-card>header{border-bottom:0!important;padding-bottom:10px!important}
 .timeflow-private-mode .personalization-settings-card :is(>.settings-list,.settings-accordion-body>.settings-list){display:grid;gap:18px;padding:2px 14px 16px!important}
-.timeflow-private-mode .personalization-settings-card :is(>.settings-list,.settings-accordion-body>.settings-list)>:is(.settings-select,.custom-background-setting){min-height:0!important;padding:0!important;border:0!important;background:transparent!important;background-image:none!important;box-shadow:none!important}
-.timeflow-private-mode .personalization-settings-card .custom-background-setting{color:inherit}
-.timeflow-private-mode .personalization-settings-card .custom-background-setting small{color:inherit;opacity:.66}
+.timeflow-private-mode .personalization-settings-card :is(>.settings-list,.settings-accordion-body>.settings-list)>:is(.settings-select,.custom-background-setting,.custom-color-setting){min-height:0!important;padding:0!important;border:0!important;background:transparent!important;background-image:none!important;box-shadow:none!important}
+.timeflow-private-mode .personalization-settings-card .custom-background-setting,.custom-color-setting{color:inherit}
+.timeflow-private-mode .personalization-settings-card :is(.custom-background-setting,.custom-color-setting) small{color:inherit;opacity:.66}
 
 @media(max-width:600px){
   .timeflow-private-mode .personalization-settings-card :is(>.settings-list,.settings-accordion-body>.settings-list){gap:16px;padding-bottom:14px!important}
@@ -171,12 +171,12 @@ html[data-tf-background] .timeflow-private-mode :is(
 ){color:var(--tf-text-primary)!important}
 html[data-tf-background] .timeflow-private-mode :is(
   p,small,label,.subtitle,.settings-card-copy,.profile-menu-link,.week-row small,
-  .private-home-clock small,.private-home-dialog header p,.custom-background-setting small,
+  .private-home-clock small,.private-home-dialog header p,.custom-background-setting small,.custom-color-setting small,
   .work-protection-card>p,.profile-language-select small
 ){color:var(--tf-text-secondary)!important}
 html[data-tf-background] .timeflow-private-mode :is(
   .label,.settings-group-title,.settings-chevron,.private-home-dialog header small,
-  .private-home-clock header small,.custom-background-setting>span>small
+  .private-home-clock header small,.custom-background-setting>span>small,.custom-color-setting>span>small
 ){color:var(--tf-text-muted)!important}
 html[data-tf-background] .timeflow-private-mode :is(
   h1,h2,h3,h4,strong,b,.settings-select>span,.profile-language-select>span,.week-row b,

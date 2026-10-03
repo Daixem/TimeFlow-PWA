@@ -8,6 +8,7 @@
   const BACKGROUND_STORE = "assets";
   const BACKGROUND_MAX_BYTES = 30 * 1024 * 1024;
   const BACKGROUND_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+  const CUSTOM_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
   const storage = () => window.TimeFlowPlatform?.storage || { getItem: () => null, setItem: () => undefined };
 
   function read(key, fallback = {}) {
@@ -60,6 +61,74 @@
     await saveBackgroundOnDevice(value);
     write(CUSTOM_BACKGROUND_KEY, value || { cleared: true, updatedAt: new Date().toISOString() });
     document.dispatchEvent(new CustomEvent("timeflow:settings-updated", { detail: { customBackground: Boolean(value?.dataUrl) } }));
+  }
+
+  function colourDetails(value) {
+    if (!CUSTOM_COLOR_PATTERN.test(String(value || ""))) return null;
+    const hex = String(value).toLowerCase();
+    const rgb = [1, 3, 5].map((offset) => Number.parseInt(hex.slice(offset, offset + 2), 16));
+    const linear = rgb.map((channel) => {
+      const value = channel / 255;
+      return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+    });
+    return { hex, rgb, luminance: 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2] };
+  }
+
+  function applyCustomColor(value) {
+    const root = document.documentElement;
+    const colour = colourDetails(value);
+    if (!colour) {
+      delete root.dataset.tfCustomColor;
+      ["--tf-custom-color", "--tf-custom-rgb", "--tf-text-primary", "--tf-text-secondary", "--tf-text-muted", "--tf-accent-contrast"].forEach((name) => root.style.removeProperty(name));
+      return false;
+    }
+    const darkText = colour.luminance > 0.45;
+    root.dataset.tfCustomColor = "true";
+    root.style.setProperty("--tf-custom-color", colour.hex);
+    root.style.setProperty("--tf-custom-rgb", colour.rgb.join(" "));
+    root.style.setProperty("--tf-text-primary", darkText ? "#092746" : "#f5f9ff");
+    root.style.setProperty("--tf-text-secondary", darkText ? "#234765" : "#c8d8e9");
+    root.style.setProperty("--tf-text-muted", darkText ? "#42657f" : "#9fb7cf");
+    root.style.setProperty("--tf-accent-contrast", darkText ? "#092746" : "#ffffff");
+    return true;
+  }
+
+  function customColorValue(settings = read(SETTINGS_KEY)) {
+    return colourDetails(settings.customBackgroundColor)?.hex || "#001c3b";
+  }
+
+  function updateCustomColorControls(settings = read(SETTINGS_KEY)) {
+    const active = Boolean(colourDetails(settings.customBackgroundColor)) && settings.appBackground === "custom";
+    const input = document.querySelector("[data-custom-background-color]");
+    if (input) input.value = customColorValue(settings);
+    const value = document.querySelector("[data-custom-color-value]");
+    if (value) value.textContent = customColorValue(settings).toUpperCase();
+    const reset = document.querySelector("[data-reset-custom-background-color]");
+    if (reset) reset.hidden = !active;
+  }
+
+  function installCustomColorPicker() {
+    const input = document.querySelector("[data-custom-background-color]");
+    if (!input || input.dataset.ready) return;
+    input.dataset.ready = "true";
+    updateCustomColorControls();
+    input.addEventListener("input", () => {
+      applyCustomColor(input.value);
+      document.documentElement.dataset.tfBackground = "custom";
+      const value = document.querySelector("[data-custom-color-value]");
+      if (value) value.textContent = input.value.toUpperCase();
+    });
+    input.addEventListener("change", async () => {
+      await setBackground(null);
+      const settings = saveSettings({ appBackground: "custom", customBackgroundColor: input.value });
+      updateCustomColorControls(settings);
+      notify("Eigene Hintergrundfarbe wurde gespeichert.");
+    });
+    document.querySelector("[data-reset-custom-background-color]")?.addEventListener("click", () => {
+      const settings = saveSettings({ appBackground: "midnight", customBackgroundColor: "" });
+      updateCustomColorControls(settings);
+      notify("Hintergrund wurde auf Mitternacht zurückgesetzt.");
+    });
   }
 
   function applyCustomBackground(asset) {
@@ -153,7 +222,10 @@
     root.style.setProperty("--tf-font-scale", String(scale));
     root.dataset.tfFontSize = scale >= 1.2 ? "expanded" : scale >= 1.1 ? "large" : "normal";
     root.dataset.tfFont = ["inter", "system", "segoe", "aptos", "calibri", "cambria", "times", "arial", "rounded", "serif", "verdana", "tahoma", "trebuchet", "century", "courier", "mono"].includes(settings.fontFamily) ? settings.fontFamily : "inter";
-    root.dataset.tfBackground = ["midnight", "ocean", "teal", "violet", "graphite", "forest", "sunset", "rose", "light"].includes(settings.appBackground) ? settings.appBackground : "midnight";
+    const hasCustomColor = applyCustomColor(settings.customBackgroundColor);
+    root.dataset.tfBackground = hasCustomColor && settings.appBackground === "custom"
+      ? "custom"
+      : ["midnight", "ocean", "teal", "violet", "graphite", "forest", "sunset", "rose", "light"].includes(settings.appBackground) ? settings.appBackground : "midnight";
   }
 
   function notify(message) {
@@ -194,6 +266,7 @@
         <header><span class="settings-card-icon violet"><i class="fa-solid fa-palette"></i></span><div><small>Darstellung</small><h2 id="personalizationTitle">Persönliches Erscheinungsbild</h2></div></header>
         <div class="settings-list">
           <label class="settings-select"><span><strong>Hintergrund</strong><small>Farbstimmung der gesamten App</small></span><select data-personal-setting="appBackground"><option value="midnight">Mitternacht</option><option value="ocean">Ozeanblau</option><option value="teal">Petrol</option><option value="violet">Violett</option><option value="graphite">Graphit</option><option value="forest">Waldgrün</option><option value="sunset">Sonnenuntergang</option><option value="rose">Rosé</option><option value="light">Hell</option></select></label>
+          <div class="custom-color-setting"><span><strong>Eigene Hintergrundfarbe</strong><small>Wähle eine Farbe aus dem Farbrad. Schrift, Fenster und Schaltflächen passen sich automatisch an.</small></span><div class="custom-color-actions"><label class="custom-color-pick"><input type="color" value="${customColorValue(settings)}" data-custom-background-color aria-label="Eigene Hintergrundfarbe auswählen"><i class="fa-solid fa-droplet"></i><span>Farbe auswählen</span></label><output data-custom-color-value>${customColorValue(settings).toUpperCase()}</output><button type="button" data-reset-custom-background-color hidden>Voreinstellung verwenden</button></div></div>
           <div class="custom-background-setting" data-custom-background-preview><span><strong>Eigenes Hintergrundbild</strong><small>Mit deinem Profil verbunden. Fenster und Kontrast passen sich automatisch an.</small></span><div class="custom-background-actions"><label class="custom-background-pick"><i class="fa-solid fa-image"></i><span>Bild auswählen</span><input type="file" accept="image/jpeg,image/png,image/webp" data-custom-background-input></label><button type="button" data-remove-custom-background hidden><i class="fa-solid fa-trash-can"></i><span>Entfernen</span></button></div><small class="custom-background-limit">Unterstützte Bilder: JPG, PNG, WebP · Max. 30 MB<br>Für eine schnelle Synchronisierung wird eine optimierte Hintergrundversion gespeichert.</small></div>
           <label class="settings-select"><span><strong>Schriftart</strong><small>Für alle Ansichten</small></span><select data-personal-setting="fontFamily"><option value="inter">Inter</option><option value="system">Systemschrift</option><option value="segoe">Segoe UI</option><option value="aptos">Aptos</option><option value="calibri">Calibri</option><option value="cambria">Cambria</option><option value="times">Times New Roman</option><option value="arial">Arial</option><option value="verdana">Verdana</option><option value="tahoma">Tahoma</option><option value="trebuchet">Trebuchet MS</option><option value="century">Century Gothic</option><option value="courier">Courier New</option><option value="rounded">Abgerundet</option><option value="serif">Serif</option><option value="mono">Monospace</option></select></label>
           <label class="settings-select"><span><strong>Schriftgröße</strong><small>Auch für Karten und Dialoge</small></span><select data-personal-setting="fontScale"><option value="1">Normal</option><option value="1.1">Groß</option><option value="1.2">Sehr groß</option><option value="1.3">Maximal</option></select></label>
@@ -207,6 +280,7 @@
         notify("Darstellung wurde gespeichert.");
       });
     });
+    installCustomColorPicker();
     installBackgroundPicker();
     document.querySelector("[data-annual-vacation]")?.addEventListener("change", (event) => {
       const annualVacationDays = Math.max(0, Math.round(Number(event.target.value || 0)));
