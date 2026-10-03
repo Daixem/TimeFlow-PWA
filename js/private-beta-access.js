@@ -2,12 +2,22 @@
   "use strict";
   if (!/\.chatgpt\.site$/i.test(location.hostname)) return;
   document.documentElement.classList.add("beta-access-pending");
+  let finishAccessCheck;
+  window.TimeFlowBetaAccessReady = new Promise((resolve) => { finishAccessCheck = resolve; });
+  const originalFetch = window.fetch.bind(window);
+  window.fetch = (input, options) => {
+    const requestUrl = new URL(typeof input === "string" ? input : input.url, location.href);
+    if (requestUrl.origin === location.origin && requestUrl.pathname.startsWith("/api/") && !requestUrl.pathname.startsWith("/api/beta/")) {
+      return window.TimeFlowBetaAccessReady.then(() => originalFetch(input, options));
+    }
+    return originalFetch(input, options);
+  };
   const escapeHtml = (value) => String(value || "").replace(/[&<>"']/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]);
   const request = async (path, options = {}) => { const response = await fetch(new URL(path, document.baseURI), { cache: "no-store", headers: { Accept: "application/json", ...(options.body ? { "Content-Type": "application/json" } : {}) }, ...options }); const result = await response.json().catch(() => ({})); return { response, result }; };
   document.addEventListener("DOMContentLoaded", async () => {
     document.body.insertAdjacentHTML("afterbegin", `<section class="beta-access-gate" id="betaAccessGate" aria-live="polite"><div><span><i class="fa-solid fa-user-shield"></i></span><small>TIMEFLOW EINZEL-BETA</small><h1>Zugang wird geprüft</h1><p>Bitte einen Moment warten.</p><section data-beta-gate-action></section></div></section>`);
     const gate = document.getElementById("betaAccessGate"); const title = gate.querySelector("h1"); const copy = gate.querySelector("p"); const action = gate.querySelector("[data-beta-gate-action]"); const token = new URLSearchParams(location.search).get("invite");
-    const unlock = (access) => { gate.remove(); document.documentElement.classList.remove("beta-access-pending"); window.TimeFlowBetaAccess = access; document.dispatchEvent(new CustomEvent("timeflow:beta-access-ready", { detail: access })); if (access.admin) installAdmin(); };
+    const unlock = (access) => { gate.remove(); document.documentElement.classList.remove("beta-access-pending"); window.TimeFlowBetaAccess = access; finishAccessCheck(access); document.dispatchEvent(new CustomEvent("timeflow:beta-access-ready", { detail: access })); if (access.admin) installAdmin(); };
     async function installAdmin() {
       const settings = document.querySelector("#settingsPage .settings-layout"); if (!settings || document.querySelector(".beta-invite-admin")) return window.setTimeout(installAdmin, 300);
       settings.insertAdjacentHTML("afterbegin", `<section class="settings-card beta-invite-admin"><header><span class="settings-card-icon blue"><i class="fa-solid fa-user-plus"></i></span><div><small>Betatest</small><h2>Person einladen</h2></div></header><p class="settings-card-copy">Erstelle pro Person einen einmaligen Link. Nach der Anmeldung wird er fest an ihr Konto gebunden.</p><form><label>Name oder Bezeichnung<input name="label" maxlength="80" required placeholder="z. B. Anna – iPhone-Test"></label><label>Gültigkeit<select name="days"><option value="3">3 Tage</option><option value="7" selected>7 Tage</option><option value="14">14 Tage</option><option value="30">30 Tage</option></select></label><button type="submit"><i class="fa-solid fa-link"></i> Einladungslink erstellen</button></form><div data-beta-invite-result hidden><input readonly><button type="button" data-copy-invite>Link kopieren</button><button type="button" data-share-invite>Teilen</button></div></section><section class="settings-card team-invite-admin"><header><span class="settings-card-icon mint"><i class="fa-solid fa-people-group"></i></span><div><small>Team</small><h2>Person zum Team einladen</h2></div></header><p class="settings-card-copy">Die Einladung gilt nur für diese E-Mail-Adresse. Sie schaltet den Teamzugang frei und ist keine Einzelnutzungs-Einladung.</p><form><label>Teamname<input name="teamName" maxlength="80" required placeholder="z. B. Praxis Benz"></label><label>E-Mail-Adresse<input name="email" type="email" maxlength="254" required placeholder="name@beispiel.de"></label><button type="submit"><i class="fa-solid fa-user-plus"></i> Zum Team einladen</button></form><div data-team-invite-result hidden><p></p><button type="button" data-share-team-invite>Einladung teilen</button></div></section>`);
@@ -21,7 +31,7 @@
     }
     const access = await request("api/beta/access");
     if (access.response.ok && access.result.allowed) { unlock(access.result); return; }
-    if (access.response.status === 401) { title.textContent = "Anmelden, um fortzufahren"; copy.textContent = token ? "Dieser persönliche Einladungslink wird nach der Anmeldung an dein Konto gebunden." : "Für TimeFlow benötigst du einen persönlichen Einladungslink."; const returnTo = `${location.pathname}${location.search}`; action.innerHTML = `<a href="/signin-with-chatgpt?return_to=${encodeURIComponent(returnTo)}" target="_top"><i class="fa-solid fa-right-to-bracket"></i> Sicher anmelden</a>`; return; }
+    if (access.response.status === 401) { finishAccessCheck({ allowed: false }); title.textContent = "Anmelden, um fortzufahren"; copy.textContent = token ? "Dieser persönliche Einladungslink wird nach der Anmeldung an dein Konto gebunden." : "Für TimeFlow benötigst du einen persönlichen Einladungslink."; const returnTo = `${location.pathname}${location.search}`; action.innerHTML = `<a href="/signin-with-chatgpt?return_to=${encodeURIComponent(returnTo)}" target="_top"><i class="fa-solid fa-right-to-bracket"></i> Sicher anmelden</a>`; return; }
     if (token) {
       const invitation = await request(`api/beta/invite?token=${encodeURIComponent(token)}`);
       if (invitation.response.ok && invitation.result.valid) {
@@ -50,6 +60,7 @@
         return;
       }
     }
+    finishAccessCheck({ allowed: false });
     title.textContent = "Kein Beta-Zugang"; copy.textContent = "Dieser Link ist ungültig, abgelaufen oder wurde bereits verwendet. Bitte fordere einen neuen persönlichen Link an.";
   });
 }());
