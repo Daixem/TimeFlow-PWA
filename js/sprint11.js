@@ -156,6 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (conversations) conversations.innerHTML = '<p class="team-empty-state"><i class="fa-regular fa-comments"></i><span>Noch keine echten Team-Chats vorhanden.</span></p>';
       chat.querySelector(".chat-thread")?.setAttribute("hidden", "");
       chat.querySelector(".chat-demo-note")?.remove();
+      chat.querySelector(".new-chat-dialog")?.remove();
     }
   }
 

@@ -152,6 +152,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const messageList = document.getElementById("messageList");
   const chatDialog = document.getElementById("newChatDialog");
 
+  function clearPlatformDemoChat() {
+    chatPage.querySelector(".inbox-highlight")?.remove();
+    chatPage.querySelector(".conversation-list")?.replaceChildren();
+    chatPage.querySelector(".chat-thread")?.setAttribute("hidden", "");
+    chatPage.querySelector(".chat-demo-note")?.remove();
+    chatDialog?.remove();
+  }
+
   const conversations = {
     restaurant: {
       name: "Team Restaurant",
@@ -476,6 +484,9 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("chatSearch").focus();
   });
   chatPage.querySelector("[data-thread-info]")?.addEventListener("click", () => notify("Team Restaurant · 8 Mitglieder · Benachrichtigungen aktiv"));
+  document.addEventListener("timeflow:session-ready", (event) => {
+    if (event.detail?.source === "platform") clearPlatformDemoChat();
+  });
   chatPage.querySelector("[data-shift-details]")?.addEventListener("click", () => notify("Frühschicht: Freitag, 31. Juli · 07:30 – 15:00 Uhr · Restaurant"));
 
   chatPage.querySelector("[data-new-chat]")?.addEventListener("click", () => {

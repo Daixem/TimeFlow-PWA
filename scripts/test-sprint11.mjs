@@ -41,3 +41,7 @@ const privateHome = await readFile("js/private-home.js", "utf8");
 const privateHomeCss = await readFile("css/private-home.css", "utf8");
 if (!privateHome.includes("data-team-only") || !privateHome.includes("Teamchat")) throw new Error("Team-Erweiterung der Einzelnutzungs-Navigation fehlt.");
 if (!privateHomeCss.includes(":is(.timeflow-private-mode,.timeflow-team-mode)")) throw new Error("Teammodus verwendet nicht die bewährte Einzelnutzungs-Oberfläche.");
+const auth = await readFile("js/sprint8.js", "utf8");
+const chat = await readFile("js/sprint3.js", "utf8");
+if (!auth.includes("fictionalIds") || !auth.includes("Noch keine echten Teammitglieder verbunden")) throw new Error("Fiktive Teammitglieder werden im echten Teamzugang nicht ausgeblendet.");
+if (!chat.includes("clearPlatformDemoChat") || !chat.includes("timeflow:session-ready")) throw new Error("Beta-Chatdaten werden im echten Teamzugang nicht ausgeblendet.");

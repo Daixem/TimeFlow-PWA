@@ -197,7 +197,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function renderManagement() {
     managementList.replaceChildren();
-    users.forEach((user) => {
+    const fictionalIds = new Set(["tf-2048", "tf-1056", "tf-1001"]);
+    const visibleUsers = session?.source === "platform"
+      ? users.filter((user) => !fictionalIds.has(String(user.id)))
+      : users;
+    if (!visibleUsers.length) {
+      const empty = document.createElement("p");
+      empty.className = "team-empty-state";
+      empty.innerHTML = '<i class="fa-solid fa-users-slash"></i><span>Noch keine echten Teammitglieder verbunden.</span>';
+      managementList.append(empty);
+      document.getElementById("activeUserCount").textContent = "0";
+      managementDialog.querySelector("[data-reset-users]").hidden = session?.source === "platform";
+      return;
+    }
+    managementDialog.querySelector("[data-reset-users]").hidden = session?.source === "platform";
+    visibleUsers.forEach((user) => {
       const article = document.createElement("article");
       article.className = user.active ? "" : "is-inactive";
       article.dataset.userId = user.id;
@@ -208,7 +222,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <label class="managed-user-toggle"><span>${user.active ? "Aktiv" : "Inaktiv"}</span><input type="checkbox" data-user-active${user.active ? " checked" : ""}><i></i></label>`;
       managementList.append(article);
     });
-    document.getElementById("activeUserCount").textContent = String(users.filter((user) => user.active).length);
+    document.getElementById("activeUserCount").textContent = String(visibleUsers.filter((user) => user.active).length);
   }
 
   function openManagement() {
