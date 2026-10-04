@@ -38,40 +38,40 @@ html[data-tf-background="custom"] { --tf-app-background:radial-gradient(circle a
 html,
 body { min-height:100%; background:var(--tf-app-background)!important; }
 
-.timeflow-private-mode :is(select,input,textarea),
-.timeflow-private-mode :is(.settings-select,.profile-language-select) select {
+:is(.timeflow-private-mode,.timeflow-team-mode) :is(select,input,textarea),
+:is(.timeflow-private-mode,.timeflow-team-mode) :is(.settings-select,.profile-language-select) select {
   border-color: var(--tf-glass-border) !important;
   background-color: var(--tf-control) !important;
   accent-color: var(--tf-accent);
 }
-.timeflow-private-mode :is(button.active,[aria-selected="true"],form > button) { background-color: var(--tf-accent) !important; }
-html[data-tf-background="light"] .timeflow-private-mode :is(select,input,textarea) { color:#092746 !important; }
+:is(.timeflow-private-mode,.timeflow-team-mode) :is(button.active,[aria-selected="true"],form > button) { background-color: var(--tf-accent) !important; }
+html[data-tf-background="light"] :is(.timeflow-private-mode,.timeflow-team-mode) :is(select,input,textarea) { color:#092746 !important; }
 
-.timeflow-private-mode :is(.card,.list-card,.shift-card,.private-home-clock,.profile-hero,.profile-menu-card,.settings-card,.cloud-sync-card,.release-readiness-card,.private-import-panel,.private-account-dialog,dialog) {
+:is(.timeflow-private-mode,.timeflow-team-mode) :is(.card,.list-card,.shift-card,.private-home-clock,.profile-hero,.profile-menu-card,.settings-card,.cloud-sync-card,.release-readiness-card,.private-import-panel,.private-account-dialog,dialog) {
   border-color: var(--tf-glass-border) !important;
   background-color: var(--tf-glass) !important;
   background-image: linear-gradient(135deg, rgba(255,255,255,.045), rgba(255,255,255,.008)) !important;
   backdrop-filter: blur(18px) saturate(120%);
   -webkit-backdrop-filter: blur(18px) saturate(120%);
 }
-.timeflow-private-mode :is(.profile-hero,.settings-card,.private-home-clock) { background-color: var(--tf-glass-strong) !important; }
+:is(.timeflow-private-mode,.timeflow-team-mode) :is(.profile-hero,.settings-card,.private-home-clock) { background-color: var(--tf-glass-strong) !important; }
 
-html[data-tf-font-size="expanded"] .timeflow-private-mode :is(.profile-hero,.cloud-sync-card,.private-home-summary,.settings-list>label,.week-row) {
+html[data-tf-font-size="expanded"] :is(.timeflow-private-mode,.timeflow-team-mode) :is(.profile-hero,.cloud-sync-card,.private-home-summary,.settings-list>label,.week-row) {
   grid-template-columns: 1fr !important;
   height: auto !important;
   min-height: 0 !important;
 }
-html[data-tf-font-size="expanded"] .timeflow-private-mode :is(.profile-identity h2,.cloud-sync-copy strong,.cloud-sync-copy p,.week-row strong) {
+html[data-tf-font-size="expanded"] :is(.timeflow-private-mode,.timeflow-team-mode) :is(.profile-identity h2,.cloud-sync-copy strong,.cloud-sync-copy p,.week-row strong) {
   overflow: visible;
   white-space: normal;
   text-overflow: clip;
 }
-html[data-tf-font-size="expanded"] .timeflow-private-mode .profile-avatar-large { justify-self: start; }
-html[data-tf-font-size="expanded"] .timeflow-private-mode .edit-profile-button { grid-column: 1; width: 100%; }
-html[data-tf-font-size="expanded"] .timeflow-private-mode .private-home-summary { gap: 10px; }
-html[data-tf-font-size="expanded"] .timeflow-private-mode .private-home-summary > span { width: 100%; }
+html[data-tf-font-size="expanded"] :is(.timeflow-private-mode,.timeflow-team-mode) .profile-avatar-large { justify-self: start; }
+html[data-tf-font-size="expanded"] :is(.timeflow-private-mode,.timeflow-team-mode) .edit-profile-button { grid-column: 1; width: 100%; }
+html[data-tf-font-size="expanded"] :is(.timeflow-private-mode,.timeflow-team-mode) .private-home-summary { gap: 10px; }
+html[data-tf-font-size="expanded"] :is(.timeflow-private-mode,.timeflow-team-mode) .private-home-summary > span { width: 100%; }
 
-.timeflow-private-mode .profile-settings-shortcut { display: none !important; }
+:is(.timeflow-private-mode,.timeflow-team-mode) .profile-settings-shortcut { display: none !important; }
 .work-protection-card { margin-top: 14px; padding: 14px; border: 1px solid var(--tf-glass-border); border-radius: 16px; background: var(--tf-glass); }
 .work-protection-card h3 { margin: 0 0 5px; font-size: .9rem; }
 .work-protection-card > p { margin: 0; color: #91a9c4; font-size: .72rem; line-height: 1.45; }

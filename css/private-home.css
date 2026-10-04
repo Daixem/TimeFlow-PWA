@@ -3,10 +3,10 @@
 .private-home-account,
 .private-quick-nav { display: none; }
 
-.timeflow-private-mode .for-you-card,
-.timeflow-private-mode .overview-card { display: none !important; }
+:is(.timeflow-private-mode,.timeflow-team-mode) .for-you-card,
+:is(.timeflow-private-mode,.timeflow-team-mode) .overview-card { display: none !important; }
 
-.timeflow-private-mode .dashboard > .stamp-card {
+:is(.timeflow-private-mode,.timeflow-team-mode) .dashboard > .stamp-card {
   grid-column: 1 / -1;
   justify-self: center;
   width: 138px;
@@ -21,14 +21,14 @@
   background: radial-gradient(circle at 35% 25%, color-mix(in srgb,var(--tf-accent) 72%,white), var(--tf-accent) 66%, color-mix(in srgb,var(--tf-accent) 68%,black));
   box-shadow: 0 0 0 9px color-mix(in srgb,var(--tf-accent) 12%,transparent), 0 15px 36px color-mix(in srgb,var(--tf-accent) 38%,transparent);
 }
-.timeflow-private-mode .dashboard > .stamp-card.is-working { background: radial-gradient(circle at 35% 25%, #45da8a, #1bae61 66%, #118044); }
-.timeflow-private-mode .stamp-card .stamp-left { flex-direction: column; gap: 6px; }
-.timeflow-private-mode .stamp-card .stamp-icon { width: 44px; height: 44px; font-size: 1rem; }
-.timeflow-private-mode .stamp-card .stamp-left strong { font-size: .9rem; }
-.timeflow-private-mode .stamp-card #clockHint { display: block; max-width: 106px; margin: 0; color: rgba(236,245,255,.78); font-size: .68rem; line-height: 1.3; }
-.timeflow-private-mode .stamp-card .stamp-arrow { display: none; }
+:is(.timeflow-private-mode,.timeflow-team-mode) .dashboard > .stamp-card.is-working { background: radial-gradient(circle at 35% 25%, #45da8a, #1bae61 66%, #118044); }
+:is(.timeflow-private-mode,.timeflow-team-mode) .stamp-card .stamp-left { flex-direction: column; gap: 6px; }
+:is(.timeflow-private-mode,.timeflow-team-mode) .stamp-card .stamp-icon { width: 44px; height: 44px; font-size: 1rem; }
+:is(.timeflow-private-mode,.timeflow-team-mode) .stamp-card .stamp-left strong { font-size: .9rem; }
+:is(.timeflow-private-mode,.timeflow-team-mode) .stamp-card #clockHint { display: block; max-width: 106px; margin: 0; color: rgba(236,245,255,.78); font-size: .68rem; line-height: 1.3; }
+:is(.timeflow-private-mode,.timeflow-team-mode) .stamp-card .stamp-arrow { display: none; }
 
-.timeflow-private-mode .private-home-clock { display: grid; grid-column: 1 / -1; gap: 11px; width: min(100%, 900px); justify-self: center; padding: 16px; border: 1px solid var(--tf-glass-border); border-radius: 18px; background: var(--tf-glass); }
+:is(.timeflow-private-mode,.timeflow-team-mode) .private-home-clock { display: grid; grid-column: 1 / -1; gap: 11px; width: min(100%, 900px); justify-self: center; padding: 16px; border: 1px solid var(--tf-glass-border); border-radius: 18px; background: var(--tf-glass); }
 .private-home-clock header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .private-home-clock header > div { display: grid; gap: 4px; }
 .private-home-clock small { color: #8299b5; font-size: clamp(.66rem,1.1vw,.74rem); font-weight: 750; letter-spacing: .04em; }
@@ -47,10 +47,10 @@
 .private-home-summary span > span { display: grid; gap: 3px; min-width: 0; }
 .private-home-summary b { overflow: hidden; font-size: clamp(.78rem,1.2vw,.9rem); text-overflow: ellipsis; white-space: nowrap; }
 
-.timeflow-private-mode .dashboard > .shift-grid,
-.timeflow-private-mode .dashboard > .month-card { grid-column: 1 / -1; width: min(100%, 980px); justify-self: center; }
+:is(.timeflow-private-mode,.timeflow-team-mode) .dashboard > .shift-grid,
+:is(.timeflow-private-mode,.timeflow-team-mode) .dashboard > .month-card { grid-column: 1 / -1; width: min(100%, 980px); justify-self: center; }
 
-.timeflow-private-mode .private-home-account { position: relative; display: grid; grid-template-columns: minmax(150px,1.35fr) repeat(3,minmax(80px,1fr)) 18px; gap: 10px; align-items: center; width: 100%; margin-top: 13px; padding: 12px; border: 1px solid rgba(88,142,214,.16); border-radius: 12px; color: #e8f1fc; background: rgba(4,35,69,.62); text-align: left; }
+:is(.timeflow-private-mode,.timeflow-team-mode) .private-home-account { position: relative; display: grid; grid-template-columns: minmax(150px,1.35fr) repeat(3,minmax(80px,1fr)) 18px; gap: 10px; align-items: center; width: 100%; margin-top: 13px; padding: 12px; border: 1px solid rgba(88,142,214,.16); border-radius: 12px; color: #e8f1fc; background: rgba(4,35,69,.62); text-align: left; }
 .private-home-account > span { display: grid; gap: 3px; min-width: 0; }
 .private-home-account > span + span { padding-left: 10px; border-left: 1px solid rgba(88,142,214,.14); }
 .private-home-account-title { grid-template-columns: 32px 1fr; align-items: center; }
@@ -61,8 +61,8 @@
 .private-home-account .positive { color: #62dcb0; }
 .private-home-account > i:last-child { color: #7391b3; }
 
-.timeflow-private-mode .bottom-nav { display: none !important; }
-.timeflow-private-mode .private-quick-nav { position: fixed; z-index: 8500; left: 50%; bottom: max(14px,env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(4,1fr); width: min(94vw,500px); padding: 7px; transform: translateX(-50%); border: 1px solid var(--tf-glass-border); border-radius: 22px; background: var(--tf-glass-strong); box-shadow: 0 18px 50px rgba(0,3,16,.48); backdrop-filter: blur(18px); }
+:is(.timeflow-private-mode,.timeflow-team-mode) .bottom-nav { display: none !important; }
+:is(.timeflow-private-mode,.timeflow-team-mode) .private-quick-nav { position: fixed; z-index: 8500; left: 50%; bottom: max(14px,env(safe-area-inset-bottom)); display: grid; grid-template-columns: repeat(4,1fr); width: min(94vw,500px); padding: 7px; transform: translateX(-50%); border: 1px solid var(--tf-glass-border); border-radius: 22px; background: var(--tf-glass-strong); box-shadow: 0 18px 50px rgba(0,3,16,.48); backdrop-filter: blur(18px); }
 .private-quick-nav button { display: grid; gap: 4px; justify-items: center; min-height: 48px; padding: 7px 5px; border: 0; border-radius: 14px; color: var(--tf-text-secondary); background: transparent; font: 700 .68rem Inter,sans-serif; }
 .private-quick-nav button i { font-size: 1rem; }
 .private-quick-nav button.active { color: var(--tf-text-primary); background: color-mix(in srgb,var(--tf-accent) 22%,transparent); }
@@ -84,32 +84,32 @@
 .private-home-dialog section strong { font-size: .84rem; }
 
 @media (min-width:1100px) {
-  .timeflow-private-mode .dashboard { gap: 20px; }
-  .timeflow-private-mode .private-home-clock,
-  .timeflow-private-mode .dashboard > .shift-grid,
-  .timeflow-private-mode .dashboard > .month-card { width: min(100%,980px); }
+  :is(.timeflow-private-mode,.timeflow-team-mode) .dashboard { gap: 20px; }
+  :is(.timeflow-private-mode,.timeflow-team-mode) .private-home-clock,
+  :is(.timeflow-private-mode,.timeflow-team-mode) .dashboard > .shift-grid,
+  :is(.timeflow-private-mode,.timeflow-team-mode) .dashboard > .month-card { width: min(100%,980px); }
 }
 @media (max-width:599px) {
-  .timeflow-private-mode .header { align-items: flex-start; gap: 10px; }
-  .timeflow-private-mode .header-left { flex: 1 1 auto; min-width: 0; }
-  .timeflow-private-mode .header-left h1 { font-size: clamp(1.12rem,6vw,1.35rem); white-space: normal; overflow-wrap: anywhere; }
-  .timeflow-private-mode .header-right { flex: 0 0 auto; gap: 7px; }
-  .timeflow-private-mode .top-grid { grid-template-columns: 1fr; }
-  .timeflow-private-mode .info-card { border-right: 0 !important; border-bottom: 1px solid rgba(84,131,181,.18) !important; }
-  .timeflow-private-mode .motivation-card p { padding-left: 0; padding-right: 24px; font-size: .91rem; }
+  :is(.timeflow-private-mode,.timeflow-team-mode) .header { align-items: flex-start; gap: 10px; }
+  :is(.timeflow-private-mode,.timeflow-team-mode) .header-left { flex: 1 1 auto; min-width: 0; }
+  :is(.timeflow-private-mode,.timeflow-team-mode) .header-left h1 { font-size: clamp(1.12rem,6vw,1.35rem); white-space: normal; overflow-wrap: anywhere; }
+  :is(.timeflow-private-mode,.timeflow-team-mode) .header-right { flex: 0 0 auto; gap: 7px; }
+  :is(.timeflow-private-mode,.timeflow-team-mode) .top-grid { grid-template-columns: 1fr; }
+  :is(.timeflow-private-mode,.timeflow-team-mode) .info-card { border-right: 0 !important; border-bottom: 1px solid rgba(84,131,181,.18) !important; }
+  :is(.timeflow-private-mode,.timeflow-team-mode) .motivation-card p { padding-left: 0; padding-right: 24px; font-size: .91rem; }
   .private-home-timeline { grid-template-columns: 1fr 1fr; }
   .private-home-summary { grid-template-columns: 1fr; }
-  .timeflow-private-mode .month-stats { grid-template-columns: 1fr 1fr; gap: 12px 0; }
-  .timeflow-private-mode .month-stats > div:nth-child(2) { border-right: 0; }
-  .timeflow-private-mode .month-stats > div:nth-child(3),
-  .timeflow-private-mode .month-stats > div:nth-child(4) { padding-top: 10px; border-top: 1px solid rgba(84,131,181,.14); }
-  .timeflow-private-mode .private-home-account { grid-template-columns: 1fr 1fr; }
+  :is(.timeflow-private-mode,.timeflow-team-mode) .month-stats { grid-template-columns: 1fr 1fr; gap: 12px 0; }
+  :is(.timeflow-private-mode,.timeflow-team-mode) .month-stats > div:nth-child(2) { border-right: 0; }
+  :is(.timeflow-private-mode,.timeflow-team-mode) .month-stats > div:nth-child(3),
+  :is(.timeflow-private-mode,.timeflow-team-mode) .month-stats > div:nth-child(4) { padding-top: 10px; border-top: 1px solid rgba(84,131,181,.14); }
+  :is(.timeflow-private-mode,.timeflow-team-mode) .private-home-account { grid-template-columns: 1fr 1fr; }
   .private-home-account-title { grid-column: 1 / -1; padding-bottom: 8px; border-bottom: 1px solid rgba(88,142,214,.14); }
   .private-home-account > span:nth-child(2) { padding-left: 0; border-left: 0; }
   .private-home-account > span:nth-child(4) { padding-top: 8px; padding-left: 0; border-top: 1px solid rgba(88,142,214,.14); border-left: 0; }
   .private-home-account > i:last-child { position: absolute; right: 14px; }
 }
 @media (max-width:380px) {
-  .timeflow-private-mode .shift-grid { grid-template-columns: 1fr; }
+  :is(.timeflow-private-mode,.timeflow-team-mode) .shift-grid { grid-template-columns: 1fr; }
 }
 .private-pause-button{justify-self:center;min-width:180px;min-height:44px;border:1px solid rgba(255,188,90,.28);border-radius:999px;background:rgba(255,169,55,.12);color:#ffc36d;font:inherit;font-weight:800}.private-pause-button.is-paused{background:#1d65ce;color:#fff;border-color:#4f91ef}

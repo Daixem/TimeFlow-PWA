@@ -99,7 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const privateClock = dashboard.querySelector(".private-home-clock");
 
   document.body.insertAdjacentHTML("beforeend", `
-    <nav class="private-quick-nav" aria-label="Navigation für die Einzelnutzung">
+    <nav class="private-quick-nav" aria-label="TimeFlow-Navigation">
       <button class="active" type="button" data-private-target="home"><i class="fa-solid fa-house"></i><span>Home</span></button>
       <button type="button" data-private-target="schedule"><i class="fa-regular fa-calendar"></i><span>Dienstpläne</span></button>
       <button class="private-quick-main" type="button" data-private-quick><i class="fa-solid fa-plus"></i><span>Schnellzugriff</span></button>
@@ -107,7 +107,7 @@ document.addEventListener("DOMContentLoaded", () => {
     </nav>
     <dialog class="private-home-dialog" id="privateHomeQuickDialog" aria-labelledby="privateHomeQuickTitle">
       <header><div><small>SCHNELLZUGRIFF</small><h2 id="privateHomeQuickTitle">Was möchtest du öffnen?</h2><p>Die Zeiterfassung bleibt direkt auf dem Home-Screen.</p></div><button type="button" data-private-quick-close aria-label="Schließen"><i class="fa-solid fa-xmark"></i></button></header>
-      <section><button type="button" data-private-action="notifications"><i class="fa-regular fa-bell"></i><span><small>HINWEISE UND ERINNERUNGEN</small><strong>Mitteilungen</strong></span><i class="fa-solid fa-chevron-right"></i></button><button type="button" data-private-action="account"><i class="fa-solid fa-wallet"></i><span><small>ZEITEN UND MONATSWERTE</small><strong>Arbeitszeitkonto</strong></span><i class="fa-solid fa-chevron-right"></i></button><button type="button" data-private-action="settings"><i class="fa-solid fa-gear"></i><span><small>APP UND DATENSICHERUNG</small><strong>Einstellungen</strong></span><i class="fa-solid fa-chevron-right"></i></button></section>
+      <section><button type="button" data-private-action="notifications"><i class="fa-regular fa-bell"></i><span><small>HINWEISE UND ERINNERUNGEN</small><strong>Mitteilungen</strong></span><i class="fa-solid fa-chevron-right"></i></button><button type="button" data-private-action="chat" data-team-only hidden><i class="fa-regular fa-comments"></i><span><small>GEMEINSAM ARBEITEN</small><strong>Teamchat</strong></span><i class="fa-solid fa-chevron-right"></i></button><button type="button" data-private-action="account"><i class="fa-solid fa-wallet"></i><span><small>ZEITEN UND MONATSWERTE</small><strong>Arbeitszeitkonto</strong></span><i class="fa-solid fa-chevron-right"></i></button><button type="button" data-private-action="settings"><i class="fa-solid fa-gear"></i><span><small>APP UND DATENSICHERUNG</small><strong>Einstellungen</strong></span><i class="fa-solid fa-chevron-right"></i></button></section>
     </dialog>`);
 
   const privateNav = document.querySelector(".private-quick-nav");
@@ -151,12 +151,14 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("privateHomePlannedEnd").textContent = workday?.workEnd ? workday.workEnd ? new Date(workday.workEnd).toLocaleTimeString(window.TimeFlowLocalization?.locale?.() || "de-DE", { hour: "2-digit", minute: "2-digit" }) : "--:--" : scheduledEnd || "--:--";
   }
   function applyPrivateHome() {
-    // Both modes use the same home layout and primary navigation. The
-    // organisation context changes data access, never the way a person moves
-    // through TimeFlow.
-    if (originalShiftAnchor.parentNode) originalShiftAnchor.after(shiftGrid);
-    privateClock.hidden = true;
-    privateNav.hidden = true;
+    const root = document.documentElement;
+    const isTimeFlowMode = root.classList.contains("timeflow-private-mode") || root.classList.contains("timeflow-team-mode");
+    const isTeam = root.classList.contains("timeflow-team-mode");
+    if (isTimeFlowMode) privateClock.insertAdjacentElement("afterend", shiftGrid);
+    else if (originalShiftAnchor.parentNode) originalShiftAnchor.after(shiftGrid);
+    privateClock.hidden = !isTimeFlowMode;
+    privateNav.hidden = !isTimeFlowMode;
+    quickDialog.querySelectorAll("[data-team-only]").forEach((element) => { element.hidden = !isTeam; });
   }
 
   privateNav.querySelectorAll("[data-private-target]").forEach((button) => button.addEventListener("click", () => {
@@ -169,6 +171,7 @@ document.addEventListener("DOMContentLoaded", () => {
   quickDialog.querySelectorAll("[data-private-action]").forEach((button) => button.addEventListener("click", () => {
     window.TimeFlowPlatform.dialog.close(quickDialog);
     if (button.dataset.privateAction === "notifications") document.querySelector('[data-action="notifications"]')?.click();
+    if (button.dataset.privateAction === "chat") document.querySelector('.bottom-nav [data-target="chat"]')?.click();
     if (button.dataset.privateAction === "account") document.dispatchEvent(new CustomEvent("timeflow:open-private-account"));
     if (button.dataset.privateAction === "settings") document.dispatchEvent(new CustomEvent("timeflow:open-settings"));
   }));

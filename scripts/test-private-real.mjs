@@ -13,6 +13,6 @@ for (const marker of ["timeflow-private-schedule-v1", "timeflow-workday-v2", "ti
   if (!clean.includes(marker)) throw new Error(`Echte Privatdaten: ${marker} fehlt.`);
 }
 for (const marker of [".for-you-card", ".team-card", ".account-section", ".statistics-section"]) {
-  if (cleanCss.includes(marker)) throw new Error(`Gemeinsame Ansicht: ${marker} wird im Privatmodus noch ausgeblendet.`);
+  if (!cleanCss.includes(marker)) throw new Error(`Demo-Bereinigung: ${marker} wird nicht ausgeblendet.`);
 }
-console.log("Einzelnutzung: persönliche Daten bleiben getrennt, die Ansicht bleibt mit dem Teammodus gleich.");
+console.log("Einzelnutzung: Mitteilungen und sichtbare Werte verwenden ausschließlich persönliche Laufzeitdaten.");

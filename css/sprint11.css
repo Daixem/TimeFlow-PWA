@@ -24,10 +24,27 @@
 .mode-settings-options > button.is-selected { border-color: rgba(66, 133, 240, .42); background: rgba(31, 83, 161, .18); }
 .mode-settings-options > button.is-selected b { display: grid; }
 .mode-current-note { display: flex; gap: 7px; margin-top: 10px; padding: 9px; border-radius: 9px; color: #7590af; background: rgba(19, 58, 101, .42); font-size: .43rem; line-height: 1.45; }
+.timeflow-private-mode .approval-card,
+.timeflow-private-mode .team-card,
+.timeflow-private-mode .nav-item[data-target="chat"],
+.timeflow-private-mode .session-card [data-manage-users],
+.timeflow-private-mode .team-today,
+.timeflow-private-mode .week-row em,
+.timeflow-private-mode .period-filter button:nth-child(2),
+.timeflow-private-mode [data-quick-action="late"],
+.timeflow-private-mode [data-quick-action="swap"],
+.timeflow-private-mode [aria-labelledby="notificationSettingsTitle"] .settings-toggle:has([data-setting="chatAlerts"]),
+.timeflow-private-mode [aria-labelledby="notificationSettingsTitle"] .settings-toggle:has([data-setting="approvalAlerts"]),
+.timeflow-private-mode .notification-item.chat,
+.timeflow-private-mode .notification-item.approval { display: none !important; }
+.timeflow-private-mode .quick-actions-grid { grid-template-columns: 1fr 1fr; }
+.timeflow-private-mode .bottom-nav { justify-content: space-evenly; }
+.timeflow-private-mode .session-card { grid-template-columns: 42px minmax(0, 1fr) auto auto; }
 @media (max-width: 560px) {
   .mode-onboarding > section { padding: 19px 14px; }
   .mode-choice-grid { grid-template-columns: 1fr; }
   .mode-settings-options { grid-template-columns: 1fr; }
+  .timeflow-private-mode .session-card { grid-template-columns: 38px 1fr; }
 }
 .quick-actions-card[hidden] { display: none !important; }
 .mode-choice-grid button.is-locked,.mode-settings-options button.is-locked{opacity:.62;cursor:not-allowed}.mode-choice-grid button.is-locked em{background:rgba(255,190,80,.14);color:#ffc96b}

@@ -1,6 +1,6 @@
 /* One coherent glass layer per window. Inner rows no longer introduce another
    coloured card; structure comes from spacing and quiet separators. */
-.timeflow-private-mode :is(
+:is(.timeflow-private-mode,.timeflow-team-mode) :is(
   .card,.list-card,.shift-card,.private-home-clock,.profile-hero,.profile-menu-card,
   .settings-card,.cloud-sync-card,.release-readiness-card,.private-import-panel,
   .private-account-dialog,.support-dialog,.notification-center,.home-detail-dialog,
@@ -17,7 +17,7 @@
 
 /* Windows keep one continuous glass surface. Actual controls and individual
    records remain tactile; explanatory and preference rows use spacing alone. */
-.timeflow-private-mode :is(
+:is(.timeflow-private-mode,.timeflow-team-mode) :is(
   .settings-list>label,.settings-toggle,.settings-select,.support-consent,
   .vacation-balance span,.app-status-list>div,.private-home-summary>span,
   .private-account-summary span,.device-check-list li,.home-detail-content article,
@@ -29,7 +29,7 @@
   box-shadow:none!important;
 }
 
-.timeflow-private-mode :is(
+:is(.timeflow-private-mode,.timeflow-team-mode) :is(
   .top-grid>.card,.top-grid>.info-card,.top-grid>.motivation-card,
   .list-row,.personal-update,.team-update,.week-row,
   .settings-card>.settings-list,.profile-hero>.profile-identity,
@@ -39,11 +39,11 @@
   background-image:none!important;
   box-shadow:none!important;
 }
-.timeflow-private-mode .top-grid>.card{border:0!important;border-radius:0!important}
-.timeflow-private-mode .top-grid>.card+.card{border-inline-start:1px solid var(--tf-divider)!important}
-.timeflow-private-mode :is(.list-row,.week-row)+:is(.list-row,.week-row){border-top-color:var(--tf-divider)!important}
+:is(.timeflow-private-mode,.timeflow-team-mode) .top-grid>.card{border:0!important;border-radius:0!important}
+:is(.timeflow-private-mode,.timeflow-team-mode) .top-grid>.card+.card{border-inline-start:1px solid var(--tf-divider)!important}
+:is(.timeflow-private-mode,.timeflow-team-mode) :is(.list-row,.week-row)+:is(.list-row,.week-row){border-top-color:var(--tf-divider)!important}
 
-.timeflow-private-mode :is(
+:is(.timeflow-private-mode,.timeflow-team-mode) :is(
   dialog>header,.support-dialog>header,.support-dialog>nav,
   .private-home-dialog>header,.private-import-dialog>header,
   .profile-dialog>header,.quick-action-dialog form>header
@@ -53,14 +53,14 @@
   border-color:var(--tf-divider)!important;
 }
 
-.timeflow-private-mode :is(input,select,textarea,.settings-hours-input,.profile-language-select select){
+:is(.timeflow-private-mode,.timeflow-team-mode) :is(input,select,textarea,.settings-hours-input,.profile-language-select select){
   border-color:var(--tf-divider)!important;
   background:var(--tf-input-background)!important;
   background-image:none!important;
   box-shadow:inset 0 1px 0 var(--tf-surface-inset)!important;
 }
 
-.timeflow-private-mode :is(.private-quick-nav,.bottom-nav){
+:is(.timeflow-private-mode,.timeflow-team-mode) :is(.private-quick-nav,.bottom-nav){
   border-color:var(--tf-border)!important;
   background:var(--tf-navigation-background)!important;
   box-shadow:var(--tf-navigation-shadow)!important;
@@ -68,30 +68,30 @@
   -webkit-backdrop-filter:blur(26px) saturate(140%)!important;
 }
 
-.timeflow-private-mode :is(button.active,[aria-selected="true"],form>button[type="submit"],.clock-confirm-submit){
+:is(.timeflow-private-mode,.timeflow-team-mode) :is(button.active,[aria-selected="true"],form>button[type="submit"],.clock-confirm-submit){
   background:linear-gradient(135deg,color-mix(in srgb,var(--tf-accent) 88%,white),var(--tf-accent))!important;
 }
 
 /* Appearance is one continuous glass surface. Controls retain their own
    affordance; only the surrounding preference rows become visually quiet. */
-.timeflow-private-mode .personalization-settings-card>header{border-bottom:0!important;padding-bottom:10px!important}
-.timeflow-private-mode .personalization-settings-card :is(>.settings-list,.settings-accordion-body>.settings-list){display:grid;gap:18px;padding:2px 14px 16px!important}
-.timeflow-private-mode .personalization-settings-card :is(>.settings-list,.settings-accordion-body>.settings-list)>:is(.settings-select,.custom-background-setting,.custom-color-setting){min-height:0!important;padding:0!important;border:0!important;background:transparent!important;background-image:none!important;box-shadow:none!important}
-.timeflow-private-mode .personalization-settings-card .custom-background-setting,.custom-color-setting{color:inherit}
-.timeflow-private-mode .personalization-settings-card :is(.custom-background-setting,.custom-color-setting) small{color:inherit;opacity:.66}
+:is(.timeflow-private-mode,.timeflow-team-mode) .personalization-settings-card>header{border-bottom:0!important;padding-bottom:10px!important}
+:is(.timeflow-private-mode,.timeflow-team-mode) .personalization-settings-card :is(>.settings-list,.settings-accordion-body>.settings-list){display:grid;gap:18px;padding:2px 14px 16px!important}
+:is(.timeflow-private-mode,.timeflow-team-mode) .personalization-settings-card :is(>.settings-list,.settings-accordion-body>.settings-list)>:is(.settings-select,.custom-background-setting){min-height:0!important;padding:0!important;border:0!important;background:transparent!important;background-image:none!important;box-shadow:none!important}
+:is(.timeflow-private-mode,.timeflow-team-mode) .personalization-settings-card .custom-background-setting{color:inherit}
+:is(.timeflow-private-mode,.timeflow-team-mode) .personalization-settings-card .custom-background-setting small{color:inherit;opacity:.66}
 
 @media(max-width:600px){
-  .timeflow-private-mode .personalization-settings-card :is(>.settings-list,.settings-accordion-body>.settings-list){gap:16px;padding-bottom:14px!important}
-  .timeflow-private-mode .personalization-settings-card :is(>.settings-list,.settings-accordion-body>.settings-list)>.settings-select{grid-template-columns:minmax(0,1fr)!important;gap:8px}
-  .timeflow-private-mode .personalization-settings-card :is(>.settings-list,.settings-accordion-body>.settings-list)>.settings-select select{width:100%;min-height:44px;font-size:1rem}
+  :is(.timeflow-private-mode,.timeflow-team-mode) .personalization-settings-card :is(>.settings-list,.settings-accordion-body>.settings-list){gap:16px;padding-bottom:14px!important}
+  :is(.timeflow-private-mode,.timeflow-team-mode) .personalization-settings-card :is(>.settings-list,.settings-accordion-body>.settings-list)>.settings-select{grid-template-columns:minmax(0,1fr)!important;gap:8px}
+  :is(.timeflow-private-mode,.timeflow-team-mode) .personalization-settings-card :is(>.settings-list,.settings-accordion-body>.settings-list)>.settings-select select{width:100%;min-height:44px;font-size:1rem}
 }
-.timeflow-private-mode :is(.settings-list,.app-status-list,.device-check-list,.work-protection-card ul,.home-detail-content,.private-home-summary,.private-account-summary){gap:14px}
+:is(.timeflow-private-mode,.timeflow-team-mode) :is(.settings-list,.app-status-list,.device-check-list,.work-protection-card ul,.home-detail-content,.private-home-summary,.private-account-summary){gap:14px}
 
 /* The same glass language is used for the home overview, schedule and
    quick access. A window gets one surface; its informational rows do not
    create a second dark card inside it. Buttons and form controls stay clear
    interactive targets. */
-.timeflow-private-mode :is(
+:is(.timeflow-private-mode,.timeflow-team-mode) :is(
   .private-home-dialog,.schedule-tabs,.private-import-panel,.week-summary,
   .week-list,.shift-grid,.month-card,.month-overview,.schedule-view>.date-switch
 ){
@@ -102,7 +102,7 @@
   -webkit-backdrop-filter:blur(24px) saturate(135%)!important;
 }
 
-.timeflow-private-mode :is(
+:is(.timeflow-private-mode,.timeflow-team-mode) :is(
   .private-home-timeline>span,.private-home-account,.private-home-dialog section button,
   .private-import-panel :is(.private-import-formats,.private-import-note,.private-learning-note),
   .week-summary>span,.private-imported-shifts article,.month-overview>div>span
@@ -113,23 +113,23 @@
   box-shadow:none!important;
 }
 
-.timeflow-private-mode .private-home-dialog section button + button,
-.timeflow-private-mode .week-summary>span + span,
-.timeflow-private-mode .private-home-timeline>span + span,
-.timeflow-private-mode .private-import-panel :is(.private-import-note,.private-learning-note){
+:is(.timeflow-private-mode,.timeflow-team-mode) .private-home-dialog section button + button,
+:is(.timeflow-private-mode,.timeflow-team-mode) .week-summary>span + span,
+:is(.timeflow-private-mode,.timeflow-team-mode) .private-home-timeline>span + span,
+:is(.timeflow-private-mode,.timeflow-team-mode) .private-import-panel :is(.private-import-note,.private-learning-note){
   border-top:1px solid var(--tf-divider)!important;
 }
 
-.timeflow-private-mode .private-home-account>span + span{border-left-color:var(--tf-divider)!important}
-.timeflow-private-mode .private-home-dialog{background-color:var(--tf-dialog-background)!important}
+:is(.timeflow-private-mode,.timeflow-team-mode) .private-home-account>span + span{border-left-color:var(--tf-divider)!important}
+:is(.timeflow-private-mode,.timeflow-team-mode) .private-home-dialog{background-color:var(--tf-dialog-background)!important}
 
 @media(max-width:600px){
   :root{--tf-shadow:0 12px 34px rgba(0,7,20,.22)}
-  .timeflow-private-mode :is(.card,.list-card,.shift-card,.settings-card,.profile-menu-card){backdrop-filter:blur(18px) saturate(125%)!important;-webkit-backdrop-filter:blur(18px) saturate(125%)!important}
+  :is(.timeflow-private-mode,.timeflow-team-mode) :is(.card,.list-card,.shift-card,.settings-card,.profile-menu-card){backdrop-filter:blur(18px) saturate(125%)!important;-webkit-backdrop-filter:blur(18px) saturate(125%)!important}
 }
 
 @media(prefers-reduced-transparency:reduce){
-  .timeflow-private-mode :is(.card,.list-card,.shift-card,.settings-card,.profile-menu-card,dialog,.private-quick-nav){background:var(--tf-glass-strong)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+  :is(.timeflow-private-mode,.timeflow-team-mode) :is(.card,.list-card,.shift-card,.settings-card,.profile-menu-card,dialog,.private-quick-nav){background:var(--tf-glass-strong)!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
 }
 
 /* The launch view uses the Phoenix brand instead of the former clock mark. */
@@ -164,28 +164,28 @@ html[data-tf-background="light"] :is(.card,.list-card,.shift-card,.settings-card
 
 /* A selected palette controls all normal app surfaces. Semantic state
    colours (success, warning and error) deliberately remain independent. */
-html[data-tf-background] .timeflow-private-mode :is(
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(
   .header,.dashboard,.schedule-page,.clock-page,.chat-page,.profile-page,.settings-page,
   .profile-menu-card,.settings-card,.private-home-clock,.private-import-panel,.week-list,
   .month-overview,.private-home-dialog,.quick-action-dialog,.support-dialog,dialog
 ){color:var(--tf-text-primary)!important}
-html[data-tf-background] .timeflow-private-mode :is(
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(
   p,small,label,.subtitle,.settings-card-copy,.profile-menu-link,.week-row small,
-  .private-home-clock small,.private-home-dialog header p,.custom-background-setting small,.custom-color-setting small,
+  .private-home-clock small,.private-home-dialog header p,.custom-background-setting small,
   .work-protection-card>p,.profile-language-select small
 ){color:var(--tf-text-secondary)!important}
-html[data-tf-background] .timeflow-private-mode :is(
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(
   .label,.settings-group-title,.settings-chevron,.private-home-dialog header small,
-  .private-home-clock header small,.custom-background-setting>span>small,.custom-color-setting>span>small
+  .private-home-clock header small,.custom-background-setting>span>small
 ){color:var(--tf-text-muted)!important}
-html[data-tf-background] .timeflow-private-mode :is(
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(
   h1,h2,h3,h4,strong,b,.settings-select>span,.profile-language-select>span,.week-row b,
   .week-row>span,.date-switch span,.month-header button,.schedule-header button
 ){color:var(--tf-text-primary)!important}
-html[data-tf-background] .timeflow-private-mode :is(.bottom-nav,.private-quick-nav) :is(button,.nav-item,.nav-text){color:var(--tf-text-secondary)!important}
-html[data-tf-background] .timeflow-private-mode :is(.bottom-nav,.private-quick-nav) :is(button.active,.nav-item.active){color:var(--tf-text-primary)!important}
-html[data-tf-background] .timeflow-private-mode :is(input,select,textarea,.settings-hours-input,.profile-language-select select){color:var(--tf-text-primary)!important;background-color:var(--tf-control)!important}
-html[data-tf-background] .timeflow-private-mode :is(input,textarea)::placeholder{color:var(--tf-text-muted)!important}
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(.bottom-nav,.private-quick-nav) :is(button,.nav-item,.nav-text){color:var(--tf-text-secondary)!important}
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(.bottom-nav,.private-quick-nav) :is(button.active,.nav-item.active){color:var(--tf-text-primary)!important}
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(input,select,textarea,.settings-hours-input,.profile-language-select select){color:var(--tf-text-primary)!important;background-color:var(--tf-control)!important}
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(input,textarea)::placeholder{color:var(--tf-text-muted)!important}
 
 /* Palette contract: a chosen colour belongs to the entire beta, not only to
    the private start page. This also covers the team views and windows that
@@ -223,9 +223,3 @@ html[data-tf-background] :is(h1,h2,h3,h4,strong,b,.label,.settings-group-title,.
 html[data-tf-background] :is(.brand-splash,.beta-access-gate){background:radial-gradient(circle at 50% 22%,color-mix(in srgb,var(--tf-accent) 46%,var(--tf-surface-elevated)),var(--tf-app-background))!important;color:var(--tf-text-primary)!important}
 html[data-tf-background] :is(.brand-splash-content,.beta-access-gate>div){border-color:var(--tf-border)!important;background:color-mix(in srgb,var(--tf-surface-elevated) 82%,transparent)!important;color:var(--tf-text-primary)!important;box-shadow:var(--tf-shadow)!important}
 html[data-tf-background] :is(dialog,.notification-center,.mode-onboarding,.settings-dialog,.clock-confirm-dialog,.private-import-dialog,.private-absence-dialog)::backdrop{background:color-mix(in srgb,var(--tf-app-background) 82%,black)!important}
-
-/* Private and team access share one navigation and one home layout. The
-   selected context changes only the available data, never the visual route. */
-.timeflow-private-mode .private-home-clock,.timeflow-private-mode .private-quick-nav{display:none!important}
-.timeflow-private-mode .bottom-nav{display:flex!important}
-.timeflow-private-mode :is(.for-you-card,.overview-card,.team-card,#profilePage .account-section,#profilePage .statistics-section,.profile-identity>small,.month-card .month-header>button,.month-card .month-open-statistics){display:revert!important}

@@ -20,15 +20,6 @@ for (const [file, snippets] of requiredSnippets) {
 const packageJson = JSON.parse(await readFile("package.json", "utf8"));
 if (packageJson.version !== "1.0.1") throw new Error("Version 1.0.1 ist nicht gesetzt.");
 
-const modeScript = await readFile("js/sprint11.js", "utf8");
-const privateHome = await readFile("js/private-home.js", "utf8");
-const privateClean = await readFile("css/private-clean.css", "utf8");
-const glass = await readFile("css/unified-glass.css", "utf8");
-if (!modeScript.includes("Navigation und Bedienung bleiben gleich")) throw new Error("Die gemeinsame Bedienung für Privat- und Teammodus fehlt.");
-if (!privateHome.includes("never the way a person moves")) throw new Error("Die gemeinsame Hauptnavigation ist nicht abgesichert.");
-if (privateClean.includes(".team-card") || privateClean.includes(".for-you-card")) throw new Error("Der Privatmodus blendet weiterhin zentrale Startkarten aus.");
-if (!glass.includes("Private and team access share one navigation")) throw new Error("Die gemeinsame Ansicht wird nicht zentral abgesichert.");
-
 const worker = (await import("../dist/server/index.js")).default;
 const home = await worker.fetch(new Request("https://timeflow.test/"), {});
 const unauthenticatedSync = await worker.fetch(new Request("https://timeflow.test/api/sync"), {});
@@ -45,3 +36,8 @@ sunday.setDate(sunday.getDate() + 6);
 if (monday.getDate() !== 24 || sunday.getDate() !== 30) throw new Error("Die aktuelle Wochenberechnung ist fehlerhaft.");
 
 console.log("Sprint 11: Privatmodus, Teammodus, PWA-Build und geschützte Synchronisierung sind abgenommen.");
+
+const privateHome = await readFile("js/private-home.js", "utf8");
+const privateHomeCss = await readFile("css/private-home.css", "utf8");
+if (!privateHome.includes("data-team-only") || !privateHome.includes("Teamchat")) throw new Error("Team-Erweiterung der Einzelnutzungs-Navigation fehlt.");
+if (!privateHomeCss.includes(":is(.timeflow-private-mode,.timeflow-team-mode)")) throw new Error("Teammodus verwendet nicht die bewährte Einzelnutzungs-Oberfläche.");
