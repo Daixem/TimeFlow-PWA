@@ -37,6 +37,9 @@
 .timeflow-private-mode [aria-labelledby="notificationSettingsTitle"] .settings-toggle:has([data-setting="approvalAlerts"]),
 .timeflow-private-mode .notification-item.chat,
 .timeflow-private-mode .notification-item.approval { display: none !important; }
+.timeflow-team-mode .account-section,
+.timeflow-team-mode .statistics-section,
+.timeflow-team-mode .profile-identity > small { display: none !important; }
 .timeflow-private-mode .quick-actions-grid { grid-template-columns: 1fr 1fr; }
 .timeflow-private-mode .bottom-nav { justify-content: space-evenly; }
 .timeflow-private-mode .session-card { grid-template-columns: 42px minmax(0, 1fr) auto auto; }

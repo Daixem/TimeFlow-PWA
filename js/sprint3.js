@@ -488,6 +488,9 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("timeflow:session-ready", (event) => {
     if (event.detail?.source === "platform") clearPlatformDemoChat();
   });
+  document.addEventListener("timeflow:mode-changed", (event) => {
+    if (event.detail?.mode === "team") clearPlatformDemoChat();
+  });
   chatPage.querySelector("[data-shift-details]")?.addEventListener("click", () => notify("Frühschicht: Freitag, 31. Juli · 07:30 – 15:00 Uhr · Restaurant"));
 
   chatPage.querySelector("[data-new-chat]")?.addEventListener("click", () => {
