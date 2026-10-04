@@ -73,7 +73,8 @@
     if (!window.TimeFlowUpdateNews?.isUnread?.()) return;
     const title = document.getElementById("notificationCenterTitle"); if (title) title.textContent = "Update-News";
     const copy = title?.nextElementSibling; if (copy) copy.textContent = "Ein neues Update wurde erfolgreich installiert.";
-    document.dispatchEvent(new CustomEvent("timeflow:open-notifications", { detail: { update: event.detail } }));
+    // Update-Hinweise bleiben als ungelesene Meldung verfügbar, öffnen sich
+    // beim Start aber nicht mehr automatisch. Die App beginnt immer im Home-Screen.
   });
   document.addEventListener("timeflow:beta-access-ready", loadUpdateNews, { once: true });
   if (window.TimeFlowBetaAccess?.allowed) loadUpdateNews();
