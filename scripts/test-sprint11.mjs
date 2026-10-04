@@ -44,4 +44,6 @@ if (!privateHomeCss.includes(":is(.timeflow-private-mode,.timeflow-team-mode)"))
 const auth = await readFile("js/sprint8.js", "utf8");
 const chat = await readFile("js/sprint3.js", "utf8");
 if (!auth.includes("fictionalIds") || !auth.includes("Noch keine echten Teammitglieder verbunden")) throw new Error("Fiktive Teammitglieder werden im echten Teamzugang nicht ausgeblendet.");
-if (!chat.includes("clearPlatformDemoChat") || !chat.includes("timeflow:session-ready")) throw new Error("Beta-Chatdaten werden im echten Teamzugang nicht ausgeblendet.");
+if (!chat.includes("clearPlatformDemoChat") || !chat.includes("updateUnreadCount()") || !chat.includes("timeflow:session-ready")) throw new Error("Beta-Chatdaten oder ungültige Chat-Badges werden im echten Teamzugang nicht ausgeblendet.");
+const sprint11 = await readFile("js/sprint11.js", "utf8");
+if (!sprint11.includes("removePlatformDemoHome") || !sprint11.includes("teamDataEmpty")) throw new Error("Statische Demo-Startdaten oder Team-Badges werden nach der echten Anmeldung nicht entfernt.");

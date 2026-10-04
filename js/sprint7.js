@@ -6,6 +6,9 @@ document.addEventListener("DOMContentLoaded", () => {
   const notificationButton = document.querySelector('[data-action="notifications"]');
   const notificationBadge = notificationButton?.querySelector(".notification-badge");
   if (!notificationButton || !notificationBadge) return;
+  notificationBadge.hidden = true;
+  notificationBadge.textContent = "0";
+  notificationButton.setAttribute("aria-label", "Keine ungelesenen Benachrichtigungen");
 
   document.body.insertAdjacentHTML("beforeend", `
     <dialog class="notification-center" id="notificationCenter" aria-labelledby="notificationCenterTitle">

@@ -101,8 +101,9 @@ document.addEventListener("DOMContentLoaded", () => {
   function updateNotificationCount(mode) {
     if (!notificationList || !notificationButton) return;
     const items = [...notificationList.querySelectorAll(".notification-item")];
+    const teamDataEmpty = mode === "team" && document.querySelector(".team-card")?.dataset.demoRemoved === "true";
     const relevant = mode === "private" ? items.filter((item) => !item.classList.contains("chat") && !item.classList.contains("approval")) : items;
-    const unread = relevant.filter((item) => !item.classList.contains("is-read")).length;
+    const unread = teamDataEmpty ? 0 : relevant.filter((item) => !item.classList.contains("is-read")).length;
     const badge = notificationButton.querySelector(".notification-badge");
     if (badge) {
       badge.textContent = String(unread);
@@ -131,6 +132,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function removeTeamDemoContent() {
+    document.querySelector(".approval-card")?.remove();
+    document.querySelector(".for-you-card")?.remove();
     const teamCard = document.querySelector(".team-card");
     if (teamCard && !teamCard.dataset.demoRemoved) {
       teamCard.dataset.demoRemoved = "true";
@@ -147,6 +150,8 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     const schedule = document.getElementById("schedulePage");
     if (schedule) schedule.classList.add("team-data-empty");
+    document.querySelector(".shift-grid")?.setAttribute("hidden", "");
+    document.querySelector(".month-card")?.setAttribute("hidden", "");
     const chat = document.getElementById("chatPage");
     if (chat && !chat.dataset.demoRemoved) {
       chat.dataset.demoRemoved = "true";
@@ -158,6 +163,11 @@ document.addEventListener("DOMContentLoaded", () => {
       chat.querySelector(".chat-demo-note")?.remove();
       chat.querySelector(".new-chat-dialog")?.remove();
     }
+  }
+
+  function removePlatformDemoHome() {
+    document.querySelector(".approval-card")?.remove();
+    document.querySelector(".for-you-card")?.remove();
   }
 
   function updateTeamSupport(isTeam) {
@@ -195,7 +205,11 @@ document.addEventListener("DOMContentLoaded", () => {
     document.documentElement.classList.toggle("timeflow-team-mode", !isPrivate);
     document.body.dataset.appMode = mode;
     if (!isPrivate) removeTeamDemoContent();
-    else document.getElementById("schedulePage")?.classList.remove("team-data-empty");
+    else {
+      document.getElementById("schedulePage")?.classList.remove("team-data-empty");
+      document.querySelector(".shift-grid")?.removeAttribute("hidden");
+      document.querySelector(".month-card")?.removeAttribute("hidden");
+    }
     updateTeamSupport(!isPrivate);
     updateProfilePresentation(isPrivate);
 
@@ -300,6 +314,9 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch { updateTeamAccess({ allowed: false, resolved: true }); }
   }
   document.addEventListener("timeflow:session-ready", (event) => event.detail?.source === "platform" ? loadTeamAccess() : updateTeamAccess({ allowed: false }));
+  document.addEventListener("timeflow:session-ready", (event) => {
+    if (event.detail?.source === "platform") removePlatformDemoHome();
+  });
   document.addEventListener("timeflow:session-ready", (event) => {
     const mode = currentMode();
     if (mode) applyMode(mode);

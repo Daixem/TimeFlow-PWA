@@ -158,6 +158,7 @@ document.addEventListener("DOMContentLoaded", () => {
     chatPage.querySelector(".chat-thread")?.setAttribute("hidden", "");
     chatPage.querySelector(".chat-demo-note")?.remove();
     chatDialog?.remove();
+    updateUnreadCount();
   }
 
   const conversations = {
