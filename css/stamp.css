@@ -30,11 +30,11 @@
 .clock-state.is-working i { background: #39d681; box-shadow: 0 0 0 4px rgba(57, 214, 129, .1); }
 .clock-live-time { position: relative; z-index: 1; margin-top: 12px; color: white; font-size: 2.25rem; font-weight: 750; letter-spacing: -.055em; line-height: 1; }
 .clock-live-date { position: relative; z-index: 1; margin-top: 5px; color: #7890aa; font-size: .58rem; }
-.clock-action-button { position: relative; z-index: 1; display: grid; justify-items: center; gap: 5px; width: 168px; min-height: 168px; margin-top: 17px; padding: 23px 12px 17px; border: 1px solid rgba(82, 142, 255, .45); border-radius: 50%; color: white; background: radial-gradient(circle at 35% 25%, #4b8bff, #1851c5 66%, #0d388d); box-shadow: 0 0 0 10px rgba(47, 112, 240, .08), 0 15px 36px rgba(16, 69, 180, .38); }
+.clock-action-button { position: relative; z-index: 1; display: grid; justify-items: center; gap: 5px; width: 168px; min-height: 168px; margin-top: 17px; padding: 23px 12px 17px; border: 1px solid rgba(244, 91, 111, .5); border-radius: 50%; color: white; background: radial-gradient(circle at 35% 25%, #e85a6d, #b62043 66%, #7b102d); box-shadow: 0 0 0 10px rgba(210, 43, 76, .1), 0 15px 36px rgba(144, 16, 48, .4); }
 .clock-action-button:hover { transform: translateY(-1px); }
 .clock-action-button:active { transform: scale(.98); }
 .clock-action-button.is-working { border-color: rgba(67, 222, 133, .5); background: radial-gradient(circle at 35% 25%, #45da8a, #1bae61 66%, #118044); box-shadow: 0 0 0 10px rgba(43, 202, 114, .08), 0 15px 36px rgba(9, 133, 67, .34); }
-.clock-action-ring { display: grid; place-items: center; width: 49px; height: 49px; border-radius: 17px; color: #1d59c9; background: white; font-size: 1.15rem; box-shadow: 0 7px 16px rgba(0, 23, 73, .18); }
+.clock-action-ring { display: grid; place-items: center; width: 49px; height: 49px; border-radius: 17px; color: #b62043; background: white; font-size: 1.15rem; box-shadow: 0 7px 16px rgba(0, 23, 73, .18); }
 .clock-action-button.is-working .clock-action-ring { color: #169852; }
 .clock-action-button strong { font-size: .84rem; }
 .clock-action-button small { color: rgba(234, 243, 255, .72); font-size: .47rem; }
