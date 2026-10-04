@@ -22,10 +22,12 @@ document.addEventListener("DOMContentLoaded", () => {
         <section class="settings-card" aria-labelledby="notificationSettingsTitle">
           <header><span class="settings-card-icon blue"><i class="fa-regular fa-bell"></i></span><div><small>Kommunikation</small><h2 id="notificationSettingsTitle">Benachrichtigungen</h2></div></header>
           <div class="settings-list">
+            <label class="settings-toggle"><span><strong>Benachrichtigungen auf dem Gerät</strong><small>Schaltet externe Hinweise vollständig ein oder aus</small></span><input type="checkbox" data-setting="deviceNotifications"><i aria-hidden="true"></i></label>
             <label class="settings-toggle"><span><strong>Dienstplan-Erinnerungen</strong><small>Vor Beginn deiner nächsten Schicht</small></span><input type="checkbox" data-setting="shiftReminders"><i aria-hidden="true"></i></label>
             <label class="settings-toggle"><span><strong>Ausstempeln-Erinnerung</strong><small>Warnt bei ungewöhnlich langer oder überzogener Stempelung</small></span><input type="checkbox" data-setting="forgottenClockOut"><i aria-hidden="true"></i></label>
             <label class="settings-toggle"><span><strong>Chat-Nachrichten</strong><small>Neue Nachrichten aus deinem Team</small></span><input type="checkbox" data-setting="chatAlerts"><i aria-hidden="true"></i></label>
             <label class="settings-toggle"><span><strong>Freigaben und Anträge</strong><small>Statusänderungen direkt anzeigen</small></span><input type="checkbox" data-setting="approvalAlerts"><i aria-hidden="true"></i></label>
+            <label class="settings-toggle"><span><strong>Sonstige Systemhinweise</strong><small>Offline-, Sicherheits- und App-Hinweise</small></span><input type="checkbox" data-setting="systemAlerts"><i aria-hidden="true"></i></label>
           </div>
         </section>
 
@@ -80,10 +82,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const MONTHLY_TARGETS_KEY = "timeflow-monthly-targets-v1";
   const LEGACY_PREFERENCES_KEY = "timeflow-profile-preferences-v1";
   const defaults = {
+    deviceNotifications: true,
     shiftReminders: true,
     forgottenClockOut: true,
     chatAlerts: true,
     approvalAlerts: true,
+    systemAlerts: true,
     weeklyTargetHours: 40,
     regularWorkDays: 5,
     dailyTargetMinutes: 480,

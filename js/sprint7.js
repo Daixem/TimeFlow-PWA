@@ -3,6 +3,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   const STORAGE_KEY = "timeflow-notifications-v1";
   const READ_KEY = "timeflow-notification-read-v1";
+  const SETTINGS_KEY = "timeflow-settings-v1";
   const notificationButton = document.querySelector('[data-action="notifications"]');
   const notificationBadge = notificationButton?.querySelector(".notification-badge");
   if (!notificationButton || !notificationBadge) return;
@@ -68,6 +69,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function saveEntries() {
     window.TimeFlowPlatform.storage.setItem(STORAGE_KEY, JSON.stringify(entries.slice(0, 50)));
+  }
+
+  function notificationPreferences() {
+    try {
+      const stored = JSON.parse(window.TimeFlowPlatform.storage.getItem(SETTINGS_KEY));
+      return { deviceNotifications: true, shiftReminders: true, forgottenClockOut: true, chatAlerts: true, approvalAlerts: true, systemAlerts: true, ...(stored && typeof stored === "object" ? stored : {}) };
+    } catch {
+      return { deviceNotifications: true, shiftReminders: true, forgottenClockOut: true, chatAlerts: true, approvalAlerts: true, systemAlerts: true };
+    }
+  }
+
+  function preferenceKey(category) {
+    return ({ schedule: "shiftReminders", worktime: "forgottenClockOut", chat: "chatAlerts", approval: "approvalAlerts", system: "systemAlerts", success: "systemAlerts" })[category] || "systemAlerts";
+  }
+
+  function deviceNotificationAllowed(category) {
+    const preferences = notificationPreferences();
+    return preferences.deviceNotifications !== false && preferences[preferenceKey(category)] !== false;
   }
 
   function relativeTime(value) {
@@ -187,6 +206,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function showDeviceNotification(title, body, data = {}) {
+    if (!deviceNotificationAllowed(data.category || "system")) return false;
     if (!notificationSupport() || Notification.permission !== "granted") return false;
     try {
       const registration = await navigator.serviceWorker.ready;
@@ -223,7 +243,7 @@ document.addEventListener("DOMContentLoaded", () => {
     entries.unshift(entry);
     saveEntries();
     renderEntries();
-    if (detail.device !== false) showDeviceNotification(entry.title, entry.body, { action: entry.action });
+    if (detail.device !== false) showDeviceNotification(entry.title, entry.body, { action: entry.action, category: entry.category || entry.type });
   }
 
   async function sendTestNotification() {

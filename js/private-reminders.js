@@ -4,8 +4,10 @@
   const read = (key, fallback) => { try { return JSON.parse(window.TimeFlowPlatform.storage.getItem(key)) ?? fallback; } catch { return fallback; } };
   const write = (key, value) => window.TimeFlowPlatform.storage.setItem(key, JSON.stringify(value));
   const currentWorkday = () => read(window.TimeFlowWorkTimeSnapshotAuthority?.() !== false ? "timeflow-work-time-current-v1" : "timeflow-workday-v2", null);
+  const deviceNotificationAllowed = (category) => { const settings = read("timeflow-settings-v1", {}); if (settings.deviceNotifications === false) return false; const key = ({ schedule: "shiftReminders", worktime: "forgottenClockOut" })[category] || "systemAlerts"; return settings[key] !== false; };
   const working = (entry) => entry && !["free", "vacation", "sick", "absence"].includes(entry.kind) && /^\d{2}:\d{2}$/.test(entry.start || "") && /^\d{2}:\d{2}$/.test(entry.end || "");
   async function notifyOnce(id, title, body) {
+    if (!deviceNotificationAllowed(id.startsWith("shift-") ? "schedule" : "worktime")) return;
     const sent = read(SENT_KEY, {}); if (sent[id]) return;
     sent[id] = new Date().toISOString(); write(SENT_KEY, sent);
     const registration = await navigator.serviceWorker?.ready.catch(() => null);

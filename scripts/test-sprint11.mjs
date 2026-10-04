@@ -49,3 +49,6 @@ const sprint11 = await readFile("js/sprint11.js", "utf8");
 if (!sprint11.includes("removePlatformDemoHome") || !sprint11.includes("teamDataEmpty")) throw new Error("Statische Demo-Startdaten oder Team-Badges werden nach der echten Anmeldung nicht entfernt.");
 const sprint11Css = await readFile("css/sprint11.css", "utf8");
 if (!sprint11Css.includes(".timeflow-team-mode .account-section") || !sprint11Css.includes(".timeflow-team-mode .statistics-section")) throw new Error("Team-Profil zeigt weiterhin statische Statistikdaten.");
+const settings = await readFile("js/sprint5.js", "utf8");
+const notifications = await readFile("js/sprint7.js", "utf8");
+if (!settings.includes("deviceNotifications") || !settings.includes("systemAlerts") || !notifications.includes("deviceNotificationAllowed")) throw new Error("Externe Benachrichtigungen sind nicht vollständig einstellbar.");

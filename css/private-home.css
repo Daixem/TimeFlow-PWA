@@ -18,8 +18,8 @@
   justify-content: center;
   gap: 7px;
   text-align: center;
-  background: radial-gradient(circle at 35% 25%, color-mix(in srgb,var(--tf-accent) 72%,white), var(--tf-accent) 66%, color-mix(in srgb,var(--tf-accent) 68%,black));
-  box-shadow: 0 0 0 9px color-mix(in srgb,var(--tf-accent) 12%,transparent), 0 15px 36px color-mix(in srgb,var(--tf-accent) 38%,transparent);
+  background: radial-gradient(circle at 35% 25%, #ff6a78, #e21f4f 66%, #9e1034);
+  box-shadow: 0 0 0 9px rgba(226,31,79,.16), 0 15px 36px rgba(190,18,62,.5);
 }
 :is(.timeflow-private-mode,.timeflow-team-mode) .dashboard > .stamp-card.is-working { background: radial-gradient(circle at 35% 25%, #45da8a, #1bae61 66%, #118044); }
 :is(.timeflow-private-mode,.timeflow-team-mode) .stamp-card .stamp-left { flex-direction: column; gap: 6px; }
