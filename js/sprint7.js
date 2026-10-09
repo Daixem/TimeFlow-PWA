@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
         <div class="notification-filters" role="group" aria-label="Mitteilungen filtern"><button type="button" data-notification-filter="all" aria-pressed="true">Alle</button><button type="button" data-notification-filter="worktime" aria-pressed="false">Arbeitszeit</button><button type="button" data-notification-filter="schedule" aria-pressed="false">Dienstplan</button><button type="button" data-notification-filter="system" aria-pressed="false">System</button></div>
         <div class="notification-list" id="notificationList"></div>
-        <footer><button type="button" data-test-notification><i class="fa-solid fa-paper-plane"></i> Testbenachrichtigung</button><small>Lokale Vorschau · Serverseitige Pushs folgen mit dem Backend</small></footer>
+        <footer><button type="button" data-test-notification><i class="fa-solid fa-paper-plane"></i> Testbenachrichtigung</button><small>Gerätehinweise sind aktivierbar. Server-Pushs folgen nach der Cloudflare-Einrichtung.</small></footer>
       </section>
     </dialog>
   `);
