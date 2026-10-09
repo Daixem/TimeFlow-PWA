@@ -392,3 +392,39 @@ html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(
   .clock-summary>article,.user-management-summary>span,.week-summary>span,
   .release-readiness-grid>span,.profile-details-grid>*
 ){background:transparent!important;background-image:none!important;box-shadow:none!important}
+
+/* Flatten every nested settings surface into its parent card. */
+html[data-tf-background] .settings-card > header,
+html[data-tf-background] .settings-card .settings-list,
+html[data-tf-background] .settings-card .app-status-list,
+html[data-tf-background] .settings-card .data-actions,
+html[data-tf-background] .settings-card .settings-effect,
+html[data-tf-background] .settings-card .settings-primary-button,
+html[data-tf-background] .settings-card .settings-notification-device {
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+html[data-tf-background] .settings-card .settings-list > label,
+html[data-tf-background] .settings-card .app-status-list > div,
+html[data-tf-background] .settings-card .data-actions > button,
+html[data-tf-background] .settings-card .settings-notification-device {
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  border-color: var(--tf-divider) !important;
+}
+html[data-tf-background] .settings-card .settings-list > label:last-child {
+  border-bottom-color: transparent !important;
+}
+html[data-tf-background] .settings-card .settings-notification-device {
+  margin: 0 !important;
+  padding: 10px 0 !important;
+  border-width: 1px 0 0 !important;
+  border-radius: 0 !important;
+}
+html[data-tf-background] .settings-card .settings-notification-device > span {
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
