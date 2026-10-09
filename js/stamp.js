@@ -158,9 +158,10 @@ document.addEventListener("DOMContentLoaded", () => {
     elements.action.classList.toggle("is-working", Boolean(saved.isWorking));
     const ready = window.TimeFlowWorkTimeReady?.() && (window.TimeFlowWorkTimeServerEnabled?.() || window.TimeFlowWorkTimeSnapshotAuthority?.() === false);
     const pending = window.TimeFlowWorkTimePending?.();
-    elements.action.disabled = !ready || Boolean(pending);
-    elements.connection.textContent = pending ? "Offline vorgemerkt" : ready ? "Bereit" : window.TimeFlowWorkTimeReady?.() ? "Nicht erreichbar" : "Wird verbunden …";
-    elements.connection.classList.toggle("is-offline", !ready || Boolean(pending));
+    const conflict = window.TimeFlowWorkTimeConflict?.();
+    elements.action.disabled = !ready;
+    elements.connection.textContent = conflict ? "Konflikt prüfen" : pending ? "Offline vorgemerkt" : ready ? "Bereit" : window.TimeFlowWorkTimeReady?.() ? "Nicht erreichbar" : "Wird verbunden …";
+    elements.connection.classList.toggle("is-offline", !ready || Boolean(pending) || Boolean(conflict));
     elements.action.setAttribute("aria-pressed", String(Boolean(saved.isWorking)));
     elements.actionIcon.className = `fa-solid ${saved.isWorking ? "fa-right-from-bracket" : "fa-right-to-bracket"}`;
     elements.actionLabel.textContent = saved.isWorking ? "Ausstempeln" : "Einstempeln";

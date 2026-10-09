@@ -40,6 +40,18 @@
     function write(key, value) { storage.setItem(storageKey(key), JSON.stringify(value)); }
     function clear(key) { storage.removeItem(storageKey(key)); }
     function meta() { return read(META_KEY, { revision: 0, updatedAt: null }); }
+    function pendingChanges() {
+      var pending = read(PENDING_KEY, null);
+      if (Array.isArray(pending?.changes)) return pending.changes.filter(function (item) { return item && item.change; });
+      return pending && pending.change ? [{ change: pending.change, queuedAt: pending.queuedAt || pending.change.occurredAt || new Date().toISOString() }] : [];
+    }
+    function savePending(changes) {
+      if (!changes.length) { clear(PENDING_KEY); return null; }
+      var normalized = changes.map(function (item) { return { change: item.change, queuedAt: item.queuedAt }; });
+      var snapshot = { change: normalized[normalized.length - 1].change, queuedAt: normalized[0].queuedAt, changes: normalized };
+      write(PENDING_KEY, snapshot);
+      return snapshot;
+    }
     function saveCurrent(result) {
       if (!result || !result.state || typeof result.state !== "object" || !Number.isInteger(Number(result.revision)) || Number(result.revision) < 1) {
         var invalid = new Error("work_time_invalid_response"); invalid.uncertain = true; throw invalid;
@@ -53,7 +65,11 @@
       try { response = await request(path, { method: method, cache: "no-store", headers: headers, body: body ? JSON.stringify(body) : undefined }); }
       catch (_error) { var networkError = new Error("work_time_network_error"); networkError.network = true; throw networkError; }
       var result = await response.json().catch(function () { return {}; });
-      if (!response.ok) throw errorFromResponse(response.status, result);
+      if (!response.ok) {
+        var responseError = errorFromResponse(response.status, result);
+        if (response.status >= 500 && !(response.status === 503 && result.error === "work_time_feature_disabled")) responseError.uncertain = true;
+        throw responseError;
+      }
       if (result && result.context) {
         var responseOrganizationId = result.context.organizationId || null;
         if (responseOrganizationId !== organizationId) throw new Error("work_time_context_mismatch");
@@ -85,36 +101,88 @@
     async function getSessions(month) { var suffix = typeof month === "string" && month ? "?month=" + encodeURIComponent(month) : ""; return api(baseUrl + "/sessions" + suffix, "GET"); }
     async function isEnabled() { try { await getCurrent(); return true; } catch (error) { if (error.status === 503 && error.result && error.result.error === "work_time_feature_disabled") return false; throw error; } }
     function preserveConflict(change, response) { var conflict = { active: true, localChange: change, serverState: response.state || null, serverRevision: Number(response.revision || 0), updatedAt: response.updatedAt || null }; write(CONFLICT_KEY, conflict); return conflict; }
-    async function send(change, revision) { var result = await api(baseUrl, "PUT", safeChange(change, revision)); saveCurrent(result); clear(PENDING_KEY); clear(CONFLICT_KEY); return result; }
+    async function send(change, revision, keepPending) { var result = await api(baseUrl, "PUT", safeChange(change, revision)); saveCurrent(result); if (!keepPending) clear(PENDING_KEY); clear(CONFLICT_KEY); return result; }
+    function queueConflictError(conflict) { var error = new Error("work_time_conflict_pending"); error.status = 409; error.result = { state: conflict.serverState, revision: conflict.serverRevision, updatedAt: conflict.updatedAt }; error.conflict = conflict; return error; }
     async function writeChange(change) {
-      var existing = read(PENDING_KEY, null);
-      if (existing && existing.change) return { pending: true, ...existing };
+      var conflict = read(CONFLICT_KEY, null);
+      if (conflict && conflict.active) throw queueConflictError(conflict);
+      var existing = pendingChanges();
+      var lastQueuedAt = existing.reduce(function (latest, item) { return Math.max(latest, Date.parse(item.change.occurredAt || item.queuedAt || "") || 0); }, 0);
+      var attemptedAt = new Date(Math.max(Date.now(), lastQueuedAt + (existing.length ? 1 : 0))).toISOString();
+      if (existing.length) {
+        var last = existing[existing.length - 1];
+        var revision = Number(last.change.expectedRevision || 0) + 1;
+        var queued = { change: safeChange({ ...change, occurredAt: change.occurredAt || attemptedAt }, revision), queuedAt: attemptedAt };
+        existing.push(queued);
+        var savedQueue = savePending(existing);
+        if (root.navigator && root.navigator.onLine) {
+          try {
+            var flushed = await reconnectPending();
+            while (pendingChanges().length && !(read(CONFLICT_KEY, null) || {}).active) flushed = await reconnectPending();
+            return flushed;
+          }
+          catch (error) {
+            if (!error.network && !error.uncertain) throw error;
+          }
+        }
+        return { pending: true, change: queued.change, queuedAt: queued.queuedAt, queueLength: savedQueue.changes.length };
+      }
       var revision = Number(meta().revision || 0);
-      var attemptedAt = new Date().toISOString();
-      try { return await send(change, revision); } catch (error) {
+      try { return await send(change, revision, false); } catch (error) {
         if (error.status === 409) { error.conflict = preserveConflict(change, error.result || {}); throw error; }
-        if (error.network || error.uncertain) { var pending = { change: safeChange({ ...change, occurredAt: attemptedAt }, revision), queuedAt: attemptedAt }; write(PENDING_KEY, pending); return { pending: true, ...pending }; }
+        if (error.network || error.uncertain) {
+          var queued = { change: safeChange({ ...change, occurredAt: change.occurredAt || attemptedAt }, revision), queuedAt: attemptedAt };
+          savePending([queued]);
+          return { pending: true, ...queued, queueLength: 1 };
+        }
         throw error;
       }
     }
     async function reconnectPending() {
       if (reconnectInFlight) return reconnectInFlight;
-      var pending = read(PENDING_KEY, null);
-      if (!pending || !pending.change) return { pending: false };
-      // Keep the original resource revision. Re-reading meta here could turn a
-      // stale offline command into a different command after another device won.
+      var conflict = read(CONFLICT_KEY, null);
+      if (conflict && conflict.active) throw queueConflictError(conflict);
+      var queue = pendingChanges();
+      if (!queue.length) return { pending: false };
       reconnectInFlight = (async function () {
-        try { return await send(pending.change, Number(pending.change.expectedRevision)); }
-        catch (error) {
-          if (error.status === 409) error.conflict = preserveConflict(pending.change, error.result || {});
-          throw error;
+        var result = null;
+        while (queue.length) {
+          var current = queue[0];
+          var revision = Number(current.change.expectedRevision || 0);
+          try {
+            result = await send(current.change, revision, true);
+          } catch (error) {
+            if (error.status === 409) error.conflict = preserveConflict(current.change, error.result || {});
+            throw error;
+          }
+          queue.shift();
+          if (queue.length) queue[0].change.expectedRevision = Number(result.revision);
+          savePending(queue);
         }
+        return result;
       }());
       try { return await reconnectInFlight; } finally { reconnectInFlight = null; }
     }
-    async function loadServerConflictVersion(applyLocalState) { var conflict = read(CONFLICT_KEY, null); if (!conflict || !conflict.active) return null; if (typeof applyLocalState === "function") await applyLocalState(conflict.serverState); saveCurrent({ state: conflict.serverState, revision: conflict.serverRevision, updatedAt: conflict.updatedAt }); clear(CONFLICT_KEY); return conflict.serverState; }
-    async function reapplyLocalConflictVersion() { var conflict = read(CONFLICT_KEY, null); if (!conflict || !conflict.active) return null; try { return await send(conflict.localChange, conflict.serverRevision); } catch (error) { if (error.status === 409) error.conflict = preserveConflict(conflict.localChange, error.result || {}); throw error; } }
-    return { organizationId: organizationId, getCurrent: getCurrent, getJournal: getJournal, getSessions: getSessions, isEnabled: isEnabled, writeChange: writeChange, reconnectPending: reconnectPending, loadServerConflictVersion: loadServerConflictVersion, reapplyLocalConflictVersion: reapplyLocalConflictVersion, getMeta: meta, getCachedCurrent: function () { return read(CACHE_KEY, null); }, getPending: function () { return read(PENDING_KEY, null); }, getConflict: function () { return read(CONFLICT_KEY, null); } };
+    async function loadServerConflictVersion(applyLocalState) {
+      var conflict = read(CONFLICT_KEY, null);
+      if (!conflict || !conflict.active) return null;
+      if (typeof applyLocalState === "function") await applyLocalState(conflict.serverState);
+      if (conflict.serverState && typeof conflict.serverState === "object") saveCurrent({ state: conflict.serverState, revision: conflict.serverRevision, updatedAt: conflict.updatedAt });
+      else { clear(CACHE_KEY); write(META_KEY, { revision: Number(conflict.serverRevision || 0), updatedAt: conflict.updatedAt || null }); }
+      clear(PENDING_KEY); clear(CONFLICT_KEY);
+      return conflict.serverState;
+    }
+    async function discardPending() { var result = await getCurrent(); clear(PENDING_KEY); clear(CONFLICT_KEY); return result; }
+    async function reapplyLocalConflictVersion() {
+      var conflict = read(CONFLICT_KEY, null);
+      if (!conflict || !conflict.active) return null;
+      var queue = pendingChanges();
+      if (!queue.length) queue = [{ change: conflict.localChange, queuedAt: conflict.localChange?.occurredAt || new Date().toISOString() }];
+      queue.forEach(function (item, index) { item.change.expectedRevision = Number(conflict.serverRevision) + index; });
+      savePending(queue); clear(CONFLICT_KEY);
+      return reconnectPending();
+    }
+    return { organizationId: organizationId, getCurrent: getCurrent, getJournal: getJournal, getSessions: getSessions, isEnabled: isEnabled, writeChange: writeChange, reconnectPending: reconnectPending, loadServerConflictVersion: loadServerConflictVersion, reapplyLocalConflictVersion: reapplyLocalConflictVersion, discardPending: discardPending, getMeta: meta, getCachedCurrent: function () { return read(CACHE_KEY, null); }, getPending: function () { return savePending(pendingChanges()); }, getConflict: function () { return read(CONFLICT_KEY, null); } };
   }
   root.TimeFlowWorkTimeApi = { create: create, activateAccount: activateAccount };
 }(globalThis));

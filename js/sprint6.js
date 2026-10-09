@@ -13,9 +13,9 @@ document.addEventListener("DOMContentLoaded", () => {
       </header>
       <div class="quick-actions-grid">
         <button type="button" data-quick-action="vacation"><span class="quick-action-icon vacation"><i class="fa-solid fa-umbrella-beach"></i></span><span><strong>Urlaub</strong><small>Antrag stellen</small></span><i class="fa-solid fa-chevron-right"></i></button>
-        <button type="button" data-quick-action="late"><span class="quick-action-icon late"><i class="fa-solid fa-person-running"></i></span><span><strong>Verspätung</strong><small>Team informieren</small></span><i class="fa-solid fa-chevron-right"></i></button>
-        <button type="button" data-quick-action="swap"><span class="quick-action-icon swap"><i class="fa-solid fa-arrow-right-arrow-left"></i></span><span><strong>Schichttausch</strong><small>Anfrage senden</small></span><i class="fa-solid fa-chevron-right"></i></button>
-        <button type="button" data-quick-action="sick"><span class="quick-action-icon sick"><i class="fa-solid fa-kit-medical"></i></span><span><strong>Krankmeldung</strong><small>Abwesenheit melden</small></span><i class="fa-solid fa-chevron-right"></i></button>
+        <button type="button" data-quick-action="late"><span class="quick-action-icon late"><i class="fa-solid fa-person-running"></i></span><span><strong>Verspätung</strong><small>Persönlich vormerken</small></span><i class="fa-solid fa-chevron-right"></i></button>
+        <button type="button" data-quick-action="swap"><span class="quick-action-icon swap"><i class="fa-solid fa-arrow-right-arrow-left"></i></span><span><strong>Schichttausch</strong><small>Persönlich vormerken</small></span><i class="fa-solid fa-chevron-right"></i></button>
+        <button type="button" data-quick-action="sick"><span class="quick-action-icon sick"><i class="fa-solid fa-kit-medical"></i></span><span><strong>Krankmeldung</strong><small>Persönlich vormerken</small></span><i class="fa-solid fa-chevron-right"></i></button>
       </div>
       <div class="quick-last-action" id="quickLastAction"><span><i class="fa-regular fa-circle-check"></i></span><div><strong>Noch keine Schnellaktion</strong><p>Dein letzter Vorgang erscheint nach dem Absenden hier.</p></div></div>
     </section>
@@ -57,47 +57,44 @@ document.addEventListener("DOMContentLoaded", () => {
   const actions = {
     vacation: {
       title: "Urlaub beantragen", icon: "fa-umbrella-beach", accent: "vacation", submit: "Antrag senden",
-      copy: "Wähle deinen gewünschten Zeitraum. Der Antrag wird lokal mit dem Status „In Prüfung“ gespeichert.",
+      copy: "Wähle deinen Zeitraum. Der Eintrag wird nur auf diesem Gerät gespeichert und nicht an ein Team gesendet.",
       fields: `
         <div class="quick-field-row"><label><span>Erster Urlaubstag</span><input name="start" type="date" required></label><label><span>Letzter Urlaubstag</span><input name="end" type="date" required></label></div>
         <label><span>Urlaubsart</span><select name="kind"><option>Erholungsurlaub</option><option>Sonderurlaub</option><option>Unbezahlter Urlaub</option></select></label>
         <label><span>Hinweis <em>optional</em></span><textarea name="note" rows="3" maxlength="180" placeholder="Kurzer Hinweis an die Personalplanung"></textarea></label>`,
       makeSummary: (data) => `${formatDate(data.get("start"))} – ${formatDate(data.get("end"))}`,
-      status: "In Prüfung"
+      status: "Lokal gespeichert · nicht übermittelt"
     },
     late: {
-      title: "Verspätung melden", icon: "fa-person-running", accent: "late", submit: "Team informieren",
-      copy: "Gib deine voraussichtliche Verspätung an. TimeFlow legt die Meldung direkt im Teamchat ab.",
+      title: "Verspätung vormerken", icon: "fa-person-running", accent: "late", submit: "Lokal vormerken",
+      copy: "Gib deine voraussichtliche Verspätung an. Der Eintrag bleibt auf diesem Gerät; das Team wird nicht benachrichtigt.",
       fields: `
         <label><span>Voraussichtliche Verspätung</span><select name="minutes" required><option value="5">5 Minuten</option><option value="10">10 Minuten</option><option value="15">15 Minuten</option><option value="30">30 Minuten</option><option value="45">45 Minuten</option><option value="60">60 Minuten</option></select></label>
         <label><span>Grund <em>optional</em></span><textarea name="note" rows="3" maxlength="180" placeholder="Zum Beispiel: Zugausfall"></textarea></label>
-        <p class="quick-info"><i class="fa-regular fa-comments"></i><span><strong>Team Restaurant</strong><small>Die Meldung wird als deine Nachricht im Chat gespeichert.</small></span></p>`,
+        <p class="quick-info"><i class="fa-solid fa-circle-info"></i><span><strong>Nur auf diesem Gerät</strong><small>Es wird keine Nachricht an das Team gesendet.</small></span></p>`,
       makeSummary: (data) => `ca. ${data.get("minutes")} Minuten`,
-      makeMessage: (data) => `Ich verspäte mich heute voraussichtlich um ${data.get("minutes")} Minuten.${data.get("note") ? ` Grund: ${String(data.get("note")).trim()}` : ""}`,
-      status: "Team informiert"
+      status: "Lokal gespeichert · nicht übermittelt"
     },
     swap: {
-      title: "Schichttausch anfragen", icon: "fa-arrow-right-arrow-left", accent: "swap", submit: "Anfrage senden",
-      copy: "Wähle die betroffene Schicht und teile deinen Tauschwunsch direkt mit dem Team.",
+      title: "Schichttausch vormerken", icon: "fa-arrow-right-arrow-left", accent: "swap", submit: "Lokal vormerken",
+      copy: "Halte deinen Tauschwunsch fest. Er wird nicht an andere Teammitglieder übermittelt.",
       fields: `
-        <label><span>Meine Schicht</span><select name="shift" required><option value="Freitag, 07:30 – 15:00">Fr., 07:30 – 15:00 · Frühschicht</option><option value="Montag, 12:00 – 20:30">Mo., 12:00 – 20:30 · Spätschicht</option></select></label>
+        <label><span>Meine Schicht</span><input name="shift" type="text" maxlength="100" required placeholder="Zum Beispiel: Montag, 07:30–15:00"></label>
         <label><span>Gewünschter Tauschtag</span><input name="wanted" type="date" required></label>
         <label><span>Hinweis <em>optional</em></span><textarea name="note" rows="3" maxlength="180" placeholder="Welche Zeiten passen für dich?"></textarea></label>
-        <p class="quick-info"><i class="fa-regular fa-comments"></i><span><strong>Offen für dein Team</strong><small>Die Anfrage wird im Teamchat geteilt.</small></span></p>`,
+        <p class="quick-info"><i class="fa-solid fa-circle-info"></i><span><strong>Nur auf diesem Gerät</strong><small>Es wird keine Tauschanfrage an das Team gesendet.</small></span></p>`,
       makeSummary: (data) => `${data.get("shift")} → ${formatDate(data.get("wanted"))}`,
-      makeMessage: (data) => `Ich suche einen Schichttausch für ${data.get("shift")}. Als Tauschtag passt mir ${formatDate(data.get("wanted"))}.${data.get("note") ? ` ${String(data.get("note")).trim()}` : ""}`,
-      status: "Anfrage offen"
+      status: "Lokal gespeichert · nicht übermittelt"
     },
     sick: {
       title: "Krankmeldung erfassen", icon: "fa-kit-medical", accent: "sick", submit: "Abwesenheit melden",
-      copy: "Melde deine voraussichtliche Abwesenheit. Eine ärztliche Bescheinigung wird in dieser Alpha nicht hochgeladen.",
+      copy: "Halte deine voraussichtliche Abwesenheit persönlich fest. Der Eintrag wird nicht an ein Team übermittelt.",
       fields: `
         <div class="quick-field-row"><label><span>Erster Fehltag</span><input name="start" type="date" required></label><label><span>Voraussichtlich</span><select name="duration"><option value="1 Tag">1 Tag</option><option value="2 Tage">2 Tage</option><option value="3 Tage">3 Tage</option><option value="noch offen">Noch offen</option></select></label></div>
         <label><span>Hinweis <em>optional</em></span><textarea name="note" rows="3" maxlength="180" placeholder="Keine medizinischen Details erforderlich"></textarea></label>
         <p class="quick-info privacy"><i class="fa-solid fa-shield-halved"></i><span><strong>Datensparsam</strong><small>Die Meldung bleibt lokal; teile keine Diagnose oder sensiblen Gesundheitsdaten.</small></span></p>`,
       makeSummary: (data) => `${formatDate(data.get("start"))} · ${data.get("duration")}`,
-      makeMessage: (data) => `Ich bin ab ${formatDate(data.get("start"))} voraussichtlich ${data.get("duration")} krankheitsbedingt abwesend.${data.get("note") ? ` Hinweis: ${String(data.get("note")).trim()}` : ""}`,
-      status: "Team informiert"
+      status: "Lokal gespeichert · nicht übermittelt"
     }
   };
 
@@ -248,12 +245,13 @@ document.addEventListener("DOMContentLoaded", () => {
       fields.querySelector('[name="end"]')?.focus();
       return;
     }
+    const personalRecord = privateMode();
     const record = {
       id: window.crypto?.randomUUID?.() || `qa-${Date.now()}`,
       type: currentAction,
       title: privateMode() && currentAction === "vacation" ? "Urlaub eingetragen" : privateMode() && currentAction === "sick" ? "Krankheit eingetragen" : action.title,
       summary: action.makeSummary(data),
-      status: privateMode() ? "Persönlich erfasst" : action.status,
+      status: personalRecord ? "Persönlich auf diesem Gerät erfasst" : action.status,
       createdAt: new Date().toISOString(),
       createdLabel: new Date().toLocaleString("de-DE", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })
     };
@@ -261,16 +259,12 @@ document.addEventListener("DOMContentLoaded", () => {
     saveRecords();
     renderLatest();
     document.dispatchEvent(new CustomEvent("timeflow:create-notification", { detail: {
-      type: currentAction === "vacation" && !privateMode() ? "approval" : "success",
-      title: `${action.title} erfasst`,
+      type: "success",
+      title: personalRecord ? `${action.title} erfasst` : `${action.title} lokal vorgemerkt`,
       body: `${record.summary} · ${record.status}`,
       action: "history"
     } }));
-    if (action.makeMessage && !privateMode()) {
-      document.dispatchEvent(new CustomEvent("timeflow:send-team-message", { detail: { text: action.makeMessage(data), confirmation: `${action.title} wurde im Teamchat geteilt.` } }));
-    } else {
-      notify(privateMode() ? "Dein persönlicher Eintrag wurde lokal gespeichert." : "Dein Urlaubsantrag wurde lokal mit dem Status „In Prüfung“ gespeichert.");
-    }
+    notify(personalRecord ? "Dein persönlicher Eintrag wurde auf diesem Gerät gespeichert." : "Lokal vorgemerkt. Es wurde nichts an das Team übermittelt.");
     window.TimeFlowPlatform.dialog.close(dialog);
   });
 

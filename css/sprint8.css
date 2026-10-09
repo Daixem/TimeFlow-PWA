@@ -14,6 +14,8 @@ html.timeflow-auth-locked body > .app { display: none; }
 .auth-intro h1 { color: white; font-size: 1.35rem; letter-spacing: -.045em; }
 .auth-intro p { max-width: 360px; margin-top: 7px; color: #8297ae; font-size: .57rem; line-height: 1.55; }
 .auth-demo-users { display: grid; gap: 8px; padding: 0 18px; }
+.auth-demo-users > a { display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 11px 14px; border: 1px solid rgba(91, 139, 190, .2); border-radius: 13px; color: #edf5ff; background: linear-gradient(145deg, #2868d6, #1749a7); font-size: .58rem; font-weight: 750; text-decoration: none; }
+.auth-demo-users > a:focus-visible { outline: 2px solid #9ec0ff; outline-offset: 3px; }
 .auth-demo-users > button { display: grid; grid-template-columns: 43px 1fr auto; gap: 11px; align-items: center; width: 100%; min-height: 65px; padding: 10px 12px; border: 1px solid rgba(91, 139, 190, .15); border-radius: 15px; color: #e6eef8; background: rgba(4, 40, 76, .72); text-align: left; transition: border-color .18s, transform .18s, background .18s; }
 .auth-demo-users > button:hover { border-color: rgba(70, 132, 234, .42); background: rgba(19, 65, 124, .58); transform: translateY(-1px); }
 .auth-demo-users > button:focus-visible { outline: 2px solid #6d9fff; outline-offset: 2px; }

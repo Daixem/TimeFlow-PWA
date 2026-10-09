@@ -21,7 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <div class="chat-toolbar">
         <div class="chat-filter-tabs" role="group" aria-label="Chatfilter">
           <button type="button" data-chat-filter="all" aria-pressed="true">Alle</button>
-          <button type="button" data-chat-filter="unread">Ungelesen <span id="unreadCount">3</span></button>
+          <button type="button" data-chat-filter="unread">Ungelesen <span id="unreadCount">0</span></button>
           <button type="button" data-chat-filter="groups">Teams</button>
         </div>
         <label class="chat-search">
@@ -157,12 +157,27 @@ document.addEventListener("DOMContentLoaded", () => {
     // Remove it when a real platform session or either production mode is
     // active so preview conversations can never reappear as real messages.
     try { window.TimeFlowPlatform.storage.removeItem(CHAT_STORAGE_KEY); } catch (_error) { /* storage can be unavailable in restricted WebViews */ }
+    try { window.TimeFlowPlatform.storage.removeItem(SHIFT_STORAGE_KEY); } catch (_error) { /* storage can be unavailable in restricted WebViews */ }
+    shiftConfirmed = false;
     chatPage.querySelector(".inbox-highlight")?.remove();
     chatPage.querySelector(".conversation-list")?.replaceChildren();
     chatPage.querySelector(".chat-thread")?.setAttribute("hidden", "");
-    chatPage.querySelector(".chat-demo-note")?.remove();
+    chatPage.querySelector("[data-new-chat]")?.setAttribute("hidden", "");
+    chatPage.querySelector(".chat-toolbar")?.setAttribute("hidden", "");
+    chatPage.querySelectorAll("[data-chat-filter]").forEach((button) => { button.disabled = true; });
+    const empty = document.getElementById("emptyConversations");
+    if (empty) empty.textContent = "Der gemeinsame Teamchat ist noch nicht verbunden.";
+    chatPage.classList.add("chat-backend-unavailable");
+    const note = chatPage.querySelector(".chat-demo-note");
+    if (note) {
+      note.replaceChildren();
+      const icon = document.createElement("i");
+      icon.className = "fa-solid fa-circle-info";
+      note.append(icon, document.createTextNode("Der gemeinsame Teamchat ist noch nicht verbunden. Nachrichten und Schichtbestätigungen werden nicht gespeichert oder versendet."));
+    }
     chatDialog?.remove();
     updateUnreadCount();
+    applyConversationFilter();
   }
 
   const conversations = {
@@ -390,51 +405,15 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("emptyConversations").hidden = visible !== 0;
   }
 
-  function sendMessage(text, confirmation = "Nachricht wurde lokal gespeichert.") {
-    const cleanText = text.trim();
-    if (!cleanText) return;
-    storedMessages[activeChat] ||= [];
-    storedMessages[activeChat].push({
-      sender: "Du",
-      text: cleanText,
-      time: new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }),
-      own: true,
-      read: false
-    });
-    window.TimeFlowPlatform.storage.setItem(CHAT_STORAGE_KEY, JSON.stringify(storedMessages));
-    renderConversation(activeChat, false);
-    updateConversationPreview(activeChat, cleanText);
-    notify(confirmation);
-  }
-
-  function updateConversationPreview(id, text) {
-    const item = document.querySelector(`[data-chat-id="${id}"]`);
-    const preview = item?.querySelector(".conversation-copy small");
-    const time = item?.querySelector(".conversation-copy time");
-    if (preview) {
-      preview.replaceChildren();
-      const receipt = document.createElement("i");
-      receipt.className = "fa-solid fa-check read-mark";
-      preview.append(receipt, document.createTextNode(` ${text}`));
-    }
-    if (time) time.textContent = "Jetzt";
+  function sendMessage(text) {
+    if (!String(text || "").trim()) return;
+    notify("Der Teamchat ist noch nicht verbunden. Es wurde keine Nachricht gesendet.");
   }
 
   document.addEventListener("timeflow:send-team-message", (event) => {
     const text = String(event.detail?.text || "").trim();
     if (!text) return;
-    storedMessages.restaurant ||= [];
-    storedMessages.restaurant.push({
-      sender: "Du",
-      text,
-      time: new Date().toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }),
-      own: true,
-      read: false
-    });
-    window.TimeFlowPlatform.storage.setItem(CHAT_STORAGE_KEY, JSON.stringify(storedMessages));
-    updateConversationPreview("restaurant", text);
-    if (activeChat === "restaurant") renderConversation("restaurant", false);
-    notify(event.detail?.confirmation || "Meldung wurde im Teamchat gespeichert.");
+    notify("Der Teamchat ist noch nicht verbunden. Es wurde keine Nachricht gesendet.");
   });
 
   function confirmShift() {
@@ -442,9 +421,7 @@ document.addEventListener("DOMContentLoaded", () => {
       notify("Diese Schicht ist bereits bestätigt.");
       return;
     }
-    shiftConfirmed = true;
-    window.TimeFlowPlatform.storage.setItem(SHIFT_STORAGE_KEY, "true");
-    sendMessage("Ich habe meine Frühschicht am Freitag bestätigt.", "Schicht bestätigt und im Chat geteilt.");
+    notify("Die Schichtbestätigung ist noch nicht mit einem gemeinsamen Dienstplan verbunden.");
   }
 
   document.querySelectorAll("[data-chat-id]").forEach((button) => button.addEventListener("click", () => {

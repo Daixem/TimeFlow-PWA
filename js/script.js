@@ -29,6 +29,7 @@ let workTimePendingEvent;
 window.TimeFlowWorkTimeServerEnabled = () => workTimeServerMode === "enabled";
 window.TimeFlowWorkTimeReady = () => workTimeServerMode !== undefined;
 window.TimeFlowWorkTimePending = () => workTimePendingEvent || null;
+window.TimeFlowWorkTimeConflict = () => Boolean(workTimeApi?.getConflict?.()?.active);
 // Until the feature explicitly answers "disabled", legacy stamps are never
 // accepted as an authority. This closes the start-up race with general sync.
 window.TimeFlowWorkTimeSnapshotAuthority = () => workTimeServerMode !== "disabled";
@@ -185,6 +186,26 @@ function ensureWorkTimeReady() {
   return workTimeReady || (workTimeReady = initialiseWorkTime());
 }
 function showWorkTimeUnavailable() { showToast("Arbeitszeiterfassung derzeit nicht erreichbar. Es wurde keine lokale Ersatzbuchung erstellt."); }
+async function resolveExpiredOfflineWorkTime(client, error) {
+  if (error?.result?.error !== "invalid_work_time_timestamp") return false;
+  const pending = client.getPending?.();
+  const pendingCount = Array.isArray(pending?.changes) ? pending.changes.length : pending?.change ? 1 : 0;
+  const discard = window.confirm(`Eine vorgemerkte Arbeitszeitaktion ist älter als sieben Tage und kann nicht automatisch übertragen werden. ${pendingCount} lokale Aktion${pendingCount === 1 ? "" : "en"} bleiben vorgemerkt. OK übernimmt den aktuellen Serverstand und verwirft diese lokalen Aktionen; du kannst die Zeiten danach manuell korrigieren. Abbrechen behält sie lokal.`);
+  if (!discard) {
+    showToast("Die alten Offline-Aktionen bleiben lokal vorgemerkt und wurden nicht übertragen.");
+    return true;
+  }
+  try {
+    const result = await client.discardPending();
+    if (result?.state) applyWorkTimeState(result.state);
+    workTimePendingEvent = undefined;
+    document.dispatchEvent(new CustomEvent("timeflow:work-time-pending", { detail: null }));
+    showToast("Serverstand geladen. Prüfe die Arbeitszeit und korrigiere fehlende Zeiten bei Bedarf manuell.");
+  } catch {
+    showToast("Der Serverstand konnte nicht geladen werden. Die Offline-Aktionen bleiben erhalten.");
+  }
+  return true;
+}
 async function writeServerWorkTime(eventType) {
   const client = workTimeClient();
   if (!client || workTimeServerMode !== "enabled") return false;
@@ -198,7 +219,7 @@ async function writeServerWorkTime(eventType) {
       else if (eventType === "PAUSE_START") applyWorkTimeState({ ...state, isPaused: true, hasManualPause: true, pauseStartedAt: now });
       else if (eventType === "PAUSE_END") applyWorkTimeState({ ...state, isPaused: false, pauseStartedAt: null });
       document.dispatchEvent(new CustomEvent("timeflow:work-time-pending", { detail: { eventType } }));
-      showToast("Offline gespeichert – wird beim Reconnect gesendet.");
+      showToast("Lokal vorgemerkt – wird beim nächsten Verbindungsversuch gesendet.");
       return true;
     }
     workTimePendingEvent = undefined;
@@ -207,10 +228,30 @@ async function writeServerWorkTime(eventType) {
     return true;
   } catch (error) {
     if (error.status === 409) {
+      const pending = client.getPending?.();
+      const pendingCount = Array.isArray(pending?.changes) ? pending.changes.length : pending?.change ? 1 : 0;
       applyWorkTimeState(error.result?.state);
-      showToast("Arbeitszeitkonflikt – bitte bewusst erneut auslösen.");
+      const replay = window.confirm(pendingCount
+        ? `Eine andere Aktualisierung wurde zuerst gespeichert. ${pendingCount} lokale Arbeitszeitaktion${pendingCount === 1 ? "" : "en"} warten noch. OK versucht, sie in ihrer ursprünglichen Reihenfolge anzuwenden. Abbrechen übernimmt den Serverstand und verwirft diese lokalen Aktionen.`
+        : "Eine andere Aktualisierung wurde zuerst gespeichert. OK versucht, deine Aktion auf dem aktuellen Stand erneut anzuwenden. Abbrechen übernimmt den Serverstand.");
+      try {
+        if (replay) {
+          const result = await client.reapplyLocalConflictVersion();
+          if (result?.state) applyWorkTimeState(result.state);
+        } else {
+          const serverState = await client.loadServerConflictVersion((value) => applyWorkTimeState(value));
+          if (serverState) applyWorkTimeState(serverState);
+        }
+        workTimePendingEvent = undefined;
+        document.dispatchEvent(new CustomEvent("timeflow:work-time-pending", { detail: null }));
+        showToast(replay ? "Lokale Arbeitszeitaktionen wurden erneut geprüft." : "Der Serverstand wurde übernommen.");
+      } catch (resolutionError) {
+        if (resolutionError.status === 409) applyWorkTimeState(resolutionError.result?.state);
+        showToast("Der Konflikt besteht weiter. Bitte prüfe die Arbeitszeit im Verlauf.");
+      }
       return true;
     }
+    if (await resolveExpiredOfflineWorkTime(client, error)) return true;
     if (error.network) { showToast("Arbeitszeit wartet auf Verbindung – es wurde keine lokale Ersatzbuchung erstellt."); return true; }
     if (error.status === 503 && error.result?.error === "work_time_feature_disabled") workTimeServerMode = "disabled";
     showWorkTimeUnavailable();
@@ -248,7 +289,7 @@ function updateWorkUi() {
   elements.workStatus.textContent = state.isWorking ? "Im Dienst" : "Nicht im Dienst";
   elements.clockHint.textContent = state.isWorking ? "Tippen zum Ausstempeln" : "Tippen zum Einstempeln";
   elements.clockButton.classList.toggle("is-working", state.isWorking);
-  elements.clockButton.disabled = Boolean(workTimePendingEvent) || (workTimeServerMode !== "enabled" && workTimeServerMode !== "disabled");
+  elements.clockButton.disabled = workTimeServerMode !== "enabled" && workTimeServerMode !== "disabled";
   elements.clockButton.setAttribute("aria-busy", String(workTimeServerMode === undefined));
   elements.clockButton.setAttribute("aria-pressed", String(state.isWorking));
   elements.clockIcon.className = `fa-solid ${state.isWorking ? "fa-right-from-bracket" : "fa-right-to-bracket"}`;
@@ -375,7 +416,19 @@ document.addEventListener("timeflow:sync-restored", () => {
 window.addEventListener("online", async () => {
   const mode = await ensureWorkTimeReady();
   if (mode !== "enabled" || !workTimeApi?.getPending?.()) return;
-  try { const result = await workTimeApi.reconnectPending(); if (result?.state) { workTimePendingEvent = undefined; applyWorkTimeState(result.state); window.TimeFlowPlatform.storage.removeItem("timeflow-work-time-correction-pending-v1"); document.dispatchEvent(new CustomEvent("timeflow:work-time-pending", { detail: null })); } } catch (error) { if (error.status === 409) applyWorkTimeState(error.result?.state); }
+  try {
+    const result = await workTimeApi.reconnectPending();
+    if (result?.state) applyWorkTimeState(result.state);
+    if (!workTimeApi.getPending?.()) {
+      workTimePendingEvent = undefined;
+      window.TimeFlowPlatform.storage.removeItem("timeflow-work-time-correction-pending-v1");
+      document.dispatchEvent(new CustomEvent("timeflow:work-time-pending", { detail: null }));
+    }
+  } catch (error) {
+    if (error.status === 409) { applyWorkTimeState(error.result?.state); showToast("Arbeitszeitkonflikt. Tippe auf den Stempelbutton, um zwischen Serverstand und lokalen Aktionen zu wählen."); }
+    else if (await resolveExpiredOfflineWorkTime(workTimeApi, error)) return;
+    else if (error.network || error.uncertain) showToast("Der Server hat die Arbeitszeit noch nicht bestätigt. Sie bleibt lokal vorgemerkt.");
+  }
 });
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -384,13 +437,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const homeNav = document.querySelector('[data-target="home"]');
   if (!dashboard || !scheduleNav || !homeNav) return;
   scheduleNav.querySelector(".nav-text").textContent = "Dienstpläne";
-  const team = [["AM","07:00 – 15:00","Anna Müller"],["MM","07:30 – 15:00","Max Mustermann (Du)"],["TB","08:00 – 16:30","Thomas Becker"],["JS","09:00 – 17:30","Julia Schneider"],["MW","10:00 – 18:30","Michael Wagner"]];
-  const teamRows = team.map((row, i) => `<div class="team-person ${i === 1 ? "active" : ""}"><b>${row[0]}</b><time>${row[1]}</time><span>${row[2]}</span></div>`).join("");
-  const week = [["Mo.","27.07.","07:30 – 15:00","Frühschicht","green","8:00 h"],["Di.","28.07.","07:30 – 15:00","Frühschicht","green active","8:00 h"],["Mi.","29.07.","12:00 – 20:30","Spätschicht","orange","8:00 h"],["Do.","30.07.","● Frei","","free","—"],["Fr.","31.07.","07:30 – 15:00","Frühschicht","green","8:00 h"],["Sa.","01.08.","🌴 Urlaub","","vacation","Urlaubstag"],["So.","02.08.","● Frei","","free","—"]];
-  const weekRows = week.map((row) => `<div class="week-row ${row[4]}"><b>${row[0]}<small>${row[1]}</small></b><i></i><span>${row[2]}<small>${row[3]}</small></span>${row[3] ? '<em>AM MM TB +3</em>' : ''}<strong>${row[5]}</strong>${row[3] ? '<i class="fa-solid fa-chevron-right arrow"></i>' : ''}</div>`).join("");
-  const types = ["muted","muted","green","orange","red","blue","free","green","green","green","green","orange","blue","free","green","green","green","green","orange","blue","free","green","red","green","green","orange","free","free","green","selected green","green","green","red","muted","muted"];
-  const monthDays = types.map((type, i) => `<span class="${type}">${i < 2 ? 29 + i : i < 33 ? i - 1 : i - 32}</span>`).join("");
-  dashboard.insertAdjacentHTML("beforeend", `<section id="schedulePage" class="schedule-page hidden"><header class="schedule-header"><h1>Dienstpläne</h1><button><i class="fa-regular fa-calendar"></i></button></header><div class="schedule-tabs"><button data-view="day" aria-selected="true">Tag</button><button data-view="week">Woche</button><button data-view="month">Monat</button><button data-view="period">Zeitraum</button></div><div class="schedule-view" data-panel="day"><div class="date-switch"><button><i class="fa-solid fa-chevron-left"></i></button><span><i class="fa-regular fa-calendar"></i> Dienstag, 28. Juli 2026 <small>Heute</small></span><button><i class="fa-solid fa-chevron-right"></i></button></div><article class="my-shift"><p><i class="fa-solid fa-briefcase"></i> Meine Schicht</p><div><i class="fa-regular fa-clock"></i><span><strong>07:30 – 15:00</strong><small>Frühschicht</small></span><em>Geplant</em></div><footer>8:00 h Arbeit &nbsp;•&nbsp; 30 Min Pause &nbsp;•&nbsp; 8:30 h Anwesenheit</footer></article><article class="team-today"><h2><i class="fa-solid fa-users"></i> Dein Team heute</h2><p>Nur Mitarbeiter deiner Abteilung (Restaurant)</p>${teamRows}<button>+ 4 weitere Kollegen <i class="fa-solid fa-chevron-down"></i></button></article></div><div class="schedule-view hidden" data-panel="week"><div class="date-switch"><button><i class="fa-solid fa-chevron-left"></i></button><span>KW 31 • 27. Juli – 2. August 2026</span><button><i class="fa-solid fa-chevron-right"></i></button></div><div class="week-summary"><span>Arbeitsstunden<strong>32:00 h</strong></span><span>Sollstunden<strong>40:00 h</strong></span><span>Überstunden<strong>+0:30 h</strong></span><span>Freie Tage<strong>2</strong></span></div><div class="week-list">${weekRows}</div></div><div class="schedule-view hidden" data-panel="month"><div class="date-switch"><button><i class="fa-solid fa-chevron-left"></i></button><span>Juli 2026</span><button><i class="fa-solid fa-chevron-right"></i></button></div><div class="calendar-weekdays"><span>Mo.</span><span>Di.</span><span>Mi.</span><span>Do.</span><span>Fr.</span><span>Sa.</span><span>So.</span></div><div class="month-calendar">${monthDays}</div><div class="calendar-legend"><span class="green">● Frühschicht</span><span class="orange">● Spätschicht</span><span class="purple">● Nachtschicht</span><span class="blue">● Urlaub</span><span class="free">● Frei</span><span class="red">● Krank</span></div><article class="month-overview"><h2>Monatsübersicht</h2><div><span><b>17</b>Arbeitstage</span><span><b>6</b>Spätschichten</span><span><b>2</b>Urlaubstage</span><span><b>6</b>Freie Tage</span></div></article></div><div class="schedule-view hidden" data-panel="period"><div class="date-switch"><button><i class="fa-solid fa-chevron-left"></i></button><span><i class="fa-regular fa-calendar"></i> 01. Juni – 31. Juli 2026</span><button><i class="fa-solid fa-chevron-right"></i></button></div><div class="period-filter"><button class="active">Meine Einsätze</button><button>Abteilung (Restaurant)</button></div><article class="period-day"><h2>Montag, 27. Juli 2026 <span>8:00 h <i class="fa-solid fa-chevron-up"></i></span></h2><p class="active">● 07:30 – 15:00 <span>Max Mustermann (Du)</span><b>Frühschicht</b></p><p>● 08:00 – 16:30 <span>Thomas Becker</span><b>Frühschicht</b></p></article><article class="period-day orange-day"><h2>Dienstag, 28. Juli 2026 <span>8:00 h <i class="fa-solid fa-chevron-up"></i></span></h2><p>● 12:00 – 20:30 <span>Michael Wagner</span><b>Spätschicht</b></p><p>● 12:30 – 21:00 <span>Sarah Klein</span><b>Spätschicht</b></p></article><div class="period-closed">Mittwoch, 29. Juli 2026 <span>8:00 h <i class="fa-solid fa-chevron-down"></i></span></div><div class="period-closed">Donnerstag, 30. Juli 2026 <span>Frei <i class="fa-solid fa-chevron-down"></i></span></div></div></section>`);
+  dashboard.insertAdjacentHTML("beforeend", '<section id="schedulePage" class="schedule-page hidden"><header class="schedule-header"><h1>Dienstpläne</h1></header><div class="schedule-tabs"><button type="button" data-view="day" aria-selected="true">Tag</button><button type="button" data-view="week" aria-selected="false">Woche</button><button type="button" data-view="month" aria-selected="false">Monat</button><button type="button" data-view="period" aria-selected="false">Zeitraum</button></div><div class="schedule-view" data-panel="day"><p class="private-import-empty">Noch kein eigener Dienstplan übernommen.</p></div><div class="schedule-view hidden" data-panel="week"><p class="private-import-empty">Noch kein eigener Dienstplan übernommen.</p></div><div class="schedule-view hidden" data-panel="month"><p class="private-import-empty">Noch kein eigener Dienstplan übernommen.</p></div><div class="schedule-view hidden" data-panel="period"><p class="private-import-empty">Noch kein eigener Dienstplan übernommen.</p></div></section>');
   const page = document.getElementById("schedulePage");
   const show = (visible) => { dashboard.classList.toggle("schedule-mode", visible); page.classList.toggle("hidden", !visible); if (visible) window.scrollTo({ top: 0, behavior: "smooth" }); };
   scheduleNav.addEventListener("click", () => show(true)); homeNav.addEventListener("click", () => show(false));

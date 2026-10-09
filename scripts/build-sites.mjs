@@ -807,6 +807,19 @@ async function handleWorkTime(request, env, url) {
     : await env.DB.prepare("SELECT state_json, revision, server_updated_at FROM timeflow_work_time_current WHERE user_id = ?").bind(target.userId).first();
   const currentState = row ? storedWorkTimeState(row) : null;
   if (row && !currentState) return jsonResponse({ error: "stored_work_time_invalid" }, 500);
+  const currentRevision = Number(row?.revision || 0);
+  if (command.expectedRevision !== currentRevision) {
+    // A request can reach D1 successfully while its response is lost. Offline
+    // replay must recognize that already-journaled clock action instead of
+    // counting it twice or returning a state-less transition error.
+    if (command.occurredAt && ["CLOCK_IN", "CLOCK_OUT", "PAUSE_START", "PAUSE_END"].includes(eventType)) {
+      const priorEvent = target.subjectSchema
+        ? await env.DB.prepare("SELECT revision FROM timeflow_work_time_journal WHERE subject_id = ? AND actor_user_id = ? AND event_type = ? AND effective_timestamp = ? ORDER BY revision DESC LIMIT 1").bind(target.subjectId, actorUserId, eventType, effectiveTimestamp).first()
+        : await env.DB.prepare("SELECT revision FROM timeflow_work_time_journal WHERE user_id = ? AND actor_user_id = ? AND event_type = ? AND effective_timestamp = ? ORDER BY revision DESC LIMIT 1").bind(target.userId, actorUserId, eventType, effectiveTimestamp).first();
+      if (priorEvent) return jsonResponse({ saved: true, idempotent: true, revision: currentRevision, state: currentState, updatedAt: row?.server_updated_at || null, context: workTimeContext(target) });
+    }
+    return jsonResponse({ error: "work_time_conflict", revision: currentRevision, state: currentState, updatedAt: row?.server_updated_at || null, context: workTimeContext(target) }, 409);
+  }
   const nextState = serverWorkTimeState(command, currentState, command.occurredAt || now, serverWorkTimePolicy(env));
   if (!nextState) return jsonResponse({ error: "invalid_work_time_transition" }, 409);
   const stateJson = JSON.stringify(nextState);
