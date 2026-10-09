@@ -153,6 +153,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const chatDialog = document.getElementById("newChatDialog");
 
   function clearPlatformDemoChat() {
+    // This storage namespace belongs exclusively to the old local preview.
+    // Remove it when a real platform session or either production mode is
+    // active so preview conversations can never reappear as real messages.
+    try { window.TimeFlowPlatform.storage.removeItem(CHAT_STORAGE_KEY); } catch (_error) { /* storage can be unavailable in restricted WebViews */ }
     chatPage.querySelector(".inbox-highlight")?.remove();
     chatPage.querySelector(".conversation-list")?.replaceChildren();
     chatPage.querySelector(".chat-thread")?.setAttribute("hidden", "");
@@ -489,7 +493,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (event.detail?.source === "platform") clearPlatformDemoChat();
   });
   document.addEventListener("timeflow:mode-changed", (event) => {
-    if (event.detail?.mode === "team") clearPlatformDemoChat();
+    if (event.detail?.mode === "team" || event.detail?.mode === "private") clearPlatformDemoChat();
   });
   chatPage.querySelector("[data-shift-details]")?.addEventListener("click", () => notify("Frühschicht: Freitag, 31. Juli · 07:30 – 15:00 Uhr · Restaurant"));
 

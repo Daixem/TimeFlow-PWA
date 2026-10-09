@@ -307,6 +307,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }));
     saveEntries(); renderEntries();
   });
+  document.addEventListener("timeflow:clear-notifications", () => {
+    entries = [];
+    saveEntries();
+    renderEntries();
+  });
 
   const settingsList = document.querySelector('[aria-labelledby="notificationSettingsTitle"] .settings-list');
   if (settingsList) {

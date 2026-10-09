@@ -131,6 +131,31 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function resetTeamSchedulePanels() {
+    const schedule = document.getElementById("schedulePage");
+    if (!schedule) return;
+    const empty = '<p class="team-empty-state"><i class="fa-solid fa-calendar-xmark"></i><span>Noch keine echten Team-Dienstplandaten verbunden.</span></p>';
+    schedule.querySelectorAll('[data-panel="day"], [data-panel="week"], [data-panel="month"], [data-panel="period"]').forEach((panel) => {
+      panel.dataset.teamDemoReset = "true";
+      panel.innerHTML = empty;
+    });
+    schedule.classList.add("team-data-empty");
+  }
+
+  function clearTeamDemoNotifications() {
+    if (!notificationList) return;
+    if (document.documentElement.dataset.teamDemoNotificationsCleared === "true") return;
+    document.documentElement.dataset.teamDemoNotificationsCleared = "true";
+    // Notifications are local until a real account/team feed is connected.
+    // Clearing this store removes stale preview notices and their badges;
+    // later real events can still add entries through sprint7.
+    try {
+      window.TimeFlowPlatform.storage.removeItem("timeflow-notifications-v1");
+      window.TimeFlowPlatform.storage.removeItem("timeflow-notification-read-v1");
+    } catch (_error) { /* storage can be unavailable in restricted WebViews */ }
+    document.dispatchEvent(new CustomEvent("timeflow:clear-notifications"));
+  }
+
   function removeTeamDemoContent() {
     document.querySelector(".approval-card")?.remove();
     document.querySelector(".for-you-card")?.remove();
@@ -148,10 +173,10 @@ document.addEventListener("DOMContentLoaded", () => {
       teamToday.dataset.demoRemoved = "true";
       teamToday.innerHTML = '<h2><i class="fa-solid fa-users"></i> Team heute</h2><p class="team-empty-state"><i class="fa-solid fa-cloud"></i><span>Es sind noch keine echten Teamdaten verbunden.</span></p>';
     }
-    const schedule = document.getElementById("schedulePage");
-    if (schedule) schedule.classList.add("team-data-empty");
+    resetTeamSchedulePanels();
     document.querySelector(".shift-grid")?.setAttribute("hidden", "");
     document.querySelector(".month-card")?.setAttribute("hidden", "");
+    clearTeamDemoNotifications();
     const chat = document.getElementById("chatPage");
     if (chat && !chat.dataset.demoRemoved) {
       chat.dataset.demoRemoved = "true";
