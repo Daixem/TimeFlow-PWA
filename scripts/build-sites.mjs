@@ -355,6 +355,20 @@ async function workTimeIdentity(user, env) {
 async function tokenHash(token) { const bytes = new TextEncoder().encode(token); const digest = await crypto.subtle.digest("SHA-256", bytes); return [...new Uint8Array(digest)].map((value) => value.toString(16).padStart(2, "0")).join(""); }
 function randomToken() { const bytes = new Uint8Array(24); crypto.getRandomValues(bytes); let token = btoa(String.fromCharCode(...bytes)).split("+").join("-").split("/").join("_"); while (token.endsWith("=")) token = token.slice(0, -1); return token; }
 
+function pushB64(value) { const bytes = value instanceof Uint8Array ? value : new Uint8Array(value); let binary = ""; bytes.forEach((byte) => { binary += String.fromCharCode(byte); }); return btoa(binary).replace(/=/g, "").replace(/\\+/g, "-").replace(/\\//g, "_"); }
+function pushBytes(value) { const text = String(value || "").replace(/-/g, "+").replace(/_/g, "/"); const padded = text + "=".repeat((4 - (text.length % 4)) % 4); const binary = atob(padded); const bytes = new Uint8Array(binary.length); for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index); return bytes; }
+function pushConcat(...parts) { const total = parts.reduce((sum, part) => sum + part.length, 0); const result = new Uint8Array(total); let offset = 0; parts.forEach((part) => { result.set(part, offset); offset += part.length; }); return result; }
+async function pushHmac(keyBytes, dataBytes) { const key = await crypto.subtle.importKey("raw", keyBytes, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]); return new Uint8Array(await crypto.subtle.sign("HMAC", key, dataBytes)); }
+async function pushExpand(prk, info, length) { const output = new Uint8Array(length); let previous = new Uint8Array(0); let offset = 0; for (let counter = 1; offset < length; counter += 1) { previous = await pushHmac(prk, pushConcat(previous, info, new Uint8Array([counter]))); output.set(previous.slice(0, Math.min(previous.length, length - offset)), offset); offset += Math.min(previous.length, length - offset); } return output; }
+function pushUint32(value) { return new Uint8Array([(value >>> 24) & 255, (value >>> 16) & 255, (value >>> 8) & 255, value & 255]); }
+async function pushEncrypt(subscription, payload) {
+  const clientPublic = pushBytes(subscription.keys.p256dh); const auth = pushBytes(subscription.keys.auth); const ephemeral = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveBits"]); const ephemeralPublic = new Uint8Array(await crypto.subtle.exportKey("raw", ephemeral.publicKey)); const clientKey = await crypto.subtle.importKey("raw", clientPublic, { name: "ECDH", namedCurve: "P-256" }, false, []); const shared = new Uint8Array(await crypto.subtle.deriveBits({ name: "ECDH", public: clientKey }, ephemeral.privateKey, 256)); const authPrk = await pushHmac(auth, shared); const info = pushConcat(new TextEncoder().encode("WebPush: info"), new Uint8Array([0]), clientPublic, ephemeralPublic); const ikm = await pushExpand(authPrk, info, 32); const salt = crypto.getRandomValues(new Uint8Array(16)); const prk = await pushHmac(salt, ikm); const cek = await pushExpand(prk, pushConcat(new TextEncoder().encode("Content-Encoding: aes128gcm"), new Uint8Array([0])), 16); const nonce = await pushExpand(prk, pushConcat(new TextEncoder().encode("Content-Encoding: nonce"), new Uint8Array([0])), 12); const aesKey = await crypto.subtle.importKey("raw", cek, { name: "AES-GCM" }, false, ["encrypt"]); const plain = pushConcat(new TextEncoder().encode(JSON.stringify(payload)), new Uint8Array([2])); const encrypted = new Uint8Array(await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, aesKey, plain)); return pushConcat(salt, pushUint32(4096), new Uint8Array([ephemeralPublic.length]), ephemeralPublic, encrypted);
+}
+async function pushVapidToken(endpoint, env) {
+  const publicKey = String(env?.TIMEFLOW_VAPID_PUBLIC_KEY || "").trim(); const privateKey = String(env?.TIMEFLOW_VAPID_PRIVATE_KEY || "").trim(); const subject = String(env?.TIMEFLOW_VAPID_SUBJECT || "").trim(); if (!publicKey || !privateKey || !subject) throw new Error("push_not_configured"); const rawPublic = pushBytes(publicKey); if (rawPublic.length !== 65) throw new Error("invalid_vapid_public_key"); const jwk = { kty: "EC", crv: "P-256", x: pushB64(rawPublic.slice(1, 33)), y: pushB64(rawPublic.slice(33, 65)), d: pushB64(pushBytes(privateKey)), ext: true }; const key = await crypto.subtle.importKey("jwk", jwk, { name: "ECDSA", namedCurve: "P-256" }, false, ["sign"]); const header = pushB64(new TextEncoder().encode(JSON.stringify({ typ: "JWT", alg: "ES256" }))); const claims = pushB64(new TextEncoder().encode(JSON.stringify({ aud: new URL(endpoint).origin, exp: Math.floor(Date.now() / 1000) + 12 * 60 * 60, sub: subject }))); const signature = new Uint8Array(await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, key, new TextEncoder().encode(header + "." + claims))); return header + "." + claims + "." + pushB64(signature);
+}
+async function sendWebPush(subscription, payload, env) { const body = await pushEncrypt(subscription, payload); const token = await pushVapidToken(subscription.endpoint, env); return fetch(subscription.endpoint, { method: "POST", headers: { TTL: "3600", "Content-Type": "application/octet-stream", "Content-Encoding": "aes128gcm", Authorization: "vapid t=" + token + ", k=" + env.TIMEFLOW_VAPID_PUBLIC_KEY }, body }); }
+
 async function betaAccess(user, env) {
   if (!user.authenticated || !env?.DB) return { allowed: false, admin: false };
   await ensureBetaTables(env.DB); if (await betaAdmin(user, env)) return { allowed: true, admin: true };
@@ -497,6 +511,29 @@ async function handlePushSubscription(request, env) {
   const now = new Date().toISOString();
   await env.DB.prepare("INSERT INTO timeflow_push_subscriptions (user_id, endpoint, p256dh, auth, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(endpoint) DO UPDATE SET user_id = excluded.user_id, p256dh = excluded.p256dh, auth = excluded.auth, updated_at = excluded.updated_at").bind(user.id, endpoint, p256dh, auth, now, now).run();
   return jsonResponse({ subscribed: true }, 201);
+}
+
+async function handlePushTest(request, env) {
+  const user = authenticatedUser(request);
+  if (!user.authenticated || !user.id) return jsonResponse({ error: "authentication_required" }, 401);
+  const access = await betaAccess(user, env);
+  if (!access.allowed) return jsonResponse({ error: "beta_access_required" }, 403);
+  if (!env?.DB) return jsonResponse({ error: "storage_unavailable" }, 503);
+  if (request.method !== "POST") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "POST" });
+  if (request.headers.get("Origin") !== new URL(request.url).origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
+  if (!env.TIMEFLOW_VAPID_PUBLIC_KEY || !env.TIMEFLOW_VAPID_PRIVATE_KEY || !env.TIMEFLOW_VAPID_SUBJECT) return jsonResponse({ error: "push_not_configured" }, 503);
+  await ensureNotificationTables(env.DB);
+  const rows = await env.DB.prepare("SELECT endpoint, p256dh, auth FROM timeflow_push_subscriptions WHERE user_id = ?").bind(user.id).all();
+  const subscriptions = rows?.results || [];
+  let sent = 0;
+  for (const subscription of subscriptions) {
+    try {
+      const response = await sendWebPush(subscription, { title: "TimeFlow ist bereit", body: "Externe Benachrichtigungen funktionieren auf diesem Gerät.", tag: "timeflow-test", url: "./" }, env);
+      if (response.ok) sent += 1;
+      else if (response.status === 404 || response.status === 410) await env.DB.prepare("DELETE FROM timeflow_push_subscriptions WHERE user_id = ? AND endpoint = ?").bind(user.id, subscription.endpoint).run();
+    } catch (_error) { /* one invalid device must not block other subscriptions */ }
+  }
+  return jsonResponse({ sent, registered: subscriptions.length });
 }
 
 async function handleAccountData(request, env, url) {
@@ -933,6 +970,7 @@ export default {
     if (url.pathname === "/api/team-invites") return handleTeamInvites(request, env, url);
     if (url.pathname === "/api/notifications/push-config") return handlePushConfig(request, env);
     if (url.pathname === "/api/notifications/push-subscription") return handlePushSubscription(request, env);
+    if (url.pathname === "/api/notifications/push-test") return handlePushTest(request, env);
     if (url.pathname === "/api/account-data") return handleAccountData(request, env, url);
     if (url.pathname === "/api/admin/retention") return handleWorkTimeRetention(request, env, url);
     if (url.pathname === "/api/beta/access") return handleBetaAccess(request, env);

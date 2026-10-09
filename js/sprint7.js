@@ -282,8 +282,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (Notification.permission !== "granted" && !(await requestPermission())) return;
     const sent = await showDeviceNotification("TimeFlow ist bereit", "Benachrichtigungen funktionieren auf diesem Gerät.", { tag: "timeflow-test" });
+    let external = false;
+    try {
+      const response = await fetch(new URL("api/notifications/push-test", document.baseURI), { method: "POST", cache: "no-store", headers: { Accept: "application/json", "Content-Type": "application/json" }, body: "{}" });
+      const result = await response.json().catch(() => ({}));
+      external = response.ok && Number(result.sent || 0) > 0;
+    } catch (_error) { /* local notification remains available when the server is offline */ }
     addEntry({ type: "success", title: "Test erfolgreich", body: "Deine lokalen PWA-Benachrichtigungen sind einsatzbereit.", device: false });
-    toast(sent ? "Testbenachrichtigung wurde gesendet." : "Der Test wurde im Notification Center gespeichert.");
+    toast(external ? "Externe Testbenachrichtigung wurde gesendet." : sent ? "Gerätebenachrichtigung wurde gesendet. Server-Push ist noch nicht eingerichtet." : "Der Test wurde im Notification Center gespeichert.");
   }
 
   function openEntry(id) {
