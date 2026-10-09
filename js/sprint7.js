@@ -153,6 +153,34 @@ document.addEventListener("DOMContentLoaded", () => {
     return "Notification" in window && "serviceWorker" in navigator;
   }
 
+  function pushSupport() {
+    return notificationSupport() && "PushManager" in window;
+  }
+
+  function decodeVapidKey(value) {
+    const normalized = String(value || "").replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized + "=".repeat((4 - (normalized.length % 4)) % 4);
+    const binary = atob(padded); const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
+    return bytes;
+  }
+
+  async function registerPushDevice() {
+    if (!pushSupport() || Notification.permission !== "granted") return false;
+    try {
+      const configResponse = await fetch(new URL("api/notifications/push-config", document.baseURI), { cache: "no-store", headers: { Accept: "application/json" } });
+      if (!configResponse.ok) return false;
+      const config = await configResponse.json();
+      if (!config.publicKey) return false;
+      const registration = await navigator.serviceWorker.ready;
+      const subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: decodeVapidKey(config.publicKey) });
+      const response = await fetch(new URL("api/notifications/push-subscription", document.baseURI), { method: "POST", cache: "no-store", headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify(subscription.toJSON()) });
+      return response.ok;
+    } catch (_error) {
+      return false;
+    }
+  }
+
   function renderPermission() {
     permissionCard.classList.remove("is-granted", "is-denied", "is-unsupported");
     const button = permissionCard.querySelector("[data-enable-notifications]");
@@ -198,6 +226,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const permission = await Notification.requestPermission();
     renderPermission();
     if (permission === "granted") {
+      await registerPushDevice();
       toast("Benachrichtigungen wurden aktiviert.");
       return true;
     }

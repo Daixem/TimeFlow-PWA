@@ -326,6 +326,11 @@ async function ensureSupportTables(database) {
   await database.prepare("CREATE TABLE IF NOT EXISTS timeflow_support_messages (id TEXT PRIMARY KEY NOT NULL, ticket_id TEXT NOT NULL, author_id TEXT NOT NULL, author_role TEXT NOT NULL, message TEXT NOT NULL, created_at TEXT NOT NULL)").run();
 }
 
+async function ensureNotificationTables(database) {
+  await database.prepare("CREATE TABLE IF NOT EXISTS timeflow_push_subscriptions (user_id TEXT NOT NULL, endpoint TEXT PRIMARY KEY NOT NULL, p256dh TEXT NOT NULL, auth TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)").run();
+  await database.prepare("CREATE INDEX IF NOT EXISTS idx_timeflow_push_subscriptions_user ON timeflow_push_subscriptions(user_id)").run();
+}
+
 async function userIdentityFingerprint(userId) {
   const bytes = new TextEncoder().encode(userId || "");
   const digest = await crypto.subtle.digest("SHA-256", bytes);
@@ -462,6 +467,36 @@ async function handleTeamInvites(request, env, url) {
   const id = crypto.randomUUID(); const createdAt = new Date().toISOString();
   await env.DB.prepare("INSERT INTO timeflow_organization_invites (id, organization_id, email, role, status, created_at, accepted_at) VALUES (?, ?, ?, 'member', 'pending', ?, NULL)").bind(id, organization.id, email, createdAt).run();
   return jsonResponse({ invitation: { id, email, organizationName: organization.name, url: url.origin + "/" }, membership: { organization_id: organization.id, role: "admin", name: organization.name } }, 201);
+}
+
+async function handlePushConfig(request, env) {
+  const user = authenticatedUser(request);
+  if (!user.authenticated || !user.id) return jsonResponse({ error: "authentication_required" }, 401);
+  const access = await betaAccess(user, env);
+  if (!access.allowed) return jsonResponse({ error: "beta_access_required" }, 403);
+  const publicKey = String(env?.TIMEFLOW_VAPID_PUBLIC_KEY || "").trim();
+  if (!publicKey) return jsonResponse({ error: "push_not_configured" }, 404);
+  return jsonResponse({ publicKey });
+}
+
+async function handlePushSubscription(request, env) {
+  const user = authenticatedUser(request);
+  if (!user.authenticated || !user.id) return jsonResponse({ error: "authentication_required" }, 401);
+  const access = await betaAccess(user, env);
+  if (!access.allowed) return jsonResponse({ error: "beta_access_required" }, 403);
+  if (!env?.DB) return jsonResponse({ error: "storage_unavailable" }, 503);
+  if (request.method !== "POST" && request.method !== "DELETE") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "POST, DELETE" });
+  if (request.headers.get("Origin") !== new URL(request.url).origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
+  await ensureNotificationTables(env.DB);
+  let body; try { body = await request.json(); } catch { return jsonResponse({ error: "invalid_json" }, 400); }
+  const endpoint = String(body?.endpoint || "").trim();
+  if (!endpoint.toLowerCase().startsWith("https://") || endpoint.length > 2048) return jsonResponse({ error: "valid_endpoint_required" }, 400);
+  if (request.method === "DELETE") { await env.DB.prepare("DELETE FROM timeflow_push_subscriptions WHERE user_id = ? AND endpoint = ?").bind(user.id, endpoint).run(); return jsonResponse({ removed: true }); }
+  const p256dh = String(body?.keys?.p256dh || "").trim(); const auth = String(body?.keys?.auth || "").trim();
+  if (!p256dh || !auth || p256dh.length > 256 || auth.length > 256) return jsonResponse({ error: "valid_subscription_required" }, 400);
+  const now = new Date().toISOString();
+  await env.DB.prepare("INSERT INTO timeflow_push_subscriptions (user_id, endpoint, p256dh, auth, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(endpoint) DO UPDATE SET user_id = excluded.user_id, p256dh = excluded.p256dh, auth = excluded.auth, updated_at = excluded.updated_at").bind(user.id, endpoint, p256dh, auth, now, now).run();
+  return jsonResponse({ subscribed: true }, 201);
 }
 
 async function handleAccountData(request, env, url) {
@@ -896,6 +931,8 @@ export default {
     if (url.pathname === "/api/work-time/journal") return handleWorkTimeJournal(request, env, url);
     if (url.pathname === "/api/team-access") return handleTeamAccess(request, env, url);
     if (url.pathname === "/api/team-invites") return handleTeamInvites(request, env, url);
+    if (url.pathname === "/api/notifications/push-config") return handlePushConfig(request, env);
+    if (url.pathname === "/api/notifications/push-subscription") return handlePushSubscription(request, env);
     if (url.pathname === "/api/account-data") return handleAccountData(request, env, url);
     if (url.pathname === "/api/admin/retention") return handleWorkTimeRetention(request, env, url);
     if (url.pathname === "/api/beta/access") return handleBetaAccess(request, env);

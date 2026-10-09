@@ -24,6 +24,24 @@ self.addEventListener("activate", (event) => {
     .then((clients) => clients.forEach((client) => client.postMessage({ type: "TIMEFLOW_UPDATED", version: BUILD_VERSION }))));
 });
 
+// Server-sent Web Push messages are displayed by the service worker, so they
+// can arrive even when no TimeFlow tab is open. The server only reaches this
+// handler after the user has granted permission and registered the device.
+self.addEventListener("push", (event) => {
+  let data = {};
+  try { data = event.data?.json?.() || {}; } catch (_error) { data = { body: event.data?.text?.() || "" }; }
+  const title = String(data.title || "TimeFlow");
+  const options = {
+    body: String(data.body || "Neue Informationen sind verfügbar."),
+    icon: data.icon || "assets/icons/timeflow-phoenix-icon-192.png",
+    badge: data.badge || "assets/icons/timeflow-phoenix-icon-192.png",
+    tag: data.tag || `timeflow-push-${Date.now()}`,
+    renotify: Boolean(data.renotify),
+    data: { url: data.url || "./", ...(data.data && typeof data.data === "object" ? data.data : {}) }
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
 function offlineShell() {
   return caches.match("./").then((response) => response || caches.match("index.html"));
 }
