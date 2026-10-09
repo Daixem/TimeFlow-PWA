@@ -225,3 +225,19 @@ html[data-tf-background] :is(h1,h2,h3,h4,strong,b,.label,.settings-group-title,.
 html[data-tf-background] :is(.brand-splash,.beta-access-gate){background:radial-gradient(circle at 50% 22%,color-mix(in srgb,var(--tf-accent) 46%,var(--tf-surface-elevated)),var(--tf-app-background))!important;color:var(--tf-text-primary)!important}
 html[data-tf-background] :is(.brand-splash-content,.beta-access-gate>div){border-color:var(--tf-border)!important;background:color-mix(in srgb,var(--tf-surface-elevated) 82%,transparent)!important;color:var(--tf-text-primary)!important;box-shadow:var(--tf-shadow)!important}
 html[data-tf-background] :is(dialog,.notification-center,.mode-onboarding,.settings-dialog,.clock-confirm-dialog,.private-import-dialog,.private-absence-dialog)::backdrop{background:color-mix(in srgb,var(--tf-app-background) 82%,black)!important}
+
+/* Device check and cloud sync use the active palette throughout. Their older
+   local colours created an unrelated inner panel inside the selected theme. */
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(.device-check-dialog,.cloud-sync-card){border-color:var(--tf-border)!important;background:linear-gradient(145deg,var(--tf-surface-inset),transparent),var(--tf-card-background)!important;color:var(--tf-text-primary)!important}
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) .device-check-dialog :is(header,footer){border-color:var(--tf-divider)!important;background:transparent!important}
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(.device-check-dialog > header > span,.cloud-sync-icon){color:var(--tf-accent)!important;background:color-mix(in srgb,var(--tf-accent) 18%,transparent)!important}
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(.device-check-dialog > header small,.device-check-dialog > header h2,.device-check-dialog > header p,.device-check-dialog > header > strong,.cloud-sync-copy small,.cloud-sync-copy strong,.cloud-sync-copy p){color:var(--tf-text-secondary)!important}
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) .device-check-progress{background:var(--tf-divider)!important}
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) .device-check-progress i{background:linear-gradient(90deg,var(--tf-accent),color-mix(in srgb,var(--tf-accent) 46%,#55d9a9))!important}
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) .device-check-list li{border-color:var(--tf-divider)!important;background:transparent!important}
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(.device-check-list li > span,.device-check-list li em,.cloud-sync-state){color:var(--tf-text-secondary)!important;background:transparent!important}
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) .device-check-list li :is(strong,small){color:var(--tf-text-primary)!important}
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(.device-check-dialog > footer button,.cloud-sync-card > button){border-color:var(--tf-border)!important;background:color-mix(in srgb,var(--tf-accent) 18%,var(--tf-control))!important;color:var(--tf-text-primary)!important}
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) .device-check-dialog > footer .device-check-repeat{background:var(--tf-accent)!important;color:var(--tf-accent-contrast)!important}
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) .device-check-summary{background:color-mix(in srgb,#31b982 14%,transparent)!important}
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) .device-check-summary.is-warning{background:color-mix(in srgb,#d79a35 14%,transparent)!important}
