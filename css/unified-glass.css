@@ -428,3 +428,31 @@ html[data-tf-background] .settings-card .settings-notification-device > span {
   background-image: none !important;
   box-shadow: none !important;
 }
+
+/* Datensync und Geräte-Check use the same single-surface treatment. */
+html[data-tf-background] :is(.cloud-sync-card,.release-readiness-card) > header,
+html[data-tf-background] :is(.cloud-sync-card,.release-readiness-card) > .settings-accordion-body,
+html[data-tf-background] .release-readiness-card .release-readiness-grid,
+html[data-tf-background] .cloud-sync-card .cloud-sync-copy,
+html[data-tf-background] .cloud-sync-card .cloud-sync-state {
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+html[data-tf-background] .release-readiness-card .release-readiness-grid > span,
+html[data-tf-background] .cloud-sync-card > button {
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  border-color: var(--tf-divider) !important;
+}
+html[data-tf-background] .release-readiness-card .release-readiness-grid > span {
+  border-width: 1px 0 0 !important;
+  border-radius: 0 !important;
+  padding-inline: 0 !important;
+}
+html[data-tf-background] .release-readiness-card > .settings-accordion-body > button,
+html[data-tf-background] .release-readiness-card > button,
+html[data-tf-background] .cloud-sync-card > button {
+  border-radius: 10px !important;
+}
