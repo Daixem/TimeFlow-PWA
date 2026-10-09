@@ -300,3 +300,67 @@ html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(
   .team-person.active,.week-row.active,.month-calendar .selected
 ){background:color-mix(in srgb,var(--tf-accent) 30%,var(--tf-surface))!important;color:var(--tf-text-primary)!important}
 html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(.settings-card>header,.profile-menu-card summary):hover{background:color-mix(in srgb,var(--tf-accent) 10%,transparent)!important}
+
+/* Final layout contract: every content window follows the Home overview
+   surface. Wrappers stay transparent so cards never receive a second frame. */
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode){
+  --tf-unified-radius:18px;
+  --tf-unified-gap:12px;
+  --tf-unified-padding:16px;
+}
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(.top-grid,.shift-grid){
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+}
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(
+  .card,.list-card,.shift-card,.month-card,.private-home-clock,.schedule-tabs,
+  .date-switch,.private-import-panel,.week-summary,.week-list,.month-overview,
+  .profile-hero,.profile-menu-card,.settings-card,.cloud-sync-card,
+  .release-readiness-card,.profile-info-card,.statistics-section,.inbox-panel,
+  .new-chat-dialog,.user-management-dialog,.support-dialog,.private-account-dialog,
+  .clock-focus-card,.clock-shift-card,.clock-summary article,.private-home-dialog,
+  .quick-action-dialog,.settings-dialog,.profile-dialog,.device-check-dialog,
+  .beta-privacy-dialog,.private-import-dialog,.private-absence-dialog,dialog
+){
+  border:1px solid var(--tf-border)!important;
+  border-radius:var(--tf-unified-radius)!important;
+  background:linear-gradient(145deg,var(--tf-surface-inset),transparent),var(--tf-card-background)!important;
+  box-shadow:inset 0 1px 0 var(--tf-surface-inset),var(--tf-shadow)!important;
+  color:var(--tf-text-primary)!important;
+}
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(
+  .settings-card>header,.settings-accordion-body,.profile-menu-card details,
+  .profile-menu-card summary,.profile-menu-link,.private-home-clock>header,
+  .private-home-clock>.private-home-summary,.month-header,.schedule-header,
+  .private-import-panel>header,.private-import-panel .private-import-actions,
+  .cloud-sync-card>header,.release-readiness-card>header,.support-dialog>header,
+  .private-account-dialog>header,.profile-dialog>header,.settings-dialog>header
+){
+  background:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+  border-color:var(--tf-divider)!important;
+}
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(
+  .month-stats>div,.week-summary>span,.month-overview>div>span,
+  .week-row,.team-person,.period-day p,.notification-item,.conversation-list>*,
+  .message-list>*,.support-ticket-list>*,.private-account-list>*,.settings-list>label,
+  .settings-toggle,.settings-select,.app-status-list>div,.device-check-list li
+){
+  border-color:var(--tf-divider)!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(
+  .schedule-tabs,.date-switch,.week-summary,.week-list,.month-overview,
+  .private-import-panel,.profile-menu-card,.settings-card,.cloud-sync-card,
+  .release-readiness-card,.support-dialog,.private-account-dialog,.profile-dialog,
+  .settings-dialog,.device-check-dialog,.private-home-dialog,.quick-action-dialog
+){margin-bottom:var(--tf-unified-gap)!important}
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(
+  .private-home-clock,.month-card,.profile-hero,.settings-card,.cloud-sync-card,
+  .release-readiness-card,.profile-menu-card,.statistics-section
+)>:is(header,.settings-accordion-body,.settings-list,.profile-details-grid){min-width:0}
