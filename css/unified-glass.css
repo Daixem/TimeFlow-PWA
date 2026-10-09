@@ -364,3 +364,31 @@ html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(
   .private-home-clock,.month-card,.profile-hero,.settings-card,.cloud-sync-card,
   .release-readiness-card,.profile-menu-card,.statistics-section
 )>:is(header,.settings-accordion-body,.settings-list,.profile-details-grid){min-width:0}
+
+/* One card per top-level area: nested content is deliberately flat. */
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(.top-grid,.shift-grid){
+  border:1px solid var(--tf-border)!important;
+  border-radius:var(--tf-unified-radius)!important;
+  background:linear-gradient(145deg,var(--tf-surface-inset),transparent),var(--tf-card-background)!important;
+  box-shadow:inset 0 1px 0 var(--tf-surface-inset),var(--tf-shadow)!important;
+}
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(.top-grid>.card,.shift-grid>.shift-card){
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+}
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(
+  .settings-card>.settings-list,.settings-card>.settings-accordion-body,
+  .settings-accordion-body>.settings-list,.cloud-sync-card>.settings-accordion-body,
+  .release-readiness-card>.settings-accordion-body,.profile-menu-card details,
+  .profile-menu-card details>div,.month-card>.month-stats,.month-overview>div,
+  .private-home-summary,.clock-summary,.user-management-summary,.week-summary
+){background:transparent!important;background-image:none!important;border:0!important;box-shadow:none!important}
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(
+  .settings-list>*,.settings-accordion-body>*,.settings-accordion-body>.settings-list>*,
+  .month-stats>div,.month-overview>div>span,.private-home-summary>span,
+  .clock-summary>article,.user-management-summary>span,.week-summary>span,
+  .release-readiness-grid>span,.profile-details-grid>*
+){background:transparent!important;background-image:none!important;box-shadow:none!important}
