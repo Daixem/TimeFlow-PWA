@@ -310,7 +310,7 @@ function serverWorkTimeState(command, currentState, now, policy) {
 
 async function ensureTeamTables(database) {
   await database.prepare("CREATE TABLE IF NOT EXISTS timeflow_organizations (id TEXT PRIMARY KEY NOT NULL, name TEXT NOT NULL, created_by TEXT NOT NULL, created_at TEXT NOT NULL)").run();
-  await database.prepare("CREATE TABLE IF NOT EXISTS timeflow_organization_invites (id TEXT PRIMARY KEY NOT NULL, organization_id TEXT NOT NULL, email TEXT NOT NULL, role TEXT NOT NULL DEFAULT 'member', status TEXT NOT NULL DEFAULT 'pending', created_at TEXT NOT NULL, accepted_at TEXT)").run();
+  await database.prepare("CREATE TABLE IF NOT EXISTS timeflow_organization_invites (id TEXT PRIMARY KEY NOT NULL, organization_id TEXT NOT NULL, email TEXT NOT NULL, invitee_name TEXT, role TEXT NOT NULL DEFAULT 'member', status TEXT NOT NULL DEFAULT 'pending', created_at TEXT NOT NULL, accepted_at TEXT)").run();
   await database.prepare("CREATE TABLE IF NOT EXISTS timeflow_organization_members (organization_id TEXT NOT NULL, user_id TEXT NOT NULL, role TEXT NOT NULL DEFAULT 'member', joined_at TEXT NOT NULL, PRIMARY KEY (organization_id, user_id))").run();
 }
 
@@ -437,7 +437,7 @@ async function handleTeamAccess(request, env, url) {
   if (!env?.DB) return jsonResponse({ error: "storage_unavailable" }, 503);
   await ensureTeamTables(env.DB);
   const member = await env.DB.prepare("SELECT m.organization_id, m.role, o.name FROM timeflow_organization_members m JOIN timeflow_organizations o ON o.id = m.organization_id WHERE m.user_id = ? LIMIT 1").bind(user.id).first();
-  const invite = user.email ? await env.DB.prepare("SELECT i.id, i.organization_id, i.role, o.name FROM timeflow_organization_invites i JOIN timeflow_organizations o ON o.id = i.organization_id WHERE lower(i.email) = lower(?) AND i.status = 'pending' ORDER BY i.created_at DESC LIMIT 1").bind(user.email).first() : null;
+  const invite = user.email ? await env.DB.prepare("SELECT i.id, i.organization_id, i.invitee_name, i.role, o.name FROM timeflow_organization_invites i JOIN timeflow_organizations o ON o.id = i.organization_id WHERE lower(i.email) = lower(?) AND i.status = 'pending' ORDER BY i.created_at DESC LIMIT 1").bind(user.email).first() : null;
   if (request.method === "GET") {
     const membership = member || (access.admin ? { organization_id: null, role: "admin", name: "TimeFlow" } : null);
     return jsonResponse({ allowed: Boolean(member || access.admin), membership, invitation: invite || null, admin: access.admin });
@@ -467,8 +467,10 @@ async function handleTeamInvites(request, env, url) {
   if (!allowRate(user, "team-invite-create", 20, 60 * 60 * 1000)) return jsonResponse({ error: "rate_limited" }, 429, { "Retry-After": "3600" });
   let body; try { body = await request.json(); } catch { return jsonResponse({ error: "invalid_json" }, 400); }
   const email = String(body?.email || "").trim().toLowerCase().slice(0, 254);
+  const inviteeName = String(body?.inviteeName || "").trim().slice(0, 80);
   const teamName = String(body?.teamName || "").trim().slice(0, 80);
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return jsonResponse({ error: "valid_email_required" }, 400);
+  if (inviteeName.length < 2) return jsonResponse({ error: "invitee_name_required" }, 400);
   if (teamName.length < 2) return jsonResponse({ error: "team_name_required" }, 400);
   let organization = await env.DB.prepare("SELECT id, name FROM timeflow_organizations WHERE created_by = ? ORDER BY created_at ASC LIMIT 1").bind(user.id).first();
   if (!organization) {
@@ -479,8 +481,8 @@ async function handleTeamInvites(request, env, url) {
   const duplicate = await env.DB.prepare("SELECT id FROM timeflow_organization_invites WHERE organization_id = ? AND lower(email) = lower(?) AND status = 'pending' LIMIT 1").bind(organization.id, email).first();
   if (duplicate) return jsonResponse({ error: "invitation_already_pending" }, 409);
   const id = crypto.randomUUID(); const createdAt = new Date().toISOString();
-  await env.DB.prepare("INSERT INTO timeflow_organization_invites (id, organization_id, email, role, status, created_at, accepted_at) VALUES (?, ?, ?, 'member', 'pending', ?, NULL)").bind(id, organization.id, email, createdAt).run();
-  return jsonResponse({ invitation: { id, email, organizationName: organization.name, url: url.origin + "/" }, membership: { organization_id: organization.id, role: "admin", name: organization.name } }, 201);
+  await env.DB.prepare("INSERT INTO timeflow_organization_invites (id, organization_id, email, invitee_name, role, status, created_at, accepted_at) VALUES (?, ?, ?, ?, 'member', 'pending', ?, NULL)").bind(id, organization.id, email, inviteeName, createdAt).run();
+  return jsonResponse({ invitation: { id, name: inviteeName, email, organizationName: organization.name, url: url.origin + "/" }, membership: { organization_id: organization.id, role: "admin", name: organization.name } }, 201);
 }
 
 async function handlePushConfig(request, env) {
