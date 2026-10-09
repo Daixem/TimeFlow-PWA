@@ -440,7 +440,8 @@ async function handleTeamAccess(request, env, url) {
 async function handleTeamInvites(request, env, url) {
   const user = authenticatedUser(request);
   if (!user.authenticated || !user.id) return jsonResponse({ error: "authentication_required" }, 401);
-  if (!env?.DB || !(await betaAdmin(user, env))) return jsonResponse({ error: "admin_required" }, 403);
+  const access = await betaAccess(user, env);
+  if (!env?.DB || !access.allowed) return jsonResponse({ error: "beta_access_required" }, 403);
   await ensureBetaTables(env.DB); await ensureTeamTables(env.DB);
   if (request.method !== "POST") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "POST" });
   if (request.headers.get("Origin") !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
@@ -460,7 +461,7 @@ async function handleTeamInvites(request, env, url) {
   if (duplicate) return jsonResponse({ error: "invitation_already_pending" }, 409);
   const id = crypto.randomUUID(); const createdAt = new Date().toISOString();
   await env.DB.prepare("INSERT INTO timeflow_organization_invites (id, organization_id, email, role, status, created_at, accepted_at) VALUES (?, ?, ?, 'member', 'pending', ?, NULL)").bind(id, organization.id, email, createdAt).run();
-  return jsonResponse({ invitation: { id, email, organizationName: organization.name, url: url.origin + "/" } }, 201);
+  return jsonResponse({ invitation: { id, email, organizationName: organization.name, url: url.origin + "/" }, membership: { organization_id: organization.id, role: "admin", name: organization.name } }, 201);
 }
 
 async function handleAccountData(request, env, url) {
