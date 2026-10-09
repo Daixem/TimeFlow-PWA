@@ -241,3 +241,28 @@ html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(.de
 html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) .device-check-dialog > footer .device-check-repeat{background:var(--tf-accent)!important;color:var(--tf-accent-contrast)!important}
 html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) .device-check-summary{background:color-mix(in srgb,#31b982 14%,transparent)!important}
 html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) .device-check-summary.is-warning{background:color-mix(in srgb,#d79a35 14%,transparent)!important}
+
+/* Older feature windows that are created on demand use their own class names.
+   Bring them into the same surface contract as the main cards and dialogs. */
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(
+  .inbox-panel,.new-chat-dialog,.user-management-dialog,.conversation-list,
+  .message-list,.user-management-list,.user-management-summary,.support-ticket-list,
+  .profile-info-card,.profile-permission-card,.account-card,.chart-card,.goal-card,
+  .stat-card,.time-card,.today-card,.for-you-card,.inline-shift-card,.session-card,
+  .month-summary-grid,.month-summary-item,.private-account-list,.restore-summary
+){border-color:var(--tf-border)!important;background:linear-gradient(145deg,var(--tf-surface-inset),transparent),var(--tf-card-background)!important;color:var(--tf-text-primary)!important}
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(
+  .conversation-list>*,.message-list>*,.user-management-list>*,.user-management-summary>*,
+  .notification-list>*,.support-ticket-list>*,.private-account-list>*,.quick-history-list>*,
+  .team-list>*,.team-update-list>*,.week-list>*,.month-summary-grid>*,.month-summary-item
+){border-color:var(--tf-divider)!important;background:transparent!important;color:var(--tf-text-primary)!important;box-shadow:none!important}
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(
+  .inbox-panel p,.inbox-panel small,.conversation-list small,.message-list small,
+  .user-management-list small,.support-ticket-list small,.profile-info-card small,
+  .account-card small,.chart-card small,.goal-card small,.stat-card small
+){color:var(--tf-text-secondary)!important}
+html[data-tf-background] :is(.timeflow-private-mode,.timeflow-team-mode) :is(
+  .inbox-panel h2,.inbox-panel h3,.conversation-list strong,.message-list strong,
+  .user-management-list strong,.support-ticket-list strong,.profile-info-card strong,
+  .account-card strong,.chart-card strong,.goal-card strong,.stat-card strong,.time-card strong
+){color:var(--tf-text-primary)!important}
