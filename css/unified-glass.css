@@ -500,3 +500,13 @@ html[data-tf-background] :is(.notification-permission,.notification-item) {
   background-image: none !important;
   box-shadow: none !important;
 }
+.notification-center .notification-toolbar > button[data-mark-notifications-read],
+.notification-center .notification-toolbar > button[data-mark-notifications-read]:is(:hover,:focus-visible) {
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+  color: var(--tf-accent) !important;
+}
