@@ -608,3 +608,70 @@ html[data-tf-background]:is(.timeflow-private-mode,.timeflow-team-mode) :is(.pri
   box-shadow: none !important;
   color: var(--tf-text-secondary) !important;
 }
+
+/* Team-only content uses the selected palette too. These selectors replace
+   the fixed blue, purple and mint colours from the earlier team styles while
+   leaving meaningful warning and success colours intact. */
+html[data-tf-background].timeflow-team-mode :is(
+  .team-empty-state,.team-card .section-heading p,.team-update-copy>em,
+  .team-invite-steps li,.team-invite-steps label,.team-support-card .settings-card-copy
+){color:var(--tf-text-secondary)!important}
+html[data-tf-background].timeflow-team-mode :is(
+  .team-avatar,.team-person>b,.team-invite-steps b
+){color:var(--tf-accent-contrast)!important;background:color-mix(in srgb,var(--tf-accent) 24%,var(--tf-control))!important}
+html[data-tf-background].timeflow-team-mode .team-empty-state i{color:var(--tf-accent)!important;background:transparent!important}
+html[data-tf-background].timeflow-team-mode .team-card .team-update .row-icon{
+  color:var(--tf-accent)!important;
+  background:color-mix(in srgb,var(--tf-accent) 18%,transparent)!important;
+}
+html[data-tf-background].timeflow-team-mode .team-avatar{
+  border:1px solid var(--tf-border)!important;
+  background:linear-gradient(145deg,color-mix(in srgb,var(--tf-accent) 72%,var(--tf-surface-elevated)),var(--tf-control))!important;
+}
+html[data-tf-background].timeflow-team-mode .team-invite-steps b{
+  border:1px solid var(--tf-border)!important;
+  background:var(--tf-accent)!important;
+}
+html[data-tf-background].timeflow-team-mode .team-card .team-update{
+  border-color:var(--tf-divider)!important;
+  border-radius:0!important;
+  background:transparent!important;
+  background-image:none!important;
+  box-shadow:none!important;
+}
+html[data-tf-background].timeflow-team-mode .team-card .team-update+.team-update{
+  border-top:1px solid var(--tf-divider)!important;
+}
+html[data-tf-background].timeflow-team-mode .team-card .team-update:is(:hover,:focus-visible){
+  background:color-mix(in srgb,var(--tf-accent) 10%,transparent)!important;
+}
+html[data-tf-background].timeflow-team-mode #schedulePage.team-data-empty::after{
+  border-color:var(--tf-border)!important;
+  border-radius:var(--tf-unified-radius,18px)!important;
+  background:var(--tf-card-background)!important;
+  color:var(--tf-text-secondary)!important;
+}
+html[data-tf-background].timeflow-team-mode .team-support-card>button{
+  border-color:var(--tf-border)!important;
+  background:color-mix(in srgb,var(--tf-accent) 28%,var(--tf-control))!important;
+  color:var(--tf-accent-contrast)!important;
+}
+
+/* Custom switches were still fixed to blue after a palette change. */
+html[data-tf-background] :is(.settings-toggle,.managed-user-toggle,.detail-content) input+ i{
+  background:var(--tf-control)!important;
+  outline-color:var(--tf-accent)!important;
+}
+html[data-tf-background] :is(.settings-toggle,.managed-user-toggle,.detail-content) input+ i::after{
+  background:var(--tf-text-muted)!important;
+}
+html[data-tf-background] :is(.settings-toggle,.managed-user-toggle,.detail-content) input:checked+ i{
+  background:var(--tf-accent)!important;
+}
+html[data-tf-background] :is(.settings-toggle,.managed-user-toggle,.detail-content) input:checked+ i::after{
+  background:var(--tf-accent-contrast)!important;
+}
+html[data-tf-background] :is(.settings-toggle,.managed-user-toggle,.detail-content) input:focus-visible+ i{
+  outline:2px solid var(--tf-accent)!important;
+  outline-offset:3px;
+}

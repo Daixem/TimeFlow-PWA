@@ -60,4 +60,18 @@ for (const surface of [
   if (!glass.includes(surface)) throw new Error(`Einheitliche Kartenregeln fehlen für ${surface}.`);
 }
 
+const teamPalette = glass.slice(glass.lastIndexOf("/* Team-only content uses the selected palette too."));
+for (const surface of [".team-avatar", ".team-invite-steps b", ".team-card .team-update", ".team-empty-state", "#schedulePage.team-data-empty::after"]) {
+  if (!teamPalette.includes(surface)) throw new Error(`Teamansicht hat keine Theme-Regel für ${surface}.`);
+}
+for (const token of ["--tf-text-secondary", "--tf-accent-contrast", "--tf-divider", "--tf-card-background"]) {
+  if (!teamPalette.includes(token)) {
+    throw new Error(`Teamansicht ist nicht vollständig an das gewählte Farbschema gebunden: ${token}.`);
+  }
+}
+const themedSwitches = glass.slice(glass.lastIndexOf("/* Custom switches were still fixed to blue after a palette change."));
+for (const selector of [".settings-toggle", ".managed-user-toggle", ".detail-content", "input:checked+ i", "input:focus-visible+ i"]) {
+  if (!themedSwitches.includes(selector)) throw new Error(`Theme-Farbe fehlt bei einem Schalter: ${selector}.`);
+}
+
 console.log("Theme-Tokens: Palette, Fenster, Navigation, Controls und Texte sind zentral verbunden.");
