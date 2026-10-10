@@ -488,3 +488,15 @@ html[data-tf-background] :is(.notification-center-header,.notification-permissio
 html[data-tf-background] :is(.notification-permission,.notification-item) {
   border-color: var(--tf-divider) !important;
 }
+/* Notification entries are buttons, so the app-wide button palette must not
+   turn each entry back into a tinted tile. Keep the entire row transparent. */
+.notification-center #notificationList > button.notification-item,
+.notification-center #notificationList > button.notification-item:is(:hover,:focus-visible) {
+  border: 0 !important;
+  border-bottom: 1px solid var(--tf-divider) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
