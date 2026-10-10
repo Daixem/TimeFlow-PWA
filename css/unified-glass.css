@@ -512,32 +512,32 @@ html[data-tf-background] :is(.notification-permission,.notification-item) {
 }
 
 /* Final surfaces found during the live screen-by-screen review. */
-html[data-tf-background] :is(.settings-about,.account-section) {
+html[data-tf-background]:is(.timeflow-private-mode,.timeflow-team-mode) :is(.settings-about,.account-section) {
   border: 1px solid var(--tf-border) !important;
   border-radius: var(--tf-unified-radius,18px) !important;
   background: linear-gradient(145deg,var(--tf-surface-inset),transparent),var(--tf-card-background) !important;
   box-shadow: inset 0 1px 0 var(--tf-surface-inset),var(--tf-shadow) !important;
   color: var(--tf-text-primary) !important;
 }
-html[data-tf-background] .settings-about { padding: 14px !important; }
-html[data-tf-background] .account-section { padding: 16px !important; }
-html[data-tf-background] .account-grid { gap: 12px !important; }
-html[data-tf-background] .account-grid .account-card {
+html[data-tf-background]:is(.timeflow-private-mode,.timeflow-team-mode) .settings-about { padding: 14px !important; }
+html[data-tf-background]:is(.timeflow-private-mode,.timeflow-team-mode) .account-section { padding: 16px !important; }
+html[data-tf-background]:is(.timeflow-private-mode,.timeflow-team-mode) .account-grid { gap: 12px !important; }
+html[data-tf-background]:is(.timeflow-private-mode,.timeflow-team-mode) .account-grid .account-card {
   border: 0 !important;
   border-radius: 0 !important;
   background: transparent !important;
   background-image: none !important;
   box-shadow: none !important;
 }
-html[data-tf-background] .account-card :is(small,p) { color: var(--tf-text-secondary) !important; }
+html[data-tf-background]:is(.timeflow-private-mode,.timeflow-team-mode) .account-card :is(small,p) { color: var(--tf-text-secondary) !important; }
 
 /* Profile details and charts are content within a section, not extra cards. */
-html[data-tf-background] .profile-hero::after {
+html[data-tf-background]:is(.timeflow-private-mode,.timeflow-team-mode) .profile-hero::after {
   border-color: color-mix(in srgb,var(--tf-accent) 18%,transparent) !important;
   box-shadow: 0 0 0 28px color-mix(in srgb,var(--tf-accent) 7%,transparent),
     0 0 0 58px color-mix(in srgb,var(--tf-accent) 4%,transparent) !important;
 }
-html[data-tf-background] .profile-hero .profile-permission-button {
+html[data-tf-background]:is(.timeflow-private-mode,.timeflow-team-mode) .profile-hero .profile-permission-button {
   border: 0 !important;
   border-radius: 0 !important;
   background: transparent !important;
@@ -545,35 +545,35 @@ html[data-tf-background] .profile-hero .profile-permission-button {
   box-shadow: none !important;
   color: var(--tf-text-primary) !important;
 }
-html[data-tf-background] .profile-hero .profile-permission-button :is(small,em) {
+html[data-tf-background]:is(.timeflow-private-mode,.timeflow-team-mode) .profile-hero .profile-permission-button :is(small,em) {
   color: var(--tf-text-secondary) !important;
 }
-html[data-tf-background] :is(.chart-card,.goal-card,.insight-grid article) {
+html[data-tf-background]:is(.timeflow-private-mode,.timeflow-team-mode) :is(.chart-card,.goal-card,.insight-grid article) {
   border: 0 !important;
   border-radius: 0 !important;
   background: transparent !important;
   background-image: none !important;
   box-shadow: none !important;
 }
-html[data-tf-background] .statistics-tabs {
+html[data-tf-background]:is(.timeflow-private-mode,.timeflow-team-mode) .statistics-tabs {
   border-color: var(--tf-border) !important;
   background: var(--tf-control) !important;
 }
-html[data-tf-background] .statistics-tabs button {
+html[data-tf-background]:is(.timeflow-private-mode,.timeflow-team-mode) .statistics-tabs button {
   border-color: transparent !important;
   border-radius: 9px !important;
   background: transparent !important;
   box-shadow: none !important;
   color: var(--tf-text-secondary) !important;
 }
-html[data-tf-background] .statistics-tabs button[aria-selected="true"] {
+html[data-tf-background]:is(.timeflow-private-mode,.timeflow-team-mode) .statistics-tabs button[aria-selected="true"] {
   border-color: var(--tf-border) !important;
   background: color-mix(in srgb,var(--tf-accent) 52%,var(--tf-control)) !important;
   color: var(--tf-text-primary) !important;
 }
 
 /* Keep the schedule figures in one card, with dividers between values. */
-html[data-tf-background] .week-summary {
+html[data-tf-background]:is(.timeflow-private-mode,.timeflow-team-mode) .week-summary {
   display: grid !important;
   gap: 0 !important;
   padding: 8px 5px !important;
@@ -582,7 +582,7 @@ html[data-tf-background] .week-summary {
   background: linear-gradient(145deg,var(--tf-surface-inset),transparent),var(--tf-card-background) !important;
   box-shadow: inset 0 1px 0 var(--tf-surface-inset),var(--tf-shadow) !important;
 }
-html[data-tf-background] .week-summary > span {
+html[data-tf-background]:is(.timeflow-private-mode,.timeflow-team-mode) .week-summary > span {
   padding: 9px 8px !important;
   border: 0 !important;
   border-radius: 0 !important;
@@ -590,19 +590,18 @@ html[data-tf-background] .week-summary > span {
   background-image: none !important;
   box-shadow: none !important;
 }
-html[data-tf-background] .week-summary > span + span {
+html[data-tf-background]:is(.timeflow-private-mode,.timeflow-team-mode) .week-summary > span + span {
   border-inline-start: 1px solid var(--tf-divider) !important;
 }
 
 /* The account-period selector is a control; its explanatory audit is a row. */
-html[data-tf-background] .private-account-period {
+html[data-tf-background]:is(.timeflow-private-mode,.timeflow-team-mode) .private-account-period {
   border: 0 !important;
   border-radius: 0 !important;
   background: transparent !important;
   box-shadow: none !important;
 }
-html[data-tf-background] .private-account-audit,
-html[data-tf-background] .private-account-model {
+html[data-tf-background]:is(.timeflow-private-mode,.timeflow-team-mode) :is(.private-account-audit,.private-account-model) {
   border: 0 !important;
   border-radius: 0 !important;
   background: transparent !important;
