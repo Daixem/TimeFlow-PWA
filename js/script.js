@@ -219,7 +219,7 @@ async function writeServerWorkTime(eventType) {
       else if (eventType === "PAUSE_START") applyWorkTimeState({ ...state, isPaused: true, hasManualPause: true, pauseStartedAt: now });
       else if (eventType === "PAUSE_END") applyWorkTimeState({ ...state, isPaused: false, pauseStartedAt: null });
       document.dispatchEvent(new CustomEvent("timeflow:work-time-pending", { detail: { eventType } }));
-      showToast("Lokal vorgemerkt – wird beim nächsten Verbindungsversuch gesendet.");
+      showToast("Offline gespeichert. Wird beim nächsten Verbindungsversuch gesendet.");
       return true;
     }
     workTimePendingEvent = undefined;
@@ -289,7 +289,7 @@ function updateWorkUi() {
   elements.workStatus.textContent = state.isWorking ? "Im Dienst" : "Nicht im Dienst";
   elements.clockHint.textContent = state.isWorking ? "Tippen zum Ausstempeln" : "Tippen zum Einstempeln";
   elements.clockButton.classList.toggle("is-working", state.isWorking);
-  elements.clockButton.disabled = workTimeServerMode !== "enabled" && workTimeServerMode !== "disabled";
+  elements.clockButton.disabled = Boolean(workTimePendingEvent) || (workTimeServerMode !== "enabled" && workTimeServerMode !== "disabled");
   elements.clockButton.setAttribute("aria-busy", String(workTimeServerMode === undefined));
   elements.clockButton.setAttribute("aria-pressed", String(state.isWorking));
   elements.clockIcon.className = `fa-solid ${state.isWorking ? "fa-right-from-bracket" : "fa-right-to-bracket"}`;

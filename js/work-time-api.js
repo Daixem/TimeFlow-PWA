@@ -130,7 +130,10 @@
       var revision = Number(meta().revision || 0);
       try { return await send(change, revision, false); } catch (error) {
         if (error.status === 409) { error.conflict = preserveConflict(change, error.result || {}); throw error; }
-        if (error.network || error.uncertain) {
+        // Only a confirmed transport failure is safe to queue as an offline
+        // action. A server 5xx can happen after a write was committed, so
+        // replaying it automatically could apply the same clock event twice.
+        if (error.network) {
           var queued = { change: safeChange({ ...change, occurredAt: change.occurredAt || attemptedAt }, revision), queuedAt: attemptedAt };
           savePending([queued]);
           return { pending: true, ...queued, queueLength: 1 };

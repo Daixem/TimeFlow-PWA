@@ -5,7 +5,7 @@ const requiredSnippets = new Map([
   ["sw.js", ["timeflow-", "css/sprint11.css?v=__TIMEFLOW_BUILD__", "js/sprint11.js?v=__TIMEFLOW_BUILD__"]],
   ["js/sprint11.js", ["data-select-mode=\"private\"", "data-select-mode=\"team\"", "timeflow-private-mode", "timeflow:mode-changed", "Teamzugang", "timeflow:workday-updated"]],
   ["js/sprint9.js", ["function markReady()", "timeflow:sync-ready"]],
-  ["js/sprint6.js", ["function privateMode()", "Persönlich erfasst", "action.makeMessage && !privateMode()"]],
+  ["js/sprint6.js", ["function privateMode()", "Persönlich auf diesem Gerät erfasst", "action.makeSummary(data)", 'if (privateMode() && ["late", "swap"].includes(type))']],
   ["js/sprint10.js", ["function refreshCurrentSchedule()", "aria-current\", \"date"]],
   ["js/script.js", ["previousWorkday", "nextWorkday", "month: \"long\"", "togglePause"]]
 ]);
@@ -43,8 +43,8 @@ if (!privateHome.includes("data-team-only") || !privateHome.includes("Teamchat")
 if (!privateHomeCss.includes(":is(.timeflow-private-mode,.timeflow-team-mode)")) throw new Error("Teammodus verwendet nicht die bewährte Einzelnutzungs-Oberfläche.");
 const auth = await readFile("js/sprint8.js", "utf8");
 const chat = await readFile("js/sprint3.js", "utf8");
-if (!auth.includes("fictionalIds") || !auth.includes("Noch keine echten Teammitglieder verbunden")) throw new Error("Fiktive Teammitglieder werden im echten Teamzugang nicht ausgeblendet.");
-if (!chat.includes("clearPlatformDemoChat") || !chat.includes("updateUnreadCount()") || !chat.includes("timeflow:session-ready") || !chat.includes('event.detail?.mode === "team"')) throw new Error("Beta-Chatdaten oder ungültige Chat-Badges werden im echten Teamzugang nicht ausgeblendet.");
+if (auth.includes("Anna Müller") || auth.includes("Thomas Becker")) throw new Error("Fiktive Teammitglieder tauchen im Anmeldedialog auf.");
+if (chat.includes("Anna Müller") || chat.includes("Thomas Becker") || !chat.includes('new URL("api/team-chat"') || !chat.includes("clearPlatformDemoChat") || !chat.includes("updateUnreadCount()") || !chat.includes("timeflow:session-ready") || !chat.includes('event.detail?.mode === "team"')) throw new Error("Echte Teamnachrichten werden nicht geladen oder Demo-Chats bleiben sichtbar.");
 const sprint11 = await readFile("js/sprint11.js", "utf8");
 if (!sprint11.includes("removePlatformDemoHome") || !sprint11.includes("teamDataEmpty")) throw new Error("Statische Demo-Startdaten oder Team-Badges werden nach der echten Anmeldung nicht entfernt.");
 const sprint11Css = await readFile("css/sprint11.css", "utf8");

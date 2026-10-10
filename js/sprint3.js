@@ -33,42 +33,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       <div class="chat-layout">
         <aside class="inbox-panel" aria-label="Unterhaltungen">
-          <div class="inbox-highlight">
-            <span class="highlight-icon"><i class="fa-solid fa-briefcase"></i></span>
-            <span><small>Nächste Schicht</small><strong>Fr., 07:30 – 15:00</strong></span>
-            <span class="team-live"><i></i> 5 online</span>
-          </div>
           <div class="conversation-list" id="conversationList">
-            <button type="button" data-chat-id="restaurant" data-chat-type="groups" data-unread="2" data-search="team restaurant dienstplan frühschicht" aria-pressed="true">
-              <span class="conversation-avatar team-avatar"><i class="fa-solid fa-users"></i></span>
-              <span class="conversation-copy">
-                <span><strong>Team Restaurant</strong><time>08:31</time></span>
-                <small><b>Anna:</b> Der Dienstplan ist aktualisiert.</small>
-              </span>
-              <em class="conversation-badge">2</em>
-            </button>
-            <button type="button" data-chat-id="anna" data-chat-type="direct" data-unread="0" data-search="anna müller geburtstag">
-              <span class="conversation-avatar anna-avatar">AM<i class="presence-dot"></i></span>
-              <span class="conversation-copy">
-                <span><strong>Anna Müller</strong><time>Gestern</time></span>
-                <small><i class="fa-solid fa-check-double read-mark"></i> Danke für die Info! 😊</small>
-              </span>
-            </button>
-            <button type="button" data-chat-id="leitung" data-chat-type="groups" data-unread="1" data-search="abteilungsleitung freigabe urlaub">
-              <span class="conversation-avatar lead-avatar">AL</span>
-              <span class="conversation-copy">
-                <span><strong>Abteilungsleitung</strong><time>Mo.</time></span>
-                <small>Dein Urlaubsantrag wurde genehmigt.</small>
-              </span>
-              <em class="conversation-badge">1</em>
-            </button>
-            <button type="button" data-chat-id="thomas" data-chat-type="direct" data-unread="0" data-search="thomas becker jubiläum frühschicht">
-              <span class="conversation-avatar thomas-avatar">TB</span>
-              <span class="conversation-copy">
-                <span><strong>Thomas Becker</strong><time>Fr.</time></span>
-                <small><i class="fa-solid fa-check-double read-mark"></i> Bis morgen in der Frühschicht.</small>
-              </span>
-            </button>
           </div>
           <p class="empty-conversations" id="emptyConversations" hidden>
             <i class="fa-regular fa-message"></i>
@@ -83,8 +48,8 @@ document.addEventListener("DOMContentLoaded", () => {
             </button>
             <span class="conversation-avatar team-avatar" id="threadAvatar"><i class="fa-solid fa-users"></i></span>
             <div class="thread-heading">
-              <strong id="threadName">Team Restaurant</strong>
-              <small id="threadStatus"><i></i> 5 von 8 Mitgliedern online</small>
+              <strong id="threadName">Teamchat</strong>
+              <small id="threadStatus">Wird verbunden …</small>
             </div>
             <button type="button" class="thread-action" data-thread-search aria-label="Im Chat suchen">
               <i class="fa-solid fa-magnifying-glass"></i>
@@ -94,7 +59,7 @@ document.addEventListener("DOMContentLoaded", () => {
             </button>
           </header>
 
-          <div class="work-context">
+          <div class="work-context" hidden>
             <span><i class="fa-solid fa-wand-magic-sparkles"></i></span>
             <div><small>TimeFlow erkennt den Arbeitskontext</small><strong>Frühschicht am Freitag · 07:30 Uhr</strong></div>
             <button type="button" data-shift-details>Öffnen</button>
@@ -102,7 +67,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
           <div class="message-list" id="messageList"></div>
 
-          <div class="smart-replies" aria-label="Schnellaktionen">
+          <div class="smart-replies" aria-label="Schnellaktionen" hidden>
             <button type="button" data-smart-reply="confirm"><i class="fa-solid fa-circle-check"></i> Schicht bestätigen</button>
             <button type="button" data-smart-reply="swap"><i class="fa-solid fa-arrow-right-arrow-left"></i> Tausch anfragen</button>
             <button type="button" data-smart-reply="late"><i class="fa-regular fa-clock"></i> 10 Min. später</button>
@@ -117,7 +82,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <input id="messageInput" type="text" maxlength="300" autocomplete="off" placeholder="Nachricht schreiben">
               <button type="button" data-emoji aria-label="Emoji einfügen"><i class="fa-regular fa-face-smile"></i></button>
             </label>
-            <button type="submit" class="send-button" aria-label="Nachricht lokal senden">
+            <button type="submit" class="send-button" aria-label="Nachricht senden">
               <i class="fa-solid fa-paper-plane"></i>
             </button>
           </form>
@@ -126,22 +91,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
       <p class="chat-demo-note">
         <i class="fa-solid fa-shield-halved"></i>
-        Diese Vorschau speichert Nachrichten ausschließlich auf deinem Gerät.
+        Nachrichten werden nur für angemeldete Mitglieder deines Teams angezeigt.
       </p>
 
       <dialog class="new-chat-dialog" id="newChatDialog" aria-labelledby="newChatTitle">
         <header><div><small>Neue Unterhaltung</small><h2 id="newChatTitle">Wen möchtest du erreichen?</h2></div><button type="button" data-close-dialog aria-label="Schließen"><i class="fa-solid fa-xmark"></i></button></header>
         <div>
-          <button type="button" data-start-chat="restaurant"><span class="conversation-avatar team-avatar"><i class="fa-solid fa-users"></i></span><span><strong>Team Restaurant</strong><small>8 Mitglieder</small></span><i class="fa-solid fa-chevron-right"></i></button>
-          <button type="button" data-start-chat="anna"><span class="conversation-avatar anna-avatar">AM</span><span><strong>Anna Müller</strong><small>Online</small></span><i class="fa-solid fa-chevron-right"></i></button>
-          <button type="button" data-start-chat="thomas"><span class="conversation-avatar thomas-avatar">TB</span><span><strong>Thomas Becker</strong><small>Zuletzt gestern</small></span><i class="fa-solid fa-chevron-right"></i></button>
+          <p>Der Teamchat ist für alle bestätigten Mitglieder deines Teams gemeinsam.</p>
         </div>
       </dialog>
     </section>
   `);
 
   const CHAT_STORAGE_KEY = "timeflow-chat-demo-v2";
-  const SHIFT_STORAGE_KEY = "timeflow-chat-shift-confirmed-v1";
   const schedulePage = document.getElementById("schedulePage");
   const chatPage = document.getElementById("chatPage");
   const homeNav = document.querySelector('[data-target="home"]');
@@ -152,87 +114,48 @@ document.addEventListener("DOMContentLoaded", () => {
   const messageList = document.getElementById("messageList");
   const chatDialog = document.getElementById("newChatDialog");
 
-  function clearPlatformDemoChat() {
-    // This storage namespace belongs exclusively to the old local preview.
-    // Remove it when a real platform session or either production mode is
-    // active so preview conversations can never reappear as real messages.
+  let platformSession = false;
+  let platformUserId = "";
+  let teamRefreshTimer = 0;
+  let teamRefreshGeneration = 0;
+  let activeTeamId = "";
+  let teamMessages = [];
+  function clearPlatformDemoChat(message = "Melde dich an und tritt einem Team bei, um den gemeinsamen Chat zu nutzen.") {
+    teamRefreshGeneration += 1;
     try { window.TimeFlowPlatform.storage.removeItem(CHAT_STORAGE_KEY); } catch (_error) { /* storage can be unavailable in restricted WebViews */ }
-    try { window.TimeFlowPlatform.storage.removeItem(SHIFT_STORAGE_KEY); } catch (_error) { /* storage can be unavailable in restricted WebViews */ }
-    shiftConfirmed = false;
     chatPage.querySelector(".inbox-highlight")?.remove();
     chatPage.querySelector(".conversation-list")?.replaceChildren();
-    chatPage.querySelector(".chat-thread")?.setAttribute("hidden", "");
+    messageList.replaceChildren();
+    chatPage.querySelector(".chat-thread")?.removeAttribute("hidden");
     chatPage.querySelector("[data-new-chat]")?.setAttribute("hidden", "");
-    chatPage.querySelector(".chat-toolbar")?.setAttribute("hidden", "");
-    chatPage.querySelectorAll("[data-chat-filter]").forEach((button) => { button.disabled = true; });
+    chatPage.querySelector(".chat-toolbar")?.removeAttribute("hidden");
+    chatPage.querySelectorAll("[data-chat-filter]").forEach((button) => { button.disabled = false; });
     const empty = document.getElementById("emptyConversations");
-    if (empty) empty.textContent = "Der gemeinsame Teamchat ist noch nicht verbunden.";
-    chatPage.classList.add("chat-backend-unavailable");
+    if (empty) empty.textContent = message;
+    chatPage.classList.toggle("chat-backend-unavailable", Boolean(message));
+    document.getElementById("threadName").textContent = "Teamchat";
+    document.getElementById("threadStatus").textContent = message;
+    const messageInput = document.getElementById("messageInput");
+    if (messageInput) messageInput.disabled = true;
+    const sendButton = chatPage.querySelector(".send-button"); if (sendButton) sendButton.disabled = true;
+    activeTeamId = "";
+    teamMessages = [];
+    window.clearInterval(teamRefreshTimer);
+    teamRefreshTimer = 0;
     const note = chatPage.querySelector(".chat-demo-note");
     if (note) {
       note.replaceChildren();
       const icon = document.createElement("i");
       icon.className = "fa-solid fa-circle-info";
-      note.append(icon, document.createTextNode("Der gemeinsame Teamchat ist noch nicht verbunden. Nachrichten und Schichtbestätigungen werden nicht gespeichert oder versendet."));
+      note.append(icon, document.createTextNode(message));
     }
-    chatDialog?.remove();
     updateUnreadCount();
     applyConversationFilter();
   }
 
-  const conversations = {
-    restaurant: {
-      name: "Team Restaurant",
-      status: "5 von 8 Mitgliedern online",
-      online: true,
-      avatar: "group",
-      messages: [
-        { type: "date", text: "Heute" },
-        { sender: "Anna", text: "Guten Morgen zusammen! Der Dienstplan für August ist aktualisiert.", time: "08:27" },
-        { type: "shift", sender: "TimeFlow Plan" },
-        { sender: "Thomas", text: "Danke! Meine Schicht am Freitag passt.", time: "08:29" },
-        { sender: "Du", text: "Perfekt, danke für die schnelle Rückmeldung.", time: "08:31", own: true, read: true }
-      ]
-    },
-    anna: {
-      name: "Anna Müller",
-      status: "Online",
-      online: true,
-      avatar: "AM",
-      messages: [
-        { type: "date", text: "Gestern" },
-        { sender: "Du", text: "Alles Gute schon einmal für morgen!", time: "17:42", own: true, read: true },
-        { sender: "Anna", text: "Danke für die Info! 😊", time: "17:44" }
-      ]
-    },
-    leitung: {
-      name: "Abteilungsleitung",
-      status: "Zuletzt heute um 07:52",
-      avatar: "AL",
-      avatarClass: "lead-avatar",
-      messages: [
-        { type: "date", text: "Montag" },
-        { sender: "Abteilungsleitung", text: "Dein Urlaubsantrag vom 15. August wurde genehmigt.", time: "09:12" },
-        { sender: "Du", text: "Vielen Dank für die Rückmeldung.", time: "09:16", own: true, read: true }
-      ]
-    },
-    thomas: {
-      name: "Thomas Becker",
-      status: "Zuletzt gestern um 18:14",
-      avatar: "TB",
-      avatarClass: "thomas-avatar",
-      messages: [
-        { type: "date", text: "Freitag" },
-        { sender: "Thomas", text: "Bis morgen in der Frühschicht.", time: "16:02" },
-        { sender: "Du", text: "Alles klar, bis morgen!", time: "16:05", own: true, read: true }
-      ]
-    }
-  };
-
-  const storedMessages = loadStoredMessages();
-  let activeChat = "restaurant";
+  const conversations = {};
+  let activeChat = "team";
   let activeFilter = "all";
-  let shiftConfirmed = window.TimeFlowPlatform.storage.getItem(SHIFT_STORAGE_KEY) === "true";
 
   const navBadge = document.createElement("span");
   navBadge.className = "nav-unread-badge";
@@ -285,15 +208,6 @@ document.addEventListener("DOMContentLoaded", () => {
     setNavActive("profile");
   });
 
-  function loadStoredMessages() {
-    try {
-      const value = JSON.parse(window.TimeFlowPlatform.storage.getItem(CHAT_STORAGE_KEY));
-      return value && typeof value === "object" ? value : {};
-    } catch {
-      return {};
-    }
-  }
-
   function renderConversation(id, markRead = true) {
     activeChat = id;
     const conversation = conversations[id];
@@ -302,39 +216,22 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("threadName").textContent = conversation.name;
     const status = document.getElementById("threadStatus");
     status.replaceChildren();
-    if (conversation.online) {
-      const dot = document.createElement("i");
-      status.append(dot);
-    }
     status.append(document.createTextNode(conversation.status));
 
     const avatar = document.getElementById("threadAvatar");
-    avatar.className = `conversation-avatar ${conversation.avatar === "group" ? "team-avatar" : conversation.avatarClass || "anna-avatar"}`;
+    avatar.className = "conversation-avatar team-avatar";
     avatar.replaceChildren();
-    if (conversation.avatar === "group") {
-      const icon = document.createElement("i");
-      icon.className = "fa-solid fa-users";
-      avatar.append(icon);
-    } else {
-      avatar.append(document.createTextNode(conversation.avatar));
-    }
-
-    const hasShiftContext = id === "restaurant";
-    chatPage.querySelector(".work-context").hidden = !hasShiftContext;
-    chatPage.querySelectorAll('[data-smart-reply="confirm"], [data-smart-reply="swap"]').forEach((button) => {
-      button.hidden = !hasShiftContext;
-    });
+    const icon = document.createElement("i"); icon.className = "fa-solid fa-users"; avatar.append(icon);
+    chatPage.querySelector(".work-context").hidden = true;
+    chatPage.querySelector(".smart-replies").hidden = true;
 
     messageList.replaceChildren();
-    [...conversation.messages, ...(storedMessages[id] || [])].forEach((message) => renderMessage(message));
+    conversation.messages.forEach((message) => renderMessage(message));
 
     document.querySelectorAll("[data-chat-id]").forEach((button) => {
       const selected = button.dataset.chatId === id;
       button.setAttribute("aria-pressed", String(selected));
-      if (selected && markRead) {
-        button.dataset.unread = "0";
-        button.querySelector(".conversation-badge")?.remove();
-      }
+      if (selected && markRead) button.dataset.unread = "0";
     });
 
     updateUnreadCount();
@@ -343,27 +240,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderMessage(message) {
-    if (message.type === "date") {
-      const separator = document.createElement("div");
-      separator.className = "message-date";
-      separator.textContent = message.text;
-      messageList.append(separator);
-      return;
-    }
-
-    if (message.type === "shift") {
-      const card = document.createElement("article");
-      card.className = "inline-shift-card";
-      card.innerHTML = `
-        <header><span><i class="fa-solid fa-calendar-check"></i></span><div><small>Schicht geteilt von ${message.sender}</small><strong>Frühschicht</strong></div></header>
-        <div class="shift-time"><span><small>Freitag</small><strong>31. Juli</strong></span><i></i><span><small>Arbeitszeit</small><strong>07:30 – 15:00</strong></span></div>
-        <p><i class="fa-solid fa-location-dot"></i> Restaurant <span>·</span> 30 Min. Pause</p>
-        <button type="button" data-confirm-shift${shiftConfirmed ? " disabled" : ""}><i class="fa-solid ${shiftConfirmed ? "fa-circle-check" : "fa-check"}"></i> ${shiftConfirmed ? "Schicht bestätigt" : "Teilnahme bestätigen"}</button>
-      `;
-      messageList.append(card);
-      return;
-    }
-
     const bubble = document.createElement("div");
     bubble.className = `message-bubble${message.own ? " own" : ""}`;
     const sender = document.createElement("strong");
@@ -405,29 +281,71 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("emptyConversations").hidden = visible !== 0;
   }
 
-  function sendMessage(text) {
-    if (!String(text || "").trim()) return;
-    notify("Der Teamchat ist noch nicht verbunden. Es wurde keine Nachricht gesendet.");
+  async function refreshTeamChat(markRead = false) {
+    const requestGeneration = ++teamRefreshGeneration;
+    const access = window.TimeFlowTeamAccess;
+    const organizationId = String(access?.membership?.organization_id || "");
+    if (!platformSession || document.body.dataset.appMode !== "team" || !access?.allowed || !organizationId) {
+      clearPlatformDemoChat(platformSession ? "Der Chat ist nur im Teammodus mit bestätigter Teammitgliedschaft verfügbar." : "Melde dich an und tritt einem Team bei, um den gemeinsamen Chat zu nutzen.");
+      return false;
+    }
+    try {
+      const response = await fetch(new URL("api/team-chat", document.baseURI), { cache: "no-store", headers: { Accept: "application/json" } });
+      if (response.status === 403) { clearPlatformDemoChat("Der Teamzugang konnte nicht bestätigt werden. Prüfe deine Teameinladung."); return false; }
+      if (!response.ok) throw new Error("chat_unavailable");
+      const data = await response.json();
+      if (requestGeneration !== teamRefreshGeneration || document.body.dataset.appMode !== "team") return false;
+      if (!data.team?.id || data.team.id !== organizationId) throw new Error("chat_team_mismatch");
+      activeTeamId = data.team.id;
+      document.getElementById("messageInput").disabled = false;
+      chatPage.querySelector(".send-button").disabled = false;
+      teamMessages = Array.isArray(data.messages) ? data.messages : [];
+      const list = document.getElementById("conversationList");
+      list.replaceChildren();
+      const item = document.createElement("button"); item.type = "button"; item.dataset.chatId = "team"; item.dataset.chatType = "groups"; item.dataset.unread = String(markRead ? 0 : Number(data.unread || 0)); item.dataset.search = String(data.team.name || "Team").toLocaleLowerCase("de"); item.setAttribute("aria-pressed", "true");
+      item.innerHTML = '<span class="conversation-avatar team-avatar"><i class="fa-solid fa-users"></i></span><span class="conversation-copy"><span><strong></strong><time></time></span><small></small></span>';
+      item.querySelector("strong").textContent = data.team.name;
+      const lastMessage = teamMessages.at(-1);
+      item.querySelector("time").textContent = lastMessage ? new Date(lastMessage.created_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) : "";
+      item.querySelector("small").textContent = lastMessage ? `${lastMessage.sender_name}: ${lastMessage.message}` : "Noch keine Nachrichten";
+      if (Number(item.dataset.unread)) { const badge = document.createElement("em"); badge.className = "conversation-badge"; badge.textContent = item.dataset.unread; item.append(badge); }
+      list.append(item);
+      const unread = markRead ? 0 : Number(data.unread || 0);
+      conversations.team = { name: data.team.name, status: unread ? `${unread} ungelesene Nachrichten` : "Gemeinsamer Teamchat", messages: teamMessages.map((message) => ({ sender: message.sender_name, text: message.message, own: message.sender_id === platformUserId, time: new Date(message.created_at).toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" }) })) };
+      renderConversation("team", false);
+      chatPage.classList.remove("chat-backend-unavailable");
+      const note = chatPage.querySelector(".chat-demo-note"); if (note) note.textContent = "Nachrichten werden für alle bestätigten Mitglieder dieses Teams gemeinsam gespeichert.";
+      if (markRead && unread) await fetch(new URL("api/team-chat", document.baseURI), { method: "PUT", headers: { Accept: "application/json" } });
+      if (!teamRefreshTimer) teamRefreshTimer = window.setInterval(() => { if (document.visibilityState === "visible" && navigator.onLine) refreshTeamChat(!chatPage.classList.contains("hidden")); }, 8000);
+      return true;
+    } catch (_error) {
+      clearPlatformDemoChat(navigator.onLine ? "Der Teamchat ist gerade nicht erreichbar. Bitte versuche es erneut." : "Für den gemeinsamen Chat brauchst du eine Internetverbindung.");
+      return false;
+    }
+  }
+
+  async function sendMessage(text) {
+    const message = String(text || "").trim();
+    if (!message) return;
+    if (!activeTeamId || !navigator.onLine) { notify("Nachrichten können nur mit Internetverbindung gesendet werden."); return; }
+    const input = document.getElementById("messageInput");
+    const button = chatPage.querySelector(".send-button"); button.disabled = true;
+    try {
+      const response = await fetch(new URL("api/team-chat", document.baseURI), { method: "POST", headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ message }) });
+      if (response.status === 429) throw new Error("Du hast gerade viele Nachrichten gesendet. Bitte warte kurz.");
+      if (!response.ok) throw new Error("Die Nachricht konnte nicht gesendet werden.");
+      input.value = "";
+      await refreshTeamChat(false);
+    } catch (error) { notify(error instanceof Error ? error.message : "Die Nachricht konnte nicht gesendet werden."); }
+    finally { button.disabled = false; input.focus(); }
   }
 
   document.addEventListener("timeflow:send-team-message", (event) => {
     const text = String(event.detail?.text || "").trim();
     if (!text) return;
-    notify("Der Teamchat ist noch nicht verbunden. Es wurde keine Nachricht gesendet.");
+    sendMessage(text);
   });
-
-  function confirmShift() {
-    if (shiftConfirmed) {
-      notify("Diese Schicht ist bereits bestätigt.");
-      return;
-    }
-    notify("Die Schichtbestätigung ist noch nicht mit einem gemeinsamen Dienstplan verbunden.");
-  }
-
-  document.querySelectorAll("[data-chat-id]").forEach((button) => button.addEventListener("click", () => {
-    renderConversation(button.dataset.chatId);
-    chatPage.classList.add("thread-open");
-  }));
+  document.getElementById("conversationList").addEventListener("click", (event) => { if (event.target.closest("[data-chat-id]")) { refreshTeamChat(true); chatPage.classList.add("thread-open"); } });
 
   document.getElementById("chatSearch")?.addEventListener("input", applyConversationFilter);
   document.querySelectorAll("[data-chat-filter]").forEach((button) => button.addEventListener("click", () => {
@@ -438,20 +356,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("messageForm")?.addEventListener("submit", (event) => {
     event.preventDefault();
-    const input = document.getElementById("messageInput");
-    sendMessage(input.value);
-    input.value = "";
-  });
-
-  messageList.addEventListener("click", (event) => {
-    if (event.target.closest("[data-confirm-shift]")) confirmShift();
+    sendMessage(document.getElementById("messageInput").value);
   });
 
   document.querySelectorAll("[data-smart-reply]").forEach((button) => button.addEventListener("click", () => {
     const reply = button.dataset.smartReply;
-    if (reply === "confirm") confirmShift();
-    if (reply === "swap") sendMessage("Kann jemand meine Frühschicht am Freitag übernehmen?", "Tauschanfrage wurde lokal im Team geteilt.");
-    if (reply === "late") sendMessage("Ich komme heute voraussichtlich 10 Minuten später.", "Verspätung wurde lokal im Chat geteilt.");
+    if (reply === "swap") sendMessage("Ich möchte eine Schicht tauschen.");
+    if (reply === "late") sendMessage("Ich komme voraussichtlich 10 Minuten später.");
   }));
 
   chatPage.querySelector("[data-close-thread]")?.addEventListener("click", () => chatPage.classList.remove("thread-open"));
@@ -465,29 +376,26 @@ document.addEventListener("DOMContentLoaded", () => {
     chatPage.classList.remove("thread-open");
     document.getElementById("chatSearch").focus();
   });
-  chatPage.querySelector("[data-thread-info]")?.addEventListener("click", () => notify("Team Restaurant · 8 Mitglieder · Benachrichtigungen aktiv"));
+  chatPage.querySelector("[data-thread-info]")?.addEventListener("click", () => notify(conversations.team?.name || "Teamchat"));
   document.addEventListener("timeflow:session-ready", (event) => {
-    if (event.detail?.source === "platform") clearPlatformDemoChat();
+    platformSession = event.detail?.source === "platform";
+    if (platformSession) refreshTeamChat(false); else clearPlatformDemoChat();
+    if (new URL(location.href).searchParams.get("open") === "chat") {
+      showPage("chat"); setNavActive("chat");
+      history.replaceState({}, "", location.pathname + location.hash);
+    }
   });
+  navigator.serviceWorker?.addEventListener("message", (event) => {
+    if (event.data?.type === "TIMEFLOW_NOTIFICATION_OPEN" && event.data.action === "chat") document.dispatchEvent(new CustomEvent("timeflow:open-chat"));
+  });
+  document.addEventListener("timeflow:team-access", () => refreshTeamChat(false));
   document.addEventListener("timeflow:mode-changed", (event) => {
-    if (event.detail?.mode === "team" || event.detail?.mode === "private") clearPlatformDemoChat();
+    if (event.detail?.mode === "team") refreshTeamChat(false); else clearPlatformDemoChat("Der Chat ist nur im Teammodus verfügbar.");
   });
-  chatPage.querySelector("[data-shift-details]")?.addEventListener("click", () => notify("Frühschicht: Freitag, 31. Juli · 07:30 – 15:00 Uhr · Restaurant"));
+  chatPage.querySelector("[data-shift-details]")?.addEventListener("click", () => notify("Schichtinformationen werden hier angezeigt, sobald ein gemeinsamer Dienstplan verbunden ist."));
 
-  chatPage.querySelector("[data-new-chat]")?.addEventListener("click", () => {
-    window.TimeFlowPlatform.dialog.open(chatDialog);
-  });
-  chatPage.querySelector("[data-close-dialog]")?.addEventListener("click", () => window.TimeFlowPlatform.dialog.close(chatDialog));
-  chatPage.querySelectorAll("[data-start-chat]").forEach((button) => button.addEventListener("click", () => {
-    window.TimeFlowPlatform.dialog.close(chatDialog);
-    renderConversation(button.dataset.startChat);
-    chatPage.classList.add("thread-open");
-  }));
-  chatDialog.addEventListener("click", (event) => {
-    if (event.target === chatDialog) window.TimeFlowPlatform.dialog.close(chatDialog);
-  });
-
-  renderConversation("restaurant", window.matchMedia("(min-width: 621px)").matches);
+  document.addEventListener("timeflow:session-ready", (event) => { platformUserId = String(event.detail?.user?.id || ""); });
+  renderConversation("team", window.matchMedia("(min-width: 621px)").matches);
   updateUnreadCount();
 
   function notify(message) {

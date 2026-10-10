@@ -53,6 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const hasOrganization = /^[A-Za-z0-9_-]{1,160}$/.test(organizationId);
     teamAccessAllowed = Boolean(access.allowed && hasOrganization);
     window.TimeFlowTeamAccess = access;
+    document.dispatchEvent(new CustomEvent("timeflow:team-access", { detail: access }));
     document.querySelectorAll('[data-select-mode="team"], [data-mode-setting="team"]').forEach((button) => {
       // Bestätigte Mitglieder dürfen ihren eigenen Organisationskontext nutzen.
       // Verwaltungsaktionen bleiben unabhängig davon serverseitig rollenbegrenzt.

@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
         <div class="notification-filters" role="group" aria-label="Mitteilungen filtern"><button type="button" data-notification-filter="all" aria-pressed="true">Alle</button><button type="button" data-notification-filter="worktime" aria-pressed="false">Arbeitszeit</button><button type="button" data-notification-filter="schedule" aria-pressed="false">Dienstplan</button><button type="button" data-notification-filter="system" aria-pressed="false">System</button></div>
         <div class="notification-list" id="notificationList"></div>
-        <footer><button type="button" data-test-notification><i class="fa-solid fa-paper-plane"></i> Testbenachrichtigung</button><small>Gerätehinweise sind aktivierbar. Server-Pushs folgen nach der Cloudflare-Einrichtung.</small></footer>
+        <footer><button type="button" data-test-notification><i class="fa-solid fa-paper-plane"></i> Testbenachrichtigung</button><small>Push-Einstellungen gelten für dein Konto und werden auf allen angemeldeten Geräten beachtet.</small></footer>
       </section>
     </dialog>
   `);
@@ -78,6 +78,34 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch {
       return { deviceNotifications: true, shiftReminders: true, forgottenClockOut: true, chatAlerts: true, approvalAlerts: true, systemAlerts: true };
     }
+  }
+
+  let pushPreferenceSyncRunning = false;
+  async function syncPushPreferences() {
+    if (pushPreferenceSyncRunning || !navigator.onLine) return;
+    pushPreferenceSyncRunning = true;
+    try {
+      await fetch(new URL("api/notifications/push-preferences", document.baseURI), {
+        method: "PUT", cache: "no-store", headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({ preferences: notificationPreferences() })
+      });
+    } catch (_error) { /* lokale Einstellungen bleiben erhalten und werden beim nächsten Start erneut gesendet */ }
+    finally { pushPreferenceSyncRunning = false; }
+  }
+
+  async function loadServerPushPreferences() {
+    try {
+      const response = await fetch(new URL("api/notifications/push-preferences", document.baseURI), { cache: "no-store", headers: { Accept: "application/json" } });
+      if (!response.ok) return syncPushPreferences();
+      const { preferences: remote } = await response.json();
+      if (!remote || !Object.keys(remote).length) return syncPushPreferences();
+      const local = notificationPreferences();
+      const merged = { ...local, ...remote };
+      window.TimeFlowPlatform.storage.setItem(SETTINGS_KEY, JSON.stringify(merged));
+      document.querySelectorAll('#settingsPage [data-setting][type="checkbox"]').forEach((control) => {
+        if (typeof merged[control.dataset.setting] === "boolean") control.checked = merged[control.dataset.setting];
+      });
+    } catch (_error) { /* bei Verbindungsproblemen bleiben die Geräteeinstellungen maßgeblich */ }
   }
 
   function preferenceKey(category) {
@@ -375,4 +403,7 @@ document.addEventListener("DOMContentLoaded", () => {
   saveEntries();
   renderEntries();
   renderPermission();
+  document.addEventListener("timeflow:session-ready", (event) => { if (event.detail?.source === "platform") loadServerPushPreferences(); });
+  document.addEventListener("timeflow:settings-updated", () => syncPushPreferences());
+  window.addEventListener("online", () => syncPushPreferences());
 });

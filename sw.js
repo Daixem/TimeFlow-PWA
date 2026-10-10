@@ -92,9 +92,15 @@ self.addEventListener("fetch", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const targetUrl = new URL(event.notification.data?.url || "./", self.location.href).href;
+  const action = event.notification.data?.action;
   event.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((clients) => {
     const appClient = clients.find((client) => new URL(client.url).origin === new URL(targetUrl).origin);
-    if (appClient) return appClient.focus();
-    return self.clients.openWindow(targetUrl);
+    if (appClient) {
+      if (action) appClient.postMessage({ type: "TIMEFLOW_NOTIFICATION_OPEN", action });
+      return appClient.focus();
+    }
+    const url = new URL(targetUrl);
+    if (action === "chat") url.searchParams.set("open", "chat");
+    return self.clients.openWindow(url.href);
   }));
 });

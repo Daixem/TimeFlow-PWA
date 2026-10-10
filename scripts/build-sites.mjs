@@ -329,6 +329,24 @@ async function ensureSupportTables(database) {
 async function ensureNotificationTables(database) {
   await database.prepare("CREATE TABLE IF NOT EXISTS timeflow_push_subscriptions (user_id TEXT NOT NULL, endpoint TEXT PRIMARY KEY NOT NULL, p256dh TEXT NOT NULL, auth TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)").run();
   await database.prepare("CREATE INDEX IF NOT EXISTS idx_timeflow_push_subscriptions_user ON timeflow_push_subscriptions(user_id)").run();
+  await database.prepare("CREATE TABLE IF NOT EXISTS timeflow_push_preferences (user_id TEXT PRIMARY KEY NOT NULL, preferences_json TEXT NOT NULL, updated_at TEXT NOT NULL)").run();
+}
+
+async function ensureTeamChatTables(database) {
+  await database.prepare("CREATE TABLE IF NOT EXISTS timeflow_team_chat_messages (id TEXT PRIMARY KEY NOT NULL, organization_id TEXT NOT NULL, sender_id TEXT NOT NULL, sender_name TEXT NOT NULL, message TEXT NOT NULL, created_at TEXT NOT NULL)").run();
+  await database.prepare("CREATE INDEX IF NOT EXISTS idx_timeflow_team_chat_messages_org_created ON timeflow_team_chat_messages(organization_id, created_at)").run();
+  await database.prepare("CREATE TABLE IF NOT EXISTS timeflow_team_chat_reads (organization_id TEXT NOT NULL, user_id TEXT NOT NULL, last_read_at TEXT NOT NULL, PRIMARY KEY (organization_id, user_id))").run();
+}
+
+function validPushEndpoint(value) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" && (url.hostname === "fcm.googleapis.com"
+      || url.hostname === "updates.push.services.mozilla.com"
+      || url.hostname === "web.push.apple.com"
+      || url.hostname.endsWith(".push.apple.com")
+      || url.hostname.endsWith(".notify.windows.com"));
+  } catch { return false; }
 }
 
 async function userIdentityFingerprint(userId) {
@@ -485,6 +503,94 @@ async function handleTeamInvites(request, env, url) {
   return jsonResponse({ invitation: { id, name: inviteeName, email, organizationName: organization.name, url: url.origin + "/" }, membership: { organization_id: organization.id, role: "admin", name: organization.name } }, 201);
 }
 
+async function teamChatMembership(database, userId) {
+  return database.prepare("SELECT m.organization_id, m.role, o.name FROM timeflow_organization_members m JOIN timeflow_organizations o ON o.id = m.organization_id WHERE m.user_id = ? ORDER BY m.joined_at ASC LIMIT 1").bind(userId).first();
+}
+
+async function sendTeamChatPush(database, organization, senderId, senderName, env) {
+  if (!env.TIMEFLOW_VAPID_PUBLIC_KEY || !env.TIMEFLOW_VAPID_PRIVATE_KEY || !env.TIMEFLOW_VAPID_SUBJECT) return;
+  await ensureNotificationTables(database);
+  const members = await database.prepare("SELECT user_id FROM timeflow_organization_members WHERE organization_id = ? AND user_id != ?").bind(organization.id, senderId).all();
+  for (const member of members?.results || []) {
+    const preferenceRow = await database.prepare("SELECT preferences_json FROM timeflow_push_preferences WHERE user_id = ?").bind(member.user_id).first();
+    let preferences = {};
+    try { preferences = JSON.parse(preferenceRow?.preferences_json || "{}"); } catch { /* defaults remain enabled */ }
+    if (preferences.deviceNotifications === false || preferences.chatAlerts === false) continue;
+    const subscriptions = await database.prepare("SELECT endpoint, p256dh, auth FROM timeflow_push_subscriptions WHERE user_id = ?").bind(member.user_id).all();
+    for (const subscription of subscriptions?.results || []) {
+      try {
+        const response = await sendWebPush(subscription, { title: organization.name, body: senderName + " hat eine Nachricht gesendet.", tag: "timeflow-team-chat-" + organization.id, url: "./", data: { action: "chat" } }, env);
+        if (response.status === 404 || response.status === 410) await database.prepare("DELETE FROM timeflow_push_subscriptions WHERE user_id = ? AND endpoint = ?").bind(member.user_id, subscription.endpoint).run();
+        else if (!response.ok) console.error(JSON.stringify({ message: "team chat push rejected", status: response.status }));
+      } catch (_error) {
+        console.error(JSON.stringify({ message: "team chat push failed" }));
+      }
+    }
+  }
+}
+
+async function handleTeamChat(request, env, url, ctx) {
+  const user = authenticatedUser(request);
+  if (!user.authenticated || !user.id) return jsonResponse({ error: "authentication_required" }, 401);
+  if (!(await betaAccess(user, env)).allowed) return jsonResponse({ error: "beta_access_required" }, 403);
+  if (!env?.DB) return jsonResponse({ error: "storage_unavailable" }, 503);
+  await ensureTeamTables(env.DB);
+  const membership = await teamChatMembership(env.DB, user.id);
+  if (!membership) return jsonResponse({ error: "team_membership_required" }, 403);
+  await ensureTeamChatTables(env.DB);
+  if (request.method === "GET") {
+    const [messageRows, readRow] = await Promise.all([
+      env.DB.prepare("SELECT id, sender_id, sender_name, message, created_at FROM timeflow_team_chat_messages WHERE organization_id = ? ORDER BY created_at DESC LIMIT 100").bind(membership.organization_id).all(),
+      env.DB.prepare("SELECT last_read_at FROM timeflow_team_chat_reads WHERE organization_id = ? AND user_id = ?").bind(membership.organization_id, user.id).first()
+    ]);
+    const messages = (messageRows?.results || []).reverse();
+    const unread = messages.filter((message) => message.sender_id !== user.id && (!readRow?.last_read_at || message.created_at > readRow.last_read_at)).length;
+    return jsonResponse({ team: { id: membership.organization_id, name: membership.name, role: membership.role }, messages, unread });
+  }
+  if (request.method === "POST") {
+    if (request.headers.get("Origin") !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
+    if (!allowRate(user, "team-chat-message", 30, 60 * 60 * 1000)) return jsonResponse({ error: "rate_limited" }, 429, { "Retry-After": "3600" });
+    let body; try { body = await request.json(); } catch { return jsonResponse({ error: "invalid_json" }, 400); }
+    const message = String(body?.message || "").trim();
+    if (!message || message.length > 1000) return jsonResponse({ error: "message_length_invalid" }, 400);
+    const createdAt = new Date().toISOString();
+    const entry = { id: crypto.randomUUID(), sender_id: user.id, sender_name: String(user.name || user.email || "Teammitglied").trim().slice(0, 80), message, created_at: createdAt };
+    await env.DB.prepare("INSERT INTO timeflow_team_chat_messages (id, organization_id, sender_id, sender_name, message, created_at) VALUES (?, ?, ?, ?, ?, ?)").bind(entry.id, membership.organization_id, user.id, entry.sender_name, entry.message, entry.created_at).run();
+    if (ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(sendTeamChatPush(env.DB, { id: membership.organization_id, name: membership.name }, user.id, entry.sender_name, env).catch(() => console.error(JSON.stringify({ message: "team chat push delivery failed" }))));
+    return jsonResponse({ message: entry }, 201);
+  }
+  if (request.method === "PUT") {
+    if (request.headers.get("Origin") !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
+    const readAt = new Date().toISOString();
+    await env.DB.prepare("INSERT INTO timeflow_team_chat_reads (organization_id, user_id, last_read_at) VALUES (?, ?, ?) ON CONFLICT(organization_id, user_id) DO UPDATE SET last_read_at = excluded.last_read_at").bind(membership.organization_id, user.id, readAt).run();
+    return jsonResponse({ readAt });
+  }
+  return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "GET, POST, PUT" });
+}
+
+async function handlePushPreferences(request, env, url) {
+  const user = authenticatedUser(request);
+  if (!user.authenticated || !user.id) return jsonResponse({ error: "authentication_required" }, 401);
+  if (!(await betaAccess(user, env)).allowed) return jsonResponse({ error: "beta_access_required" }, 403);
+  if (!env?.DB) return jsonResponse({ error: "storage_unavailable" }, 503);
+  await ensureNotificationTables(env.DB);
+  if (request.method === "GET") {
+    const row = await env.DB.prepare("SELECT preferences_json FROM timeflow_push_preferences WHERE user_id = ?").bind(user.id).first();
+    let preferences = {}; try { preferences = JSON.parse(row?.preferences_json || "{}"); } catch { /* defaults */ }
+    return jsonResponse({ preferences });
+  }
+  if (request.method !== "PUT") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "GET, PUT" });
+  if (request.headers.get("Origin") !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
+  let body; try { body = await request.json(); } catch { return jsonResponse({ error: "invalid_json" }, 400); }
+  const preferences = {};
+  for (const key of ["deviceNotifications", "chatAlerts", "shiftReminders", "forgottenClockOut", "approvalAlerts", "systemAlerts"]) {
+    if (typeof body?.preferences?.[key] === "boolean") preferences[key] = body.preferences[key];
+  }
+  const updatedAt = new Date().toISOString();
+  await env.DB.prepare("INSERT INTO timeflow_push_preferences (user_id, preferences_json, updated_at) VALUES (?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET preferences_json = excluded.preferences_json, updated_at = excluded.updated_at").bind(user.id, JSON.stringify(preferences), updatedAt).run();
+  return jsonResponse({ saved: true, preferences });
+}
+
 async function handlePushConfig(request, env) {
   const user = authenticatedUser(request);
   if (!user.authenticated || !user.id) return jsonResponse({ error: "authentication_required" }, 401);
@@ -506,7 +612,7 @@ async function handlePushSubscription(request, env) {
   await ensureNotificationTables(env.DB);
   let body; try { body = await request.json(); } catch { return jsonResponse({ error: "invalid_json" }, 400); }
   const endpoint = String(body?.endpoint || "").trim();
-  if (!endpoint.toLowerCase().startsWith("https://") || endpoint.length > 2048) return jsonResponse({ error: "valid_endpoint_required" }, 400);
+  if (!validPushEndpoint(endpoint) || endpoint.length > 2048) return jsonResponse({ error: "valid_endpoint_required" }, 400);
   if (request.method === "DELETE") { await env.DB.prepare("DELETE FROM timeflow_push_subscriptions WHERE user_id = ? AND endpoint = ?").bind(user.id, endpoint).run(); return jsonResponse({ removed: true }); }
   const p256dh = String(body?.keys?.p256dh || "").trim(); const auth = String(body?.keys?.auth || "").trim();
   if (!p256dh || !auth || p256dh.length > 256 || auth.length > 256) return jsonResponse({ error: "valid_subscription_required" }, 400);
@@ -525,6 +631,9 @@ async function handlePushTest(request, env) {
   if (request.headers.get("Origin") !== new URL(request.url).origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
   if (!env.TIMEFLOW_VAPID_PUBLIC_KEY || !env.TIMEFLOW_VAPID_PRIVATE_KEY || !env.TIMEFLOW_VAPID_SUBJECT) return jsonResponse({ error: "push_not_configured" }, 503);
   await ensureNotificationTables(env.DB);
+  const preferenceRow = await env.DB.prepare("SELECT preferences_json FROM timeflow_push_preferences WHERE user_id = ?").bind(user.id).first();
+  let preferences = {}; try { preferences = JSON.parse(preferenceRow?.preferences_json || "{}"); } catch { /* default enabled */ }
+  if (preferences.deviceNotifications === false) return jsonResponse({ sent: 0, registered: 0, disabled: true });
   const rows = await env.DB.prepare("SELECT endpoint, p256dh, auth FROM timeflow_push_subscriptions WHERE user_id = ?").bind(user.id).all();
   const subscriptions = rows?.results || [];
   let sent = 0;
@@ -983,8 +1092,10 @@ export default {
     if (url.pathname === "/api/work-time/journal") return handleWorkTimeJournal(request, env, url);
     if (url.pathname === "/api/team-access") return handleTeamAccess(request, env, url);
     if (url.pathname === "/api/team-invites") return handleTeamInvites(request, env, url);
+    if (url.pathname === "/api/team-chat") return handleTeamChat(request, env, url, ctx);
     if (url.pathname === "/api/notifications/push-config") return handlePushConfig(request, env);
     if (url.pathname === "/api/notifications/push-subscription") return handlePushSubscription(request, env);
+    if (url.pathname === "/api/notifications/push-preferences") return handlePushPreferences(request, env, url);
     if (url.pathname === "/api/notifications/push-test") return handlePushTest(request, env);
     if (url.pathname === "/api/account-data") return handleAccountData(request, env, url);
     if (url.pathname === "/api/admin/retention") return handleWorkTimeRetention(request, env, url);
