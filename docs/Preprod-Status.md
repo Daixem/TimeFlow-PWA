@@ -1,6 +1,6 @@
 # TimeFlow Pre-Production – Phase D bis F
 
-Stand: 29. September 2026
+Stand: 10. Oktober 2026
 
 ## Umgebung
 
@@ -11,6 +11,25 @@ Stand: 29. September 2026
 - Deployed Worker-Commit: `6e7485598e68eafd71fbb073097053b015be52e6`
 - Worker-Build-ID: `6e7485598e68-20260929t192609808z`
 - Konfiguration: `wrangler.preprod.jsonc`
+
+## Aktueller Rollout
+
+- Commit: `9704c32bb590b84befe7424a335bd9f8d0d5777d`
+- Build-ID: `9704c32bb590-20261010t200117467z`
+- Worker-Version: `5c35aff3-0e35-4fc2-b680-ec479eda177a`
+- Test-D1: Migration `0009_timeflow_team_chat_and_push_preferences.sql`
+  wurde ausschließlich auf `timeflow-migration-test-20260917` angewendet.
+- Gemeinsamer Teamchat speichert Nachrichten pro Organisation; die frühere
+  lokale Vorschau mit erfundenen Mitgliedern und Nachrichten ist entfernt.
+- Push-Einstellungen werden kontoweit gespeichert. Die vorhandenen VAPID-
+  Schlüssel bleiben geheim; eine echte Zustellung an ein iPhone wurde noch
+  nicht vor Ort geprüft.
+- GitHub-Pages-Workflow 225 wurde erfolgreich abgeschlossen. Die statische
+  GitHub-Pages-Adresse stellt keine Teamchat-API bereit; der gemeinsame Chat
+  ist deshalb derzeit im geschützten Pre-Prod-Worker erreichbar.
+- Der Zugriff ohne Cloudflare-Access-Anmeldung wurde geprüft und erhält eine
+  Anmeldeweiterleitung. Produktiv-Worker und produktive D1 wurden nicht
+  verändert.
 
 Der Worker wurde aus dem dokumentierten Datenschutz- und Retention-Commit gebaut. Die Vorschau
 für fällige Löschungen ist in Pre-Prod aktiv. Die tatsächliche Löschung bleibt
@@ -62,7 +81,7 @@ Restore-Test-D1 ist ebenfalls nicht an den Worker gebunden.
 | Append-only-Journal | **PASS** | UPDATE und DELETE werden durch D1-Constraints abgewiesen. |
 | Erstmaliger D1-Insert | **PASS** | Falscher HTTP-409-Fall behoben; erneuter Remote-Test liefert HTTP 201. |
 | Automatisierte Tests | **PASS** | Vollständige `npm test`-Suite erfolgreich. |
-| Monitoring | **PASS** | Logs und Traces aktiv; bei der Abnahme keine 5xx-Fehler festgestellt. |
+| Monitoring | **PASS** | Worker-Logs aktiv; bei der Abnahme keine 5xx-Fehler festgestellt. |
 | Browser-Anmeldung mit echter Identität | **PASS** | Cloudflare Access schützt die URL; Dimitris geprüfte Identität wird von TimeFlow übernommen. |
 | Browser-E2E mit zwei Identitäten | **PASS** | Zweite temporäre Identität erkannt; eigener Server-Akteur und getrennte D1-Zeile verifiziert. |
 | Lokale Arbeitszeit-Isolation je Identität | **PASS** | Kontowechsel entfernt fremden Zustand aus der aktiven Ansicht; Zustand und offene Offline-Buchung bleiben im eigenen Kontobereich. Browser zeigte für Dimitri wieder `Nicht im Dienst`, `--:--` und `0 h 0 min`. |
