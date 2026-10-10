@@ -473,3 +473,18 @@ html[data-tf-background] :is(.cloud-sync-card,.release-readiness-card) > header 
 html[data-tf-background] :is(.cloud-sync-card,.release-readiness-card) > .settings-accordion-body {
   padding: 0 16px 16px !important;
 }
+
+/* The personal-notices window follows the same single glass surface as the
+   rest of the app; its content is separated with dividers, not inset cards. */
+html[data-tf-background] .notification-center {
+  background: var(--tf-card-background) !important;
+  background-image: none !important;
+}
+html[data-tf-background] :is(.notification-center-header,.notification-permission,.notification-item) {
+  background: transparent !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+html[data-tf-background] :is(.notification-permission,.notification-item) {
+  border-color: var(--tf-divider) !important;
+}
