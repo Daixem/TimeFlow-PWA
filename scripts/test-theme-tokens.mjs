@@ -42,4 +42,18 @@ for (const selector of [
   if (!glass.includes(selector)) throw new Error(`Palette ist nicht für ${selector} vollständig verbunden.`);
 }
 
+// The mode classes live on <html>, alongside data-tf-background. Keeping a
+// descendant combinator between those selectors silently disables the rules.
+const brokenModeScope = /html\[data-tf-background\]\s+:is\(\.timeflow-private-mode,\s*\.timeflow-team-mode\)/;
+if (brokenModeScope.test(glass)) {
+  throw new Error("Theme-Regeln suchen den Modus als Nachfahren statt direkt auf <html>.");
+}
+if (!glass.includes("html[data-tf-background]:is(.timeflow-private-mode,.timeflow-team-mode)")) {
+  throw new Error("Theme-Regeln sind nicht direkt an die Modi auf <html> gebunden.");
+}
+
+for (const surface of [".week-summary", ".shift-grid", ".profile-hero", ".settings-card", ".cloud-sync-card", ".release-readiness-card"]) {
+  if (!glass.includes(surface)) throw new Error(`Einheitliche Kartenregeln fehlen für ${surface}.`);
+}
+
 console.log("Theme-Tokens: Palette, Fenster, Navigation, Controls und Texte sind zentral verbunden.");
