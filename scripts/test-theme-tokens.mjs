@@ -52,7 +52,11 @@ if (!glass.includes("html[data-tf-background]:is(.timeflow-private-mode,.timeflo
   throw new Error("Theme-Regeln sind nicht direkt an die Modi auf <html> gebunden.");
 }
 
-for (const surface of [".week-summary", ".shift-grid", ".profile-hero", ".settings-card", ".cloud-sync-card", ".release-readiness-card"]) {
+for (const surface of [
+  ".week-summary", ".week-summary > span + span", ".shift-grid", ".profile-hero",
+  ".profile-permission-button", ".statistics-tabs", ".settings-about", ".settings-card",
+  ".cloud-sync-card", ".release-readiness-card", ".private-account-audit"
+]) {
   if (!glass.includes(surface)) throw new Error(`Einheitliche Kartenregeln fehlen für ${surface}.`);
 }
 
