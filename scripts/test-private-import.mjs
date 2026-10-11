@@ -17,6 +17,12 @@ const parse = context.window.TimeFlowPrivateScheduleParser;
 const merge = context.window.TimeFlowPrivateScheduleMerge;
 const importApi = context.window.TimeFlowPrivateScheduleImport;
 if (!importApi || importApi.validateImportFile({ name: "plan.PNG", type: "image/png", size: 4096 }) !== "image" || importApi.validateImportFile({ name: "plan.jpg", type: "", size: 4096 }) !== "image") throw new Error("PNG/JPG-Dateien werden nicht als aktive Bildimporte akzeptiert.");
+const legacyLearning = importApi.normalizeLearning({ F: "Frühschicht" });
+if (legacyLearning.markers.F !== "Frühschicht") throw new Error("Bisher gelernte Dienstplan-Kürzel werden beim Ausbau des Lernens nicht übernommen.");
+const learnedCorrection = importApi.rememberCorrections(legacyLearning, [{ title: "Spätschicht", recognizedTitle: "Arbeit", learningLabel: "Spätschicht B", start: "14:00", end: "22:00", recognizedTimeKey: "14:00-22:00" }]);
+if (learnedCorrection.learnedCount < 2 || importApi.learnedShiftTitle(learnedCorrection.learning, "Spaetschicht B", "07:30", "15:00") !== "Spätschicht" || importApi.learnedShiftTitle(learnedCorrection.learning, "anderes Kürzel", "14:00", "22:00") !== "Spätschicht") throw new Error("Bestätigte Schichtkorrekturen werden nicht nach Kürzel und wiederkehrenden Uhrzeiten gelernt.");
+const changedTime = importApi.rememberCorrections(learnedCorrection.learning, [{ title: "Frühschicht", recognizedTitle: "Frühschicht", learningLabel: "Frueh", start: "07:30", end: "15:00", recognizedTimeKey: "08:00-16:00" }]);
+if (importApi.learnedShiftTitle(changedTime.learning, "anderes Kürzel", "07:30", "15:00") !== "Frühschicht") throw new Error("Korrigierte wiederkehrende Arbeitszeiten werden nicht zum Lernen verwendet.");
 if (code.includes(".heic,.heif")) throw new Error("Die Dateiauswahl darf HEIC/HEIF nicht als unterstütztes Format anbieten.");
 for (const stage of ["Texterkennung wird geladen …", "OCR-Worker wird erstellt …", "Erkannte Daten werden geprüft …", "OCR_MODULE_TIMEOUT_MS"]) {
   if (!code.includes(stage)) throw new Error(`Bildimport meldet die OCR-Stufe nicht sichtbar: ${stage}`);
@@ -58,4 +64,7 @@ const screenshotLike = { blocks: [{ paragraphs: [{ lines: [
 ].map((line) => ({ ...line, words: line.words.map((item) => ({ ...item, bbox: { ...item.bbox, y1: item.bbox.y1 + 5 } })) })) }] }] };
 const screenshotResult = layout(screenshotLike, 600);
 if (screenshotResult.length !== 7 || screenshotResult[0].date.slice(5) !== "10-05" || screenshotResult[0].start !== "14:00" || screenshotResult[0].end !== "22:00" || screenshotResult[1].title !== "Frei" || screenshotResult[2].title !== "Spätschicht" || screenshotResult[6].date.slice(5) !== "10-11") throw new Error("Screenshot-Import: fehlende Wochentagslabels, leere Tage, getrennte Zeit-Ziffern oder Schichtname wurden nicht robust erkannt.");
+storage.setItem("timeflow-private-schedule-learning-v1:local-private-user", JSON.stringify(learnedCorrection.learning));
+const rememberedPlan = parse("01.09.2026 anderes Kürzel 14:00 - 22:00\n02.09.2026 Spaetschicht B 07:30 - 15:00");
+if (rememberedPlan.length !== 2 || rememberedPlan[0].title !== "Spätschicht" || rememberedPlan[1].title !== "Spätschicht") throw new Error("Gespeicherte Korrekturen zu wiederkehrenden Uhrzeiten und Dienstplan-Kürzeln werden bei späteren Importen nicht verwendet.");
 console.log("Privater Dienstplan-Import: Wochen-, Tabellen-, Datums- und Zeitformate werden erkannt.");

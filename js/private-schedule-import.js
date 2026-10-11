@@ -51,8 +51,40 @@
     return "local-private-user";
   };
   const learningKey = () => `timeflow-private-schedule-learning-v1:${userKey()}`;
-  const readLearning = () => { try { const value = JSON.parse(platform().storage.getItem(learningKey()) || "{}"); return value && typeof value === "object" ? value : {}; } catch (_error) { return {}; } };
+  const normalizeLearningText = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ß/gi, "ss").toLowerCase().replace(/ae/g, "a").replace(/oe/g, "o").replace(/ue/g, "u").replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
+  const normalizeLearning = (value) => {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return { markers: {}, labels: {}, times: {} };
+    if (value.markers || value.labels || value.times) return { markers: value.markers || {}, labels: value.labels || {}, times: value.times || {} };
+    // Migrate the old marker → title map without losing any learned values.
+    return { markers: value, labels: {}, times: {} };
+  };
+  const readLearning = () => { try { return normalizeLearning(JSON.parse(platform().storage.getItem(learningKey()) || "{}")); } catch (_error) { return normalizeLearning(null); } };
   const writeLearning = (value) => platform().storage.setItem(learningKey(), JSON.stringify(value));
+  const learningTimeKey = (start, end) => /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(String(start || "")) && /^(?:[01]\d|2[0-3]):[0-5]\d$/.test(String(end || "")) && start !== end ? `${start}-${end}` : "";
+  const learnedShiftTitle = (learning, label, start, end) => {
+    const key = normalizeLearningText(label);
+    const byLabel = key && learning.labels[key];
+    const byTime = learning.times[learningTimeKey(start, end)];
+    return String(byLabel || byTime || "").trim();
+  };
+  const rememberCorrections = (value, entries) => {
+    const learning = normalizeLearning(value);
+    let learnedCount = 0;
+    entries.forEach((entry) => {
+      const title = String(entry.title || "").trim();
+      const recognized = String(entry.recognizedTitle || "").trim();
+      if (entry.sourceMarker) { learning.markers[String(entry.sourceMarker).toUpperCase()] = title; learnedCount += 1; }
+      if (!title || (!entry.learningLabel && !entry.recognizedTimeKey) || /^(frei|urlaub|krank)$/i.test(title)) return;
+      const label = normalizeLearningText(entry.learningLabel);
+      const timeKey = learningTimeKey(entry.start, entry.end);
+      const timeChanged = Boolean(timeKey && timeKey !== (entry.recognizedTimeKey || ""));
+      const titleChanged = title !== recognized;
+      if (!titleChanged && !timeChanged) return;
+      if (titleChanged && label && label.length <= 96) { learning.labels[label] = title; learnedCount += 1; }
+      if (timeKey) { learning.times[timeKey] = title; learnedCount += 1; }
+    });
+    return { learning, learnedCount };
+  };
   const dateValue = (text) => { const match = String(text).match(/(\d{1,2})[.\/-](\d{1,2})[.\/-](\d{2,4})/); if (!match) return ""; return `${match[3].length === 2 ? "20" + match[3] : match[3]}-${match[2].padStart(2, "0")}-${match[1].padStart(2, "0")}`; };
   const fileExtension = (file) => String(file?.name || "").split(".").pop().toLowerCase();
   const importError = (message) => { const error = new Error(message); error.importMessage = message; return error; };
@@ -107,6 +139,7 @@
     let pendingDate = "";
     let pendingWeekday = "";
     const result = [];
+    const learning = readLearning();
     const inferredDate = (day, month = startMonth) => {
       const year = month < startMonth && endMonth < startMonth ? startYear + 1 : startYear;
       return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -128,17 +161,21 @@
       else if (pendingWeekday && /^\d{1,2}$/.test(line)) { const day = Number(line); pendingDate = inferredDate(day, range && day < Number(range[1]) ? endMonth : startMonth); }
       if (weekdayOnly) pendingWeekday = weekdayOnly[1].slice(0, 2).toLowerCase();
       const markerLine = line.replace(/\b20\d{2}[-/.]\d{1,2}[-/.]\d{1,2}\b/g, "").replace(/\b\d{1,2}[.\/-]\d{1,2}[.\/-]\d{2,4}\b/g, "").replace(/^(?:Mo|Di|Mi|Do|Fr|Sa|So)[.,]?\s*\d{0,2}/i, "").trim();
-      const normalizedTimeLine = line.replace(/\b([0-2]?\d)([0-5]\d)\s*(?:-|bis)\s*([0-2]?\d)([0-5]\d)\b/gi, "$1:$2 - $3:$4").replace(/\b([0-2]?\d)\s*(?:Uhr|h)\b/gi, "$1:00");
+      const lineWithoutDates = line.replace(/\b20\d{2}[-/.]\d{1,2}[-/.]\d{1,2}\b/g, " ").replace(/\b\d{1,2}[\/-]\d{1,2}(?:[\/-]\d{2,4})?\b/g, " ").replace(/\b\d{1,2}\.\d{1,2}\.(?:\d{2,4}\b)?/g, " ");
+      const normalizedTimeLine = normalizeOcrTimes(lineWithoutDates).replace(/\b([0-2]?\d)([0-5]\d)\s*(?:-|bis)\s*([0-2]?\d)([0-5]\d)\b/gi, "$1:$2 - $3:$4").replace(/\b([0-2]?\d)\s*(?:Uhr|h)\b/gi, "$1:00");
       let timeOnlyLine = normalizedTimeLine.replace(/\b20\d{2}[-/.]\d{1,2}[-/.]\d{1,2}\b/g, " ").replace(/\b\d{1,2}[.\/-]\d{1,2}[.\/-]\d{2,4}\b/g, " ");
       const rawTimeCount = [...timeOnlyLine.matchAll(/(?:^|\D)([0-2]?\d)[:.]([0-5]\d)(?=\D|$)/g)].length;
       if (rawTimeCount < 2) timeOnlyLine = timeOnlyLine.replace(/\b(\d{1,2})[.\/-](\d{1,2})[.]?(?=\s|$)/g, (full, _day, month) => Number(month) <= 12 ? " " : full);
       const times = [...timeOnlyLine.matchAll(/(?:^|\D)([0-2]?\d)[:.]([0-5]\d)(?=\D|$)/g)].map((match) => `${match[1].padStart(2, "0")}:${match[2]}`);
       if (pendingDate && times.length > 1) {
-        result.push({ id: `import-${Date.now()}-${result.length}`, date: pendingDate, start: times[0], end: times[1], break: 30, title: shiftTitle(line), note: "Aus Dienstplan-Screenshot erkannt" });
+        const learningLabel = normalizeLearningText(normalizedTimeLine.replace(/\b\d{1,2}:\d{2}\b/g, " "));
+        const learnedTitle = learnedShiftTitle(learning, learningLabel, times[0], times[1]);
+        const title = learnedTitle || shiftTitle(line);
+        result.push({ id: `import-${Date.now()}-${result.length}`, date: pendingDate, start: times[0], end: times[1], break: 30, title, recognizedTitle: title, learningLabel, recognizedTimeKey: learningTimeKey(times[0], times[1]), note: "Aus Dienstplan erkannt" });
         pendingDate = "";
       } else if (pendingDate && /^(?:[-–—]|A|F|frei|off|U|Urlaub|K|Krank)$/i.test(markerLine)) {
         const marker = markerLine.toUpperCase() || "FREI"; const defaultTitle = /^(?:U|URLAUB)$/i.test(marker) ? "Urlaub" : /^(?:K|KRANK)$/i.test(marker) ? "Krank" : "Frei";
-        result.push({ id: `import-${Date.now()}-${result.length}`, date: pendingDate, start: "", end: "", break: 0, title: readLearning()[marker] || defaultTitle, sourceMarker: marker, note: `Abwesenheit (${markerLine}) aus Dienstplan erkannt` });
+        result.push({ id: `import-${Date.now()}-${result.length}`, date: pendingDate, start: "", end: "", break: 0, title: learning.markers[marker] || defaultTitle, recognizedTitle: learning.markers[marker] || defaultTitle, sourceMarker: marker, note: `Abwesenheit (${markerLine}) aus Dienstplan erkannt` });
         pendingDate = "";
       }
     });
@@ -200,17 +237,19 @@
       const free = times.length < 2;
       const rawMarker = band.trim().replace(/^[\s|:;,-]+|[\s|:;,-]+$/g, "");
       const marker = rawMarker ? rawMarker.toUpperCase().slice(0, 30) : "__EMPTY__";
-      const learnedTitle = readLearning()[marker];
+      const learningLabel = normalizeLearningText(band.replace(/\b(?:[01]?\d|2[0-3])[:.]\d{2}\b/g, " ").replace(/\b\d{1,2}\s+\d{2}\b/g, " "));
+      const learning = readLearning();
+      const learnedTitle = learning.markers[marker] || learnedShiftTitle(learning, learningLabel, times[0], times[1]);
       const absenceTitle = /^(U|URLAUB)$/i.test(marker) ? "Urlaub" : /^(K|KRANK)$/i.test(marker) ? "Krank" : /^(A|F|FREI|OFF|—|-|__EMPTY__)$/i.test(marker) ? "Frei" : "";
       const hasShiftClue = /(?:fru|sp.t|nacht|schicht|arbeit)/i.test(band) || /\b\d{1,2}\s*[:.]\s*\d{1,2}\b/.test(band);
-      const title = free ? learnedTitle || absenceTitle || (hasShiftClue ? `Prüfen: ${rawMarker || "Schicht ohne vollständige Uhrzeit"}` : "Frei") : shiftTitle(band);
-      return { id: `import-${Date.now()}-${index}`, date: `${year}-${String(month).padStart(2, "0")}-${String(row.day).padStart(2, "0")}`, start: free ? "" : times[0], end: free ? "" : times[1], break: free ? 0 : 30, title, sourceMarker: free ? marker : "", note: free ? `${learnedTitle ? "Persönlich gelernt" : "Aus Dienstplan erkannt"}: ${rawMarker || "leeres Feld"}` : "Aus Dienstplan-Screenshot erkannt" };
+      const title = free ? learnedTitle || absenceTitle || (hasShiftClue ? `Prüfen: ${rawMarker || "Schicht ohne vollständige Uhrzeit"}` : "Frei") : learnedTitle || shiftTitle(band);
+      return { id: `import-${Date.now()}-${index}`, date: `${year}-${String(month).padStart(2, "0")}-${String(row.day).padStart(2, "0")}`, start: free ? "" : times[0], end: free ? "" : times[1], break: free ? 0 : 30, title, recognizedTitle: title, learningLabel, recognizedTimeKey: free ? "" : learningTimeKey(times[0], times[1]), sourceMarker: free ? marker : "", note: free ? `${learnedTitle ? "Persönlich gelernt" : "Aus Dienstplan erkannt"}: ${rawMarker || "leeres Feld"}` : "Aus Dienstplan-Screenshot erkannt" };
     });
   };
   window.TimeFlowPrivateScheduleParser = parse;
   window.TimeFlowPrivateScheduleLayoutParser = parseLayout;
   window.TimeFlowPrivateScheduleMerge = mergeEntries;
-  window.TimeFlowPrivateScheduleImport = { validateImportFile, validEntry, saveEntries };
+  window.TimeFlowPrivateScheduleImport = { validateImportFile, validEntry, saveEntries, normalizeLearning, rememberCorrections, learnedShiftTitle, learningTimeKey };
   async function pdfText(file, status) {
     stage(status, "PDF wird vorbereitet …");
     let pdfjs;
@@ -322,7 +361,14 @@
     document.body.insertAdjacentHTML("beforeend", `<dialog class="private-import-dialog" id="privateImportDialog"><header><div><small>IMPORT-VORSCHAU</small><h2>Erkannte Einsätze prüfen und korrigieren</h2><p data-import-status>Die Datei wird analysiert.</p></div><button type="button" data-close-import aria-label="Schließen"><i class="fa-solid fa-xmark"></i></button></header><form><div class="private-import-toolbar"><span>Jeder Wert kann vor der Übernahme geändert werden.</span><button type="button" data-add-import-row><i class="fa-solid fa-plus"></i> Fehlenden Einsatz ergänzen</button></div><div class="private-import-preview" data-import-preview></div><label class="private-import-consent"><input type="checkbox" data-import-consent><span>Ich habe alle Einträge geprüft und stimme der Übernahme in meinen privaten Dienstplan zu.</span></label><footer><button type="button" data-close-import>Abbrechen</button><button type="submit" data-commit-import disabled><i class="fa-solid fa-check"></i> Verbindlich übernehmen</button></footer></form></dialog><dialog class="private-absence-dialog" id="privateAbsenceDialog"><header><div><small>TAG KENNZEICHNEN</small><h2>Frei oder Abwesenheit eintragen</h2><p>An diesem Tag wird keine Sollzeit berechnet.</p></div><button type="button" data-close-absence aria-label="Schließen"><i class="fa-solid fa-xmark"></i></button></header><form><label>Datum<input name="date" type="date" required></label><label>Art<select name="title"><option value="Frei">Frei</option><option value="Urlaub">Urlaub</option><option value="Krank">Krank</option></select></label><footer><button type="button" data-close-absence>Abbrechen</button><button type="submit"><i class="fa-solid fa-check"></i> Tag speichern</button></footer></form></dialog>`);
     const dialog = document.getElementById("privateImportDialog"); const absenceDialog = document.getElementById("privateAbsenceDialog"); const absenceForm = absenceDialog.querySelector("form"); const input = panel.querySelector("[data-plan-file]"); const status = dialog.querySelector("[data-import-status]"); const preview = dialog.querySelector("[data-import-preview]"); const learningNote = panel.querySelector("[data-learning-note]"); const consent = dialog.querySelector("[data-import-consent]"); const commit = dialog.querySelector("[data-commit-import]"); let entries = []; let visibleWeekStart = ""; let visibleMonthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1, 12);
     const setStatus = (message, state = "info") => { status.textContent = message; status.dataset.state = state; };
-    const renderLearning = () => { const learned = Object.entries(readLearning()).filter(([marker]) => marker !== "__EMPTY__"); learningNote.innerHTML = learned.length ? `<i class="fa-solid fa-brain"></i> Persönlich gelernt: ${learned.map(([marker, title]) => `${escapeHtml(marker)} = ${escapeHtml(title)}`).join(" · ")}` : '<i class="fa-solid fa-brain"></i> TimeFlow lernt deine Dienstplan-Kürzel nach einer geprüften Übernahme.'; };
+    const renderLearning = () => {
+      const learned = readLearning();
+      const markers = Object.keys(learned.markers).filter((marker) => marker !== "__EMPTY__").length;
+      const labels = Object.keys(learned.labels).length;
+      const times = Object.keys(learned.times).length;
+      const details = [markers && `${markers} Kürzel`, labels && `${labels} Bezeichnungen`, times && `${times} Zeitmuster`].filter(Boolean).join(" · ");
+      learningNote.innerHTML = details ? `<i class="fa-solid fa-brain"></i> Persönlich gelernt: ${escapeHtml(details)}. Bestätigte Korrekturen werden bei neuen Dienstplänen berücksichtigt.` : '<i class="fa-solid fa-brain"></i> TimeFlow merkt sich bestätigte Korrekturen an Kürzeln, Schichtnamen und wiederkehrenden Uhrzeiten.';
+    };
     const renderScheduleViews = (shifts) => {
       const dayPanel = document.querySelector('#schedulePage [data-panel="day"]'); const weekPanel = document.querySelector('#schedulePage [data-panel="week"]'); const periodPanel = document.querySelector('#schedulePage [data-panel="period"]');
       if (!dayPanel || !weekPanel || !periodPanel) return;
@@ -391,7 +437,10 @@
         try {
           const json = JSON.parse(text);
           const list = Array.isArray(json) ? json : json.shifts || json.schedule || json.entries;
-          if (Array.isArray(list)) found = list.map((item, index) => ({ id: `import-${Date.now()}-${fileIndex}-${index}`, date: item.date || item.day, start: item.start || item.begin || "", end: item.end || item.finish || "", break: Number(item.break ?? item.pause ?? 30), title: item.title || item.shift || item.type || "Arbeit", note: `Aus ${file.name} importiert` })).filter((item) => item.date);
+          if (Array.isArray(list)) found = list.map((item, index) => {
+            const start = item.start || item.begin || ""; const end = item.end || item.finish || ""; const title = item.title || item.shift || item.type || "Arbeit";
+            return { id: `import-${Date.now()}-${fileIndex}-${index}`, date: item.date || item.day, start, end, break: Number(item.break ?? item.pause ?? 30), title, recognizedTitle: title, recognizedTimeKey: learningTimeKey(start, end), note: `Aus ${file.name} importiert` };
+          }).filter((item) => item.date);
         } catch (_error) { found = []; }
       }
       const textEntries = parse(text);
@@ -422,7 +471,7 @@
     dialog.querySelector("[data-add-import-row]").addEventListener("click", () => { entries.push({ id: `import-${Date.now()}-${entries.length}`, date: new Date().toLocaleDateString("sv-SE"), start: "08:00", end: "16:30", break: 30, title: "Arbeit", note: "In Import-Vorschau ergänzt" }); render(); });
     consent.addEventListener("change", () => { commit.disabled = !consent.checked || !entries.length || entries.some((entry) => !entry.date || (!/^(frei|urlaub|krank)$/i.test(entry.title) && (!entry.start || !entry.end))); });
     dialog.querySelectorAll("[data-close-import]").forEach((button) => button.addEventListener("click", () => platform().dialog.close(dialog)));
-    dialog.querySelector("form").addEventListener("submit", (event) => { event.preventDefault(); if (commit.disabled) return; const learned = readLearning(); entries.filter((entry) => entry.sourceMarker).forEach((entry) => { learned[entry.sourceMarker] = entry.title.trim(); }); writeLearning(learned); const saved = read(); const updated = entries.filter((entry) => saved.some((item) => item.date === entry.date)).length; saveEntries(platform().storage, saved, entries); platform().storage.setItem("timeflow-private-last-import-v1", JSON.stringify({ at: new Date().toISOString(), added: entries.length - updated, updated })); platform().dialog.close(dialog); renderLearning(); renderSaved(); document.dispatchEvent(new CustomEvent("timeflow:private-schedule-updated")); const toast = document.getElementById("toast"); toast.textContent = `${entries.length - updated} Tage ergänzt${updated ? `, ${updated} aktualisiert` : ""}. Persönliche Kürzel wurden gelernt.`; toast.classList.add("is-visible"); });
+    dialog.querySelector("form").addEventListener("submit", (event) => { event.preventDefault(); if (commit.disabled) return; const { learning, learnedCount } = rememberCorrections(readLearning(), entries); writeLearning(learning); const saved = read(); const updated = entries.filter((entry) => saved.some((item) => item.date === entry.date)).length; saveEntries(platform().storage, saved, entries); platform().storage.setItem("timeflow-private-last-import-v1", JSON.stringify({ at: new Date().toISOString(), added: entries.length - updated, updated })); platform().dialog.close(dialog); renderLearning(); renderSaved(); document.dispatchEvent(new CustomEvent("timeflow:private-schedule-updated")); const toast = document.getElementById("toast"); toast.textContent = `${entries.length - updated} Tage ergänzt${updated ? `, ${updated} aktualisiert` : ""}.${learnedCount ? " Korrekturen für Kürzel und wiederkehrende Schichten gemerkt." : ""}`; toast.classList.add("is-visible"); });
     const updateMode = () => { panel.hidden = !privateMode(); if (privateMode()) { const weekTab = tabs.querySelector('[data-view="week"]'); if (weekTab && weekTab.getAttribute("aria-selected") !== "true") weekTab.click(); renderLearning(); renderSaved(); } }; updateMode(); new MutationObserver(updateMode).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
     document.addEventListener("timeflow:sync-restored", () => { visibleWeekStart = ""; renderLearning(); renderSaved(); });
   }
