@@ -2,6 +2,7 @@ import { access, readFile } from "node:fs/promises";
 
 const source = await readFile("js/private-schedule-import.js", "utf8");
 const worker = await readFile("dist/server/index.js", "utf8");
+const pagesBuilder = await readFile("scripts/build-pages.mjs", "utf8");
 
 for (const marker of [
   'PDFJS_MODULE_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs"',
@@ -35,6 +36,7 @@ for (const marker of [
 }
 
 if (worker.includes("cdn.jsdelivr.net")) throw new Error("Der aktive OCR-Pfad darf keine jsDelivr-Laufzeitabhängigkeit mehr enthalten.");
+if (!/const entries = \[[^\]]*"vendor"/.test(pagesBuilder)) throw new Error("GitHub-Pages-Build veröffentlicht die lokalen OCR-Hilfsdateien nicht.");
 for (const file of [
   "vendor/tesseract/tesseract.esm.min.js",
   "vendor/tesseract/worker.min.js",
