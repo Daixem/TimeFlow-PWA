@@ -34,6 +34,8 @@ if (weekly.length !== 5) throw new Error(`Wochenplan: 5 Tage einschließlich fre
 if (weekly[1].date.slice(5) !== "09-01" || weekly[1].start !== "07:30" || weekly[1].end !== "15:00") throw new Error("Wochenplan: Datum oder Zeit falsch erkannt.");
 const table = parse("01.09.2026 | Frühschicht | 08:00 - 16:30\n2026-09-02 Spätschicht 12:00 bis 20:30");
 if (table.length !== 2 || table[1].title !== "Spätschicht") throw new Error("Tabellenplan: Datum, Zeiten oder Schichtart falsch erkannt.");
+const umlautlessShift = parse("03.09.2026 Spatschicht 14:00 - 22:00");
+if (umlautlessShift.length !== 1 || umlautlessShift[0].title !== "Spätschicht") throw new Error("Schichtnamen: OCR-Varianten ohne Umlaute werden nicht als Spätschicht erkannt.");
 const freeMarkers = parse("03.09.2026 F\n04.09.2026 A\n05.09.2026 frei");
 if (freeMarkers.length !== 3 || freeMarkers.some((entry) => entry.title !== "Frei" || entry.start || entry.end)) throw new Error("Freie Tage: leeres Zeitfeld, A, F oder Frei werden nicht korrekt behandelt.");
 const absences = parse("06.09.2026 -\n07.09.2026 OFF\n08.09.2026 U\n09.09.2026 Krank\n10.09.2026 Nachtschicht 22:00 - 06:00");
@@ -43,4 +45,17 @@ const word = (text, x, y) => ({ text, bbox: { x0: x, y0: y, x1: x + 45, y1: y + 
 const positioned = { blocks: [{ paragraphs: [{ lines: [{ words: [word("31.08", 400, 20), word("-", 460, 20), word("06.09", 500, 20)] }, { words: [word("Mo", 20, 100), word("31", 25, 130)] }, { words: [word("Di", 20, 220), word("1", 25, 250), word("07:30", 250, 240), word("-", 310, 240), word("15:00", 340, 240)] }, { words: [word("Mi", 20, 340), word("2", 25, 370), word("07:30", 250, 360), word("15:00", 340, 360)] }, { words: [word("Sa", 20, 460), word("5", 25, 490)] }] }] }] };
 const positionedResult = layout(positioned, 600);
 if (positionedResult.length !== 7 || positionedResult[0].title !== "Frei" || positionedResult[0].sourceMarker !== "__EMPTY__" || positionedResult[1].date.slice(5) !== "09-01" || positionedResult[1].start !== "07:30" || positionedResult[5].title !== "Frei" || positionedResult[6].title !== "Frei") throw new Error("Bildlayout: vollständige Woche, freie Tage oder zeilenweise Zeiten wurden falsch zugeordnet.");
+const screenshotLike = { blocks: [{ paragraphs: [{ lines: [
+  { words: [word("05", 350, 20), word(".", 380, 20), word("10", 390, 20), word("-", 430, 20), word("11", 450, 20), word(".", 480, 20), word("10", 490, 20)] },
+  ...[5, 6, 7, 8, 9, 10, 11].map((day, index) => {
+    const y = 100 + index * 120;
+    const words = [word(String(day), 20, y)];
+    if (index === 1) words.push(word("Hotel", 250, y));
+    else words.push(word("14", 250, y), word("00", 278, y), word("22", 350, y), word("00", 378, y));
+    if (index === 2) words.push(word("Spatschicht", 450, y));
+    return { words };
+  })
+].map((line) => ({ ...line, words: line.words.map((item) => ({ ...item, bbox: { ...item.bbox, y1: item.bbox.y1 + 5 } })) })) }] }] };
+const screenshotResult = layout(screenshotLike, 600);
+if (screenshotResult.length !== 7 || screenshotResult[0].date.slice(5) !== "10-05" || screenshotResult[0].start !== "14:00" || screenshotResult[0].end !== "22:00" || screenshotResult[1].title !== "Frei" || screenshotResult[2].title !== "Spätschicht" || screenshotResult[6].date.slice(5) !== "10-11") throw new Error("Screenshot-Import: fehlende Wochentagslabels, leere Tage, getrennte Zeit-Ziffern oder Schichtname wurden nicht robust erkannt.");
 console.log("Privater Dienstplan-Import: Wochen-, Tabellen-, Datums- und Zeitformate werden erkannt.");

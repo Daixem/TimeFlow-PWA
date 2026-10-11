@@ -86,10 +86,20 @@
     if (!validEntry(entry)) return score;
     return score + (entry.start && entry.end ? 3 : 1);
   }, 0);
+  const normalizeOcrTimes = (value) => String(value).replace(/[–—]/g, "-")
+    .replace(/\b([0-2]?\d)\s*[:.]\s*([0-5]\d)\b/g, "$1:$2")
+    .replace(/\b([0-2]?\d)\s+([0-5]\d)\b/g, "$1:$2");
+  const shiftTitle = (value) => {
+    const normalized = String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    if (/fruh(?:schicht)?/.test(normalized)) return "Frühschicht";
+    if (/spat(?:schicht)?/.test(normalized)) return "Spätschicht";
+    if (/nacht(?:schicht)?/.test(normalized)) return "Nachtschicht";
+    return "Arbeit";
+  };
   const parse = (text) => {
     const source = String(text).replace(/[–—]/g, "-").replace(/\r/g, "\n");
     const lines = source.split(/\n|;/).map((line) => line.replace(/\s+/g, " ").trim()).filter(Boolean);
-    const range = source.match(/(\d{1,2})[.]?(\d{2})[.]?\s*-\s*(\d{1,2})[.]?(\d{2})[.]?/);
+    const range = source.match(/(\d{1,2})\s*\.?\s*(\d{2})\s*\.?\s*-\s*(\d{1,2})\s*\.?\s*(\d{2})\s*\.?/);
     const now = new Date();
     const startMonth = Number(range?.[2] || now.getMonth() + 1);
     const endMonth = Number(range?.[4] || startMonth);
@@ -124,7 +134,7 @@
       if (rawTimeCount < 2) timeOnlyLine = timeOnlyLine.replace(/\b(\d{1,2})[.\/-](\d{1,2})[.]?(?=\s|$)/g, (full, _day, month) => Number(month) <= 12 ? " " : full);
       const times = [...timeOnlyLine.matchAll(/(?:^|\D)([0-2]?\d)[:.]([0-5]\d)(?=\D|$)/g)].map((match) => `${match[1].padStart(2, "0")}:${match[2]}`);
       if (pendingDate && times.length > 1) {
-        result.push({ id: `import-${Date.now()}-${result.length}`, date: pendingDate, start: times[0], end: times[1], break: 30, title: /früh/i.test(line) ? "Frühschicht" : /spät/i.test(line) ? "Spätschicht" : /nacht/i.test(line) ? "Nachtschicht" : "Arbeit", note: "Aus Dienstplan-Screenshot erkannt" });
+        result.push({ id: `import-${Date.now()}-${result.length}`, date: pendingDate, start: times[0], end: times[1], break: 30, title: shiftTitle(line), note: "Aus Dienstplan-Screenshot erkannt" });
         pendingDate = "";
       } else if (pendingDate && /^(?:[-–—]|A|F|frei|off|U|Urlaub|K|Krank)$/i.test(markerLine)) {
         const marker = markerLine.toUpperCase() || "FREI"; const defaultTitle = /^(?:U|URLAUB)$/i.test(marker) ? "Urlaub" : /^(?:K|KRANK)$/i.test(marker) ? "Krank" : "Frei";
@@ -144,11 +154,12 @@
     visit({ blocks: data.blocks || [] });
     if (!words.length) return [];
     const allText = words.map((word) => word.text).join(" ").replace(/[–—]/g, "-");
-    const range = allText.match(/(\d{1,2})[.]?(\d{2})[.]?\s*-\s*(\d{1,2})[.]?(\d{2})[.]?/);
+    const range = allText.match(/(\d{1,2})\s*\.?\s*(\d{2})\s*\.?\s*-\s*(\d{1,2})\s*\.?\s*(\d{2})\s*\.?/);
     const now = new Date(); const startMonth = Number(range?.[2] || now.getMonth() + 1); const endMonth = Number(range?.[4] || startMonth); const startDay = Number(range?.[1] || 1);
-    const detectedDayRows = words.filter((word) => /^(Mo|Di|Mi|Do|Fr|Sa|So)[.,]?$/i.test(word.text) && word.bbox.x0 < imageWidth * .24).map((weekday) => {
+    const leftColumn = words.filter((word) => word.bbox.x0 < imageWidth * .24);
+    const detectedDayRows = leftColumn.filter((word) => /^(Mo|Di|Mi|Do|Fr|Sa|So)[.,]?$/i.test(word.text)).map((weekday) => {
       const middle = (weekday.bbox.y0 + weekday.bbox.y1) / 2;
-      const dayWord = words.filter((word) => /^\d{1,2}$/.test(word.text) && word.bbox.x0 < imageWidth * .24).sort((a, b) => Math.abs(((a.bbox.y0 + a.bbox.y1) / 2) - middle) - Math.abs(((b.bbox.y0 + b.bbox.y1) / 2) - middle))[0];
+      const dayWord = leftColumn.filter((word) => /^\d{1,2}$/.test(word.text)).sort((a, b) => Math.abs(((a.bbox.y0 + a.bbox.y1) / 2) - middle) - Math.abs(((b.bbox.y0 + b.bbox.y1) / 2) - middle))[0];
       return dayWord && Math.abs(((dayWord.bbox.y0 + dayWord.bbox.y1) / 2) - middle) < Math.max(70, imageWidth * .055) ? { weekday: weekday.text, day: Number(dayWord.text), y: (middle + (dayWord.bbox.y0 + dayWord.bbox.y1) / 2) / 2 } : null;
     }).filter(Boolean).sort((a, b) => a.y - b.y);
     let dayRows = detectedDayRows.reduce((unique, row) => {
@@ -157,20 +168,33 @@
       else duplicate.y = (duplicate.y + row.y) / 2;
       return unique;
     }, []).sort((a, b) => a.y - b.y);
-    if (range && dayRows.length >= 2 && dayRows.length < 7) {
+    if (range) {
       const expectedDays = [];
       const rangeStart = new Date(Date.UTC(now.getFullYear(), startMonth - 1, startDay));
       for (let offset = 0; offset < 7; offset += 1) { const date = new Date(rangeStart); date.setUTCDate(rangeStart.getUTCDate() + offset); expectedDays.push({ day: date.getUTCDate(), month: date.getUTCMonth() + 1, index: offset }); }
+      // Some OCR engines read the weekday label and date number as one token,
+      // or miss the weekday altogether. Recover rows from the narrow date
+      // column when the date range gives us a reliable seven-day reference.
+      if (dayRows.length < 2) {
+        const dateCandidates = leftColumn.filter((word) => /^\d{1,2}$/.test(word.text) && Number(word.text) >= 1 && Number(word.text) <= 31)
+          .map((word) => ({ day: Number(word.text), y: (word.bbox.y0 + word.bbox.y1) / 2 }))
+          .filter((row) => row.y > imageWidth * .15 && expectedDays.some((expected) => expected.day === row.day));
+        const recovered = expectedDays.map((expected) => ({ expected, found: dateCandidates.filter((row) => row.day === expected.day).sort((a, b) => a.y - b.y)[0] }))
+          .filter((item) => item.found).map((item) => ({ weekday: "", day: item.expected.day, y: item.found.y }));
+        if (recovered.length >= 2) dayRows = recovered;
+      }
+      if (dayRows.length >= 2 && dayRows.length < 7) {
       const matched = expectedDays.map((expected) => ({ expected, found: dayRows.find((row) => row.day === expected.day) })).filter((item) => item.found);
       const first = matched[0]; const last = matched[matched.length - 1];
       const step = last.expected.index !== first.expected.index ? (last.found.y - first.found.y) / (last.expected.index - first.expected.index) : 100;
       const origin = matched.reduce((sum, item) => sum + item.found.y - item.expected.index * step, 0) / matched.length;
       dayRows = expectedDays.map((expected) => dayRows.find((row) => row.day === expected.day) || { weekday: "", day: expected.day, y: origin + expected.index * step, inferred: true }).sort((a, b) => a.y - b.y);
+      }
     }
     return dayRows.map((row, index) => {
       const previousY = index ? (dayRows[index - 1].y + row.y) / 2 : row.y - (dayRows[index + 1]?.y - row.y || 100) / 2;
       const nextY = index < dayRows.length - 1 ? (row.y + dayRows[index + 1].y) / 2 : row.y + (row.y - dayRows[index - 1]?.y || 100) / 2;
-      const band = words.filter((word) => { const y = (word.bbox.y0 + word.bbox.y1) / 2; return y >= previousY && y < nextY && word.bbox.x0 >= imageWidth * .18; }).sort((a, b) => a.bbox.x0 - b.bbox.x0).map((word) => word.text).join(" ").replace(/[–—]/g, "-").replace(/\b([0-2]?\d)([0-5]\d)\b/g, "$1:$2");
+      const band = normalizeOcrTimes(words.filter((word) => { const y = (word.bbox.y0 + word.bbox.y1) / 2; return y >= previousY && y < nextY && word.bbox.x0 >= imageWidth * .18; }).sort((a, b) => a.bbox.x0 - b.bbox.x0).map((word) => word.text).join(" ")).replace(/\b([0-2]?\d)([0-5]\d)\b/g, "$1:$2");
       const times = [...band.matchAll(/(?:^|\D)([0-2]?\d)[:.]([0-5]\d)(?=\D|$)/g)].map((match) => `${match[1].padStart(2, "0")}:${match[2]}`);
       const month = range && row.day < startDay ? endMonth : startMonth; const year = month < startMonth && endMonth < startMonth ? now.getFullYear() + 1 : now.getFullYear();
       const free = times.length < 2;
@@ -178,7 +202,9 @@
       const marker = rawMarker ? rawMarker.toUpperCase().slice(0, 30) : "__EMPTY__";
       const learnedTitle = readLearning()[marker];
       const absenceTitle = /^(U|URLAUB)$/i.test(marker) ? "Urlaub" : /^(K|KRANK)$/i.test(marker) ? "Krank" : /^(A|F|FREI|OFF|—|-|__EMPTY__)$/i.test(marker) ? "Frei" : "";
-      return { id: `import-${Date.now()}-${index}`, date: `${year}-${String(month).padStart(2, "0")}-${String(row.day).padStart(2, "0")}`, start: free ? "" : times[0], end: free ? "" : times[1], break: free ? 0 : 30, title: free ? learnedTitle || absenceTitle || `Prüfen: ${rawMarker}` : /früh/i.test(band) ? "Frühschicht" : /spät/i.test(band) ? "Spätschicht" : /nacht/i.test(band) ? "Nachtschicht" : "Arbeit", sourceMarker: free ? marker : "", note: free ? `${learnedTitle ? "Persönlich gelernt" : "Aus Dienstplan erkannt"}: ${rawMarker || "leeres Feld"}` : "Aus Dienstplan-Screenshot erkannt" };
+      const hasShiftClue = /(?:fru|sp.t|nacht|schicht|arbeit)/i.test(band) || /\b\d{1,2}\s*[:.]\s*\d{1,2}\b/.test(band);
+      const title = free ? learnedTitle || absenceTitle || (hasShiftClue ? `Prüfen: ${rawMarker || "Schicht ohne vollständige Uhrzeit"}` : "Frei") : shiftTitle(band);
+      return { id: `import-${Date.now()}-${index}`, date: `${year}-${String(month).padStart(2, "0")}-${String(row.day).padStart(2, "0")}`, start: free ? "" : times[0], end: free ? "" : times[1], break: free ? 0 : 30, title, sourceMarker: free ? marker : "", note: free ? `${learnedTitle ? "Persönlich gelernt" : "Aus Dienstplan erkannt"}: ${rawMarker || "leeres Feld"}` : "Aus Dienstplan-Screenshot erkannt" };
     });
   };
   window.TimeFlowPrivateScheduleParser = parse;
@@ -224,9 +250,36 @@
     const context = canvas.getContext("2d", { willReadFrequently: true });
     context.drawImage(image, 0, 0, canvas.width, canvas.height); image.close?.();
     const pixels = context.getImageData(0, 0, canvas.width, canvas.height); let brightness = 0;
-    for (let index = 0; index < pixels.data.length; index += 4) brightness += (pixels.data[index] + pixels.data[index + 1] + pixels.data[index + 2]) / 3;
-    const invert = brightness / (pixels.data.length / 4) < 128;
-    for (let index = 0; index < pixels.data.length; index += 4) { let gray = .299 * pixels.data[index] + .587 * pixels.data[index + 1] + .114 * pixels.data[index + 2]; if (invert) gray = 255 - gray; gray = gray > 155 ? 255 : gray < 80 ? 0 : gray; pixels.data[index] = pixels.data[index + 1] = pixels.data[index + 2] = gray; }
+    const histogram = new Uint32Array(256); const pixelCount = pixels.data.length / 4;
+    for (let index = 0; index < pixels.data.length; index += 4) {
+      const gray = Math.round(.299 * pixels.data[index] + .587 * pixels.data[index + 1] + .114 * pixels.data[index + 2]);
+      brightness += gray; histogram[gray] += 1;
+    }
+    const invert = brightness / pixelCount < 128;
+    if (invert) {
+      const reversed = new Uint32Array(256);
+      for (let level = 0; level < 256; level += 1) reversed[255 - level] = histogram[level];
+      histogram.set(reversed);
+    }
+    // Otsu selects a threshold from this image instead of assuming every
+    // screenshot has the same dark/light palette or text brightness.
+    let totalWeighted = 0;
+    for (let level = 0; level < 256; level += 1) totalWeighted += level * histogram[level];
+    let backgroundWeight = 0; let backgroundSum = 0; let threshold = 128; let bestVariance = -1;
+    for (let level = 0; level < 256; level += 1) {
+      backgroundWeight += histogram[level]; if (!backgroundWeight) continue;
+      const foregroundWeight = pixelCount - backgroundWeight; if (!foregroundWeight) break;
+      backgroundSum += level * histogram[level];
+      const difference = backgroundSum / backgroundWeight - (totalWeighted - backgroundSum) / foregroundWeight;
+      const variance = backgroundWeight * foregroundWeight * difference * difference;
+      if (variance > bestVariance) { bestVariance = variance; threshold = level; }
+    }
+    for (let index = 0; index < pixels.data.length; index += 4) {
+      let gray = Math.round(.299 * pixels.data[index] + .587 * pixels.data[index + 1] + .114 * pixels.data[index + 2]);
+      if (invert) gray = 255 - gray;
+      gray = gray > threshold ? 255 : 0;
+      pixels.data[index] = pixels.data[index + 1] = pixels.data[index + 2] = gray;
+    }
     context.putImageData(pixels, 0, 0);
     let worker;
     try {
