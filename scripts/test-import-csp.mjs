@@ -27,7 +27,7 @@ for (const marker of [
 }
 
 for (const marker of [
-  "script-src 'self' 'unsafe-inline' https://cdnjs.cloudflare.com",
+  "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval' https://cdnjs.cloudflare.com",
   "connect-src 'self'",
   "worker-src 'self' blob: https://cdnjs.cloudflare.com",
   "img-src 'self' data: blob:"
@@ -44,8 +44,8 @@ for (const file of [
   "vendor/tesseract/lang/4.0.0/deu.traineddata.gz"
 ]) await access(file);
 
-if (/script-src[^;]*(?:\*|unsafe-eval)/.test(worker)) {
-  throw new Error("Die PDF-/OCR-CSP darf weder Wildcards noch unsafe-eval enthalten.");
+if (/script-src[^;]*\*/.test(worker) || /script-src[^;]*(?:^|\s)'unsafe-eval'(?:\s|;)/.test(worker)) {
+  throw new Error("Die PDF-/OCR-CSP darf weder Wildcards noch allgemeines unsafe-eval enthalten.");
 }
 
 console.log("PDF-/OCR-Import: lokale feste OCR-Quellen, Worker-Pfade und restriktive CSP geprüft.");
