@@ -3,9 +3,8 @@
 ## Verbindliche Quelle
 
 `Daixem/TimeFlow-PWA:main` ist die einzige Quelle für einen produktiven
-TimeFlow-Stand. Codex und Cloud-Aufgaben arbeiten mit demselben Repository:
-Änderung auf einem Arbeitsbranch, Prüfung, Merge nach `main`, danach Release.
-Ein Branch ist kein Release.
+TimeFlow-App-Stand. Der normale Weg ist: Änderung prüfen, nach `main` übernehmen
+und den automatischen Release abwarten. Ein Branch ist kein Release.
 
 ## GitHub Pages
 
@@ -33,15 +32,21 @@ lokale Entwicklungsprüfungen steht `npm run build:dev` zur Verfügung;
 unersetzten Build-Platzhaltern, fehlenden referenzierten Dateien, ungültigem
 Manifest oder fehlender Service-Worker-Versionierung.
 
-## Bestehende Private Beta
+## Ein Release für öffentliche PWA und Beta
 
-Das bereits gebundene Projekt aus `.openai/hosting.json` bleibt unverändert.
-Der Worker leitet statische PWA-Dateien an den veröffentlichten GitHub-Pages-
-Stand von `main` weiter, behält aber Anmeldung, Einladungen, API und D1 im
-bestehenden Hosting-Projekt. Für Änderungen an dieser Worker-Laufzeit muss die
-vorhandene ChatGPT-Sites-Veröffentlichung verwendet werden. Im Repository ist
-keine verifizierte automatische GitHub-zu-Sites-Schnittstelle hinterlegt; sie
-wird deshalb nicht behauptet oder simuliert.
+Ein Merge nach `main` veröffentlicht die öffentliche PWA und aktualisiert
+zugleich die App-Dateien, die der Beta-Worker aus GitHub Pages weiterreicht.
+Dadurch gibt es für normale App-Änderungen nur einen Release-Schritt; eine
+separate Beta-Veröffentlichung ist dafür nicht nötig. Die spätere offizielle
+PWA sollte ebenfalls aus diesem `main`-Stand veröffentlicht werden.
+
+Das bestehende Hosting-Projekt aus `.openai/hosting.json` behält Anmeldung,
+Einladungen, API und D1. Änderungen an diesem Worker oder seinen Einstellungen
+brauchen weiterhin eine Veröffentlichung des Hosting-Projekts. Dafür gibt es
+noch keine unterstützte automatische Verbindung zu GitHub Actions. Wir lösen
+diese Ausnahme erst, wenn die Hosting-Plattform einen dafür geeigneten
+automatischen Veröffentlichungsweg bereitstellt; Zugangsdaten oder eine
+unbestätigte Schnittstelle werden nicht in GitHub eingerichtet.
 
 ## PWA-Updates
 

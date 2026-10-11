@@ -19,11 +19,12 @@ veröffentlicht.
 Hosting-Projekt übernimmt Anmeldung, Beta-Freigaben, API und D1-Daten. Seine
 statischen App-Dateien beziehen sich aus dem GitHub-Pages-Release von `main`.
 
-Ein Push nach `main` baut und veröffentlicht GitHub Pages ausschließlich aus
-diesem Commit. Der Beta-Worker liefert diese Hauptdateien weiter aus. Änderungen
-am Worker, an D1-Routen oder an der Hosting-Laufzeit selbst werden dagegen nur
-über die vorhandene ChatGPT-Sites-Veröffentlichung des bestehenden Projekts
-ausgerollt. Es gibt bewusst keinen erfundenen GitHub-zu-Sites-Webhook.
+Der normale Veröffentlichungsweg ist immer derselbe: Änderungen nach `main`
+übernehmen. GitHub veröffentlicht daraus die öffentliche PWA; der Beta-Worker
+zeigt automatisch dieselben App-Dateien an. Damit erhalten öffentliche PWA und
+Beta-Ansicht denselben App-Stand. Nur Änderungen an Anmeldung, API, D1 oder
+anderen Worker-Einstellungen brauchen zusätzlich die Veröffentlichung des
+bestehenden Hosting-Projekts.
 
 Jeder Produktions-Build erzeugt `_site/version.json` mit vollem Commit-SHA,
 eindeutiger Build-ID und UTC-Buildzeit. Der Build stoppt, wenn `GITHUB_SHA`
