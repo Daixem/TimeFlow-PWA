@@ -6,7 +6,7 @@ const output = new URL("../_site/", import.meta.url);
 // GitHub Pages must publish the same locally hosted OCR runtime as the main
 // Sites build. Without these files screenshot imports fail while creating the
 // Tesseract worker (worker, wasm core, or German language data cannot load).
-const entries = ["index.html", "manifest.webmanifest", "sw.js", "assets", "css", "js", "vendor"];
+const entries = ["index.html", "manifest.webmanifest", "sw.js", "release-notes.json", "assets", "css", "js", "vendor"];
 assertCleanWorkingTree(root);
 const metadata = createBuildMetadata(root);
 

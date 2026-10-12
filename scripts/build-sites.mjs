@@ -6,7 +6,7 @@ const root = new URL("../", import.meta.url);
 const output = new URL("../dist/server/", import.meta.url);
 const releaseBuild = process.argv.includes("--release");
 if (releaseBuild) assertCleanWorkingTree(root);
-const publicEntries = ["index.html", "manifest.webmanifest", "sw.js"];
+const publicEntries = ["index.html", "manifest.webmanifest", "sw.js", "release-notes.json"];
 const publicDirectories = ["assets", "css", "js", "vendor"];
 const contentTypes = {
   ".css": "text/css; charset=utf-8",

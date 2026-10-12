@@ -33,6 +33,13 @@ document.addEventListener("DOMContentLoaded", () => {
         <footer><button type="button" data-test-notification><i class="fa-solid fa-paper-plane"></i> Testbenachrichtigung</button><small>Push-Einstellungen gelten für dein Konto und werden auf allen angemeldeten Geräten beachtet.</small></footer>
       </section>
     </dialog>
+    <dialog class="notification-detail" id="notificationDetail" aria-labelledby="notificationDetailTitle">
+      <section>
+        <header><span class="notification-center-icon"><i class="fa-regular fa-bell"></i></span><div><small id="notificationDetailKind">Mitteilung</small><h2 id="notificationDetailTitle"></h2><p id="notificationDetailTime"></p></div><button type="button" data-close-notification-detail aria-label="Mitteilung schließen"><i class="fa-solid fa-xmark"></i></button></header>
+        <div class="notification-detail-content"><p id="notificationDetailBody"></p><div id="notificationDetailList" hidden></div></div>
+        <footer><button type="button" data-open-notification-action hidden></button></footer>
+      </section>
+    </dialog>
   `);
 
   const center = document.getElementById("notificationCenter");
@@ -40,8 +47,11 @@ document.addEventListener("DOMContentLoaded", () => {
   const unreadLabel = document.getElementById("notificationUnreadLabel");
   const permissionText = document.getElementById("notificationPermissionText");
   const permissionCard = document.getElementById("notificationPermissionCard");
+  const detailDialog = document.getElementById("notificationDetail");
+  const detailAction = detailDialog.querySelector("[data-open-notification-action]");
   let activeFilter = "all";
   let entries = loadEntries();
+  let serverPushReady = false;
 
   function loadReadReceipts() {
     try { return JSON.parse(window.TimeFlowPlatform.storage.getItem(READ_KEY)) || {}; } catch { return {}; }
@@ -203,7 +213,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const registration = await navigator.serviceWorker.ready;
       const subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: decodeVapidKey(config.publicKey) });
       const response = await fetch(new URL("api/notifications/push-subscription", document.baseURI), { method: "POST", cache: "no-store", headers: { Accept: "application/json", "Content-Type": "application/json" }, body: JSON.stringify(subscription.toJSON()) });
-      return response.ok;
+      serverPushReady = response.ok;
+      renderPermission();
+      return serverPushReady;
     } catch (_error) {
       return false;
     }
@@ -222,9 +234,9 @@ document.addEventListener("DOMContentLoaded", () => {
     button.disabled = false;
     if (Notification.permission === "granted") {
       permissionCard.classList.add("is-granted");
-      permissionText.textContent = "Aktiv – Hinweise dürfen auf dem Gerät erscheinen.";
-      button.textContent = "Aktiv";
-      button.disabled = true;
+      permissionText.textContent = serverPushReady ? "Aktiv – Hinweise dürfen auf dem Gerät erscheinen." : "Gerätefreigabe aktiv. Serververbindung wird geprüft.";
+      button.textContent = serverPushReady ? "Aktiv" : "Verbinden";
+      button.disabled = serverPushReady;
     } else if (Notification.permission === "denied") {
       permissionCard.classList.add("is-denied");
       permissionText.textContent = "Blockiert – bitte in den Browser-Einstellungen freigeben.";
@@ -254,9 +266,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const permission = await Notification.requestPermission();
     renderPermission();
     if (permission === "granted") {
-      await registerPushDevice();
-      toast("Benachrichtigungen wurden aktiviert.");
-      return true;
+      const registered = await registerPushDevice();
+      toast(registered ? "Benachrichtigungen wurden aktiviert." : "Gerätefreigabe ist aktiv. Der Push-Dienst ist noch nicht erreichbar.");
+      return registered;
     }
     toast(permission === "denied" ? "Benachrichtigungen sind im Browser blockiert." : "Benachrichtigungen wurden noch nicht aktiviert.");
     return false;
@@ -284,7 +296,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function addEntry(detail = {}) {
     const existing = detail.id ? entries.find((item) => item.id === detail.id) : null;
     if (existing) {
-      existing.type = detail.type || existing.type; existing.category = detail.category || existing.category; existing.title = detail.title || existing.title; existing.body = detail.body || existing.body; existing.action = detail.action || existing.action;
+      existing.type = detail.type || existing.type; existing.category = detail.category || existing.category; existing.title = detail.title || existing.title; existing.body = detail.body || existing.body; existing.action = detail.action || existing.action; existing.details = normalizeDetails(detail.details ?? detail.changes ?? existing.details);
       saveEntries(); renderEntries(); return;
     }
     const entry = {
@@ -295,29 +307,18 @@ document.addEventListener("DOMContentLoaded", () => {
       body: detail.body || "Es gibt eine neue Information für dich.",
       createdAt: new Date().toISOString(),
       read: false,
-      action: detail.action || ""
+      action: detail.action || "",
+      details: normalizeDetails(detail.details ?? detail.changes)
     };
     entries.unshift(entry);
     saveEntries();
     renderEntries();
-    if (detail.device !== false) showDeviceNotification(entry.title, entry.body, { action: entry.action, category: entry.category || entry.type });
+    if (detail.device !== false) showDeviceNotification(entry.title, entry.body, { id: entry.id, action: entry.action, category: entry.category || entry.type, details: entry.details });
   }
 
-  async function sendTestNotification() {
-    if (!notificationSupport()) {
-      toast("PWA-Benachrichtigungen werden in diesem Browser nicht unterstützt.");
-      return;
-    }
-    if (Notification.permission !== "granted" && !(await requestPermission())) return;
-    const sent = await showDeviceNotification("TimeFlow ist bereit", "Benachrichtigungen funktionieren auf diesem Gerät.", { tag: "timeflow-test" });
-    let external = false;
-    try {
-      const response = await fetch(new URL("api/notifications/push-test", document.baseURI), { method: "POST", cache: "no-store", headers: { Accept: "application/json", "Content-Type": "application/json" }, body: "{}" });
-      const result = await response.json().catch(() => ({}));
-      external = response.ok && Number(result.sent || 0) > 0;
-    } catch (_error) { /* local notification remains available when the server is offline */ }
-    addEntry({ type: "success", title: "Test erfolgreich", body: "Deine lokalen PWA-Benachrichtigungen sind einsatzbereit.", device: false });
-    toast(external ? "Externe Testbenachrichtigung wurde gesendet." : sent ? "Gerätebenachrichtigung wurde gesendet. Server-Push ist noch nicht eingerichtet." : "Der Test wurde im Notification Center gespeichert.");
+  function normalizeDetails(value) {
+    if (!Array.isArray(value)) return [];
+    return value.map((item) => typeof item === "string" ? item : String(item?.text || item?.label || "").trim()).filter(Boolean).slice(0, 40);
   }
 
   function openEntry(id) {
@@ -328,9 +329,43 @@ document.addEventListener("DOMContentLoaded", () => {
     saveEntries();
     renderEntries();
     window.TimeFlowPlatform.dialog.close(center);
-    if (entry.action === "chat") document.dispatchEvent(new CustomEvent("timeflow:open-chat"));
-    else if (entry.action === "schedule") document.querySelector('[data-target="schedule"]')?.click();
-    else if (entry.action === "history") document.dispatchEvent(new CustomEvent("timeflow:open-quick-actions", { detail: { action: "history" } }));
+    document.getElementById("notificationDetailTitle").textContent = entry.title || "Mitteilung";
+    document.getElementById("notificationDetailKind").textContent = ({ schedule: "Dienstplan", system: "Update und System", chat: "Teamnachricht", worktime: "Arbeitszeit", approval: "Antrag" })[entry.category || entry.type] || "Mitteilung";
+    document.getElementById("notificationDetailTime").textContent = new Date(entry.createdAt || Date.now()).toLocaleString("de-DE", { dateStyle: "full", timeStyle: "short" });
+    document.getElementById("notificationDetailBody").textContent = entry.body || "Es gibt eine neue Information für dich.";
+    const details = document.getElementById("notificationDetailList");
+    details.replaceChildren();
+    const detailItems = normalizeDetails(entry.details);
+    if (detailItems.length) {
+      const heading = document.createElement("strong");
+      heading.textContent = entry.category === "system" ? "Das ist im Update enthalten" : "Änderungen im Überblick";
+      const listElement = document.createElement("ul");
+      detailItems.forEach((text) => { const item = document.createElement("li"); item.textContent = text; listElement.append(item); });
+      details.append(heading, listElement);
+      details.hidden = false;
+    } else details.hidden = true;
+    detailAction.hidden = !["chat", "schedule", "history"].includes(entry.action);
+    detailAction.textContent = ({ chat: "Teamchat öffnen", schedule: "Dienstplan öffnen", history: "Verlauf öffnen" })[entry.action] || "";
+    detailAction.dataset.action = entry.action || "";
+    window.TimeFlowPlatform.dialog.open(detailDialog);
+  }
+
+  async function sendTestNotification() {
+    if (!notificationSupport()) {
+      toast("PWA-Benachrichtigungen werden in diesem Browser nicht unterstützt.");
+      return;
+    }
+    if (Notification.permission !== "granted" && !(await requestPermission())) return;
+    if (Notification.permission === "granted" && !serverPushReady) await registerPushDevice();
+    const sent = await showDeviceNotification("TimeFlow ist bereit", "Benachrichtigungen funktionieren auf diesem Gerät.", { tag: "timeflow-test" });
+    let external = false;
+    try {
+      const response = await fetch(new URL("api/notifications/push-test", document.baseURI), { method: "POST", cache: "no-store", headers: { Accept: "application/json", "Content-Type": "application/json" }, body: "{}" });
+      const result = await response.json().catch(() => ({}));
+      external = response.ok && Number(result.sent || 0) > 0;
+    } catch (_error) { /* local notification remains available when the server is offline */ }
+    addEntry({ type: "success", title: "Test erfolgreich", body: "Deine lokalen PWA-Benachrichtigungen sind einsatzbereit.", device: false });
+    toast(external ? "Externe Testbenachrichtigung wurde gesendet." : sent ? "Hinweis auf diesem Gerät angezeigt. Server-Push konnte nicht bestätigt werden." : "Der Test wurde im Notification Center gespeichert.");
   }
 
   function openCenter() {
@@ -354,10 +389,22 @@ document.addEventListener("DOMContentLoaded", () => {
     renderEntries();
   }));
   center.querySelector("[data-close-notifications]").addEventListener("click", () => window.TimeFlowPlatform.dialog.close(center));
+  detailDialog.querySelector("[data-close-notification-detail]").addEventListener("click", () => window.TimeFlowPlatform.dialog.close(detailDialog));
+  detailAction.addEventListener("click", () => {
+    const action = detailAction.dataset.action;
+    window.TimeFlowPlatform.dialog.close(detailDialog);
+    if (action === "chat") document.dispatchEvent(new CustomEvent("timeflow:open-chat"));
+    else if (action === "schedule") document.querySelector('[data-target="schedule"]')?.click();
+    else if (action === "history") document.dispatchEvent(new CustomEvent("timeflow:open-quick-actions", { detail: { action: "history" } }));
+  });
+  detailDialog.addEventListener("click", (event) => { if (event.target === detailDialog) window.TimeFlowPlatform.dialog.close(detailDialog); });
   center.addEventListener("click", (event) => {
     if (event.target === center) window.TimeFlowPlatform.dialog.close(center);
     const item = event.target.closest("[data-notification-id]");
     if (item) openEntry(item.dataset.notificationId);
+  });
+  navigator.serviceWorker?.addEventListener("message", (event) => {
+    if (event.data?.type === "TIMEFLOW_NOTIFICATION_OPEN") openEntry(event.data.id);
   });
   document.addEventListener("timeflow:open-notifications", openCenter);
   document.addEventListener("timeflow:create-notification", (event) => addEntry(event.detail));
@@ -375,6 +422,14 @@ document.addEventListener("DOMContentLoaded", () => {
     saveEntries();
     renderEntries();
   });
+
+  if ("Notification" in window && Notification.permission === "granted") void registerPushDevice();
+
+  const notificationIdFromUrl = new URL(window.location.href).searchParams.get("notificationId");
+  if (notificationIdFromUrl) {
+    window.history.replaceState({}, "", `${window.location.pathname}${window.location.hash}`);
+    window.setTimeout(() => openEntry(notificationIdFromUrl), 0);
+  }
 
   const settingsList = document.querySelector('[aria-labelledby="notificationSettingsTitle"] .settings-list');
   if (settingsList) {

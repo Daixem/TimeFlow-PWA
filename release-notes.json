@@ -1,0 +1,10 @@
+{
+  "title": "Benachrichtigungen mit mehr Details",
+  "summary": "Du kannst Mitteilungen jetzt vollständig öffnen und Änderungen direkt nachvollziehen.",
+  "changes": [
+    "Ein Klick auf eine Mitteilung öffnet den vollständigen Text in einer eigenen Detailansicht.",
+    "Nach dem Dienstplanimport siehst du, welcher Tag neu eingetragen oder geändert wurde – mit Schichtname und Uhrzeit.",
+    "App-Updates zeigen eine verständliche Liste der enthaltenen Neuerungen.",
+    "Push-Benachrichtigungen werden nach Gerätefreigabe über den Server zugestellt, auch wenn TimeFlow geschlossen ist."
+  ]
+}

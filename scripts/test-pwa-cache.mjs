@@ -23,6 +23,7 @@ if (!icon192.equals(phoenix192) || !icon512.equals(phoenix512)) throw new Error(
 for (const marker of [
   'const CACHE_PREFIX = "timeflow-"',
   'const CACHE_NAME = `${CACHE_PREFIX}app-${BUILD_VERSION}`',
+  '"release-notes.json"',
   'key.startsWith(CACHE_PREFIX) && key !== CACHE_NAME',
   "caches.delete(key)",
   "self.skipWaiting()",
