@@ -36,8 +36,11 @@ if (savedByActiveImportPath.length !== 1 || JSON.parse(storage.getItem("timeflow
 const mergedPlans = merge([{ date: "2026-09-01", start: "08:00", end: "16:00" }], [{ date: "2026-09-01", start: "09:00", end: "17:00" }, { date: "2026-09-02", start: "08:00", end: "16:00" }]);
 if (mergedPlans.length !== 2 || mergedPlans[0].start !== "09:00") throw new Error("Mehrfach-Import: neue Pläne werden nicht ergänzt oder vorhandene Tage nicht aktualisiert.");
 const weekly = parse("Woche 31.08 - 06.09\nMo 31\n-\nDi 1\nHotel Rezeption\n07:30 - 15:00\nMi 2\n07.30 – 15.00\nDo 3\n0730 bis 1500\nFr 4\n7 Uhr - 15 Uhr");
-if (weekly.length !== 5) throw new Error(`Wochenplan: 5 Tage einschließlich freiem Montag erwartet, ${weekly.length} erkannt.`);
+if (weekly.length !== 7) throw new Error(`Wochenplan: alle 7 Tage einschließlich nicht aufgeführter freier Tage erwartet, ${weekly.length} erkannt.`);
 if (weekly[1].date.slice(5) !== "09-01" || weekly[1].start !== "07:30" || weekly[1].end !== "15:00") throw new Error("Wochenplan: Datum oder Zeit falsch erkannt.");
+if (weekly[5].title !== "Frei" || weekly[6].title !== "Frei" || weekly[5].note !== "Kein Einsatz im erkannten Wochenzeitraum") throw new Error("Nicht aufgeführte Tage im erkannten Zeitraum werden nicht automatisch als frei ergänzt.");
+const noRange = parse("01.09.2026 Frühschicht 07:30 - 15:00\n03.09.2026 Spätschicht 14:00 - 22:00");
+if (noRange.length !== 2) throw new Error("Ohne eindeutig erkannten Wochenzeitraum dürfen keine fehlenden Tage ergänzt werden.");
 const table = parse("01.09.2026 | Frühschicht | 08:00 - 16:30\n2026-09-02 Spätschicht 12:00 bis 20:30");
 if (table.length !== 2 || table[1].title !== "Spätschicht") throw new Error("Tabellenplan: Datum, Zeiten oder Schichtart falsch erkannt.");
 const umlautlessShift = parse("03.09.2026 Spatschicht 14:00 - 22:00");

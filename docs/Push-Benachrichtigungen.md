@@ -1,12 +1,12 @@
 # Push-Benachrichtigungen
 
-Die PWA kann Push-Nachrichten bereits im Service Worker empfangen und nach Zustimmung ein Gerät registrieren. Die Registrierung wird pro Konto in D1 gespeichert.
+Der Service Worker kann Web-Push empfangen. Ein Gerät kann nach Zustimmung über die geschützte API registriert und pro Konto in D1 gespeichert werden. Der Worker enthält außerdem den Versandweg für Teamchat-Nachrichten und einen Test-Endpunkt.
 
-Für den echten Versand bei geschlossener App fehlen noch die Cloudflare-Konfiguration und ein Versandprozess:
+Für eine echte Zustellung bei geschlossener App muss die Zielumgebung vollständig konfiguriert und die Zustellung auf einem realen Gerät geprüft sein:
 
 1. VAPID-Schlüssel erzeugen.
 2. Den öffentlichen Schlüssel als `TIMEFLOW_VAPID_PUBLIC_KEY` hinterlegen.
 3. Den privaten Schlüssel ausschließlich als Wrangler-Secret hinterlegen.
-4. Einen Worker- oder Queue-Versand für Dienstplan-, Chat- und Arbeitszeitereignisse anschließen.
+4. Für weitere Ereignisse (Dienstplan, Arbeitszeit und Freigaben) den passenden Auslöser ergänzen. Der vorhandene Versandweg löst derzeit nur beim Teamchat aus.
 
-Ohne diese vier Schritte bleiben Benachrichtigungen lokal und es wird kein unsicherer Scheinversand aktiviert. Die Funktion bleibt jederzeit über die Geräteeinstellung abschaltbar.
+Fehlt eine dieser Einstellungen, meldet der Server-Test `push_not_configured`; eine lokale Gerätebenachrichtigung ist kein Nachweis für externen Versand. Auch eine erfolgreiche Serverantwort ist erst dann ein Zustellnachweis, wenn die Nachricht tatsächlich auf dem Zielgerät angekommen ist. Die Funktion bleibt über Geräte- und Benachrichtigungseinstellungen abschaltbar.

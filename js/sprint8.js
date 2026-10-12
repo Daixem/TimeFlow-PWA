@@ -117,7 +117,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const security = document.getElementById("sessionSecurityState");
     if (!role || !session) return;
     role.textContent = session.user.role || "Kontoinhaber";
-    meta.textContent = `${session.user.email || "Verifiziertes Konto"} · Site-verifiziert`;
+    meta.textContent = session.offline
+      ? `${session.user.email || "Gespeichertes Konto"} · zuletzt online bestätigt`
+      : `${session.user.email || "Verifiziertes Konto"} · Site-verifiziert`;
     security.innerHTML = '<i class="fa-solid fa-shield-halved"></i>';
   }
 

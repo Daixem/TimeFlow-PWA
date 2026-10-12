@@ -22,6 +22,7 @@ const required = [
   "js/sprint3.js",
   "js/sprint4.js",
   "js/sprint5.js",
+  "js/backup-data.js",
   "js/sprint6.js",
   "js/sprint7.js",
   "js/sprint8.js",

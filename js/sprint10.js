@@ -13,12 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
   if (!settingsPage || !profilePage) return;
 
   const BACKUP_KEY = "timeflow-last-backup-v1";
-  const RESTORE_EXCLUDED_KEYS = new Set(["timeflow-session-v1", "timeflow-sync-meta-v1", BACKUP_KEY]);
-  const RESTORE_ALLOWED_KEYS = new Set([
-    "timeflow-profile-v1", "timeflow-settings-v1", "timeflow-profile-preferences-v1",
-    "timeflow-workday-v2", "timeflow-chat-demo-v2", "timeflow-chat-shift-confirmed-v1",
-    "timeflow-quick-actions-v1", "timeflow-notifications-v1", "timeflow-users-v1"
-  ]);
+  const BACKUP_RESTORE_KEY = "timeflow-backup-restore-pending-v1";
   const appSettingsCard = settingsPage.querySelector('[aria-labelledby="appSettingsTitle"]');
   const dataSettingsCard = settingsPage.querySelector('[aria-labelledby="dataSettingsTitle"]');
   const cloudCard = settingsPage.querySelector(".cloud-sync-card");
@@ -220,19 +215,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function safeBackupPayload(payload) {
-    if (!payload || payload.app !== "TimeFlow PWA" || !payload.data || typeof payload.data !== "object" || Array.isArray(payload.data)) {
-      throw new Error("Diese Datei ist keine gültige TimeFlow-Datensicherung.");
-    }
-    const serialized = JSON.stringify(payload);
-    if (serialized.length > 1_000_000) throw new Error("Die Datensicherung ist zu groß.");
-    const data = {};
-    for (const [key, value] of Object.entries(payload.data)) {
-      if (!key.startsWith("timeflow-") || RESTORE_EXCLUDED_KEYS.has(key) || !RESTORE_ALLOWED_KEYS.has(key)) continue;
-      if (typeof value === "undefined" || typeof value === "function") continue;
-      data[key] = value;
-    }
-    if (!Object.keys(data).length || Object.keys(data).length > 100) throw new Error("Die Datensicherung enthält keine verwendbaren TimeFlow-Daten.");
-    return { data, exportedAt: payload.exportedAt || null };
+    const cached = (() => { try { return JSON.parse(window.TimeFlowPlatform.storage.getItem("timeflow-platform-session-cache-v1") || "{}").session || {}; } catch { return {}; } })();
+    const profile = (() => { try { return JSON.parse(window.TimeFlowPlatform.storage.getItem("timeflow-profile-v1") || "{}"); } catch { return {}; } })();
+    return window.TimeFlowBackupData.validatePayload(payload, String(cached.user?.email || profile.email || cached.user?.id || "").trim().toLowerCase());
   }
 
   async function inspectBackup(file) {
@@ -261,6 +246,7 @@ document.addEventListener("DOMContentLoaded", () => {
     for (const [key, value] of Object.entries(pendingRestore.data)) {
       window.TimeFlowPlatform.storage.setItem(key, typeof value === "string" ? value : JSON.stringify(value));
     }
+    window.TimeFlowPlatform.storage.setItem(BACKUP_RESTORE_KEY, JSON.stringify({ active: true, restoredAt: new Date().toISOString() }));
     window.TimeFlowPlatform.storage.setItem(BACKUP_KEY, new Date().toISOString());
     window.TimeFlowPlatform.session.setItem("timeflow-restore-complete", "1");
     window.location.reload();

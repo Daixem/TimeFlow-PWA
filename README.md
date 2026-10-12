@@ -91,35 +91,31 @@ Status und Zeitpunkt lokal gespeichert. Teamrelevante Meldungen erscheinen
 zusätzlich als eigene Nachricht im Teamchat; der Verlauf lässt sich über Home
 oder die Karte mit den offenen Freigaben öffnen.
 
-## Sprint 7
+## Benachrichtigungen
 
-Sprint 7 macht die Glocke im Home-Header zum vollständigen Notification Center.
-Hinweise für Freigaben, Dienstpläne, Teamchat und Schnellaktionen besitzen einen
-Ungelesen-Status und bleiben lokal auf dem Gerät gespeichert. In den
-Einstellungen kann die Browser-/PWA-Berechtigung bewusst aktiviert und mit
-einer Testbenachrichtigung geprüft werden. Echte serverseitige Push-Nachrichten
-bei vollständig geschlossener App benötigen später die Benutzerverwaltung und
-das Backend.
+Die Glocke öffnet eine lokale Mitteilungsübersicht. Browser-Berechtigung,
+Gerätebenachrichtigung und externer Server-Push sind unterschiedliche Dinge.
+Der Worker enthält einen Push-Test und einen Teamchat-Versandweg, aber externe
+Zustellung ist erst bestätigt, wenn Cloudflare-Schlüssel eingerichtet sind und
+eine Nachricht auf einem realen Gerät ankommt. Siehe
+[Push-Benachrichtigungen](docs/Push-Benachrichtigungen.md).
 
-## Sprint 8
+## Anmeldung und lokale Offline-Nutzung
 
-Sprint 8 ergänzt Anmeldung, Sitzungsstatus und eine erste Benutzerverwaltung.
-Die private TimeFlow-Site verwendet die vorhandene geschützte Site-Anmeldung
-und zeigt das verifizierte Konto im Profil. Die öffentliche GitHub-Vorschau
-nutzt stattdessen bewusst gekennzeichnete Demo-Konten ohne Passwort. Rollen,
-Aktivstatus und Demo-Benutzer lassen sich lokal verwalten. Zentrale Konten,
-echte Berechtigungen und geräteübergreifende Synchronisierung folgen mit dem
-Backend.
+Die geschützte Connect-Version verwendet die Plattform-Anmeldung. Ein zuletzt
+bestätigtes Konto kann bei fehlender Verbindung bis zu 24 Stunden für den
+lokalen Offlinezugriff zwischengespeichert bleiben. Das ist keine erneute
+Online-Verifizierung; geschützte Serveraktionen benötigen weiterhin eine
+Verbindung. Die öffentliche GitHub-Vorschau bleibt lokal.
 
-## Sprint 9
+## Synchronisierung und Datensicherung
 
-Sprint 9 verbindet die private TimeFlow-Site mit einem benutzerbezogenen
-Cloud-Speicher. Profil und Einstellungen werden nach der Anmeldung automatisch
-gesichert und können auf einem weiteren Gerät wiederhergestellt werden. Ein
-Statusbereich im Profil zeigt Synchronisierung, Offline-Betrieb und den letzten
-Abgleich. Die öffentliche GitHub-Vorschau bleibt vollständig lokal. Chats,
-Krankmeldungen und andere sensible Schnellaktionen werden in diesem Sprint
-bewusst nicht in die Cloud übertragen.
+Die geschützte Connect-Version synchronisiert freigegebene Profildaten und
+Einstellungen kontobezogen. Konflikte werden angezeigt; eigene Änderungen
+werden gezielt mit dem aktuellen Serverstand zusammengeführt. JSON-Sicherungen
+schließen Anmeldesitzungen und Synchronisierungsmarker aus. Der Restore fragt
+bei vorhandenem Cloudstand ausdrücklich, ob Sicherung oder Cloudstand gelten
+soll. Die öffentliche GitHub-Vorschau synchronisiert keine Kontodaten.
 
 ## Sprint 10
 

@@ -2,8 +2,11 @@
 
 document.addEventListener("DOMContentLoaded", () => {
   const SYNC_KEYS = ["timeflow-profile-v1", "timeflow-settings-v1", "timeflow-profile-preferences-v1", "timeflow-custom-background-v1", "timeflow-private-schedule-v1", "timeflow-private-schedule-learning-v1", "timeflow-private-account-v1", "timeflow-worktime-audit-v1", "timeflow-monthly-targets-v1", "timeflow-private-setup-v1", "timeflow-beta-consent-v1", "timeflow-workday-v2", "timeflow-notifications-v1", "timeflow-notification-read-v1", "timeflow-quick-actions-v1"];
+  const LEARNING_KEY_PREFIX = "timeflow-private-schedule-learning-v1:";
   const WORK_TIME_SNAPSHOT_KEYS = new Set(["timeflow-workday-v2", "timeflow-workday-history-v1", "timeflow-private-account-v1", "timeflow-worktime-audit-v1", "timeflow-work-time-current-v1", "timeflow-work-time-meta-v1", "timeflow-work-time-pending-v1", "timeflow-work-time-conflict-v1", "timeflow-work-time-correction-pending-v1", "timeflow-work-time-sessions-v1"]);
   const META_KEY = "timeflow-sync-meta-v1";
+  const BASE_KEY = "timeflow-sync-base-v1";
+  const BACKUP_RESTORE_KEY = "timeflow-backup-restore-pending-v1";
   const settingsLayout = document.querySelector("#settingsPage .settings-layout");
   if (!settingsLayout) return;
 
@@ -23,6 +26,8 @@ document.addEventListener("DOMContentLoaded", () => {
   const timestamp = document.getElementById("cloudSyncTimestamp");
   const syncButton = card.querySelector("[data-sync-now]");
   let platformSession = false;
+  let platformAccountId = "";
+  let platformAccountEmail = "";
   let ready = false;
   let syncing = false;
   let queuedWorkdaySnapshot = window.TimeFlowPlatform.storage.getItem("timeflow-workday-v2") || "";
@@ -37,7 +42,18 @@ document.addEventListener("DOMContentLoaded", () => {
     return window.TimeFlowWorkTimeSnapshotAuthority?.() !== false;
   }
 
-  function syncKeys() { return serverWorkTimeAuthority() ? SYNC_KEYS.filter((key) => !WORK_TIME_SNAPSHOT_KEYS.has(key)) : SYNC_KEYS; }
+  function accountLearningKey() {
+    const cachedSession = parseJson(window.TimeFlowPlatform.storage.getItem("timeflow-platform-session-cache-v1"), {});
+    const profile = parseJson(window.TimeFlowPlatform.storage.getItem("timeflow-profile-v1"), {});
+    const email = String(platformAccountEmail || cachedSession?.session?.user?.email || profile?.email || "").trim().toLowerCase();
+    const suffix = email || String(platformAccountId || cachedSession?.session?.user?.id || "").trim();
+    return suffix ? `${LEARNING_KEY_PREFIX}${suffix}` : "";
+  }
+
+  function syncKeys() {
+    const keys = accountLearningKey() ? [...SYNC_KEYS, accountLearningKey()] : SYNC_KEYS;
+    return serverWorkTimeAuthority() ? keys.filter((key) => !WORK_TIME_SNAPSHOT_KEYS.has(key)) : keys;
+  }
 
   function collectSnapshot() {
     const snapshot = {};
@@ -57,12 +73,31 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
+  function accountScope() { return platformAccountId || platformAccountEmail || "unresolved"; }
+  function storedMeta() { return parseJson(window.TimeFlowPlatform.storage.getItem(META_KEY), {}); }
   function meta() {
-    return parseJson(window.TimeFlowPlatform.storage.getItem(META_KEY), {});
+    const saved = storedMeta();
+    return saved?.account === accountScope() ? saved : {};
+  }
+
+  function hasDifferentLocalAccount() {
+    const saved = storedMeta();
+    if (saved?.account && saved.account !== accountScope()) return true;
+    const profile = parseJson(window.TimeFlowPlatform.storage.getItem("timeflow-profile-v1"), {});
+    const profileEmail = String(profile?.email || "").trim().toLowerCase();
+    return Boolean(platformAccountEmail && profileEmail && profileEmail !== platformAccountEmail);
   }
 
   function saveMeta(revision, updatedAt) {
-    window.TimeFlowPlatform.storage.setItem(META_KEY, JSON.stringify({ revision, updatedAt, syncedAt: new Date().toISOString() }));
+    window.TimeFlowPlatform.storage.setItem(META_KEY, JSON.stringify({ account: accountScope(), revision, updatedAt, syncedAt: new Date().toISOString() }));
+  }
+
+  function baseSnapshot() {
+    const saved = parseJson(window.TimeFlowPlatform.storage.getItem(BASE_KEY), {});
+    return saved?.account === accountScope() && saved.snapshot && typeof saved.snapshot === "object" ? saved.snapshot : null;
+  }
+  function saveBaseSnapshot(snapshot) {
+    window.TimeFlowPlatform.storage.setItem(BASE_KEY, JSON.stringify({ account: accountScope(), snapshot }));
   }
 
   function formatTimestamp(value) {
@@ -93,10 +128,10 @@ document.addEventListener("DOMContentLoaded", () => {
   function clearConflict() { conflictLogic.clearSyncConflict(window.TimeFlowPlatform.storage); card.querySelector("[data-sync-conflict]")?.remove(); }
   function showConflict(conflict) {
     card.querySelector("[data-sync-conflict]")?.remove();
-    card.insertAdjacentHTML("beforeend", `<div data-sync-conflict><p>Deine Daten wurden auf einem anderen Gerät geändert.</p><button type="button" data-sync-server>Serverstand laden</button><button type="button" data-sync-local>Lokale Änderungen erneut verwenden</button></div>`);
+    card.insertAdjacentHTML("beforeend", `<div data-sync-conflict><p>Deine Daten wurden auf einem anderen Gerät geändert. Beim Zusammenführen bleiben Änderungen an anderen Daten erhalten.</p><button type="button" data-sync-server>Serverstand laden</button><button type="button" data-sync-local>Meine Änderungen übernehmen</button></div>`);
     const box = card.querySelector("[data-sync-conflict]");
-    box.querySelector("[data-sync-server]").addEventListener("click", async () => { try { await conflictLogic.loadServerConflictVersion({ storage: window.TimeFlowPlatform.storage, applyLocalSnapshot: applySnapshot, saveRevision: saveMeta }); card.querySelector("[data-sync-conflict]")?.remove(); document.dispatchEvent(new CustomEvent("timeflow:sync-restored")); renderStatus("synced", "Cloud-Sicherung ist aktuell", "Der aktuelle Serverstand wurde geladen.", "Synchron"); } catch { notify("Der Serverstand konnte lokal nicht übernommen werden."); } });
-    box.querySelector("[data-sync-local]").addEventListener("click", async () => { try { const outcome = await conflictLogic.reapplyLocalConflictVersion({ storage: window.TimeFlowPlatform.storage, requestSync: (payload) => requestSync("PUT", payload), applyLocalSnapshot: applySnapshot, saveRevision: saveMeta }); if (outcome.state === "saved") { card.querySelector("[data-sync-conflict]")?.remove(); renderStatus("synced", "Cloud-Sicherung ist aktuell", "Deine lokale Änderung wurde bewusst erneut gespeichert.", "Synchron"); } else if (outcome.state === "conflict") showConflict({ data: outcome.conflict.serverSnapshot, revision: outcome.conflict.serverRevision, updatedAt: outcome.conflict.updatedAt }); } catch { notify("Die lokale Änderung konnte nicht erneut gespeichert werden."); } });
+    box.querySelector("[data-sync-server]").addEventListener("click", async () => { try { await conflictLogic.loadServerConflictVersion({ storage: window.TimeFlowPlatform.storage, applyLocalSnapshot: applySnapshot, saveRevision: saveMeta, saveBaseSnapshot }); card.querySelector("[data-sync-conflict]")?.remove(); document.dispatchEvent(new CustomEvent("timeflow:sync-restored")); renderStatus("synced", "Cloud-Sicherung ist aktuell", "Der aktuelle Serverstand wurde geladen.", "Synchron"); } catch { notify("Der Serverstand konnte lokal nicht übernommen werden."); } });
+    box.querySelector("[data-sync-local]").addEventListener("click", async () => { try { const outcome = await conflictLogic.reapplyLocalConflictVersion({ storage: window.TimeFlowPlatform.storage, requestSync: (payload) => requestSync("PUT", payload), applyLocalSnapshot: applySnapshot, saveRevision: saveMeta, saveBaseSnapshot }); if (outcome.state === "saved") { card.querySelector("[data-sync-conflict]")?.remove(); document.dispatchEvent(new CustomEvent("timeflow:sync-restored")); renderStatus("synced", "Cloud-Sicherung ist aktuell", "Deine Änderungen wurden mit dem Serverstand zusammengeführt.", "Synchron"); } else if (outcome.state === "conflict") showConflict({ data: outcome.conflict.serverSnapshot, revision: outcome.conflict.serverRevision, updatedAt: outcome.conflict.updatedAt }); } catch { notify("Die lokale Änderung konnte nicht erneut gespeichert werden."); } });
   }
 
   async function requestSync(method, body) {
@@ -116,13 +151,16 @@ document.addEventListener("DOMContentLoaded", () => {
     syncing = true;
     renderStatus("syncing", "Daten werden synchronisiert", "Dein Profil und deine Einstellungen werden sicher gespeichert.", "Läuft");
     try {
-      const result = await requestSync("PUT", { snapshot: collectSnapshot(), expectedRevision: Number(meta().revision || 0) });
+      const snapshot = collectSnapshot();
+      const result = await requestSync("PUT", { snapshot, expectedRevision: Number(meta().revision || 0) });
       saveMeta(result.revision, result.updatedAt);
+      saveBaseSnapshot(snapshot);
+      window.TimeFlowPlatform.storage.removeItem(BACKUP_RESTORE_KEY);
       renderStatus("synced", "Cloud-Sicherung ist aktuell", "Profil und Einstellungen sind mit deinem privaten Konto verbunden.", "Synchron");
       if (showConfirmation) notify("Deine TimeFlow-Daten wurden synchronisiert.");
     } catch (error) {
       if (error.status === 409) {
-        const conflict = conflictLogic.handleSyncConflict({ storage: window.TimeFlowPlatform.storage, localSnapshot: collectSnapshot(), response: error.result || {} });
+        const conflict = conflictLogic.handleSyncConflict({ storage: window.TimeFlowPlatform.storage, localSnapshot: collectSnapshot(), baseSnapshot: baseSnapshot(), response: error.result || {} });
         showConflict({ data: conflict.serverSnapshot, revision: conflict.serverRevision, updatedAt: conflict.updatedAt });
         renderStatus("error", "Änderungskonflikt erkannt", "Deine Daten wurden auf einem anderen Gerät geändert. Deine lokale Änderung bleibt erhalten.", "Konflikt");
         notify("Deine Daten wurden auf einem anderen Gerät geändert.");
@@ -150,15 +188,31 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       const cloud = await requestSync("GET");
       const localMeta = meta();
+      if (hasDifferentLocalAccount()) {
+        const conflict = conflictLogic.handleSyncConflict({ storage: window.TimeFlowPlatform.storage, localSnapshot: collectSnapshot(), baseSnapshot: null, response: { data: cloud.snapshot || {}, revision: cloud.revision, updatedAt: cloud.updatedAt } });
+        showConflict({ data: conflict.serverSnapshot, revision: conflict.serverRevision, updatedAt: conflict.updatedAt });
+        renderStatus("error", "Konto-Wechsel prüfen", "Die lokalen Daten gehören möglicherweise zu einem anderen Konto. Wähle, welche Daten für dieses Konto gelten sollen.", "Auswahl nötig");
+        markReady();
+        return;
+      }
       if (!cloud.snapshot) {
         syncing = false;
         await upload(false);
         markReady();
         return;
       }
+      if (window.TimeFlowPlatform.storage.getItem(BACKUP_RESTORE_KEY)) {
+        const conflict = conflictLogic.handleSyncConflict({ storage: window.TimeFlowPlatform.storage, localSnapshot: collectSnapshot(), baseSnapshot: baseSnapshot(), response: { data: cloud.snapshot, revision: cloud.revision, updatedAt: cloud.updatedAt } });
+        window.TimeFlowPlatform.storage.removeItem(BACKUP_RESTORE_KEY);
+        showConflict({ data: conflict.serverSnapshot, revision: conflict.serverRevision, updatedAt: conflict.updatedAt });
+        renderStatus("error", "Datensicherung abgleichen", "Wähle, ob die Sicherung oder der aktuelle Cloud-Stand gelten soll.", "Abgleich nötig");
+        markReady();
+        return;
+      }
       if (!localMeta.revision || Number(cloud.revision) > Number(localMeta.revision)) {
         applySnapshot(cloud.snapshot);
         saveMeta(cloud.revision, cloud.updatedAt);
+        saveBaseSnapshot(cloud.snapshot);
         // Refresh the mounted interface in place. A full reload made a normal
         // PWA start look like a second launch after the cloud check.
         document.dispatchEvent(new CustomEvent("timeflow:sync-restored", { detail: { revision: cloud.revision, updatedAt: cloud.updatedAt } }));
@@ -168,6 +222,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       saveMeta(cloud.revision, cloud.updatedAt);
+      if (Number(cloud.revision) === Number(localMeta.revision)) saveBaseSnapshot(cloud.snapshot);
       renderStatus("synced", "Cloud-Sicherung ist aktuell", "Profil und Einstellungen sind mit deinem privaten Konto verbunden.", "Synchron");
       markReady();
     } catch {
@@ -203,6 +258,8 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("timeflow:session-ready", (event) => {
     platformSession = event.detail?.source === "platform";
     if (platformSession) {
+      platformAccountId = String(event.detail?.user?.id || "").trim();
+      platformAccountEmail = String(event.detail?.user?.email || "").trim().toLowerCase();
       syncButton.disabled = false;
       initialSync();
     } else {

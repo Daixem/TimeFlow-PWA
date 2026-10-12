@@ -14,7 +14,7 @@ const requiredSnippets = new Map([
   ["js/sprint11.js", ["data-select-mode=\"private\"", "data-select-mode=\"team\"", "writeSettings", "pointerup", "timeflow:open-mode-selection", "quickActionsCard.hidden = isPrivate"]],
   ["js/sprint4.js", ["profile-details-grid", "profile-menu-card", "data-edit-profile", "profilePhotoInput", "loadCropPhoto", "profileCropZoom", "pointermove", "applyCrop", "canvas.toDataURL", "avatar: pendingAvatar", "timeflow:session-ready", "canEditAccountName", "readonly", "timeflow:account-name-change"]],
   ["js/sprint9.js", ["timeflow:sync-ready", "cache: \"no-store\"", "#settingsPage .settings-layout", "settingsLayout.insertAdjacentHTML"]],
-  ["js/sprint10.js", ["function safeBackupPayload", "RESTORE_EXCLUDED_KEYS", "function refreshCurrentSchedule", "settingsPage.querySelector(\".settings-layout\")", "settingsPage.querySelector(`[data-readiness="]]
+  ["js/sprint10.js", ["function safeBackupPayload", "BACKUP_RESTORE_KEY", "function refreshCurrentSchedule", "settingsPage.querySelector(\".settings-layout\")", "settingsPage.querySelector(`[data-readiness="]]
 ]);
 
 for (const [file, snippets] of requiredSnippets) {

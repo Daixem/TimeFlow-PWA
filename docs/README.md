@@ -1,8 +1,10 @@
-# TimeFlow PWA
+# TimeFlow Connect / TimeFlow PWA
 
-TimeFlow ist eine mobile Zeiterfassungs- und Dienstplan-App. Der zusammengeführte
-Stand enthält das Dashboard, eine lokal gespeicherte Stempeluhr, Tages-, Wochen-,
-Monats- und Zeitraumansichten sowie einen Offline-App-Cache.
+TimeFlow ist eine mobile Zeiterfassungs- und Dienstplan-App. Der Stand enthält
+private Zeiterfassung und Dienstpläne, persönliche Einstellungen, lokale
+Sicherungen, Kontosynchronisierung und – im geschützten Connect-Angebot –
+Teamfunktionen. GitHub Pages ist die öffentliche, lokale PWA-Vorschau; sie hat
+keinen Zugriff auf Konten, Teamdaten oder die geschützte API.
 
 ## Lokal in VS Code testen
 
@@ -15,8 +17,10 @@ Alternativ kann über **Terminal → Aufgabe ausführen** die Aufgabe
 `TimeFlow: PWA starten` gewählt werden. Es sind keine Pakete und kein
 `npm install` erforderlich.
 
-Mit `npm test` werden Manifest, Offline-Cache, Sites-Build und die aktuellen
-Sprint-12-Abnahmekriterien automatisch geprüft.
+Mit `npm test` werden Client, API, Berechtigungen, Synchronisierung,
+Sicherheitsregeln, Import, Offline-Cache und Produktionsbuild automatisch
+geprüft. Die Tests ersetzen keine Prüfung auf echten iOS- und Android-Geräten
+oder mit realen Dienstplanbildern.
 
 Die Sicherheits-, Backup- und Wiederherstellungsstrategie steht in
 [Sicherheit-und-Backup.md](Sicherheit-und-Backup.md).
@@ -26,23 +30,36 @@ Die Sicherheits-, Backup- und Wiederherstellungsstrategie steht in
 Auf `localhost` oder nach einer Bereitstellung über HTTPS kann TimeFlow in
 aktuellen Chromium-Browsern über das Installationssymbol in der Adressleiste
 installiert werden. Nach dem ersten vollständigen Laden steht die Oberfläche
-auch offline zur Verfügung. Stempelzeiten bleiben lokal auf dem Gerät
-gespeichert.
+auch offline zur Verfügung. Die private Zeiterfassung kann lokale Buchungen
+zwischenpuffern; Wiederverbindung und serverseitige Bestätigung sind für die
+Cloud-Speicherung weiterhin erforderlich.
 
 ## Enthaltene Funktionen
 
 - Responsives Dashboard nach der mobilen Designreferenz
 - Ein- und Ausstempeln mit Tagesfortschritt
-- Lokale Speicherung des aktuellen Arbeitstags
+- Zeiterfassung mit lokaler Offline-Warteschlange und Serverabgleich, wenn der
+  geschützte Arbeitszeitdienst für das Konto freigeschaltet ist
 - Dienstpläne für Tag, Woche, Monat und Zeitraum
+- Dienstplanimport aus Bildern und PDFs mit Korrektur vor dem Speichern
+- Kontogebundenes Lernen von erkannten Dienstplan-Kürzeln und Schichtmustern
+- Konfliktanzeige beim Synchronisieren; Nutzer können den Serverstand wählen
+  oder eigene Änderungen auf den aktuellen Stand anwenden
 - Installierbares Web-App-Manifest
 - Service Worker mit App-Shell-Cache
 - VS-Code-Aufgaben zum Starten und Prüfen
 
 ## Bereitstellung und Synchronisierung
 
-Die private Sites-Version besitzt eine kontogeschützte Synchronisierung für
-Profil und Einstellungen. Die öffentliche GitHub-Version arbeitet als Demo
-lokal im jeweiligen Browser. Echte Mehrbenutzerrollen, gemeinsamer Teamchat,
-zentrale Dienstplanfreigaben und serverseitige Push-Zustellung bleiben spätere
-Backend-Funktionen.
+Die geschützte Connect-Version synchronisiert freigegebene Profil- und
+Einstellungsdaten kontobezogen. Teamchat und Push-Versand sind im Worker
+implementiert; externe Push-Zustellung funktioniert aber erst mit gültigen
+VAPID-Einstellungen und muss auf einem realen Gerät bestätigt werden. Lokale
+Browserhinweise belegen keine externe Zustellung. Details stehen in
+[Push-Benachrichtigungen.md](Push-Benachrichtigungen.md).
+
+Der Dienstplanimport und das Lernen wiederkehrender Zeiten werden automatisiert
+mit Testdaten geprüft. Eine belastbare Erkennungsquote mit realen
+Dienstplan-Screenshots ist nicht nachgewiesen. Erkannte Einträge müssen vor
+Übernahme kontrolliert und können bearbeitet werden. Die App ist daher nicht
+als vollständig fehlerfrei oder unabhängig zertifiziert zu verstehen.

@@ -21,9 +21,10 @@ Stand: 10. Oktober 2026
   wurde ausschließlich auf `timeflow-migration-test-20260917` angewendet.
 - Gemeinsamer Teamchat speichert Nachrichten pro Organisation; die frühere
   lokale Vorschau mit erfundenen Mitgliedern und Nachrichten ist entfernt.
-- Push-Einstellungen werden kontoweit gespeichert. Die vorhandenen VAPID-
-  Schlüssel bleiben geheim; eine echte Zustellung an ein iPhone wurde noch
-  nicht vor Ort geprüft.
+- Push-Einstellungen und Versandwege sind im Worker vorhanden. Eine echte
+  externe Zustellung an ein iPhone ist noch nicht vor Ort bestätigt; Schlüssel
+  oder Serverantworten gelten nicht als Zustellnachweis. Die App zeigt beim
+  Test ausdrücklich an, wenn der Server-Push nicht eingerichtet ist.
 - GitHub-Pages-Workflow 225 wurde erfolgreich abgeschlossen. Die statische
   GitHub-Pages-Adresse stellt keine Teamchat-API bereit; der gemeinsame Chat
   ist deshalb derzeit im geschützten Pre-Prod-Worker erreichbar.

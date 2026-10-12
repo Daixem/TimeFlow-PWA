@@ -46,8 +46,10 @@
     return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
   };
   const userKey = () => {
-    try { const session = JSON.parse(platform().storage.getItem("timeflow-session-v1") || "{}"); if (session.userId) return session.userId; } catch (_error) { /* Profil als Ersatz */ }
+    try { const cached = JSON.parse(platform().storage.getItem("timeflow-platform-session-cache-v1") || "{}"); if (cached.session?.user?.email) return String(cached.session.user.email).trim().toLowerCase(); } catch (_error) { /* Profil als Ersatz */ }
+    try { const session = JSON.parse(platform().storage.getItem("timeflow-session-v1") || "{}"); if (session.user?.email) return String(session.user.email).trim().toLowerCase(); if (session.userId) return session.userId; } catch (_error) { /* Profil als Ersatz */ }
     try { const profile = JSON.parse(platform().storage.getItem("timeflow-profile-v1") || "{}"); if (profile.email) return String(profile.email).trim().toLowerCase(); } catch (_error) { /* Lokales Profil */ }
+    try { const cached = JSON.parse(platform().storage.getItem("timeflow-platform-session-cache-v1") || "{}"); if (cached.session?.user?.id) return cached.session.user.id; } catch (_error) { /* Lokales Profil */ }
     return "local-private-user";
   };
   const learningKey = () => `timeflow-private-schedule-learning-v1:${userKey()}`;
@@ -179,6 +181,31 @@
         pendingDate = "";
       }
     });
+    if (range && Number(range[1]) >= 1 && Number(range[1]) <= 31 && Number(range[3]) >= 1 && Number(range[3]) <= 31 && Number(range[2]) >= 1 && Number(range[2]) <= 12 && Number(range[4]) >= 1 && Number(range[4]) <= 12) {
+      const firstDay = Number(range[1]);
+      const firstMonth = Number(range[2]);
+      const firstDate = new Date(Date.UTC(startYear, firstMonth - 1, firstDay));
+      const indexed = new Map(result.map((entry) => [entry.date, entry]));
+      for (let offset = 0; offset < 7; offset += 1) {
+        const date = new Date(firstDate);
+        date.setUTCDate(firstDate.getUTCDate() + offset);
+        const isoDate = date.toISOString().slice(0, 10);
+        if (!indexed.has(isoDate)) {
+          indexed.set(isoDate, {
+            id: `import-${Date.now()}-${indexed.size}`,
+            date: isoDate,
+            start: "",
+            end: "",
+            break: 0,
+            title: "Frei",
+            recognizedTitle: "Frei",
+            sourceMarker: "__EMPTY__",
+            note: "Kein Einsatz im erkannten Wochenzeitraum"
+          });
+        }
+      }
+      return [...indexed.values()].sort((left, right) => left.date.localeCompare(right.date));
+    }
     return result;
   };
   const parseLayout = (data, imageWidth) => {

@@ -188,13 +188,9 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function exportData() {
-    const localData = {};
-    for (const key of window.TimeFlowPlatform.storage.keys()) {
-      if (!key?.startsWith("timeflow-")) continue;
-      const rawValue = window.TimeFlowPlatform.storage.getItem(key);
-      try { localData[key] = JSON.parse(rawValue); } catch { localData[key] = rawValue; }
-    }
-    const exportPayload = { app: "TimeFlow PWA", version: "1.0.1", exportedAt: new Date().toISOString(), data: localData };
+    const session = (() => { try { return JSON.parse(window.TimeFlowPlatform.storage.getItem("timeflow-platform-session-cache-v1") || "{}").session || {}; } catch { return {}; } })();
+    const profile = (() => { try { return JSON.parse(window.TimeFlowPlatform.storage.getItem("timeflow-profile-v1") || "{}"); } catch { return {}; } })();
+    const exportPayload = window.TimeFlowBackupData.createPayload(window.TimeFlowPlatform.storage, String(session.user?.email || profile.email || session.user?.id || "").trim().toLowerCase());
     const blob = new Blob([JSON.stringify(exportPayload, null, 2)], { type: "application/json" });
     const downloadUrl = URL.createObjectURL(blob);
     const link = document.createElement("a");
