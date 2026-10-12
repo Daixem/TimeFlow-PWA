@@ -12,6 +12,7 @@ if (!Array.isArray(notes.changes) || !notes.changes.length) throw new Error("Die
 for (const marker of ["notificationDetail", "normalizeDetails", "Änderungen im Überblick", "TIMEFLOW_NOTIFICATION_OPEN"]) {
   if (!notifications.includes(marker)) throw new Error(`Detailansicht: ${marker} fehlt.`);
 }
+if (!/notification-toolbar[\s\S]*?data-test-notification/.test(notifications)) throw new Error("Der Testknopf ist nicht oben im Mitteilungsfenster sichtbar.");
 for (const marker of ["lastImport.changes", "shiftSummary(previous)", "Dienstplan übernommen"]) {
   if (!privateClean.includes(marker) && !scheduleImport.includes(marker)) throw new Error(`Dienstplan-Änderungen: ${marker} fehlen.`);
 }

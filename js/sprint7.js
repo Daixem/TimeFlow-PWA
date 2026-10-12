@@ -26,11 +26,13 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
         <div class="notification-toolbar">
           <strong id="notificationUnreadLabel">Aktuell</strong>
-          <button type="button" data-mark-notifications-read><i class="fa-regular fa-circle-check"></i> Alle gelesen</button>
+          <div class="notification-toolbar-actions">
+            <button type="button" data-test-notification><i class="fa-solid fa-paper-plane"></i> Testbenachrichtigung</button>
+            <button type="button" data-mark-notifications-read><i class="fa-regular fa-circle-check"></i> Alle gelesen</button>
+          </div>
         </div>
         <div class="notification-filters" role="group" aria-label="Mitteilungen filtern"><button type="button" data-notification-filter="all" aria-pressed="true">Alle</button><button type="button" data-notification-filter="worktime" aria-pressed="false">Arbeitszeit</button><button type="button" data-notification-filter="schedule" aria-pressed="false">Dienstplan</button><button type="button" data-notification-filter="system" aria-pressed="false">System</button></div>
         <div class="notification-list" id="notificationList"></div>
-        <footer><button type="button" data-test-notification><i class="fa-solid fa-paper-plane"></i> Testbenachrichtigung</button><small>Push-Einstellungen gelten für dein Konto und werden auf allen angemeldeten Geräten beachtet.</small></footer>
       </section>
     </dialog>
     <dialog class="notification-detail" id="notificationDetail" aria-labelledby="notificationDetailTitle">
