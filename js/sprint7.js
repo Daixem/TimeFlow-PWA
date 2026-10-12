@@ -236,7 +236,7 @@ document.addEventListener("DOMContentLoaded", () => {
     button.disabled = false;
     if (Notification.permission === "granted") {
       permissionCard.classList.add("is-granted");
-      permissionText.textContent = serverPushReady ? "Aktiv – Hinweise dürfen auf dem Gerät erscheinen." : "Gerätefreigabe aktiv. Serververbindung wird geprüft.";
+      permissionText.textContent = serverPushReady ? "Gerät beim Push-Dienst angemeldet. Eine Zustellung ist damit noch nicht bestätigt." : "Gerätefreigabe aktiv. Serververbindung wird geprüft.";
       button.textContent = serverPushReady ? "Aktiv" : "Verbinden";
       button.disabled = serverPushReady;
     } else if (Notification.permission === "denied") {
@@ -359,15 +359,33 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (Notification.permission !== "granted" && !(await requestPermission())) return;
     if (Notification.permission === "granted" && !serverPushReady) await registerPushDevice();
-    const sent = await showDeviceNotification("TimeFlow ist bereit", "Benachrichtigungen funktionieren auf diesem Gerät.", { tag: "timeflow-test" });
-    let external = false;
+    let result = {};
+    let responseOk = false;
+    let responseStatus = 0;
     try {
       const response = await fetch(new URL("api/notifications/push-test", document.baseURI), { method: "POST", cache: "no-store", headers: { Accept: "application/json", "Content-Type": "application/json" }, body: "{}" });
-      const result = await response.json().catch(() => ({}));
-      external = response.ok && Number(result.sent || 0) > 0;
-    } catch (_error) { /* local notification remains available when the server is offline */ }
-    addEntry({ type: "success", title: "Test erfolgreich", body: "Deine lokalen PWA-Benachrichtigungen sind einsatzbereit.", device: false });
-    toast(external ? "Externe Testbenachrichtigung wurde gesendet." : sent ? "Hinweis auf diesem Gerät angezeigt. Server-Push konnte nicht bestätigt werden." : "Der Test wurde im Notification Center gespeichert.");
+      result = await response.json().catch(() => ({}));
+      responseOk = response.ok;
+      responseStatus = response.status;
+    } catch (_error) { /* local preview remains available when the server is offline */ }
+    const accepted = responseOk && Number(result.sent || 0) > 0;
+    if (accepted) {
+      const count = Number(result.sent) || 1;
+      addEntry({ type: "success", title: "Push-Test angenommen", body: `Der Push-Dienst hat ${count} Testnachricht${count === 1 ? "" : "en"} angenommen. Bitte prüfe, ob sie auf diesem Gerät erscheint.`, device: false });
+      toast("Der Push-Dienst hat den Test angenommen. Die tatsächliche Anzeige auf dem Gerät ist damit noch nicht bestätigt.");
+      return;
+    }
+    const localShown = await showDeviceNotification("TimeFlow – lokaler Test", "Dieser Hinweis wurde nur auf diesem geöffneten Gerät angezeigt.", { tag: "timeflow-local-test" });
+    let detail;
+    if (!responseOk) {
+      if (responseStatus === 401) detail = "Deine Anmeldung ist abgelaufen. Bitte melde dich erneut an.";
+      else if (responseStatus === 403) detail = "Der Server hat den Test für dieses Konto abgelehnt.";
+      else if (responseStatus === 503) detail = "Der Push-Dienst ist derzeit nicht verfügbar.";
+      else detail = "Der Server konnte den Test nicht verarbeiten.";
+    } else if (result.registered > 0) detail = "Der Server hat keine Testnachricht angenommen.";
+    else detail = "Für dieses Konto wurde kein Push-Gerät gefunden.";
+    addEntry({ type: "warning", title: "Push-Test nicht bestätigt", body: `${detail}${localShown ? " Ein lokaler Hinweis wurde zusätzlich angezeigt." : ""}`, device: false });
+    toast(localShown ? `${detail} Es wurde nur ein lokaler Hinweis angezeigt.` : detail);
   }
 
   function openCenter() {
