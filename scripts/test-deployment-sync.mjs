@@ -16,6 +16,7 @@ if (!worker.includes('env?.TIMEFLOW_ASSET_SOURCE === "bundled"')) throw new Erro
 if (!worker.includes("timeflow_release")) throw new Error("Die Private Beta umgeht veraltete Main-Release-Caches nicht.");
 if (!worker.includes('url.pathname === "/version.json"')) throw new Error("Build-Nachweis der Private Beta fehlt.");
 if (!preprodConfig.includes('"keep_vars": true')) throw new Error("Cloudflare muss vertrauliche Laufzeitwerte beim Git-Deploy erhalten.");
+if (!preprodConfig.includes('"upload_source_maps": false')) throw new Error("Der Preprod-Build muss innerhalb des Cloudflare-Quellkartenlimits bleiben.");
 if (preprodConfig.includes('"TIMEFLOW_BETA_ADMIN_USER_FINGERPRINT"')) throw new Error("Der Admin-Fingerabdruck darf nicht erneut in der öffentlichen Konfiguration stehen.");
 if (!worker.includes("const BUILD_VERSION =") || !worker.includes("const BUILD_METADATA =")) throw new Error("Vollständige Commit-Version fehlt im Hosting-Build.");
 if (!worker.includes("function isLearningSnapshotKey(key)") || !worker.includes("timeflow-private-schedule-learning-v1:[A-Za-z0-9._@:+-]{1,256}")) throw new Error("Kontobezogene Lernregeln sind nicht sicher für die Cloud-Synchronisierung freigegeben.");
