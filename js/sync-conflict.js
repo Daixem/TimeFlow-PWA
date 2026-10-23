@@ -32,6 +32,18 @@
     const conflict = parse(get(storage, CONFLICT_KEY));
     return conflict?.active && conflict.localSnapshot ? conflict : null;
   }
+  function refreshPersistedSyncConflict(storage, response) {
+    const existing = restorePersistedSyncConflict(storage);
+    if (!existing) return null;
+    const serverSnapshot = response?.data && typeof response.data === "object" && !Array.isArray(response.data) ? response.data : {};
+    return persistSyncConflict(storage, {
+      ...existing,
+      serverSnapshot,
+      serverRevision: response?.revision,
+      updatedAt: response?.updatedAt,
+      detectedAt: existing.detectedAt
+    });
+  }
   function clearSyncConflict(storage) { remove(storage, CONFLICT_KEY); }
   function persistSyncConflict(storage, conflict) {
     const persisted = { active: true, localSnapshot: conflict.localSnapshot, baseSnapshot: conflict.baseSnapshot ?? null, serverSnapshot: conflict.serverSnapshot ?? null, serverRevision: Number(conflict.serverRevision || 0), updatedAt: conflict.updatedAt || null, detectedAt: conflict.detectedAt || new Date().toISOString() };
@@ -67,5 +79,5 @@
       return { state: "conflict", conflict: handleSyncConflict({ storage, localSnapshot: conflict.localSnapshot, baseSnapshot: conflict.baseSnapshot, response: error.result || {} }) };
     }
   }
-  root.TimeFlowSyncConflict = { restorePersistedSyncConflict, clearSyncConflict, persistSyncConflict, handleSyncConflict, loadServerConflictVersion, reapplyLocalConflictVersion, mergeChangedKeys };
+  root.TimeFlowSyncConflict = { restorePersistedSyncConflict, refreshPersistedSyncConflict, clearSyncConflict, persistSyncConflict, handleSyncConflict, loadServerConflictVersion, reapplyLocalConflictVersion, mergeChangedKeys };
 }(globalThis));

@@ -5,7 +5,7 @@ function memoryStorage() { const data = new Map(); return { get: (key) => data.g
 const source = await readFile(new URL("../js/sync-conflict.js", import.meta.url), "utf8");
 const sandbox = { globalThis: {}, Date, JSON };
 vm.runInNewContext(source, sandbox, { filename: "sync-conflict.js" });
-const { handleSyncConflict, loadServerConflictVersion, reapplyLocalConflictVersion, restorePersistedSyncConflict } = sandbox.globalThis.TimeFlowSyncConflict;
+const { handleSyncConflict, loadServerConflictVersion, reapplyLocalConflictVersion, restorePersistedSyncConflict, refreshPersistedSyncConflict } = sandbox.globalThis.TimeFlowSyncConflict;
 const storage = memoryStorage(); let writes = 0; let local = null; let baseline = null;
 const apply = async (snapshot) => { local = snapshot; };
 const saveRevision = async (revision, updatedAt) => storage.set("meta", JSON.stringify({ revision, updatedAt }));
@@ -14,6 +14,12 @@ handleSyncConflict({ storage, localSnapshot: { profile: { name: "Local" }, theme
 assert(restorePersistedSyncConflict(storage)?.active && writes === 0, "offline conflict persistence / no auto retry");
 const restarted = restorePersistedSyncConflict(storage);
 assert(restarted.localSnapshot.profile.name === "Local" && restarted.serverSnapshot.profile.name === "Server" && restarted.serverRevision === 21, "restart conflict persistence");
+const refreshedStorage = memoryStorage();
+handleSyncConflict({ storage: refreshedStorage, localSnapshot: { profile: { name: "Local" } }, baseSnapshot: { profile: { name: "Old" } }, response: { revision: 21, data: { profile: { name: "Old server" } }, updatedAt: "t21" } });
+const oldConflict = restorePersistedSyncConflict(refreshedStorage);
+const refreshed = refreshPersistedSyncConflict(refreshedStorage, { revision: 25, data: { profile: { name: "Current server" }, schedule: [2] }, updatedAt: "t25" });
+assert(refreshed.serverRevision === 25 && refreshed.updatedAt === "t25" && refreshed.serverSnapshot.profile.name === "Current server" && refreshed.serverSnapshot.schedule[0] === 2, "persisted conflict refreshed from current cloud version");
+assert(refreshed.detectedAt === oldConflict.detectedAt && refreshed.localSnapshot.profile.name === "Local" && refreshed.baseSnapshot.profile.name === "Old", "refresh preserves original local and base snapshots");
 await loadServerConflictVersion({ storage, applyLocalSnapshot: apply, saveRevision, saveBaseSnapshot });
 assert(local.profile.name === "Server" && baseline.schedule[0] === 1 && JSON.parse(storage.get("meta")).revision === 21 && !restorePersistedSyncConflict(storage) && writes === 0, "load server version");
 handleSyncConflict({ storage, localSnapshot: { profile: { name: "Local" }, theme: { color: "blue" } }, baseSnapshot: { profile: { name: "Old" }, theme: { color: "dark" } }, response: { revision: 21, data: { profile: { name: "Server" }, theme: { color: "dark" }, schedule: [1] } } });
@@ -30,4 +36,6 @@ await loadServerConflictVersion({ storage, applyLocalSnapshot: apply, saveRevisi
 assert(Object.keys(local).length === 0, "choosing an empty server account clears old local sync data");
 const sprint = await readFile(new URL("../js/sprint9.js", import.meta.url), "utf8");
 assert(sprint.includes("Serverstand laden") && sprint.includes("Meine Änderungen übernehmen") && sprint.includes("hasDifferentLocalAccount") && sprint.includes("saved?.account === accountScope()") && sprint.includes("baseSnapshot") && !/force\s*[=:]|overwrite\s*[=:]|ignoreRevision\s*[=:]|skipRevision\s*[=:]|skipConflict\s*[=:]/.test(sprint), "conflict UI, account isolation and no force bypass");
+assert(sprint.indexOf('const cloud = await requestSync("GET")') < sprint.indexOf("const persistedConflict = conflictLogic.restorePersistedSyncConflict") && sprint.includes("refreshPersistedSyncConflict"), "initial sync refreshes persisted conflict from the current server before offering resolution");
+assert(sprint.includes('staleConflictBox.querySelectorAll("button").forEach((button) => { button.disabled = true; })') && sprint.includes("bevor du eine Version auswählst"), "offline startup disables stale conflict choices until the current cloud version can be checked");
 console.log("Sync client conflicts: offline, restart, server load, failed load, reapply, repeated 409 and write counts verified.");

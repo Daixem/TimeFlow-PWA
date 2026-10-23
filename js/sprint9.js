@@ -180,19 +180,22 @@ document.addEventListener("DOMContentLoaded", () => {
     syncing = true;
     renderStatus("syncing", "Cloud-Daten werden abgeglichen", "TimeFlow vergleicht diesen Browser mit deinem privaten Konto.", "Abgleich");
     try {
+      const cloud = await requestSync("GET");
       const persistedConflict = conflictLogic.restorePersistedSyncConflict(window.TimeFlowPlatform.storage);
-      if (persistedConflict) {
-        showConflict({ data: persistedConflict.serverSnapshot, revision: persistedConflict.serverRevision, updatedAt: persistedConflict.updatedAt });
-        renderStatus("error", "Änderungskonflikt erkannt", "Deine Daten wurden auf einem anderen Gerät geändert. Deine lokale Änderung bleibt erhalten.", "Konflikt");
+      const refreshedConflict = persistedConflict ? conflictLogic.refreshPersistedSyncConflict(window.TimeFlowPlatform.storage, {
+        data: cloud.snapshot || {}, revision: cloud.revision, updatedAt: cloud.updatedAt
+      }) : null;
+      const localMeta = meta();
+      if (hasDifferentLocalAccount()) {
+        const conflict = refreshedConflict || conflictLogic.handleSyncConflict({ storage: window.TimeFlowPlatform.storage, localSnapshot: collectSnapshot(), baseSnapshot: null, response: { data: cloud.snapshot || {}, revision: cloud.revision, updatedAt: cloud.updatedAt } });
+        showConflict({ data: conflict.serverSnapshot, revision: conflict.serverRevision, updatedAt: conflict.updatedAt });
+        renderStatus("error", "Konto-Wechsel prüfen", "Die lokalen Daten gehören möglicherweise zu einem anderen Konto. Wähle, welche Daten für dieses Konto gelten sollen.", "Auswahl nötig");
         markReady();
         return;
       }
-      const cloud = await requestSync("GET");
-      const localMeta = meta();
-      if (hasDifferentLocalAccount()) {
-        const conflict = conflictLogic.handleSyncConflict({ storage: window.TimeFlowPlatform.storage, localSnapshot: collectSnapshot(), baseSnapshot: null, response: { data: cloud.snapshot || {}, revision: cloud.revision, updatedAt: cloud.updatedAt } });
-        showConflict({ data: conflict.serverSnapshot, revision: conflict.serverRevision, updatedAt: conflict.updatedAt });
-        renderStatus("error", "Konto-Wechsel prüfen", "Die lokalen Daten gehören möglicherweise zu einem anderen Konto. Wähle, welche Daten für dieses Konto gelten sollen.", "Auswahl nötig");
+      if (persistedConflict) {
+        showConflict({ data: refreshedConflict.serverSnapshot, revision: refreshedConflict.serverRevision, updatedAt: refreshedConflict.updatedAt });
+        renderStatus("error", "Änderungskonflikt erkannt", "Deine Daten wurden auf einem anderen Gerät geändert. Deine lokale Änderung bleibt erhalten.", "Konflikt");
         markReady();
         return;
       }
@@ -227,6 +230,12 @@ document.addEventListener("DOMContentLoaded", () => {
       renderStatus("synced", "Cloud-Sicherung ist aktuell", "Profil und Einstellungen sind mit deinem privaten Konto verbunden.", "Synchron");
       markReady();
     } catch {
+      const staleConflictBox = card.querySelector("[data-sync-conflict]");
+      if (staleConflictBox) {
+        staleConflictBox.querySelectorAll("button").forEach((button) => { button.disabled = true; });
+        const explanation = staleConflictBox.querySelector("p");
+        if (explanation) explanation.textContent = "Der aktuelle Cloud-Stand konnte nicht geladen werden. Verbinde dich erneut, bevor du eine Version auswählst.";
+      }
       renderStatus("error", "Nur lokal verfügbar", "Die Cloud ist gerade nicht erreichbar; deine Daten bleiben auf diesem Gerät erhalten.", "Offline");
       markReady();
     } finally {
