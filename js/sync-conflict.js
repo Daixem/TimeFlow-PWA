@@ -32,6 +32,14 @@
     const conflict = parse(get(storage, CONFLICT_KEY));
     return conflict?.active && conflict.localSnapshot ? conflict : null;
   }
+  function shouldPromptForStartupConflict({ localSnapshot, baseSnapshot, serverSnapshot, localRevision, serverRevision }) {
+    if (Number(serverRevision || 0) <= Number(localRevision || 0)) return false;
+    const local = localSnapshot && typeof localSnapshot === "object" && !Array.isArray(localSnapshot) ? localSnapshot : {};
+    const server = serverSnapshot && typeof serverSnapshot === "object" && !Array.isArray(serverSnapshot) ? serverSnapshot : {};
+    const base = baseSnapshot && typeof baseSnapshot === "object" && !Array.isArray(baseSnapshot) ? baseSnapshot : null;
+    const localHasChanges = base ? !equal(local, base) : Object.keys(local).length > 0 && !equal(local, server);
+    return localHasChanges && !equal(local, server);
+  }
   function refreshPersistedSyncConflict(storage, response) {
     const existing = restorePersistedSyncConflict(storage);
     if (!existing) return null;
@@ -79,5 +87,5 @@
       return { state: "conflict", conflict: handleSyncConflict({ storage, localSnapshot: conflict.localSnapshot, baseSnapshot: conflict.baseSnapshot, response: error.result || {} }) };
     }
   }
-  root.TimeFlowSyncConflict = { restorePersistedSyncConflict, refreshPersistedSyncConflict, clearSyncConflict, persistSyncConflict, handleSyncConflict, loadServerConflictVersion, reapplyLocalConflictVersion, mergeChangedKeys };
+  root.TimeFlowSyncConflict = { restorePersistedSyncConflict, shouldPromptForStartupConflict, refreshPersistedSyncConflict, clearSyncConflict, persistSyncConflict, handleSyncConflict, loadServerConflictVersion, reapplyLocalConflictVersion, mergeChangedKeys };
 }(globalThis));
