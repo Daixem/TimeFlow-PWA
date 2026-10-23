@@ -213,21 +213,6 @@ document.addEventListener("DOMContentLoaded", () => {
         markReady();
         return;
       }
-      const localSnapshot = collectSnapshot();
-      const knownBaseSnapshot = baseSnapshot();
-      if (conflictLogic.shouldPromptForStartupConflict({
-        localSnapshot,
-        baseSnapshot: knownBaseSnapshot,
-        serverSnapshot: cloud.snapshot,
-        localRevision: localMeta.revision,
-        serverRevision: cloud.revision
-      })) {
-        const conflict = conflictLogic.handleSyncConflict({ storage: window.TimeFlowPlatform.storage, localSnapshot, baseSnapshot: knownBaseSnapshot, response: { data: cloud.snapshot, revision: cloud.revision, updatedAt: cloud.updatedAt } });
-        showConflict({ data: conflict.serverSnapshot, revision: conflict.serverRevision, updatedAt: conflict.updatedAt });
-        renderStatus("error", "Änderungskonflikt erkannt", "Dieses Gerät und die Cloud enthalten unterschiedliche Änderungen. Wähle, welche Daten gelten sollen.", "Auswahl nötig");
-        markReady();
-        return;
-      }
       if (!localMeta.revision || Number(cloud.revision) > Number(localMeta.revision)) {
         applySnapshot(cloud.snapshot);
         saveMeta(cloud.revision, cloud.updatedAt);
