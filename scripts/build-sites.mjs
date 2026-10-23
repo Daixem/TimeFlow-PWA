@@ -337,6 +337,11 @@ async function ensureNotificationTables(database) {
   await database.prepare("CREATE TABLE IF NOT EXISTS timeflow_push_subscriptions (user_id TEXT NOT NULL, endpoint TEXT PRIMARY KEY NOT NULL, p256dh TEXT NOT NULL, auth TEXT NOT NULL, created_at TEXT NOT NULL, updated_at TEXT NOT NULL)").run();
   await database.prepare("CREATE INDEX IF NOT EXISTS idx_timeflow_push_subscriptions_user ON timeflow_push_subscriptions(user_id)").run();
   await database.prepare("CREATE TABLE IF NOT EXISTS timeflow_push_preferences (user_id TEXT PRIMARY KEY NOT NULL, preferences_json TEXT NOT NULL, updated_at TEXT NOT NULL)").run();
+  await database.prepare("CREATE TABLE IF NOT EXISTS timeflow_push_schedule_state (user_id TEXT PRIMARY KEY NOT NULL, revision INTEGER NOT NULL, time_zone TEXT NOT NULL, updated_at TEXT NOT NULL)").run();
+  await database.prepare("CREATE TABLE IF NOT EXISTS timeflow_push_shifts (user_id TEXT NOT NULL, shift_key TEXT NOT NULL, shift_date TEXT NOT NULL, shift_start TEXT NOT NULL, shift_end TEXT NOT NULL, title TEXT NOT NULL, starts_at TEXT NOT NULL, sync_revision INTEGER NOT NULL, updated_at TEXT NOT NULL, PRIMARY KEY (user_id, shift_key))").run();
+  await database.prepare("CREATE INDEX IF NOT EXISTS idx_timeflow_push_shifts_starts_at ON timeflow_push_shifts(starts_at, user_id)").run();
+  await database.prepare("CREATE TABLE IF NOT EXISTS timeflow_push_reminder_deliveries (user_id TEXT NOT NULL, shift_key TEXT NOT NULL, claimed_at TEXT NOT NULL, delivered_at TEXT, status TEXT NOT NULL, PRIMARY KEY (user_id, shift_key))").run();
+  await database.prepare("CREATE TABLE IF NOT EXISTS timeflow_push_release_state (source TEXT PRIMARY KEY NOT NULL, version TEXT NOT NULL, pending_version TEXT, pending_claimed_at TEXT, updated_at TEXT NOT NULL)").run();
 }
 
 async function ensureTeamChatTables(database) {
@@ -392,7 +397,210 @@ async function pushEncrypt(subscription, payload) {
 async function pushVapidToken(endpoint, env) {
   const publicKey = String(env?.TIMEFLOW_VAPID_PUBLIC_KEY || "").trim(); const privateKey = String(env?.TIMEFLOW_VAPID_PRIVATE_KEY || "").trim(); const subject = String(env?.TIMEFLOW_VAPID_SUBJECT || "").trim(); if (!publicKey || !privateKey || !subject) throw new Error("push_not_configured"); const rawPublic = pushBytes(publicKey); if (rawPublic.length !== 65) throw new Error("invalid_vapid_public_key"); const jwk = { kty: "EC", crv: "P-256", x: pushB64(rawPublic.slice(1, 33)), y: pushB64(rawPublic.slice(33, 65)), d: pushB64(pushBytes(privateKey)), ext: true }; const key = await crypto.subtle.importKey("jwk", jwk, { name: "ECDSA", namedCurve: "P-256" }, false, ["sign"]); const header = pushB64(new TextEncoder().encode(JSON.stringify({ typ: "JWT", alg: "ES256" }))); const claims = pushB64(new TextEncoder().encode(JSON.stringify({ aud: new URL(endpoint).origin, exp: Math.floor(Date.now() / 1000) + 12 * 60 * 60, sub: subject }))); const signature = new Uint8Array(await crypto.subtle.sign({ name: "ECDSA", hash: "SHA-256" }, key, new TextEncoder().encode(header + "." + claims))); return header + "." + claims + "." + pushB64(signature);
 }
-async function sendWebPush(subscription, payload, env) { const body = await pushEncrypt(subscription, payload); const token = await pushVapidToken(subscription.endpoint, env); return fetch(subscription.endpoint, { method: "POST", headers: { TTL: "3600", "Content-Type": "application/octet-stream", "Content-Encoding": "aes128gcm", Authorization: "vapid t=" + token + ", k=" + env.TIMEFLOW_VAPID_PUBLIC_KEY }, body }); }
+async function sendWebPush(subscription, payload, env, delivery = {}) { const normalized = { ...subscription, keys: subscription.keys || { p256dh: subscription.p256dh, auth: subscription.auth } }; const body = await pushEncrypt(normalized, payload); const token = await pushVapidToken(subscription.endpoint, env); return fetch(subscription.endpoint, { method: "POST", headers: { TTL: String(delivery.ttl ?? 3600), Urgency: delivery.urgency || "normal", "Content-Type": "application/octet-stream", "Content-Encoding": "aes128gcm", Authorization: "vapid t=" + token + ", k=" + env.TIMEFLOW_VAPID_PUBLIC_KEY }, body }); }
+
+function validPushTimeZone(value) {
+  const timeZone = String(value || "").trim().slice(0, 80);
+  if (!timeZone) return null;
+  try { new Intl.DateTimeFormat("en", { timeZone }).format(new Date()); return timeZone; }
+  catch { return null; }
+}
+
+function pushLocalTimeToEpoch(date, time, timeZone) {
+  const match = /^(\\d{4})-(\\d{2})-(\\d{2})$/.exec(String(date || ""));
+  const clock = /^(\\d{2}):(\\d{2})$/.exec(String(time || ""));
+  if (!match || !clock) return NaN;
+  const target = Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3]), Number(clock[1]), Number(clock[2]));
+  if (!Number.isFinite(target)) return NaN;
+  const formatter = new Intl.DateTimeFormat("en-GB", { timeZone, year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" });
+  let candidate = target;
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const fields = Object.fromEntries(formatter.formatToParts(new Date(candidate)).map((part) => [part.type, part.value]));
+    const observed = Date.UTC(Number(fields.year), Number(fields.month) - 1, Number(fields.day), Number(fields.hour), Number(fields.minute), Number(fields.second));
+    const difference = target - observed;
+    if (!difference) break;
+    candidate += difference;
+  }
+  return candidate;
+}
+
+function normalizePushShifts(value, timeZone, now = Date.now()) {
+  if (!Array.isArray(value)) return [];
+  const shifts = [];
+  for (const entry of value.slice(0, 500)) {
+    const date = String(entry?.date || "");
+    const start = String(entry?.start || "");
+    const end = String(entry?.end || "");
+    if (!/^(\\d{4})-(\\d{2})-(\\d{2})$/.test(date) || !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(start) || !/^([01]\\d|2[0-3]):[0-5]\\d$/.test(end)) continue;
+    const startsAt = pushLocalTimeToEpoch(date, start, timeZone);
+    if (!Number.isFinite(startsAt) || start === end || startsAt < now - 14 * 86400000 || startsAt > now + 370 * 86400000) continue;
+    shifts.push({ shiftKey: date + "_" + start, date, start, end, title: String(entry?.title || "Einsatz").trim().slice(0, 80) || "Einsatz", startsAt: new Date(startsAt).toISOString() });
+  }
+  const byKey = new Map(shifts.map((shift) => [shift.shiftKey, shift]));
+  return [...byKey.values()].sort((left, right) => left.startsAt.localeCompare(right.startsAt)).slice(0, 300);
+}
+
+function pushScheduleChanges(previous, next) {
+  const before = new Map(previous.map((shift) => [shift.shift_date, shift]));
+  const after = new Map(next.map((shift) => [shift.date, shift]));
+  const changed = [];
+  for (const key of new Set([...before.keys(), ...after.keys()])) {
+    const oldShift = before.get(key); const newShift = after.get(key);
+    if (!oldShift || !newShift || oldShift.shift_start !== newShift.start || oldShift.shift_end !== newShift.end || oldShift.title !== newShift.title) {
+      const date = newShift?.date || oldShift?.shift_date || "";
+      changed.push({ date, added: !oldShift, removed: !newShift });
+    }
+  }
+  return changed;
+}
+
+async function sendPushToUser(database, userId, payload, env, delivery) {
+  const rows = await database.prepare("SELECT endpoint, p256dh, auth FROM timeflow_push_subscriptions WHERE user_id = ?").bind(userId).all();
+  let accepted = 0;
+  for (const subscription of rows?.results || []) {
+    try {
+      const response = await sendWebPush(subscription, payload, env, delivery);
+      if (response.ok) accepted += 1;
+      else {
+        if (response.status === 404 || response.status === 410) await database.prepare("DELETE FROM timeflow_push_subscriptions WHERE user_id = ? AND endpoint = ?").bind(userId, subscription.endpoint).run();
+        else console.error(JSON.stringify({ message: "push delivery rejected", status: response.status }));
+      }
+    } catch (_error) { console.error(JSON.stringify({ message: "push delivery failed", reason: String(_error?.message || "unknown").slice(0, 120) })); }
+  }
+  return accepted;
+}
+
+async function synchronizePushSchedule(database, userId, snapshot, revision, timeZone, env) {
+  await ensureNotificationTables(database);
+  const current = await database.prepare("SELECT revision, time_zone FROM timeflow_push_schedule_state WHERE user_id = ?").bind(userId).first();
+  const zone = validPushTimeZone(timeZone) || current?.time_zone;
+  if (!zone) {
+    console.error(JSON.stringify({ event: "push_schedule_sync_skipped", reason: "timezone_missing" }));
+    return;
+  }
+  if (current && Number(current.revision) > revision) return;
+  const timeZoneChanged = Boolean(current && current.time_zone !== zone);
+  if (current && Number(current.revision) === revision && !timeZoneChanged) return;
+  const previousRows = await database.prepare("SELECT shift_key, shift_date, shift_start, shift_end, title FROM timeflow_push_shifts WHERE user_id = ?").bind(userId).all();
+  const shifts = normalizePushShifts(snapshot?.["timeflow-private-schedule-v1"], zone);
+  const now = new Date().toISOString();
+  const statements = [database.prepare("INSERT INTO timeflow_push_schedule_state (user_id, revision, time_zone, updated_at) VALUES (?, ?, ?, ?) ON CONFLICT(user_id) DO UPDATE SET revision = excluded.revision, time_zone = excluded.time_zone, updated_at = excluded.updated_at WHERE excluded.revision > timeflow_push_schedule_state.revision OR (excluded.revision = timeflow_push_schedule_state.revision AND excluded.time_zone != timeflow_push_schedule_state.time_zone)").bind(userId, revision, zone, now)];
+  for (const shift of shifts) statements.push(database.prepare("INSERT INTO timeflow_push_shifts (user_id, shift_key, shift_date, shift_start, shift_end, title, starts_at, sync_revision, updated_at) SELECT ?, ?, ?, ?, ?, ?, ?, ?, ? WHERE (SELECT revision FROM timeflow_push_schedule_state WHERE user_id = ?) = ? ON CONFLICT(user_id, shift_key) DO UPDATE SET shift_date = excluded.shift_date, shift_start = excluded.shift_start, shift_end = excluded.shift_end, title = excluded.title, starts_at = excluded.starts_at, sync_revision = excluded.sync_revision, updated_at = excluded.updated_at WHERE excluded.sync_revision > timeflow_push_shifts.sync_revision OR (excluded.sync_revision = timeflow_push_shifts.sync_revision AND excluded.starts_at != timeflow_push_shifts.starts_at)").bind(userId, shift.shiftKey, shift.date, shift.start, shift.end, shift.title, shift.startsAt, revision, now, userId, revision));
+  statements.push(database.prepare("DELETE FROM timeflow_push_shifts WHERE user_id = ? AND sync_revision < ? AND (SELECT revision FROM timeflow_push_schedule_state WHERE user_id = ?) = ?").bind(userId, revision, userId, revision));
+  await database.batch(statements);
+  const latest = await database.prepare("SELECT revision FROM timeflow_push_schedule_state WHERE user_id = ?").bind(userId).first();
+  if (Number(latest?.revision) !== revision) return;
+  if (!current) return;
+  const changed = pushScheduleChanges(previousRows?.results || [], shifts);
+  if (!changed.length || timeZoneChanged || !env.TIMEFLOW_VAPID_PUBLIC_KEY || !env.TIMEFLOW_VAPID_PRIVATE_KEY || !env.TIMEFLOW_VAPID_SUBJECT) return;
+  const preferenceRow = await database.prepare("SELECT preferences_json FROM timeflow_push_preferences WHERE user_id = ?").bind(userId).first();
+  let preferences = {}; try { preferences = JSON.parse(preferenceRow?.preferences_json || "{}"); } catch { /* default enabled */ }
+  if (preferences.deviceNotifications === false || preferences.scheduleUpdates === false) return;
+  const added = changed.filter((change) => change.added).length;
+  const removed = changed.filter((change) => change.removed).length;
+  const updated = changed.length - added - removed;
+  const parts = [];
+  if (added) parts.push(added + " Einsatz" + (added === 1 ? " hinzugefügt" : "e hinzugefügt"));
+  if (updated) parts.push(updated + " Einsatz" + (updated === 1 ? " geändert" : "e geändert"));
+  if (removed) parts.push(removed + " Einsatz" + (removed === 1 ? " entfernt" : "e entfernt"));
+  await sendPushToUser(database, userId, { title: "Dienstplan aktualisiert", body: parts.join(", ") + ". Öffne TimeFlow für die Einzelheiten.", tag: "timeflow-schedule-update-" + revision, url: "./", data: { action: "schedule" } }, env);
+}
+
+async function runScheduledShiftReminders(env, now = Date.now()) {
+  if (!env?.DB || !env.TIMEFLOW_VAPID_PUBLIC_KEY || !env.TIMEFLOW_VAPID_PRIVATE_KEY || !env.TIMEFLOW_VAPID_SUBJECT) return { due: 0, sent: 0, unavailable: true };
+  const database = env.DB;
+  await ensureNotificationTables(database);
+  const staleClaim = new Date(now - 10 * 60 * 1000).toISOString();
+  await database.prepare("DELETE FROM timeflow_push_reminder_deliveries WHERE status = 'sending' AND claimed_at < ?").bind(staleClaim).run();
+  const from = new Date(now).toISOString(); const to = new Date(now + 30 * 60 * 1000).toISOString();
+  const due = await database.prepare("SELECT shift.user_id, shift.shift_key, shift.shift_date, shift.shift_start, shift.title, shift.starts_at, state.time_zone FROM timeflow_push_shifts AS shift JOIN timeflow_push_schedule_state AS state ON state.user_id = shift.user_id LEFT JOIN timeflow_push_reminder_deliveries AS delivery ON delivery.user_id = shift.user_id AND delivery.shift_key = shift.shift_key AND delivery.status = 'sent' WHERE shift.starts_at >= ? AND shift.starts_at <= ? AND delivery.user_id IS NULL ORDER BY shift.starts_at LIMIT 200").bind(from, to).all();
+  const result = { due: due?.results?.length || 0, sent: 0, skipped: 0, failed: 0 };
+  for (const shift of due?.results || []) {
+    const preferenceRow = await database.prepare("SELECT preferences_json FROM timeflow_push_preferences WHERE user_id = ?").bind(shift.user_id).first();
+    let preferences = {}; try { preferences = JSON.parse(preferenceRow?.preferences_json || "{}"); } catch { /* default enabled */ }
+    if (preferences.deviceNotifications === false || preferences.shiftReminders === false) { result.skipped += 1; continue; }
+    const subscriptions = await database.prepare("SELECT endpoint FROM timeflow_push_subscriptions WHERE user_id = ?").bind(shift.user_id).all();
+    if (!subscriptions?.results?.length) { result.skipped += 1; continue; }
+    const claim = await database.prepare("INSERT OR IGNORE INTO timeflow_push_reminder_deliveries (user_id, shift_key, claimed_at, delivered_at, status) VALUES (?, ?, ?, NULL, 'sending')").bind(shift.user_id, shift.shift_key, new Date(now).toISOString()).run();
+    if ((claim?.meta?.changes || 0) !== 1) { result.skipped += 1; continue; }
+    const date = shift.shift_date.split("-").reverse().join(".");
+    const acceptedAt = new Date(now).toISOString();
+    const minutesUntilStart = Math.round((Date.parse(shift.starts_at) - now) / 60000);
+    console.log(JSON.stringify({ event: "shift_reminder_sending", shiftKey: shift.shift_key, timeZone: shift.time_zone, plannedStartUtc: shift.starts_at, sentAtUtc: acceptedAt, minutesUntilStart }));
+    const accepted = await sendPushToUser(database, shift.user_id, { title: "Dein Dienst beginnt bald", body: "Am " + date + " beginnt dein Einsatz um " + shift.shift_start + " Uhr.", tag: "timeflow-shift-" + shift.shift_key, url: "./", data: { action: "schedule" } }, env, { ttl: 600, urgency: "high" });
+    if (accepted) {
+      await database.prepare("UPDATE timeflow_push_reminder_deliveries SET status = 'sent', delivered_at = ? WHERE user_id = ? AND shift_key = ? AND status = 'sending'").bind(acceptedAt, shift.user_id, shift.shift_key).run();
+      result.sent += 1;
+    } else {
+      await database.prepare("DELETE FROM timeflow_push_reminder_deliveries WHERE user_id = ? AND shift_key = ? AND status = 'sending'").bind(shift.user_id, shift.shift_key).run();
+      result.failed += 1;
+    }
+  }
+  return result;
+}
+
+async function runPublishedReleaseNotice(env, now = Date.now()) {
+  if (!env?.DB || !env.TIMEFLOW_VAPID_PUBLIC_KEY || !env.TIMEFLOW_VAPID_PRIVATE_KEY || !env.TIMEFLOW_VAPID_SUBJECT) return { releaseChecked: false, releaseNoticeSent: 0, releaseUnavailable: true };
+  const database = env.DB;
+  await ensureNotificationTables(database);
+  const versionUrl = new URL("version.json", MAIN_RELEASE_ORIGIN);
+  versionUrl.searchParams.set("timeflow_push_check", String(Math.floor(now / 60000)));
+  let release;
+  try {
+    const response = await fetch(versionUrl, { headers: { Accept: "application/json", "Cache-Control": "no-cache" }, cache: "no-store", redirect: "follow" });
+    if (!response.ok) return { releaseChecked: false, releaseNoticeSent: 0, releaseUnavailable: true };
+    const metadata = await response.json();
+    const version = String(metadata?.commit || "").toLowerCase();
+    if (!/^[a-f0-9]{40}$/.test(version)) return { releaseChecked: false, releaseNoticeSent: 0, releaseUnavailable: true };
+    release = version;
+  } catch {
+    return { releaseChecked: false, releaseNoticeSent: 0, releaseUnavailable: true };
+  }
+
+  const source = "github-pages-main";
+  const state = await database.prepare("SELECT version, pending_version, pending_claimed_at FROM timeflow_push_release_state WHERE source = ?").bind(source).first();
+  const timestamp = new Date(now).toISOString();
+  if (!state) {
+    await database.prepare("INSERT OR IGNORE INTO timeflow_push_release_state (source, version, pending_version, pending_claimed_at, updated_at) VALUES (?, ?, NULL, NULL, ?)").bind(source, release, timestamp).run();
+    return { releaseChecked: true, releaseNoticeSent: 0, releaseBaseline: true };
+  }
+  if (state.version === release && !state.pending_version) return { releaseChecked: true, releaseNoticeSent: 0 };
+
+  const staleClaim = new Date(now - 10 * 60 * 1000).toISOString();
+  if (state.pending_version === release && state.pending_claimed_at && state.pending_claimed_at >= staleClaim) return { releaseChecked: true, releaseNoticeSent: 0, releasePending: true };
+  if (state.pending_version && state.pending_version !== release && state.pending_claimed_at && state.pending_claimed_at >= staleClaim) return { releaseChecked: true, releaseNoticeSent: 0, releasePending: true };
+  const claim = await database.prepare("UPDATE timeflow_push_release_state SET pending_version = ?, pending_claimed_at = ?, updated_at = ? WHERE source = ? AND version = ? AND (pending_version IS NULL OR pending_claimed_at < ?)").bind(release, timestamp, timestamp, source, state.version, staleClaim).run();
+  if ((claim?.meta?.changes || 0) !== 1) return { releaseChecked: true, releaseNoticeSent: 0, releasePending: true };
+
+  const users = await database.prepare("SELECT DISTINCT user_id FROM timeflow_push_subscriptions").bind().all();
+  let attempted = 0;
+  let accepted = 0;
+  for (const item of users?.results || []) {
+    const userId = String(item?.user_id || "");
+    if (!userId) continue;
+    const preferenceRow = await database.prepare("SELECT preferences_json FROM timeflow_push_preferences WHERE user_id = ?").bind(userId).first();
+    let preferences = {}; try { preferences = JSON.parse(preferenceRow?.preferences_json || "{}"); } catch { /* default enabled */ }
+    if (preferences.deviceNotifications === false || preferences.systemAlerts === false) continue;
+    const subscriptions = await database.prepare("SELECT endpoint FROM timeflow_push_subscriptions WHERE user_id = ?").bind(userId).all();
+    const subscriptionCount = subscriptions?.results?.length || 0;
+    if (!subscriptionCount) continue;
+    attempted += subscriptionCount;
+    accepted += await sendPushToUser(database, userId, {
+      title: "TimeFlow wurde aktualisiert",
+      body: "Eine neue Version ist verfügbar. Öffne TimeFlow, damit sie geladen wird.",
+      tag: "timeflow-release-" + release,
+      url: "./",
+      data: { action: "release", version: release }
+    }, env, { ttl: 86400, urgency: "normal" });
+  }
+
+  if (!attempted || accepted > 0) {
+    await database.prepare("UPDATE timeflow_push_release_state SET version = ?, pending_version = NULL, pending_claimed_at = NULL, updated_at = ? WHERE source = ? AND pending_version = ?").bind(release, new Date().toISOString(), source, release).run();
+    return { releaseChecked: true, releaseNoticeSent: accepted, releaseNoticeTargets: attempted };
+  }
+  await database.prepare("UPDATE timeflow_push_release_state SET pending_version = NULL, pending_claimed_at = NULL, updated_at = ? WHERE source = ? AND pending_version = ?").bind(new Date().toISOString(), source, release).run();
+  return { releaseChecked: true, releaseNoticeSent: 0, releaseNoticeTargets: attempted, releaseNoticeRetry: true };
+}
 
 async function betaAccess(user, env) {
   if (!user.authenticated || !env?.DB) return { allowed: false, admin: false };
@@ -590,7 +798,7 @@ async function handlePushPreferences(request, env, url) {
   if (request.headers.get("Origin") !== url.origin) return jsonResponse({ error: "origin_not_allowed" }, 403);
   let body; try { body = await request.json(); } catch { return jsonResponse({ error: "invalid_json" }, 400); }
   const preferences = {};
-  for (const key of ["deviceNotifications", "chatAlerts", "shiftReminders", "forgottenClockOut", "approvalAlerts", "systemAlerts"]) {
+  for (const key of ["deviceNotifications", "chatAlerts", "shiftReminders", "scheduleUpdates", "forgottenClockOut", "approvalAlerts", "systemAlerts"]) {
     if (typeof body?.preferences?.[key] === "boolean") preferences[key] = body.preferences[key];
   }
   const updatedAt = new Date().toISOString();
@@ -644,14 +852,18 @@ async function handlePushTest(request, env) {
   const rows = await env.DB.prepare("SELECT endpoint, p256dh, auth FROM timeflow_push_subscriptions WHERE user_id = ?").bind(user.id).all();
   const subscriptions = rows?.results || [];
   let sent = 0;
+  let failed = 0;
   for (const subscription of subscriptions) {
     try {
       const response = await sendWebPush(subscription, { title: "TimeFlow ist bereit", body: "Externe Benachrichtigungen funktionieren auf diesem Gerät.", tag: "timeflow-test", url: "./" }, env);
       if (response.ok) sent += 1;
-      else if (response.status === 404 || response.status === 410) await env.DB.prepare("DELETE FROM timeflow_push_subscriptions WHERE user_id = ? AND endpoint = ?").bind(user.id, subscription.endpoint).run();
-    } catch (_error) { /* one invalid device must not block other subscriptions */ }
+      else {
+        failed += 1;
+        if (response.status === 404 || response.status === 410) await env.DB.prepare("DELETE FROM timeflow_push_subscriptions WHERE user_id = ? AND endpoint = ?").bind(user.id, subscription.endpoint).run();
+      }
+    } catch (_error) { failed += 1; /* one invalid device must not block other subscriptions */ }
   }
-  return jsonResponse({ sent, registered: subscriptions.length });
+  return jsonResponse({ sent, registered: subscriptions.length, failed, status: sent ? "accepted" : subscriptions.length ? "failed" : "no_subscriptions" }, sent || !subscriptions.length ? 200 : 502);
 }
 
 async function handleAccountData(request, env, url) {
@@ -696,6 +908,10 @@ async function handleAccountData(request, env, url) {
   for (const ticket of tickets?.results || []) await env.DB.prepare("DELETE FROM timeflow_support_messages WHERE ticket_id = ?").bind(ticket.id).run();
   await env.DB.prepare("DELETE FROM timeflow_support_tickets WHERE user_id = ?").bind(user.id).run();
   await env.DB.prepare("DELETE FROM timeflow_user_sync WHERE user_id = ?").bind(user.id).run();
+  await ensureNotificationTables(env.DB);
+  await env.DB.prepare("DELETE FROM timeflow_push_reminder_deliveries WHERE user_id = ?").bind(user.id).run();
+  await env.DB.prepare("DELETE FROM timeflow_push_shifts WHERE user_id = ?").bind(user.id).run();
+  await env.DB.prepare("DELETE FROM timeflow_push_schedule_state WHERE user_id = ?").bind(user.id).run();
   await env.DB.prepare("DELETE FROM timeflow_organization_members WHERE user_id = ?").bind(user.id).run();
   return jsonResponse({ deleted: true, privateWorkTimeDeletion });
 }
@@ -1038,7 +1254,7 @@ async function handleWorkTimeSessions(request, env, url) {
   return jsonResponse({ sessions: rows?.results || [], context: workTimeContext(target) });
 }
 
-async function handleSync(request, env, url) {
+async function handleSync(request, env, url, ctx) {
   const user = authenticatedUser(request);
   if (!user.authenticated || !user.id) return jsonResponse({ error: "authentication_required" }, 401);
   if (!(await betaAccess(user, env)).allowed) return jsonResponse({ error: "beta_access_required" }, 403);
@@ -1050,7 +1266,10 @@ async function handleSync(request, env, url) {
     const row = await env.DB.prepare("SELECT payload_json, revision, updated_at FROM timeflow_user_sync WHERE user_id = ?").bind(user.id).first();
     if (!row) return jsonResponse({ snapshot: null, revision: 0, updatedAt: null });
     try {
-      return jsonResponse({ snapshot: validatedSnapshot(JSON.parse(row.payload_json), serverWorkTimeEnabled) || {}, revision: row.revision, updatedAt: row.updated_at });
+      const snapshot = validatedSnapshot(JSON.parse(row.payload_json), serverWorkTimeEnabled) || {};
+        const syncSchedule = synchronizePushSchedule(env.DB, user.id, snapshot, Number(row.revision), request.headers.get("X-TimeFlow-Time-Zone"), env).catch(() => console.error(JSON.stringify({ message: "push schedule sync failed" })));
+      if (ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(syncSchedule); else await syncSchedule;
+      return jsonResponse({ snapshot, revision: row.revision, updatedAt: row.updated_at });
     } catch {
       return jsonResponse({ error: "stored_data_invalid" }, 500);
     }
@@ -1073,10 +1292,19 @@ async function handleSync(request, env, url) {
     const updatedAt = new Date().toISOString();
     if (expectedRevision === 0) {
       const created = await env.DB.prepare("INSERT INTO timeflow_user_sync (user_id, payload_json, revision, updated_at) VALUES (?, ?, 1, ?) ON CONFLICT(user_id) DO NOTHING").bind(user.id, payloadJson, updatedAt).run();
-      if ((created?.meta?.changes || 0) === 1) return jsonResponse({ saved: true, revision: 1, updatedAt });
+      if ((created?.meta?.changes || 0) === 1) {
+        const syncSchedule = synchronizePushSchedule(env.DB, user.id, snapshot, 1, body?.timeZone || request.headers.get("X-TimeFlow-Time-Zone"), env).catch(() => console.error(JSON.stringify({ message: "push schedule sync failed" })));
+        if (ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(syncSchedule); else await syncSchedule;
+        return jsonResponse({ saved: true, revision: 1, updatedAt });
+      }
     }
+    const previous = await env.DB.prepare("SELECT payload_json FROM timeflow_user_sync WHERE user_id = ? AND revision = ?").bind(user.id, expectedRevision).first();
     const updated = await env.DB.prepare("UPDATE timeflow_user_sync SET payload_json = ?, revision = revision + 1, updated_at = ? WHERE user_id = ? AND revision = ?").bind(payloadJson, updatedAt, user.id, expectedRevision).run();
-    if ((updated?.meta?.changes || 0) === 1) return jsonResponse({ saved: true, revision: expectedRevision + 1, updatedAt });
+    if ((updated?.meta?.changes || 0) === 1) {
+      const syncSchedule = synchronizePushSchedule(env.DB, user.id, snapshot, expectedRevision + 1, body?.timeZone || request.headers.get("X-TimeFlow-Time-Zone"), env).catch(() => console.error(JSON.stringify({ message: "push schedule sync failed" })));
+      if (ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(syncSchedule); else await syncSchedule;
+      return jsonResponse({ saved: true, revision: expectedRevision + 1, updatedAt });
+    }
     const current = await env.DB.prepare("SELECT payload_json, revision, updated_at FROM timeflow_user_sync WHERE user_id = ?").bind(user.id).first();
     let data = null; try { data = current ? (validatedSnapshot(JSON.parse(current.payload_json), serverWorkTimeEnabled) || {}) : null; } catch {}
     return jsonResponse({ error: "sync_conflict", revision: current?.revision || 0, data, updatedAt: current?.updated_at || null }, 409);
@@ -1085,15 +1313,32 @@ async function handleSync(request, env, url) {
   return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "GET, PUT" });
 }
 
+async function handleScheduledPush(request, env) {
+  if (request.method !== "POST") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "POST" });
+  const token = String(env?.TIMEFLOW_PUSH_CRON_TOKEN || "");
+  if (!token || request.headers.get("Authorization") !== "Bearer " + token) return jsonResponse({ error: "authentication_required" }, 401);
+  if (!env?.DB) return jsonResponse({ error: "storage_unavailable" }, 503);
+  const now = Date.now();
+  const result = await runScheduledShiftReminders(env, now);
+  const releaseResult = await runPublishedReleaseNotice(env, now);
+  return jsonResponse({ accepted: true, ...result, ...releaseResult });
+}
+
 export default {
+  async scheduled(controller, env, ctx) {
+    const run = runScheduledShiftReminders(env, Number(controller?.scheduledTime || Date.now()));
+    if (ctx && typeof ctx.waitUntil === "function") ctx.waitUntil(run);
+    else await run;
+  },
   async fetch(request, env, ctx) {
-    request = await withCloudflareAccessIdentity(request, env, ctx);
     const url = new URL(request.url);
+    if (url.pathname === "/api/internal/push-reminders") return handleScheduledPush(request, env);
+    request = await withCloudflareAccessIdentity(request, env, ctx);
     if (url.pathname === "/api/session") {
       const user = authenticatedUser(request);
       return jsonResponse({ authenticated: user.authenticated, user: user.authenticated ? { id: user.id, email: user.email, name: user.name } : null });
     }
-    if (url.pathname === "/api/sync") return handleSync(request, env, url);
+    if (url.pathname === "/api/sync") return handleSync(request, env, url, ctx);
     if (url.pathname === "/api/work-time") return handleWorkTime(request, env, url);
     if (url.pathname === "/api/work-time/sessions") return handleWorkTimeSessions(request, env, url);
     if (url.pathname === "/api/work-time/journal") return handleWorkTimeJournal(request, env, url);

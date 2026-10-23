@@ -86,9 +86,9 @@ document.addEventListener("DOMContentLoaded", () => {
   function notificationPreferences() {
     try {
       const stored = JSON.parse(window.TimeFlowPlatform.storage.getItem(SETTINGS_KEY));
-      return { deviceNotifications: true, shiftReminders: true, forgottenClockOut: true, chatAlerts: true, approvalAlerts: true, systemAlerts: true, ...(stored && typeof stored === "object" ? stored : {}) };
+      return { deviceNotifications: true, shiftReminders: true, scheduleUpdates: true, forgottenClockOut: true, chatAlerts: true, approvalAlerts: true, systemAlerts: true, ...(stored && typeof stored === "object" ? stored : {}) };
     } catch {
-      return { deviceNotifications: true, shiftReminders: true, forgottenClockOut: true, chatAlerts: true, approvalAlerts: true, systemAlerts: true };
+      return { deviceNotifications: true, shiftReminders: true, scheduleUpdates: true, forgottenClockOut: true, chatAlerts: true, approvalAlerts: true, systemAlerts: true };
     }
   }
 
@@ -382,13 +382,21 @@ document.addEventListener("DOMContentLoaded", () => {
       else if (responseStatus === 403) detail = "Der Server hat den Test für dieses Konto abgelehnt.";
       else if (responseStatus === 503) detail = "Der Push-Dienst ist derzeit nicht verfügbar.";
       else detail = "Der Server konnte den Test nicht verarbeiten.";
-    } else if (result.registered > 0) detail = "Der Server hat keine Testnachricht angenommen.";
-    else detail = "Für dieses Konto wurde kein Push-Gerät gefunden.";
+    } else detail = result.registered > 0
+      ? "Der Server hat keine Testnachricht angenommen."
+      : "Für dieses Konto wurde kein Push-Gerät gefunden.";
     addEntry({ type: "warning", title: "Push-Test nicht bestätigt", body: `${detail}${localShown ? " Ein lokaler Hinweis wurde zusätzlich angezeigt." : ""}`, device: false });
     toast(localShown ? `${detail} Es wurde nur ein lokaler Hinweis angezeigt.` : detail);
   }
 
   function openCenter() {
+    const oneTimeNotices = entries.filter((entry) => entry.dismissAfterOpen);
+    if (oneTimeNotices.length) {
+      rememberRead(oneTimeNotices.map((entry) => entry.id));
+      const oneTimeIds = new Set(oneTimeNotices.map((entry) => entry.id));
+      entries = entries.filter((entry) => !oneTimeIds.has(entry.id));
+      saveEntries();
+    }
     renderEntries();
     renderPermission();
     window.TimeFlowPlatform.dialog.open(center);

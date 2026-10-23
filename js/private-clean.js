@@ -4,7 +4,19 @@
   const read = (key, fallback) => { try { const value = JSON.parse(platform().storage.getItem(key)); return value ?? fallback; } catch (_error) { return fallback; } };
   const isBeta = () => /\.chatgpt\.site$/i.test(location.hostname);
   const buildId = (() => { try { return new URL(document.currentScript?.src || location.href).searchParams.get("v"); } catch { return null; } })();
-  const updateNewsEntry = (build, notes = {}) => !build ? null : { id: `timeflow-update-${build}`, type: "system", category: "system", title: String(notes.title || "TimeFlow wurde aktualisiert"), body: String(notes.summary || "Ein neues Update wurde erfolgreich installiert."), details: Array.isArray(notes.changes) ? notes.changes : [], createdAt: new Date().toISOString(), read: false, action: "" };
+  const updateNewsEntry = (build, notes = {}) => {
+    if (!build) return null;
+    const title = String(notes.title || "TimeFlow wurde aktualisiert");
+    const summary = String(notes.summary || "Ein neues Update wurde erfolgreich installiert.");
+    const changes = Array.isArray(notes.changes) ? notes.changes : [];
+    // Tie the notice to its actual contents, not to the app build timestamp.
+    // Otherwise every deployment recreates the same update notice as unread.
+    const releaseContent = JSON.stringify([title, summary, changes]);
+    let fingerprint = 2166136261;
+    for (let index = 0; index < releaseContent.length; index += 1) fingerprint = Math.imul(fingerprint ^ releaseContent.charCodeAt(index), 16777619);
+    const releaseId = (fingerprint >>> 0).toString(36);
+    return { id: `timeflow-update-${releaseId}`, type: "system", category: "system", title, body: summary, details: changes, createdAt: new Date().toISOString(), read: false, dismissAfterOpen: notes.dismissAfterOpen === true, action: "" };
+  };
   const isPrivate = () => document.documentElement.classList.contains("timeflow-private-mode") || document.body.dataset.appMode === "private";
   const currentWorkday = () => read(window.TimeFlowWorkTimeSnapshotAuthority?.() !== false ? "timeflow-work-time-current-v1" : "timeflow-workday-v2", null);
   const schedule = () => { const value = read("timeflow-private-schedule-v1", []); return Array.isArray(value) ? value.sort((a, b) => `${a.date}${a.start}`.localeCompare(`${b.date}${b.start}`)) : []; };
@@ -51,7 +63,7 @@
   function buildNotifications() {
     if (!isPrivate()) return;
     const result = []; const now = new Date(); const shifts = schedule(); const next = shifts.find((entry) => working(entry) && new Date(`${entry.date}T${entry.start}:00`) > now); const workday = currentWorkday();
-    const updateNews = window.TimeFlowUpdateNews?.entry?.(); if (updateNews) result.push(updateNews);
+    const updateNews = window.TimeFlowUpdateNews?.entry?.(); if (updateNews && (!updateNews.dismissAfterOpen || window.TimeFlowUpdateNews.isUnread?.())) result.push(updateNews);
     if (next) { const start = new Date(`${next.date}T${next.start}:00`); const hours = (start - now) / 3600000; if (hours <= 48) result.push({ id: `private-next-${next.date}-${next.start}`, type: "schedule", category: "schedule", title: "Geplanter Einsatz", body: `${dateText(next.date)} · ${next.start} – ${next.end} Uhr`, createdAt: new Date().toISOString(), read: false, action: "schedule" }); }
     const lastImport = read("timeflow-private-last-import-v1", null); if (lastImport?.at && Date.now() - new Date(lastImport.at).getTime() < 86400000) result.push({ id: `private-import-${lastImport.at}`, type: "success", category: "schedule", title: "Dienstplan übernommen", body: `${Number(lastImport.added || 0)} Tage ergänzt${lastImport.updated ? `, ${lastImport.updated} aktualisiert` : ""}.`, details: Array.isArray(lastImport.changes) ? lastImport.changes : [], createdAt: lastImport.at, read: false, action: "schedule" });
     if (workday?.isWorking && workday.workStart) { const hours = (Date.now() - new Date(workday.workStart).getTime()) / 3600000; if (hours >= 10) result.push({ id: "private-long-workday", type: "system", category: "worktime", title: "Ausstempeln prüfen", body: `Deine laufende Arbeitszeit beträgt bereits mehr als ${Math.floor(hours)} Stunden.`, createdAt: new Date().toISOString(), read: false, action: "" }); }

@@ -1,6 +1,7 @@
 {
   "title": "Benachrichtigungen mit mehr Details",
   "summary": "Du kannst Mitteilungen jetzt vollständig öffnen und Änderungen direkt nachvollziehen.",
+  "dismissAfterOpen": true,
   "changes": [
     "Ein Klick auf eine Mitteilung öffnet den vollständigen Text in einer eigenen Detailansicht.",
     "Nach dem Dienstplanimport siehst du, welcher Tag neu eingetragen oder geändert wurde – mit Schichtname und Uhrzeit.",

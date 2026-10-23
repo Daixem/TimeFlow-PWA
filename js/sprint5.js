@@ -24,6 +24,7 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="settings-list">
             <label class="settings-toggle"><span><strong>Benachrichtigungen auf dem Gerät</strong><small>Schaltet externe Hinweise vollständig ein oder aus</small></span><input type="checkbox" data-setting="deviceNotifications"><i aria-hidden="true"></i></label>
             <label class="settings-toggle"><span><strong>Dienstplan-Erinnerungen</strong><small>Vor Beginn deiner nächsten Schicht</small></span><input type="checkbox" data-setting="shiftReminders"><i aria-hidden="true"></i></label>
+            <label class="settings-toggle"><span><strong>Dienstplanänderungen</strong><small>Wenn ein Einsatz neu eingetragen, geändert oder entfernt wird</small></span><input type="checkbox" data-setting="scheduleUpdates"><i aria-hidden="true"></i></label>
             <label class="settings-toggle"><span><strong>Ausstempeln-Erinnerung</strong><small>Warnt bei ungewöhnlich langer oder überzogener Stempelung</small></span><input type="checkbox" data-setting="forgottenClockOut"><i aria-hidden="true"></i></label>
             <label class="settings-toggle"><span><strong>Chat-Nachrichten</strong><small>Neue Nachrichten aus deinem Team</small></span><input type="checkbox" data-setting="chatAlerts"><i aria-hidden="true"></i></label>
             <label class="settings-toggle"><span><strong>Freigaben und Anträge</strong><small>Statusänderungen direkt anzeigen</small></span><input type="checkbox" data-setting="approvalAlerts"><i aria-hidden="true"></i></label>
@@ -84,6 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const defaults = {
     deviceNotifications: true,
     shiftReminders: true,
+    scheduleUpdates: true,
     forgottenClockOut: true,
     chatAlerts: true,
     approvalAlerts: true,

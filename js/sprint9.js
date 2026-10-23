@@ -135,11 +135,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   async function requestSync(method, body) {
+    const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC";
     const response = await fetch(new URL("api/sync", document.baseURI), {
       method,
       cache: "no-store",
-      headers: body ? { "Content-Type": "application/json", Accept: "application/json" } : { Accept: "application/json" },
-      body: body ? JSON.stringify(body) : undefined
+      headers: body ? { "Content-Type": "application/json", Accept: "application/json", "X-TimeFlow-Time-Zone": timeZone } : { Accept: "application/json", "X-TimeFlow-Time-Zone": timeZone },
+      body: body ? JSON.stringify({ ...body, timeZone }) : undefined
     });
     const result = await response.json().catch(() => ({}));
     if (!response.ok) { const error = new Error(result.error || `sync_${response.status}`); error.status = response.status; error.result = result; throw error; }

@@ -75,10 +75,10 @@ await expect(await request("/api/team-chat", "member-a", { method: "PUT", header
 const readBack = await expect(await request("/api/team-chat", "member-a"), 200);
 if (readBack.unread !== 0) throw new Error("Read receipt did not clear the unread count.");
 
-const savedPreferences = await expect(await request("/api/notifications/push-preferences", "member-a", { method: "PUT", headers: { Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ preferences: { deviceNotifications: true, chatAlerts: false, unexpected: true } }) }), 200);
-if (!savedPreferences.saved || savedPreferences.preferences.chatAlerts !== false || "unexpected" in savedPreferences.preferences) throw new Error("Push preferences were not safely normalized.");
+const savedPreferences = await expect(await request("/api/notifications/push-preferences", "member-a", { method: "PUT", headers: { Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ preferences: { deviceNotifications: true, chatAlerts: false, scheduleUpdates: false, unexpected: true } }) }), 200);
+if (!savedPreferences.saved || savedPreferences.preferences.chatAlerts !== false || savedPreferences.preferences.scheduleUpdates !== false || "unexpected" in savedPreferences.preferences) throw new Error("Push preferences were not safely normalized.");
 const loadedPreferences = await expect(await request("/api/notifications/push-preferences", "member-a"), 200);
-if (loadedPreferences.preferences.chatAlerts !== false) throw new Error("Push preferences did not persist.");
+if (loadedPreferences.preferences.chatAlerts !== false || loadedPreferences.preferences.scheduleUpdates !== false) throw new Error("Push preferences did not persist.");
 
 await expect(await request("/api/notifications/push-subscription", "member-a", { method: "POST", headers: { Origin: "https://timeflow.test", "Content-Type": "application/json" }, body: JSON.stringify({ endpoint: "https://example.test/attacker", keys: { p256dh: "x", auth: "y" } }) }), 400, "valid_endpoint_required");
 await Promise.all(pendingBackground);
