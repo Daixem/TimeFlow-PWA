@@ -43,7 +43,7 @@ try {
   await flush();
   if (database.scheduleState.get(userId)?.time_zone !== "Europe/Berlin") throw new Error("A timezone change on read did not repair the saved schedule timezone.");
   const corrected = database.shifts.get(userId + ":" + first.date + "_" + first.start);
-  const expectedStart = Date.parse(first.date + "T" + first.start + ":00+02:00");
+  const expectedStart = expectedEpochForLocalTime(first.date, first.start, "Europe/Berlin");
   if (Date.parse(corrected?.starts_at) !== expectedStart) throw new Error("The existing schedule was not recalculated using the corrected timezone.");
   if (database.shifts.has(userId + ":" + emptyDay.date + "_00:00")) throw new Error("An empty 00:00–00:00 day was treated as a shift.");
   await flush();
@@ -79,6 +79,12 @@ try {
 }
 
 function b64(bytes) { return Buffer.from(bytes).toString("base64url"); }
+function expectedEpochForLocalTime(date, time, timeZone) {
+  const utcGuess = Date.parse(`${date}T${time}:00Z`);
+  const parts = new Intl.DateTimeFormat("en", { timeZone, timeZoneName: "longOffset" }).formatToParts(new Date(utcGuess));
+  const offset = parts.find((part) => part.type === "timeZoneName")?.value?.replace("GMT", "") || "+00:00";
+  return Date.parse(`${date}T${time}:00${offset}`);
+}
 function shiftAt(timestamp) {
   const date = new Date(timestamp);
   const end = new Date(timestamp + 8 * 60 * 60 * 1000);
