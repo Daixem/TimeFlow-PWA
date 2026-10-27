@@ -1,4 +1,8 @@
-# Einheitlicher Release-Workflow
+# Veröffentlichungsweg und aktueller Stand
+
+Den belegten Stand der einzelnen Veröffentlichungen beschreibt
+[Status-2026-10-27.md](Status-2026-10-27.md). Dieser Text beschreibt den
+tatsächlich eingerichteten Ablauf und keine geplante Zielarchitektur.
 
 ## Verbindliche Quelle
 
@@ -14,13 +18,9 @@ frischen `_site`-Build und veröffentlicht ausschließlich dieses Artefakt. Die
 Concurrency-Gruppe bricht einen älteren laufenden Deployment-Lauf ab, wenn ein
 neuerer `main`-Commit eintrifft.
 
-**Einmalige Repository-Einstellung:** In GitHub unter **Settings → Pages →
-Build and deployment → Source** muss **GitHub Actions** ausgewählt sein. Bei
-der Bestandsaufnahme lieferte die öffentliche Pages-URL trotz eines erfolgreichen
-Actions-Laufs noch den Repository-Quellordner (einschließlich
-`__TIMEFLOW_BUILD__`) aus; `version.json` war dort nicht vorhanden. Diese
-Einstellung liegt außerhalb des Repositories und kann nicht sicher durch Code
-oder einen erfundenen API-Hook ersetzt werden.
+Der GitHub-Pages-Workflow ist für `main` aktiv. Der jüngste geprüfte Lauf war
+für den aktuellen `main`-Commit erfolgreich. Ein erfolgreicher Pages-Lauf
+bestätigt nur die statische PWA, nicht die Sites-App oder deren Serverfunktionen.
 
 `scripts/build-metadata.mjs` bildet die einheitliche Versionsinformation. Ein
 offizieller Release-Build bricht ab, wenn `git status --porcelain` Änderungen
@@ -32,21 +32,28 @@ lokale Entwicklungsprüfungen steht `npm run build:dev` zur Verfügung;
 unersetzten Build-Platzhaltern, fehlenden referenzierten Dateien, ungültigem
 Manifest oder fehlender Service-Worker-Versionierung.
 
-## Ein Release für öffentliche PWA und Beta
+## Was `main` derzeit veröffentlicht
 
-Ein Merge nach `main` veröffentlicht die öffentliche PWA und aktualisiert
-zugleich die App-Dateien, die der Beta-Worker aus GitHub Pages weiterreicht.
-Dadurch gibt es für normale App-Änderungen nur einen Release-Schritt; eine
-separate Beta-Veröffentlichung ist dafür nicht nötig. Die spätere offizielle
-PWA sollte ebenfalls aus diesem `main`-Stand veröffentlicht werden.
+Ein Push nach `main` veröffentlicht die statische PWA über GitHub Pages. Die
+Sites-Veröffentlichung und ihre Serverfunktionen werden dabei nicht automatisch
+aktualisiert. Der derzeit aktive Sites-Stand ist älter als `main`.
 
-Das bestehende Hosting-Projekt aus `.openai/hosting.json` behält Anmeldung,
-Einladungen, API und D1. Änderungen an diesem Worker oder seinen Einstellungen
-brauchen weiterhin eine Veröffentlichung des Hosting-Projekts. Dafür gibt es
-noch keine unterstützte automatische Verbindung zu GitHub Actions. Wir lösen
-diese Ausnahme erst, wenn die Hosting-Plattform einen dafür geeigneten
-automatischen Veröffentlichungsweg bereitstellt; Zugangsdaten oder eine
-unbestätigte Schnittstelle werden nicht in GitHub eingerichtet.
+Das Sites-Projekt stellt Anmeldung, Einladungen, API und eine verwaltete
+Datenbank bereit. Seine Veröffentlichung ist derzeit ein eigener Schritt.
+Cloudflare Pre-Prod ist ein geschützter Testserver mit einer Test-Datenbank und
+ist keine Produktionsveröffentlichung. Es gibt aktuell keinen nachgewiesenen
+automatischen Weg, der aus einem `main`-Push sowohl die öffentliche PWA als
+auch sämtliche Serverfunktionen aktualisiert.
+
+## Ziel und Sicherheitsgrenze
+
+Der gewünschte Zielzustand ist eine gemeinsame Quelle in `main`, aus der die
+öffentliche PWA und Serverfunktionen kontrolliert veröffentlicht werden.
+Dieser Ablauf ist noch nicht eingerichtet. Zugangsdaten, Schlüssel und
+Nutzerdaten gehören in die jeweiligen geschützten Cloudflare-Einstellungen
+oder Datenbanken, nie in GitHub. Vor Änderungen an Produktionsdaten sind ein
+aktueller Export, ein getesteter Wiederherstellungsweg und ein Rückfallplan
+erforderlich.
 
 ## PWA-Updates
 

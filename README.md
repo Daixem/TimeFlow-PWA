@@ -12,19 +12,19 @@ veröffentlicht. `main` ist die einzige verbindliche Quell- und Release-Version.
 Feature- und Cloud-Arbeitsbranches werden erst nach einem Merge nach `main`
 veröffentlicht.
 
-### Geschützte Private Beta
+### TimeFlow Connect und Beta-Zugang
 
-`timeflow-connect.daixem.chatgpt.site` ist der einzige Beta-Zugang. Das in
-[`.openai/hosting.json`](.openai/hosting.json) gebundene bestehende
-Hosting-Projekt übernimmt Anmeldung, Beta-Freigaben, API und D1-Daten. Seine
-statischen App-Dateien beziehen sich aus dem GitHub-Pages-Release von `main`.
+`timeflow-connect.daixem.chatgpt.site` stellt zusätzlich die Anmeldung,
+Einladungen, API und eine verwaltete Datenbank bereit. Die App verlangt dort
+weiterhin die Plattform-Anmeldung und eine Beta-Freigabe. Der Sites-Stand ist
+derzeit älter als `main`; er wird durch den GitHub-Pages-Workflow nicht
+automatisch aktualisiert.
 
-Der normale Veröffentlichungsweg ist immer derselbe: Änderungen nach `main`
-übernehmen. GitHub veröffentlicht daraus die öffentliche PWA; der Beta-Worker
-zeigt automatisch dieselben App-Dateien an. Damit erhalten öffentliche PWA und
-Beta-Ansicht denselben App-Stand. Nur Änderungen an Anmeldung, API, D1 oder
-anderen Worker-Einstellungen brauchen zusätzlich die Veröffentlichung des
-bestehenden Hosting-Projekts.
+Der Push nach `main` veröffentlicht die statische PWA über GitHub Pages.
+Serveränderungen am Sites-Projekt und Cloudflare-Worker benötigen derzeit eine
+separate Veröffentlichung. Die Veröffentlichungswege sind noch nicht
+zusammengeführt. Den überprüften Stand und die offenen Abweichungen beschreibt
+[der aktuelle Gesamtstand](docs/Status-2026-10-27.md).
 
 Jeder Produktions-Build erzeugt `_site/version.json` mit vollem Commit-SHA,
 eindeutiger Build-ID und UTC-Buildzeit. Der Build stoppt, wenn `GITHUB_SHA`
