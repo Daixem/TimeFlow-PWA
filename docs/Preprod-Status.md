@@ -3,7 +3,7 @@
 > Historischer Testbericht aus Oktober 2026. Frühere Fassungen enthielten
 > ausführliche Infrastrukturkennungen und kontobezogene Testzustände. Hier
 > bleibt nur die Zusammenfassung der damaligen Testbefunde; aktuelle Angaben
-> stehen in [Status-2026-10-27.md](Status-2026-10-27.md).
+> stehen in [Status-2026-10-30.md](Status-2026-10-30.md).
 
 Damals wurden auf einer getrennten Testdatenbank unter anderem Anmeldung,
 Teamzugriffe, Zeiterfassung, Offline-Abgleich und Löschregeln geprüft. Die

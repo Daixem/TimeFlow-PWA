@@ -1,7 +1,7 @@
 # Veröffentlichungsweg und aktueller Stand
 
 Den belegten Stand der einzelnen Veröffentlichungen beschreibt
-[Status-2026-10-27.md](Status-2026-10-27.md). Dieser Text beschreibt den
+[Status-2026-10-30.md](Status-2026-10-30.md). Dieser Text beschreibt den
 tatsächlich eingerichteten Ablauf und keine geplante Zielarchitektur.
 
 ## Verbindliche Quelle

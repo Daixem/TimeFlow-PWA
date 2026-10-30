@@ -24,7 +24,7 @@ Der Push nach `main` veröffentlicht die statische PWA über GitHub Pages.
 Serveränderungen am Sites-Projekt und Cloudflare-Worker benötigen derzeit eine
 separate Veröffentlichung. Die Veröffentlichungswege sind noch nicht
 zusammengeführt. Den überprüften Stand und die offenen Abweichungen beschreibt
-[der aktuelle Gesamtstand](docs/Status-2026-10-27.md).
+[der aktuelle Gesamtstand](docs/Status-2026-10-30.md).
 
 Jeder Produktions-Build erzeugt `_site/version.json` mit vollem Commit-SHA,
 eindeutiger Build-ID und UTC-Buildzeit. Der Build stoppt, wenn `GITHUB_SHA`
