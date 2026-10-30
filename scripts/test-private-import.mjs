@@ -27,6 +27,7 @@ if (code.includes(".heic,.heif")) throw new Error("Die Dateiauswahl darf HEIC/HE
 for (const stage of ["Texterkennung wird geladen …", "OCR-Worker wird erstellt …", "Erkannte Daten werden geprüft …", "OCR_MODULE_TIMEOUT_MS"]) {
   if (!code.includes(stage)) throw new Error(`Bildimport meldet die OCR-Stufe nicht sichtbar: ${stage}`);
 }
+if (!code.includes("parseLayout({ blocks: result.data.blocks || [] }, canvas.width)")) throw new Error("Bildlayout darf OCR-Boxen aus dem zugeschnittenen Wochenanfang nicht mit den Koordinaten des Gesamtbilds vermischen.");
 if (!importApi.validEntry({ date: "2026-09-01", start: "08:00", end: "16:00", title: "Arbeit" }) || importApi.validEntry({ date: "", start: "08:00", end: "16:00", title: "Arbeit" }) || importApi.validEntry({ date: "2026-09-01", start: "29:99", end: "16:00", title: "Arbeit" })) throw new Error("Importvorschau validiert vollständige Schichten nicht korrekt.");
 for (const file of [{ name: "plan.heic", type: "image/heic", size: 1 }, { name: "plan.docx", type: "application/vnd.openxmlformats-officedocument.wordprocessingml.document", size: 1 }, { name: "large.png", type: "image/png", size: 26 * 1024 * 1024 }]) {
   try { importApi.validateImportFile(file); throw new Error(`${file.name} wurde nicht abgelehnt.`); } catch (error) { if (!error.importMessage) throw error; }
@@ -67,6 +68,37 @@ const screenshotLike = { blocks: [{ paragraphs: [{ lines: [
 ].map((line) => ({ ...line, words: line.words.map((item) => ({ ...item, bbox: { ...item.bbox, y1: item.bbox.y1 + 5 } })) })) }] }] };
 const screenshotResult = layout(screenshotLike, 600);
 if (screenshotResult.length !== 7 || screenshotResult[0].date.slice(5) !== "10-05" || screenshotResult[0].start !== "14:00" || screenshotResult[0].end !== "22:00" || screenshotResult[1].title !== "Frei" || screenshotResult[2].title !== "Spätschicht" || screenshotResult[6].date.slice(5) !== "10-11") throw new Error("Screenshot-Import: fehlende Wochentagslabels, leere Tage, getrennte Zeit-Ziffern oder Schichtname wurden nicht robust erkannt.");
+storage.setItem("timeflow-profile-v1", JSON.stringify({ name: "Dimitri Benz" }));
+const rosterWord = (text, x, y) => ({ text, bbox: { x0: x, y0: y, x1: x + Math.max(24, text.length * 9), y1: y + 22 } });
+const rosterDays = [
+  { date: "02.11", early: [["Thomas Weber", "10:00", "18:00"], ["Anastassiisa Korn…", "07:30", "15:00"]], late: ["Dimitri Benz", "14:00", "22:00"] },
+  { date: "03.11", early: [["Thomas Weber", "10:00", "18:00"], ["Anastassiisa Korn…", "07:30", "15:00"]], late: ["Dimitri Benz", "14:00", "22:00"] },
+  { date: "04.11", early: [["Patrick Heitbaum", "07:30", "15:00"], ["Anastassiisa Korn…", "10:00", "18:00"]], late: ["Dimitri Benz", "14:00", "22:00"] },
+  { date: "05.11", early: [["Patrick Heitbaum", "07:30", "16:00"]], late: ["Dimitri Benz", "14:00", "22:00"] },
+  { date: "06.11", early: [["Thomas Weber", "10:00", "18:00"], ["Patrick Heitbaum", "07:30", "15:00"]], late: ["Dimitri Benz", "14:00", "22:00"] },
+  { date: "07.11", early: [["Thomas Weber", "10:00", "18:00"], ["Patrick Heitbaum", "07:30", "15:00"]], late: ["Anastassiisa Korn…", "14:00", "22:00"] },
+  { date: "08.11", early: [["Thomas Weber", "10:00", "18:00"], ["Patrick Heitbaum", "07:30", "15:00"]], late: ["Anastassiisa Korn…", "14:00", "22:00"] }
+];
+const rosterLines = [{ words: [rosterWord("KW: 45", 5, 20)] }, ...rosterDays.map((day, index) => ({ words: [rosterWord(day.date, 338 + index * 240, 20)] })), { words: [rosterWord("Frühschicht", 4, 175)] }];
+rosterDays.forEach((day, index) => {
+  const x = 250 + index * 240;
+  day.early.forEach(([name, start, end], row) => {
+    const nameY = 225 + row * 82;
+    rosterLines.push({ words: [rosterWord(name, x, nameY)] });
+    rosterLines.push({ words: [rosterWord(start, x + 5, nameY + 32), rosterWord("-", x + 60, nameY + 32), rosterWord(end, x + 76, nameY + 32)] });
+  });
+});
+rosterLines.push({ words: [rosterWord("Spätschicht", 4, 445)] });
+rosterDays.forEach((day, index) => {
+  const [name, start, end] = day.late;
+  const x = 250 + index * 240;
+  rosterLines.push({ words: [rosterWord(name, x, 478)] });
+  rosterLines.push({ words: [rosterWord(start, x + 5, 510), rosterWord("-", x + 60, 510), rosterWord(end, x + 76, 510)] });
+});
+const rosterResult = layout({ blocks: [{ paragraphs: [{ lines: rosterLines }] }] }, 1900);
+const mondayEntries = rosterResult.filter((entry) => entry.date.endsWith("-11-02"));
+const tuesdayEntries = rosterResult.filter((entry) => entry.date.endsWith("-11-03"));
+if (mondayEntries.length !== 3 || tuesdayEntries.length !== 3 || !mondayEntries.some((entry) => entry.personName === "Dimitri Benz" && entry.start === "14:00" && !entry.isColleague) || !tuesdayEntries.some((entry) => entry.personName === "Dimitri Benz" && entry.start === "14:00" && !entry.isColleague) || [...mondayEntries, ...tuesdayEntries].filter((entry) => entry.isColleague).length !== 4) throw new Error("Digitaler Wochenplan: Schichten von Montag und Dienstag (eigene und Kollegen) fehlen oder wurden den falschen Tagen zugeordnet.");
 storage.setItem("timeflow-private-schedule-learning-v1:local-private-user", JSON.stringify(learnedCorrection.learning));
 const rememberedPlan = parse("01.09.2026 anderes Kürzel 14:00 - 22:00\n02.09.2026 Spaetschicht B 07:30 - 15:00");
 if (rememberedPlan.length !== 2 || rememberedPlan[0].title !== "Spätschicht" || rememberedPlan[1].title !== "Spätschicht") throw new Error("Gespeicherte Korrekturen zu wiederkehrenden Uhrzeiten und Dienstplan-Kürzeln werden bei späteren Importen nicht verwendet.");

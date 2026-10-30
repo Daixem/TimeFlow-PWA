@@ -328,7 +328,7 @@
       const parsedRosterEntries = [];
       const nonName = /\b(?:rezeption|hotel|restaurant|fruhschicht|spatschicht|nachtschicht|schicht|pause|dienstplan|kw|montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)\b/i;
       const personName = (line) => {
-        const cleaned = String(line || "").replace(/(?:[01]?\d|2[0-3])[:.][0-5]\d/g, " ").replace(/[|,:;–—-]/g, " ").replace(/\s+/g, " ").trim();
+        const cleaned = String(line || "").replace(/(?:[01]?\d|2[0-3])[:.][0-5]\d/g, " ").replace(/[|,:;–—-]/g, " ").replace(/(?:…|\.{2,})/g, " ").replace(/\s+/g, " ").trim();
         const tokens = cleaned.split(" ").filter(Boolean);
         return tokens.length >= 2 && tokens.length <= 5 && !nonName.test(cleaned) && tokens.every((token) => /^[\p{L}][\p{L}'.-]*$/u.test(token)) ? cleaned : "";
       };
@@ -534,9 +534,12 @@
       dayCanvas.getContext("2d").drawImage(canvas, 0, 0, dayCanvas.width, dayCanvas.height, 0, 0, dayCanvas.width, dayCanvas.height);
       await worker.setParameters({ tessedit_pageseg_mode: "6", preserve_interword_spaces: "1" });
       const dayResult = await withTimeout(worker.recognize(dayCanvas, {}, { blocks: true }), OCR_RECOGNITION_TIMEOUT_MS, "Die Datumsprüfung hat zu lange gedauert. Bitte einen kleineren oder klareren Screenshot verwenden.");
-      const combinedData = { blocks: [...(result.data.blocks || []), ...(dayResult.data.blocks || [])] };
       stage(status, "Parser startet …");
-      return { text: `${result.data.text}\n${dayResult.data.text}`, layoutEntries: parseLayout(combinedData, canvas.width) };
+      // The crop starts at the left edge, so its OCR bounding boxes use a
+      // different coordinate space. Keep it as a text fallback only: mixing
+      // those boxes with full-image boxes shifts Monday/Tuesday column
+      // boundaries and can make their shifts disappear or land on the wrong day.
+      return { text: `${result.data.text}\n${dayResult.data.text}`, layoutEntries: parseLayout({ blocks: result.data.blocks || [] }, canvas.width) };
     } catch (error) {
       throw error.importMessage ? error : importError("Die Texterkennung ist fehlgeschlagen. Bitte Bildformat, Lesbarkeit und Verbindung prüfen.");
     } finally {
