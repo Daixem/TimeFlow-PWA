@@ -139,12 +139,13 @@ document.addEventListener("DOMContentLoaded", () => {
     const start = hasTodayWork && saved.workStart ? new Date(saved.workStart) : null;
     const end = saved.isWorking ? now : hasTodayWork && saved.workEnd ? new Date(saved.workEnd) : null;
     const settings = readSettings();
+    const targetMinutes = window.TimeFlowDailyTargetForDate?.(now) ?? settings.dailyTargetMinutes;
     const elapsedSeconds = start && end ? Math.max(0, Math.floor((end - start) / 1000)) : 0;
     const grossMinutes = Math.floor(elapsedSeconds / 60);
     const runningPause = hasTodayWork && saved.isPaused && saved.pauseStartedAt ? Math.max(0, now - new Date(saved.pauseStartedAt)) : 0;
     const policy = pausePolicy(saved, settings); const breakMinutes = hasTodayWork && saved.hasManualPause ? Math.floor((Number(saved.pauseAccumulatedMs || 0) + runningPause) / 60000) : hasTodayWork && policy.enabled && grossMinutes >= policy.after ? policy.minutes : 0;
     const netMinutes = Math.max(0, grossMinutes - breakMinutes);
-    const progress = Math.min(100, Math.round((netMinutes / settings.dailyTargetMinutes) * 100));
+    const progress = targetMinutes > 0 ? Math.min(100, Math.round((netMinutes / targetMinutes) * 100)) : 0;
 
     const locale = window.TimeFlowLocalization?.locale?.() || "de-DE";
     elements.liveTime.textContent = now.toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" });
@@ -154,8 +155,8 @@ document.addEventListener("DOMContentLoaded", () => {
     elements.net.textContent = formatMinutes(netMinutes);
     elements.breakSummary.textContent = `${breakMinutes} min`;
     elements.breakTime.textContent = settings.autoBreakMinutes ? `${settings.autoBreakMinutes} Min.` : "Deaktiviert";
-    elements.target.textContent = formatMinutes(settings.dailyTargetMinutes);
-    elements.elapsedHint.textContent = saved.isWorking ? `${progress} % deines Tagesziels` : start ? `Beendet um ${formatTime(end)}` : "Noch nicht gestartet";
+    elements.target.textContent = formatMinutes(targetMinutes);
+    elements.elapsedHint.textContent = targetMinutes === 0 && !hasTodayWork ? "Heute laut Dienstplan frei" : saved.isWorking ? `${progress} % deines Tagesziels` : start ? `Beendet um ${formatTime(end)}` : "Noch nicht gestartet";
     elements.state.classList.toggle("is-working", Boolean(saved.isWorking));
     elements.state.querySelector("span").textContent = saved.isPaused && hasTodayWork ? "In Pause" : saved.isWorking ? "Im Dienst" : start ? "Dienst beendet" : "Nicht im Dienst";
     elements.action.classList.toggle("is-working", Boolean(saved.isWorking));

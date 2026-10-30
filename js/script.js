@@ -78,6 +78,17 @@ function timeSettings() {
     return { dailyTargetMinutes: TARGET_WORK_MINUTES, autoBreakMinutes: AUTO_BREAK_MINUTES, autoBreakAfterMinutes: BREAK_AFTER_MINUTES };
   }
 }
+function dailyTargetForDate(date = new Date()) {
+  const dailyTarget = timeSettings().dailyTargetMinutes;
+  try {
+    const entries = JSON.parse(window.TimeFlowPlatform.storage.getItem("timeflow-private-schedule-v1") || "[]");
+    const dateKey = date.toLocaleDateString("sv-SE");
+    const entry = Array.isArray(entries) ? entries.find((item) => item?.date === dateKey && !item.isColleague) : null;
+    if (entry && /^(frei|free|off|a|f|-)$/i.test(String(entry.title || "").trim())) return 0;
+  } catch { /* Ohne Dienstplan bleibt das Vertragsziel maßgeblich. */ }
+  return dailyTarget;
+}
+window.TimeFlowDailyTargetForDate = dailyTargetForDate;
 function activeWorkTimePolicy() {
   const policy = window.TimeFlowWorkTimeSnapshotAuthority?.() !== false ? state.workTimePolicy : null;
   if (policy && typeof policy === "object") return { automaticPauseEnabled: policy.automaticPauseEnabled !== false, thresholdMinutes: Number(policy.thresholdMinutes) || BREAK_AFTER_MINUTES, pauseMinutes: Number(policy.pauseMinutes) || 0 };
@@ -291,8 +302,8 @@ function updateDateTime() {
   elements.greeting.textContent = hour < 12 && hour >= 5 ? "Guten Morgen" : hour < 18 ? "Guten Tag" : "Guten Abend";
 }
 function updateWorkUi() {
-  const targetMinutes = timeSettings().dailyTargetMinutes;
-  const worked = workedMinutes(); const pause = breakMinutes(); const percentage = Math.min(100, Math.round((worked / targetMinutes) * 100));
+  const targetMinutes = dailyTargetForDate(new Date());
+  const worked = workedMinutes(); const pause = breakMinutes(); const percentage = targetMinutes > 0 ? Math.min(100, Math.round((worked / targetMinutes) * 100)) : 0;
   const showToday = hasWorkTimeForToday();
   elements.startTime.textContent = showToday && state.workStart ? formatTime(state.workStart) : "--:--";
   elements.endTime.textContent = showToday && state.workEnd ? formatTime(state.workEnd) : "--:--";
@@ -311,7 +322,7 @@ function updateWorkUi() {
   elements.progressCircle.textContent = `${percentage}%`;
   elements.progressCircle.style.setProperty("--progress", `${percentage * 3.6}deg`);
   elements.progressCircle.setAttribute("aria-valuenow", String(percentage));
-  elements.progressLabel.textContent = percentage >= 100 ? "Ziel erreicht" : "Tagesziel";
+  elements.progressLabel.textContent = targetMinutes === 0 ? "Heute frei" : percentage >= 100 ? "Ziel erreicht" : "Tagesziel";
   document.dispatchEvent(new CustomEvent("timeflow:workday-updated"));
   if (privateMode) window.TimeFlowPrivateAccount?.refreshHome();
 }

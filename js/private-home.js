@@ -135,7 +135,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const recordedDate = recordedAt ? new Date(recordedAt) : null;
     const hasTodayWork = Boolean(workday?.isWorking || (recordedDate && !Number.isNaN(recordedDate.valueOf()) && recordedDate.toLocaleDateString("sv-SE") === now.toLocaleDateString("sv-SE")));
     const settings = readJson("timeflow-settings-v1") || {};
-    const target = number(settings.dailyTargetMinutes, 480);
+    const target = window.TimeFlowDailyTargetForDate?.(now) ?? number(settings.dailyTargetMinutes, 480);
     const breakAfter = number(settings.autoBreakAfterMinutes, 360);
     const breakLength = number(settings.autoBreakMinutes, 30);
     const policy = pausePolicy(workday, { autoBreakAfterMinutes: breakAfter, autoBreakMinutes: breakLength });
@@ -149,7 +149,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("privateHomeBreakUsed").textContent = `${usedBreak} min`;
     document.getElementById("privateHomeNet").textContent = formatMinutes(net);
     document.getElementById("privateHomeTarget").textContent = formatMinutes(target);
-    document.getElementById("privateHomeState").textContent = workday?.isPaused && hasTodayWork ? "In Pause" : workday?.isWorking ? "Im Dienst" : start ? "Dienst beendet" : "Bereit";
+    document.getElementById("privateHomeState").textContent = workday?.isPaused && hasTodayWork ? "In Pause" : workday?.isWorking ? "Im Dienst" : start ? "Dienst beendet" : target === 0 ? "Heute frei" : "Bereit";
     const pauseButton = document.querySelector("[data-private-pause]"); if (pauseButton) { pauseButton.hidden = !workday?.isWorking; pauseButton.classList.toggle("is-paused", Boolean(workday?.isPaused)); pauseButton.querySelector("span").textContent = workday?.isPaused ? "Pause beenden" : "Pause starten"; }
     const scheduledEnd = scheduledEndFor(now);
     document.getElementById("privateHomePlannedEnd").textContent = hasTodayWork && workday?.workEnd ? new Date(workday.workEnd).toLocaleTimeString(window.TimeFlowLocalization?.locale?.() || "de-DE", { hour: "2-digit", minute: "2-digit" }) : scheduledEnd || "--:--";
