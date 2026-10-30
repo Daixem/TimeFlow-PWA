@@ -81,6 +81,17 @@
     // must not turn a 40-hour contract into fictitious overtime.
     return dailyTarget(config);
   }
+  function creditedAbsenceMinutes(entry) {
+    const saved = Number(entry.absenceCreditMinutes);
+    if (saved > 0) return saved;
+    if (/^\d{2}:\d{2}$/.test(entry.start || "") && /^\d{2}:\d{2}$/.test(entry.end || "")) {
+      const [startHour, startMinute] = entry.start.split(":").map(Number); const [endHour, endMinute] = entry.end.split(":").map(Number);
+      let planned = endHour * 60 + endMinute - startHour * 60 - startMinute;
+      if (planned <= 0) planned += 24 * 60;
+      return Math.max(0, planned - Number(entry.break || 0));
+    }
+    return dailyTarget();
+  }
   function scheduleDueForMonth(month, today = currentDate()) {
     const todayMonth = today.slice(0, 7);
     if (month > todayMonth) return { hasSchedule: false, targetDue: 0, absenceCredit: 0, extraFreeDays: 0 };
@@ -101,9 +112,10 @@
     });
     entriesByDate.forEach((entry) => {
       if (isFreeScheduleDay(entry)) return;
-      // Urlaub and illness count as the contractual day's work time. This
-      // keeps the balance neutral while the visible work duration stays zero.
-      if (isCreditedAbsence(entry)) { contractualDays += 1; absenceCredit += dailyTarget(); return; }
+      // Paid absence is credited for the missed planned shift (or the normal
+      // contract day when no shift duration is available). It must not add a
+      // deficit or fictitious worked time to the visible attendance total.
+      if (isCreditedAbsence(entry)) { absenceCredit += creditedAbsenceMinutes(entry); return; }
       contractualDays += 1;
     });
     const normalFreeDays = 7 - Math.max(1, Math.min(7, Number(settings().regularWorkDays || 5)));
@@ -111,7 +123,7 @@
     // The configured number of free days per Monday–Sunday week is normal. Every other entered day
     // is a contractual day of eight hours for a 40-hour week. The third free day
     // is therefore counted as a missing contractual day, not as paid work.
-    const contractualTarget = contractualDays * dailyTarget();
+    const contractualTarget = contractualDays * dailyTarget() + absenceCredit;
     return { hasSchedule: true, targetDue: contractualTarget, absenceCredit, extraFreeDays, contractualDays, normalFreeDays };
   }
   function weekdaysThrough(month, date) {

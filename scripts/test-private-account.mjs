@@ -23,12 +23,12 @@ const context = {
 vm.runInNewContext(account, context);
 const weeklyTarget = context.window.TimeFlowPrivateAccount.scheduleDueForMonth("2026-09", "2026-09-06");
 if (weeklyTarget.targetDue !== 1920 || weeklyTarget.extraFreeDays !== 1 || weeklyTarget.absenceCredit !== 0) throw new Error("40-Stunden-Vertrag: Vier Schichten ergeben 32 Stunden Sollzeit; freie Tage bleiben sollzeitfrei.");
-storage.set("timeflow-private-schedule-v1", JSON.stringify(week.map((entry) => entry.date === "2026-09-02" ? { ...entry, title: "Urlaub", start: "", end: "", break: 0 } : entry)));
+storage.set("timeflow-private-schedule-v1", JSON.stringify(week.map((entry) => entry.date === "2026-09-02" ? { ...entry, title: "Urlaub" } : entry)));
 const absenceTarget = context.window.TimeFlowPrivateAccount.scheduleDueForMonth("2026-09", "2026-09-06");
-if (absenceTarget.targetDue !== 1920 || absenceTarget.absenceCredit !== 480) throw new Error("Urlaub muss als tägliches Vertragssoll angerechnet werden, ohne den Zeitsaldo zu verschlechtern.");
+if (absenceTarget.targetDue !== 1860 || absenceTarget.absenceCredit !== 420) throw new Error("Urlaub muss mit der geplanten Schichtzeit inklusive korrekter Pausenberechnung angerechnet werden.");
 storage.set("timeflow-private-schedule-v1", JSON.stringify(week.map((entry) => entry.date === "2026-09-02" ? { ...entry, title: "Krank", start: "", end: "", break: 0 } : entry)));
 const sickTarget = context.window.TimeFlowPrivateAccount.scheduleDueForMonth("2026-09", "2026-09-06");
-if (sickTarget.targetDue !== 1920 || sickTarget.absenceCredit !== 480) throw new Error("Krankheit muss wie Urlaub mit dem täglichen Vertragssoll angerechnet werden.");
+if (sickTarget.targetDue !== 1920 || sickTarget.absenceCredit !== 480) throw new Error("Bei fehlender geplanter Schicht muss Krankheit ersatzweise mit dem täglichen Vertragswert angerechnet werden.");
 storage.set("timeflow-private-schedule-v1", JSON.stringify(week));
 storage.set("timeflow-settings-v1", JSON.stringify({ weeklyTargetHours: 30, regularWorkDays: 4 }));
 const partTimeTarget = context.window.TimeFlowPrivateAccount.scheduleDueForMonth("2026-09", "2026-09-06");
