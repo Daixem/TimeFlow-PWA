@@ -2,6 +2,8 @@ import { readFile } from "node:fs/promises";
 import vm from "node:vm";
 
 const code = await readFile(new URL("../js/private-schedule-import.js", import.meta.url), "utf8");
+const scheduleShell = await readFile(new URL("../js/sprint10.js", import.meta.url), "utf8");
+if (!code.includes("shifts[shifts.length - 1]") || !code.includes('visibleWeekStart = ""; renderSaved();') || !scheduleShell.includes('document.documentElement.classList.contains("timeflow-private-mode")')) throw new Error("Beim Öffnen des persönlichen Dienstplans muss die aktuelle relevante Woche statt einer alten Auswahl angezeigt werden.");
 for (const marker of ["multiple accept=", "application/pdf", "application/json", "async function readPlanFile", "json.schedule", "mehrere Dateien gleichzeitig möglich", "data-private-week=\"previous\"", "data-private-week=\"next\"", "data-absence-plan", "privateAbsenceDialog", "data-field=\"absenceType\"", "Geplante Schichtzeit wird gutgeschrieben", "absenceCreditMinutes: minutes(entry)"]) {
   if (!code.includes(marker)) throw new Error(`Mehrfach- oder Dateiformatimport fehlt: ${marker}`);
 }

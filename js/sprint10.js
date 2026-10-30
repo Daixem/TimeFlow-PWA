@@ -104,6 +104,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function refreshCurrentSchedule() {
+    // The private schedule renderer owns its dates and real entries. This
+    // legacy refresh only changes visible labels, so applying it here can make
+    // the week heading/row dates disagree with the shifts underneath them.
+    if (document.documentElement.classList.contains("timeflow-private-mode") || document.body?.dataset.appMode === "private") return;
     const schedulePage = document.getElementById("schedulePage");
     if (!schedulePage) return;
     const today = dateOnly();

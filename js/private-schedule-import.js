@@ -570,8 +570,8 @@
     const renderScheduleViews = (shifts) => {
       const dayPanel = document.querySelector('#schedulePage [data-panel="day"]'); const weekPanel = document.querySelector('#schedulePage [data-panel="week"]'); const periodPanel = document.querySelector('#schedulePage [data-panel="period"]');
       if (!dayPanel || !weekPanel || !periodPanel) return;
-      const today = new Date().toLocaleDateString("sv-SE"); const selected = shifts.find((entry) => entry.date === today) || shifts.find((entry) => entry.date >= today) || shifts[0];
-      const colleagueFallback = readColleagues().find((entry) => entry.date >= today) || readColleagues()[0];
+      const today = new Date().toLocaleDateString("sv-SE"); const selected = shifts.find((entry) => entry.date === today) || shifts.find((entry) => entry.date >= today) || shifts[shifts.length - 1];
+      const colleagueEntries = readColleagues().slice().sort((left, right) => `${left.date}${left.start || ""}`.localeCompare(`${right.date}${right.start || ""}`)); const colleagueFallback = colleagueEntries.find((entry) => entry.date >= today) || colleagueEntries[colleagueEntries.length - 1];
       const selectedDate = selected ? new Date(`${selected.date}T12:00:00`) : colleagueFallback ? new Date(`${colleagueFallback.date}T12:00:00`) : new Date();
       dayPanel.innerHTML = `<div class="date-switch"><span>${selectedDate.toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}</span></div>${selected ? `<article class="my-shift"><p><i class="fa-solid fa-briefcase"></i> Eigener Dienstplan</p><div><i class="fa-regular fa-clock"></i><span><strong>${/^(frei|urlaub|krank)$/i.test(selected.title) ? escapeHtml(selected.title) : `${escapeHtml(selected.start)} – ${escapeHtml(selected.end)}`}</strong><small>${escapeHtml(selected.title || "Arbeit")}</small></span><em>Importiert</em></div><footer>${/^(frei|urlaub|krank)$/i.test(selected.title) ? "Kein Einsatz geplant" : `${duration(minutes(selected))} Arbeitszeit · ${Number(selected.break || 0)} Min. Pause`}</footer></article>` : '<p class="private-import-empty">Noch kein eigener Dienstplan übernommen.</p>'}`;
       const monday = visibleWeekStart ? new Date(`${visibleWeekStart}T12:00:00`) : new Date(selectedDate); const weekday = (monday.getDay() + 6) % 7; monday.setDate(monday.getDate() - weekday); visibleWeekStart = monday.toLocaleDateString("sv-SE"); const weekDates = Array.from({ length: 7 }, (_, index) => { const value = new Date(monday); value.setDate(monday.getDate() + index); return value; });
@@ -611,6 +611,7 @@
       const today = new Date().toLocaleDateString("sv-SE"); const next = shifts.find((entry) => entry.date >= today && !/^(frei|urlaub|krank)$/i.test(entry.title)); const card = document.querySelectorAll(".shift-card")[1];
       if (next && card && privateMode()) { card.querySelector("p").textContent = new Date(`${next.date}T12:00:00`).toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" }); card.querySelector("strong").textContent = `${next.start} – ${next.end}`; card.querySelector("span").textContent = next.title || "Arbeit"; }
     };
+    document.querySelector('[data-target="schedule"]')?.addEventListener("click", () => { if (!privateMode()) return; visibleWeekStart = ""; renderSaved(); });
     document.querySelector('#schedulePage [data-panel="month"]')?.addEventListener("click", (event) => {
       const button = event.target.closest("[data-private-month]"); if (!button) return;
       visibleMonthStart.setMonth(visibleMonthStart.getMonth() + (button.dataset.privateMonth === "next" ? 1 : -1));
