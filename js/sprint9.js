@@ -3,6 +3,7 @@
 document.addEventListener("DOMContentLoaded", () => {
   const SYNC_KEYS = ["timeflow-profile-v1", "timeflow-settings-v1", "timeflow-profile-preferences-v1", "timeflow-custom-background-v1", "timeflow-private-schedule-v1", "timeflow-private-schedule-learning-v1", "timeflow-private-account-v1", "timeflow-worktime-audit-v1", "timeflow-monthly-targets-v1", "timeflow-private-setup-v1", "timeflow-beta-consent-v1", "timeflow-workday-v2", "timeflow-notifications-v1", "timeflow-notification-read-v1", "timeflow-quick-actions-v1"];
   const LEARNING_KEY_PREFIX = "timeflow-private-schedule-learning-v1:";
+  const COLLEAGUE_KEY_PREFIX = "timeflow-private-colleague-schedule-v1:";
   const WORK_TIME_SNAPSHOT_KEYS = new Set(["timeflow-workday-v2", "timeflow-workday-history-v1", "timeflow-private-account-v1", "timeflow-worktime-audit-v1", "timeflow-work-time-current-v1", "timeflow-work-time-meta-v1", "timeflow-work-time-pending-v1", "timeflow-work-time-conflict-v1", "timeflow-work-time-correction-pending-v1", "timeflow-work-time-sessions-v1"]);
   const META_KEY = "timeflow-sync-meta-v1";
   const BASE_KEY = "timeflow-sync-base-v1";
@@ -50,9 +51,64 @@ document.addEventListener("DOMContentLoaded", () => {
     return suffix ? `${LEARNING_KEY_PREFIX}${suffix}` : "";
   }
 
+  function accountColleagueKey() {
+    const cachedSession = parseJson(window.TimeFlowPlatform.storage.getItem("timeflow-platform-session-cache-v1"), {});
+    const legacySession = parseJson(window.TimeFlowPlatform.storage.getItem("timeflow-session-v1"), {});
+    const profile = parseJson(window.TimeFlowPlatform.storage.getItem("timeflow-profile-v1"), {});
+    const email = String(cachedSession?.session?.user?.email || legacySession?.user?.email || profile?.email || platformAccountEmail || "").trim().toLowerCase();
+    const suffix = email || String(legacySession?.userId || platformAccountId || cachedSession?.session?.user?.id || "").trim();
+    return suffix ? `${COLLEAGUE_KEY_PREFIX}${suffix}` : "";
+  }
+
   function syncKeys() {
-    const keys = accountLearningKey() ? [...SYNC_KEYS, accountLearningKey()] : SYNC_KEYS;
+    const keys = [...SYNC_KEYS, accountLearningKey(), accountColleagueKey()].filter(Boolean);
     return serverWorkTimeAuthority() ? keys.filter((key) => !WORK_TIME_SNAPSHOT_KEYS.has(key)) : keys;
+  }
+
+  function mergeColleagueRows(remoteRows, localRows) {
+    const merged = new Map();
+    const keyOf = (entry) => `${entry.date}|${String(entry.personName || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/\s+/g, " ").trim()}`;
+    (Array.isArray(remoteRows) ? remoteRows : []).filter((entry) => entry && typeof entry.date === "string" && typeof entry.personName === "string").forEach((entry) => merged.set(keyOf(entry), entry));
+    (Array.isArray(localRows) ? localRows : []).filter((entry) => entry && typeof entry.date === "string" && typeof entry.personName === "string").forEach((entry) => merged.set(keyOf(entry), entry));
+    return [...merged.values()].sort((a, b) => `${a.date}${a.start || ""}${a.personName}`.localeCompare(`${b.date}${b.start || ""}${b.personName}`));
+  }
+
+  async function migrateColleagueSchedule(cloud) {
+    const key = accountColleagueKey();
+    if (!key) return false;
+    const base = baseSnapshot();
+    if (base && Object.prototype.hasOwnProperty.call(base, key)) return false;
+    const storage = window.TimeFlowPlatform.storage;
+    const localRows = parseJson(storage.getItem(key), []);
+    const remoteRows = Array.isArray(cloud.snapshot?.[key]) ? cloud.snapshot[key] : [];
+    if (!localRows.length && !remoteRows.length) return false;
+    const mergedRows = mergeColleagueRows(remoteRows, localRows);
+    const localChanged = JSON.stringify(localRows) !== JSON.stringify(mergedRows);
+    storage.setItem(key, JSON.stringify(mergedRows));
+    if (localChanged) document.dispatchEvent(new CustomEvent("timeflow:sync-restored", { detail: { revision: cloud.revision, updatedAt: cloud.updatedAt } }));
+    const nextSnapshot = { ...(cloud.snapshot || {}), [key]: mergedRows };
+    if (JSON.stringify(mergedRows) !== JSON.stringify(remoteRows)) {
+      try {
+        const result = await requestSync("PUT", { snapshot: nextSnapshot, expectedRevision: Number(cloud.revision || 0) });
+        saveMeta(result.revision, result.updatedAt);
+        saveBaseSnapshot(nextSnapshot);
+        document.dispatchEvent(new CustomEvent("timeflow:sync-restored", { detail: { revision: result.revision, updatedAt: result.updatedAt } }));
+        renderStatus("synced", "Cloud-Sicherung ist aktuell", "Kollegenschichten wurden mit deinem privaten Konto verbunden.", "Synchron");
+        markReady();
+        return true;
+      } catch (error) {
+        if (error.status === 409) {
+          const conflict = conflictLogic.handleSyncConflict({ storage, localSnapshot: collectSnapshot(), baseSnapshot: baseSnapshot(), response: error.result || {} });
+          showConflict({ data: conflict.serverSnapshot, revision: conflict.serverRevision, updatedAt: conflict.updatedAt });
+          renderStatus("error", "Änderungskonflikt erkannt", "Die Kollegenschichten wurden auf einem anderen Gerät geändert. Bitte gleiche die Stände ab.", "Konflikt");
+          markReady();
+          return true;
+        }
+        throw error;
+      }
+    }
+    saveBaseSnapshot(nextSnapshot);
+    return false;
   }
 
   function collectSnapshot() {
@@ -213,6 +269,7 @@ document.addEventListener("DOMContentLoaded", () => {
         markReady();
         return;
       }
+      if (await migrateColleagueSchedule(cloud)) return;
       if (!localMeta.revision || Number(cloud.revision) > Number(localMeta.revision)) {
         applySnapshot(cloud.snapshot);
         saveMeta(cloud.revision, cloud.updatedAt);

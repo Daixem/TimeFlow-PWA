@@ -162,11 +162,15 @@ function isLearningSnapshotKey(key) {
   return typeof key === "string" && /^timeflow-private-schedule-learning-v1:[A-Za-z0-9._@:+-]{1,256}$/.test(key);
 }
 
+function isColleagueSnapshotKey(key) {
+  return typeof key === "string" && /^timeflow-private-colleague-schedule-v1:[A-Za-z0-9._@:+-]{1,256}$/.test(key);
+}
+
 function validatedSnapshot(value, serverWorkTimeEnabled) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const snapshot = {};
   for (const key of Object.keys(value)) {
-    if (!snapshotKeys(serverWorkTimeEnabled).includes(key) && !isLearningSnapshotKey(key)) continue;
+    if (!snapshotKeys(serverWorkTimeEnabled).includes(key) && !isLearningSnapshotKey(key) && !isColleagueSnapshotKey(key)) continue;
     const item = value[key];
     if (item && typeof item === "object") snapshot[key] = item;
   }
