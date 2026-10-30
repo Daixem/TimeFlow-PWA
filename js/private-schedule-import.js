@@ -66,6 +66,28 @@
   };
   const learningKey = () => `timeflow-private-schedule-learning-v1:${userKey()}`;
   const normalizeLearningText = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ß/gi, "ss").toLowerCase().replace(/ae/g, "a").replace(/oe/g, "o").replace(/ue/g, "u").replace(/[^a-z0-9]+/g, " ").trim().replace(/\s+/g, " ");
+  const profileName = () => {
+    try {
+      const profile = JSON.parse(platform().storage.getItem("timeflow-profile-v1") || "{}");
+      if (profile.name) return normalizeLearningText(profile.name);
+    } catch (_error) { /* Kontositzung als Ersatz */ }
+    try {
+      const cached = JSON.parse(platform().storage.getItem("timeflow-platform-session-cache-v1") || "{}");
+      const user = cached.session?.user || {};
+      return normalizeLearningText(user.user_metadata?.full_name || user.user_metadata?.name || user.name || "");
+    } catch (_error) { return ""; }
+  };
+  const mondayOf = (value) => {
+    const monday = new Date(value);
+    monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7));
+    return monday;
+  };
+  const isoWeekMonday = (week, year) => {
+    const januaryFourth = new Date(Date.UTC(year, 0, 4));
+    const monday = mondayOf(januaryFourth);
+    monday.setUTCDate(monday.getUTCDate() + (week - 1) * 7);
+    return monday;
+  };
   const normalizeLearning = (value) => {
     if (!value || typeof value !== "object" || Array.isArray(value)) return { markers: {}, labels: {}, times: {} };
     if (value.markers || value.labels || value.times) return { markers: value.markers || {}, labels: value.labels || {}, times: value.times || {} };
@@ -147,14 +169,24 @@
     const lines = source.split(/\n|;/).map((line) => line.replace(/\s+/g, " ").trim()).filter(Boolean);
     const range = source.match(/(\d{1,2})\s*\.?\s*(\d{2})\s*\.?\s*-\s*(\d{1,2})\s*\.?\s*(\d{2})\s*\.?/);
     const now = new Date();
-    const startMonth = Number(range?.[2] || now.getMonth() + 1);
-    const endMonth = Number(range?.[4] || startMonth);
+    const weekMarker = source.match(/\b(?:KW|Kalenderwoche)\s*:?\s*(\d{1,2})(?:\s*[/.-]?\s*(20\d{2}))?\b/i);
+    const weekMonday = range
+      ? mondayOf(new Date(Date.UTC(now.getFullYear(), Number(range[2]) - 1, Number(range[1]))))
+      : weekMarker ? isoWeekMonday(Number(weekMarker[1]), Number(weekMarker[2] || now.getFullYear())) : null;
+    const startMonth = Number(range?.[2] || (weekMonday ? weekMonday.getUTCMonth() + 1 : now.getMonth() + 1));
+    const endMonth = Number(range?.[4] || (weekMonday ? new Date(weekMonday.getTime() + 6 * 86400000).getUTCMonth() + 1 : startMonth));
     const startYear = now.getFullYear();
     let pendingDate = "";
     let pendingWeekday = "";
     const result = [];
     const learning = readLearning();
     const inferredDate = (day, month = startMonth) => {
+      if (weekMonday) {
+        for (let offset = 0; offset < 7; offset += 1) {
+          const date = new Date(weekMonday); date.setUTCDate(weekMonday.getUTCDate() + offset);
+          if (date.getUTCDate() === day) return date.toISOString().slice(0, 10);
+        }
+      }
       const year = month < startMonth && endMonth < startMonth ? startYear + 1 : startYear;
       return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
     };
@@ -193,14 +225,11 @@
         pendingDate = "";
       }
     });
-    if (range && Number(range[1]) >= 1 && Number(range[1]) <= 31 && Number(range[3]) >= 1 && Number(range[3]) <= 31 && Number(range[2]) >= 1 && Number(range[2]) <= 12 && Number(range[4]) >= 1 && Number(range[4]) <= 12) {
-      const firstDay = Number(range[1]);
-      const firstMonth = Number(range[2]);
-      const firstDate = new Date(Date.UTC(startYear, firstMonth - 1, firstDay));
+    if (weekMonday && (range || weekMarker) && Number.isInteger(weekMonday.getTime())) {
       const indexed = new Map(result.map((entry) => [entry.date, entry]));
       for (let offset = 0; offset < 7; offset += 1) {
-        const date = new Date(firstDate);
-        date.setUTCDate(firstDate.getUTCDate() + offset);
+        const date = new Date(weekMonday);
+        date.setUTCDate(weekMonday.getUTCDate() + offset);
         const isoDate = date.toISOString().slice(0, 10);
         if (!indexed.has(isoDate)) {
           indexed.set(isoDate, {
@@ -259,14 +288,30 @@
       if (value < new Date(Date.UTC(year, currentDate.getMonth(), currentDate.getDate() - 60))) { year += 1; value = new Date(Date.UTC(year, header.month - 1, header.day)); }
       return { ...header, date: value.toISOString().slice(0, 10) };
     });
-    const hasWeekHeader = headerDates.length >= 4 && headerDates.slice(1).every((header, index) => {
-      const previous = new Date(`${headerDates[index].date}T12:00:00Z`); previous.setUTCDate(previous.getUTCDate() + 1);
-      return previous.toISOString().slice(5, 10) === header.date.slice(5, 10);
+    const firstHeaderDate = headerDates.length ? new Date(`${headerDates[0].date}T12:00:00Z`) : null;
+    const firstHeaderMonday = firstHeaderDate ? mondayOf(firstHeaderDate) : null;
+    const headerDayIndexes = headerDates.map((header) => {
+      const date = new Date(`${header.date}T12:00:00Z`);
+      return Math.round((date - firstHeaderMonday) / 86400000);
     });
+    const hasWeekHeader = headerDates.length >= 4
+      && headerDayIndexes.every((index, position) => index >= 0 && index <= 6 && (!position || index > headerDayIndexes[position - 1]))
+      && headerDates.slice(1).every((header, index) => header.x > headerDates[index].x);
     if (hasWeekHeader) {
-      const cellLines = headerDates.map((header, index) => {
-        const left = index ? (headerDates[index - 1].x + header.x) / 2 : header.x - (headerDates[index + 1].x - header.x) / 2;
-        const right = index < headerDates.length - 1 ? (header.x + headerDates[index + 1].x) / 2 : header.x + (header.x - headerDates[index - 1].x) / 2;
+      const firstDate = new Date(`${headerDates[0].date}T12:00:00Z`);
+      const firstWeekday = (firstDate.getUTCDay() + 6) % 7;
+      const steps = headerDates.slice(1).map((header, index) => (header.x - headerDates[index].x) / (headerDayIndexes[index + 1] - headerDayIndexes[index])).filter((distance) => distance > 0);
+      const columnStep = steps.reduce((sum, distance) => sum + distance, 0) / steps.length;
+      const monday = mondayOf(firstDate);
+      const mondayX = headerDates[0].x - firstWeekday * columnStep;
+      const weekHeaders = Array.from({ length: 7 }, (_, index) => {
+        const date = new Date(monday); date.setUTCDate(monday.getUTCDate() + index);
+        const observed = headerDates.find((header) => header.date === date.toISOString().slice(0, 10));
+        return { date: date.toISOString().slice(0, 10), x: observed?.x ?? mondayX + index * columnStep, y: observed?.y ?? headerDates[0].y };
+      });
+      const cellLines = weekHeaders.map((header, index) => {
+        const left = index ? (weekHeaders[index - 1].x + header.x) / 2 : header.x - columnStep / 2;
+        const right = index < weekHeaders.length - 1 ? (header.x + weekHeaders[index + 1].x) / 2 : header.x + columnStep / 2;
         const cellWords = words.filter((word) => { const x = (word.bbox.x0 + word.bbox.x1) / 2; const y = (word.bbox.y0 + word.bbox.y1) / 2; return x >= left && x < right && y > header.y + Math.max(22, maxY * .025); }).sort((a, b) => ((a.bbox.y0 + a.bbox.y1) / 2) - ((b.bbox.y0 + b.bbox.y1) / 2));
         const lines = [];
         cellWords.forEach((word) => {
@@ -278,13 +323,26 @@
         lines.forEach((line) => { line.words.sort((a, b) => a.bbox.x0 - b.bbox.x0); line.text = line.words.map((word) => word.text).join(" ").trim(); });
         return { header, lines };
       });
-      const colleagueEntries = [];
+      const parsedRosterEntries = [];
       const nonName = /\b(?:rezeption|hotel|restaurant|fruhschicht|spatschicht|nachtschicht|schicht|pause|dienstplan|kw|montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)\b/i;
       const personName = (line) => {
         const cleaned = String(line || "").replace(/(?:[01]?\d|2[0-3])[:.][0-5]\d/g, " ").replace(/[|,:;–—-]/g, " ").replace(/\s+/g, " ").trim();
         const tokens = cleaned.split(" ").filter(Boolean);
         return tokens.length >= 2 && tokens.length <= 5 && !nonName.test(cleaned) && tokens.every((token) => /^[\p{L}][\p{L}'.-]*$/u.test(token)) ? cleaned : "";
       };
+      const gutterRight = weekHeaders[0].x - columnStep / 2;
+      const sectionLines = [];
+      words.filter((word) => (word.bbox.x0 + word.bbox.x1) / 2 < gutterRight && (word.bbox.y0 + word.bbox.y1) / 2 > weekHeaders[0].y + 20)
+        .forEach((word) => {
+          const y = (word.bbox.y0 + word.bbox.y1) / 2;
+          let line = sectionLines.find((candidate) => Math.abs(candidate.y - y) < Math.max(13, maxY * .014));
+          if (!line) { line = { y, words: [] }; sectionLines.push(line); }
+          line.words.push(word);
+        });
+      const sections = sectionLines.map((line) => ({ y: line.y, title: shiftTitle(line.words.sort((a, b) => a.bbox.x0 - b.bbox.x0).map((word) => word.text).join(" ")) }))
+        .filter((line) => line.title !== "Arbeit").sort((a, b) => a.y - b.y);
+      const ownerName = profileName();
+      const rosterHasNames = cellLines.some(({ lines }) => lines.some((line) => personName(line.text)));
       cellLines.forEach(({ header, lines }) => {
         const timeRows = lines.map((line) => {
           const normalized = normalizeOcrTimes(line.text).replace(/\b([0-2]?\d)([0-5]\d)\b/g, "$1:$2");
@@ -299,15 +357,35 @@
           let name = candidates[0]?.name || "";
           if (candidates[0]) consumedNames.add(candidates[0].candidateIndex);
           if (!name) name = personName(line.text);
-          if (!name) return;
-          colleagueEntries.push({ id: `colleague-${Date.now()}-${colleagueEntries.length}`, date: header.date, start, end, break: 0, title: "Schicht", personName: name, isColleague: true, note: "Kollegenschicht aus Wochenplan erkannt" });
+          const ownShift = Boolean(name && ownerName && normalizeLearningText(name) === ownerName);
+          const noRosterName = !name && !rosterHasNames;
+          const directTitle = shiftTitle(line.text);
+          const sectionTitle = [...sections].reverse().find((section) => section.y <= line.y)?.title;
+          const title = directTitle !== "Arbeit" ? directTitle : sectionTitle || "Arbeit";
+          const personal = ownShift || noRosterName;
+          const checkedName = name || "Name prüfen";
+          parsedRosterEntries.push({ id: `${personal ? "import" : "colleague"}-${Date.now()}-${parsedRosterEntries.length}`, date: header.date, start, end, break: personal ? 30 : 0, title, recognizedTitle: title, personName: checkedName, isColleague: !personal, note: personal ? "Aus Dienstplan-Wochenübersicht erkannt" : name ? "Kollegenschicht aus Wochenplan erkannt" : "Schicht erkannt; Name muss ergänzt werden" });
         });
       });
-      if (colleagueEntries.length) return colleagueEntries;
+      const personalEntries = parsedRosterEntries.filter((entry) => !entry.isColleague);
+      if (personalEntries.length) {
+        const personalDates = new Set(personalEntries.map((entry) => entry.date));
+        weekHeaders.forEach((header) => {
+          if (!personalDates.has(header.date)) personalEntries.push({ id: `import-${Date.now()}-${personalEntries.length}`, date: header.date, start: "", end: "", break: 0, title: "Frei", recognizedTitle: "Frei", personName: "", isColleague: false, sourceMarker: "__EMPTY__", note: "Kein eigener Einsatz an diesem Wochentag erkannt" });
+        });
+        return [...parsedRosterEntries.filter((entry) => entry.isColleague), ...personalEntries].sort((left, right) => `${left.date}${left.isColleague ? "1" : "0"}${left.start}`.localeCompare(`${right.date}${right.isColleague ? "1" : "0"}${right.start}`));
+      }
+      if (parsedRosterEntries.length) return parsedRosterEntries;
     }
     const allText = words.map((word) => word.text).join(" ").replace(/[–—]/g, "-");
     const range = allText.match(/(\d{1,2})\s*\.?\s*(\d{2})\s*\.?\s*-\s*(\d{1,2})\s*\.?\s*(\d{2})\s*\.?/);
-    const now = new Date(); const startMonth = Number(range?.[2] || now.getMonth() + 1); const endMonth = Number(range?.[4] || startMonth); const startDay = Number(range?.[1] || 1);
+    const now = new Date();
+    const rangeValid = Boolean(range && Number(range[1]) >= 1 && Number(range[1]) <= 31 && Number(range[3]) >= 1 && Number(range[3]) <= 31 && Number(range[2]) >= 1 && Number(range[2]) <= 12 && Number(range[4]) >= 1 && Number(range[4]) <= 12);
+    const weekMarker = allText.match(/\b(?:KW|Kalenderwoche)\s*:?\s*(\d{1,2})(?:\s*[/.-]?\s*(20\d{2}))?\b/i);
+    const weekMonday = rangeValid
+      ? mondayOf(new Date(Date.UTC(now.getFullYear(), Number(range[2]) - 1, Number(range[1]))))
+      : weekMarker ? isoWeekMonday(Number(weekMarker[1]), Number(weekMarker[2] || now.getFullYear())) : null;
+    const startMonth = Number(range?.[2] || (weekMonday ? weekMonday.getUTCMonth() + 1 : now.getMonth() + 1)); const endMonth = Number(range?.[4] || (weekMonday ? new Date(weekMonday.getTime() + 6 * 86400000).getUTCMonth() + 1 : startMonth)); const startDay = Number(range?.[1] || weekMonday?.getUTCDate() || 1);
     const leftColumn = words.filter((word) => word.bbox.x0 < imageWidth * .24);
     const detectedDayRows = leftColumn.filter((word) => /^(Mo|Di|Mi|Do|Fr|Sa|So)[.,]?$/i.test(word.text)).map((weekday) => {
       const middle = (weekday.bbox.y0 + weekday.bbox.y1) / 2;
@@ -320,10 +398,9 @@
       else duplicate.y = (duplicate.y + row.y) / 2;
       return unique;
     }, []).sort((a, b) => a.y - b.y);
-    if (range) {
-      const expectedDays = [];
-      const rangeStart = new Date(Date.UTC(now.getFullYear(), startMonth - 1, startDay));
-      for (let offset = 0; offset < 7; offset += 1) { const date = new Date(rangeStart); date.setUTCDate(rangeStart.getUTCDate() + offset); expectedDays.push({ day: date.getUTCDate(), month: date.getUTCMonth() + 1, index: offset }); }
+    let expectedDays = [];
+    if (weekMonday && (rangeValid || weekMarker)) {
+      for (let offset = 0; offset < 7; offset += 1) { const date = new Date(weekMonday); date.setUTCDate(weekMonday.getUTCDate() + offset); expectedDays.push({ day: date.getUTCDate(), month: date.getUTCMonth() + 1, date: date.toISOString().slice(0, 10), index: offset }); }
       // Some OCR engines read the weekday label and date number as one token,
       // or miss the weekday altogether. Recover rows from the narrow date
       // column when the date range gives us a reliable seven-day reference.
@@ -335,12 +412,12 @@
           .filter((item) => item.found).map((item) => ({ weekday: "", day: item.expected.day, y: item.found.y }));
         if (recovered.length >= 2) dayRows = recovered;
       }
-      if (dayRows.length >= 2 && dayRows.length < 7) {
       const matched = expectedDays.map((expected) => ({ expected, found: dayRows.find((row) => row.day === expected.day) })).filter((item) => item.found);
-      const first = matched[0]; const last = matched[matched.length - 1];
-      const step = last.expected.index !== first.expected.index ? (last.found.y - first.found.y) / (last.expected.index - first.expected.index) : 100;
-      const origin = matched.reduce((sum, item) => sum + item.found.y - item.expected.index * step, 0) / matched.length;
-      dayRows = expectedDays.map((expected) => dayRows.find((row) => row.day === expected.day) || { weekday: "", day: expected.day, y: origin + expected.index * step, inferred: true }).sort((a, b) => a.y - b.y);
+      if (matched.length >= 2 && matched.length < expectedDays.length) {
+        const first = matched[0]; const last = matched[matched.length - 1];
+        const step = last.expected.index !== first.expected.index ? (last.found.y - first.found.y) / (last.expected.index - first.expected.index) : 100;
+        const origin = matched.reduce((sum, item) => sum + item.found.y - item.expected.index * step, 0) / matched.length;
+        dayRows = expectedDays.map((expected) => dayRows.find((row) => row.day === expected.day) || { weekday: "", day: expected.day, y: origin + expected.index * step, inferred: true }).sort((a, b) => a.y - b.y);
       }
     }
     return dayRows.map((row, index) => {
@@ -348,7 +425,8 @@
       const nextY = index < dayRows.length - 1 ? (row.y + dayRows[index + 1].y) / 2 : row.y + (row.y - dayRows[index - 1]?.y || 100) / 2;
       const band = normalizeOcrTimes(words.filter((word) => { const y = (word.bbox.y0 + word.bbox.y1) / 2; return y >= previousY && y < nextY && word.bbox.x0 >= imageWidth * .18; }).sort((a, b) => a.bbox.x0 - b.bbox.x0).map((word) => word.text).join(" ")).replace(/\b([0-2]?\d)([0-5]\d)\b/g, "$1:$2");
       const times = [...band.matchAll(/(?:^|\D)([0-2]?\d)[:.]([0-5]\d)(?=\D|$)/g)].map((match) => `${match[1].padStart(2, "0")}:${match[2]}`);
-      const month = range && row.day < startDay ? endMonth : startMonth; const year = month < startMonth && endMonth < startMonth ? now.getFullYear() + 1 : now.getFullYear();
+      const expectedDay = expectedDays.find((day) => day.day === row.day);
+      const month = expectedDay?.month || (range && row.day < startDay ? endMonth : startMonth); const year = expectedDay ? Number(expectedDay.date.slice(0, 4)) : month < startMonth && endMonth < startMonth ? now.getFullYear() + 1 : now.getFullYear();
       const free = times.length < 2;
       const rawMarker = band.trim().replace(/^[\s|:;,-]+|[\s|:;,-]+$/g, "");
       const marker = rawMarker ? rawMarker.toUpperCase().slice(0, 30) : "__EMPTY__";
@@ -471,9 +549,9 @@
     if (!tabs || document.querySelector(".private-import-panel")) return;
     const panel = document.createElement("section");
     panel.className = "private-import-panel";
-    panel.innerHTML = `<header><div><small>PRIVAT / EINZELNUTZUNG</small><h2>Mein eigener Dienstplan</h2><p>Lade einen oder mehrere Dienstpläne hoch oder trage deine Einsätze vollständig manuell ein. Kollegenschichten werden separat angezeigt.</p></div><div class="private-import-actions"><button type="button" data-pick-plan><i class="fa-solid fa-file-arrow-up"></i> Dienstplan hochladen</button><button type="button" data-manual-plan><i class="fa-solid fa-pen-to-square"></i> Manuell eintragen</button><button type="button" data-absence-plan><i class="fa-solid fa-calendar-day"></i> Abwesenheit eintragen</button></div></header><input hidden type="file" data-plan-file multiple accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp,.pdf,.csv,.txt,.json,.ics,application/pdf,text/csv,text/plain,application/json,text/calendar"><p class="private-import-formats"><i class="fa-solid fa-file-circle-check"></i> PNG, JPG, WEBP, PDF, JSON, CSV, TXT und ICS · mehrere Dateien gleichzeitig möglich</p><p class="private-import-note"><i class="fa-solid fa-shield-halved"></i> HEIC/HEIF bitte vor dem Import als JPG oder PNG exportieren. Kollegennamen und ihre Schichten bleiben nur auf diesem Gerät.</p><p class="private-learning-note" data-learning-note></p>`;
+    panel.innerHTML = `<header><div><small>PRIVAT / EINZELNUTZUNG</small><h2>Mein eigener Dienstplan</h2><p>Lade einen oder mehrere Dienstpläne hoch oder trage deine Einsätze vollständig manuell ein. Kollegenschichten werden separat angezeigt.</p></div><div class="private-import-actions"><button type="button" data-pick-plan><i class="fa-solid fa-file-arrow-up"></i> Dienstplan hochladen</button><button type="button" data-manual-plan><i class="fa-solid fa-pen-to-square"></i> Manuell eintragen</button><button type="button" data-absence-plan><i class="fa-solid fa-calendar-day"></i> Abwesenheit eintragen</button></div></header><input hidden type="file" data-plan-file multiple accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp,.pdf,.csv,.txt,.json,.ics,application/pdf,text/csv,text/plain,application/json,text/calendar"><p class="private-import-formats"><i class="fa-solid fa-file-circle-check"></i> PNG, JPG, WEBP, PDF, JSON, CSV, TXT und ICS · mehrere Dateien gleichzeitig möglich</p><p class="private-import-note"><i class="fa-solid fa-shield-halved"></i> HEIC/HEIF bitte vor dem Import als JPG oder PNG exportieren. Kollegennamen und Schichten bleiben deinem privaten Konto zugeordnet und werden mit deinen Geräten synchronisiert.</p><p class="private-learning-note" data-learning-note></p>`;
     tabs.insertAdjacentElement("afterend", panel);
-    document.body.insertAdjacentHTML("beforeend", `<dialog class="private-import-dialog" id="privateImportDialog"><header><div><small>IMPORT-VORSCHAU</small><h2>Erkannte Einsätze prüfen und korrigieren</h2><p data-import-status>Die Datei wird analysiert.</p></div><button type="button" data-close-import aria-label="Schließen"><i class="fa-solid fa-xmark"></i></button></header><form><div class="private-import-toolbar"><span>Jeder Wert kann vor der Übernahme geändert werden.</span><div><button type="button" data-add-import-row><i class="fa-solid fa-plus"></i> Fehlenden Einsatz ergänzen</button><button type="button" data-add-colleague-row><i class="fa-solid fa-user-plus"></i> Kollegenschicht ergänzen</button></div></div><div class="private-import-preview" data-import-preview></div><label class="private-import-consent"><input type="checkbox" data-import-consent><span>Ich habe die Angaben geprüft und stimme der Speicherung meines Plans und der lokalen Kollegenübersicht zu.</span></label><footer><button type="button" data-close-import>Abbrechen</button><button type="submit" data-commit-import disabled><i class="fa-solid fa-check"></i> Verbindlich übernehmen</button></footer></form></dialog><dialog class="private-absence-dialog" id="privateAbsenceDialog"><header><div><small>TAG KENNZEICHNEN</small><h2>Frei oder Abwesenheit eintragen</h2><p>An diesem Tag wird keine Sollzeit berechnet.</p></div><button type="button" data-close-absence aria-label="Schließen"><i class="fa-solid fa-xmark"></i></button></header><form><label>Datum<input name="date" type="date" required></label><label>Art<select name="title"><option value="Frei">Frei</option><option value="Urlaub">Urlaub</option><option value="Krank">Krank</option></select></label><footer><button type="button" data-close-absence>Abbrechen</button><button type="submit"><i class="fa-solid fa-check"></i> Tag speichern</button></footer></form></dialog>`);
+    document.body.insertAdjacentHTML("beforeend", `<dialog class="private-import-dialog" id="privateImportDialog"><header><div><small>IMPORT-VORSCHAU</small><h2>Erkannte Einsätze prüfen und korrigieren</h2><p data-import-status>Die Datei wird analysiert.</p></div><button type="button" data-close-import aria-label="Schließen"><i class="fa-solid fa-xmark"></i></button></header><form><div class="private-import-toolbar"><span>Jeder Wert kann vor der Übernahme geändert werden.</span><div><button type="button" data-add-import-row><i class="fa-solid fa-plus"></i> Fehlenden Einsatz ergänzen</button><button type="button" data-add-colleague-row><i class="fa-solid fa-user-plus"></i> Kollegenschicht ergänzen</button></div></div><div class="private-import-preview" data-import-preview></div><label class="private-import-consent"><input type="checkbox" data-import-consent><span>Ich habe die Angaben geprüft und stimme zu, dass mein Dienstplan und die Kollegenschichten in meinem privaten Konto gespeichert und mit meinen Geräten synchronisiert werden.</span></label><footer><button type="button" data-close-import>Abbrechen</button><button type="submit" data-commit-import disabled><i class="fa-solid fa-check"></i> Verbindlich übernehmen</button></footer></form></dialog><dialog class="private-absence-dialog" id="privateAbsenceDialog"><header><div><small>TAG KENNZEICHNEN</small><h2>Frei oder Abwesenheit eintragen</h2><p>An diesem Tag wird keine Sollzeit berechnet.</p></div><button type="button" data-close-absence aria-label="Schließen"><i class="fa-solid fa-xmark"></i></button></header><form><label>Datum<input name="date" type="date" required></label><label>Art<select name="title"><option value="Frei">Frei</option><option value="Urlaub">Urlaub</option><option value="Krank">Krank</option></select></label><footer><button type="button" data-close-absence>Abbrechen</button><button type="submit"><i class="fa-solid fa-check"></i> Tag speichern</button></footer></form></dialog>`);
     const dialog = document.getElementById("privateImportDialog"); const absenceDialog = document.getElementById("privateAbsenceDialog"); const absenceForm = absenceDialog.querySelector("form"); const input = panel.querySelector("[data-plan-file]"); const status = dialog.querySelector("[data-import-status]"); const preview = dialog.querySelector("[data-import-preview]"); const learningNote = panel.querySelector("[data-learning-note]"); const consent = dialog.querySelector("[data-import-consent]"); const commit = dialog.querySelector("[data-commit-import]"); let entries = []; let visibleWeekStart = ""; let visibleMonthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1, 12);
     const setStatus = (message, state = "info") => { status.textContent = message; status.dataset.state = state; };
     const renderLearning = () => {
@@ -499,7 +577,7 @@
         const key = date.toLocaleDateString("sv-SE"); const shiftsForDay = colleaguesThisWeek.filter((entry) => entry.date === key);
         return `<div class="colleague-day${shiftsForDay.length ? " has-shifts" : ""}"><b>${date.toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" })}</b>${shiftsForDay.length ? shiftsForDay.map((entry) => `<article><span><strong>${escapeHtml(entry.personName)}</strong><small>${escapeHtml(entry.title || "Schicht")}</small></span><time>${escapeHtml(entry.start)} – ${escapeHtml(entry.end)}</time><button type="button" data-remove-colleague="${entry.savedIndex}" aria-label="Kollegenschicht entfernen"><i class="fa-solid fa-xmark"></i></button></article>`).join("") : '<span class="colleague-day-empty">–</span>'}</div>`;
       }).join("");
-      weekPanel.innerHTML = `<div class="date-switch"><button type="button" data-private-week="previous" aria-label="Vorherige Woche"><i class="fa-solid fa-chevron-left"></i></button><span>KW ${isoWeek(weekDates[0])} • ${weekDates[0].toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })} – ${weekDates[6].toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })}</span><button type="button" data-private-week="next" aria-label="Nächste Woche"><i class="fa-solid fa-chevron-right"></i></button></div><div class="week-summary"><span>Arbeitszeit<strong>${duration(total)}</strong></span><span>Einsätze<strong>${weekEntries.filter((entry) => minutes(entry) > 0).length}</strong></span><span>Pausen<strong>${weekEntries.reduce((sum, entry) => sum + Number(entry.break || 0), 0)} Min.</strong></span><span>Freie Tage<strong>${weekEntries.filter((entry) => !minutes(entry)).length}</strong></span></div><div class="week-list">${weekEntries.map((entry) => { const date = new Date(`${entry.date}T12:00:00`); const free = !minutes(entry); return `<div class="week-row${free ? " free" : ""}"><b>${date.toLocaleDateString("de-DE", { weekday: "short" })}<small>${date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}</small></b><i></i><span>${escapeHtml(entry.title || "Arbeit")}</span><em>${free ? "" : `${Number(entry.break || 0)} Min. Pause`}</em><strong>${free ? "" : `${escapeHtml(entry.start)} – ${escapeHtml(entry.end)}`}</strong></div>`; }).join("")}</div><section class="colleague-week"><header><strong>Kolleginnen und Kollegen</strong><small>Nur auf diesem Gerät gespeichert</small></header><div class="colleague-week-grid">${colleagueDays}</div>${colleaguesThisWeek.length ? '<button type="button" class="colleague-clear" data-clear-colleagues>Kollegenschichten dieser Woche löschen</button>' : '<p class="colleague-empty">Erkannte oder manuell ergänzte Kollegenschichten erscheinen hier. Prüfe die Namen und Zeiten vor dem Speichern.</p>'}</section>`;
+      weekPanel.innerHTML = `<div class="date-switch"><button type="button" data-private-week="previous" aria-label="Vorherige Woche"><i class="fa-solid fa-chevron-left"></i></button><span>KW ${isoWeek(weekDates[0])} • ${weekDates[0].toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })} – ${weekDates[6].toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })}</span><button type="button" data-private-week="next" aria-label="Nächste Woche"><i class="fa-solid fa-chevron-right"></i></button></div><div class="week-summary"><span>Arbeitszeit<strong>${duration(total)}</strong></span><span>Einsätze<strong>${weekEntries.filter((entry) => minutes(entry) > 0).length}</strong></span><span>Pausen<strong>${weekEntries.reduce((sum, entry) => sum + Number(entry.break || 0), 0)} Min.</strong></span><span>Freie Tage<strong>${weekEntries.filter((entry) => !minutes(entry)).length}</strong></span></div><div class="week-list">${weekEntries.map((entry) => { const date = new Date(`${entry.date}T12:00:00`); const free = !minutes(entry); return `<div class="week-row${free ? " free" : ""}"><b>${date.toLocaleDateString("de-DE", { weekday: "short" })}<small>${date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}</small></b><i></i><span>${escapeHtml(entry.title || "Arbeit")}</span><em>${free ? "" : `${Number(entry.break || 0)} Min. Pause`}</em><strong>${free ? "" : `${escapeHtml(entry.start)} – ${escapeHtml(entry.end)}`}</strong></div>`; }).join("")}</div><section class="colleague-week"><header><strong>Kolleginnen und Kollegen</strong><small>Nur in deinem Konto – auf deinen Geräten synchronisiert</small></header><div class="colleague-week-grid">${colleagueDays}</div>${colleaguesThisWeek.length ? '<button type="button" class="colleague-clear" data-clear-colleagues>Kollegenschichten dieser Woche löschen</button>' : '<p class="colleague-empty">Erkannte oder manuell ergänzte Kollegenschichten erscheinen hier. Prüfe die Namen und Zeiten vor dem Speichern.</p>'}</section>`;
       periodPanel.innerHTML = shifts.length ? shifts.map((entry) => { const date = new Date(`${entry.date}T12:00:00`); const free = !minutes(entry); return `<article class="period-day"><h2>${date.toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}<span>${free ? "Frei" : duration(minutes(entry))}</span></h2><p${free ? "" : ' class="active"'}>${free ? "○" : "●"} ${free ? "Kein Einsatz" : `${escapeHtml(entry.start)} – ${escapeHtml(entry.end)}`} <span>Eigener Dienstplan</span><b>${escapeHtml(entry.title || "Arbeit")}</b></p></article>`; }).join("") : '<p class="private-import-empty">Noch kein eigener Dienstplan übernommen.</p>';
       const monthPanel = document.querySelector('#schedulePage [data-panel="month"]');
       if (monthPanel) {
@@ -602,7 +680,7 @@
     preview.addEventListener("click", (event) => { const button = event.target.closest("[data-remove]"); if (button) { entries.splice(Number(button.dataset.remove), 1); render(); } });
     dialog.querySelector("[data-add-import-row]").addEventListener("click", () => { entries.push({ id: `import-${Date.now()}-${entries.length}`, date: new Date().toLocaleDateString("sv-SE"), start: "08:00", end: "16:30", break: 30, title: "Arbeit", note: "In Import-Vorschau ergänzt" }); render(); });
     dialog.querySelector("[data-add-colleague-row]").addEventListener("click", () => { entries.push({ id: `colleague-${Date.now()}-${entries.length}`, date: new Date().toLocaleDateString("sv-SE"), start: "08:00", end: "16:00", break: 0, title: "Schicht", personName: "", isColleague: true, note: "Kollegenschicht manuell ergänzt" }); render(); });
-    consent.addEventListener("change", () => { commit.disabled = !consent.checked || !entries.length || entries.some((entry) => !entry.date || (entry.isColleague ? (!entry.personName?.trim() || !entry.start || !entry.end) : (!/^(frei|urlaub|krank)$/i.test(entry.title) && (!entry.start || !entry.end)))); });
+    consent.addEventListener("change", () => { commit.disabled = !consent.checked || !entries.length || entries.some((entry) => !entry.date || (entry.isColleague ? (!entry.personName?.trim() || entry.personName === "Name prüfen" || !entry.start || !entry.end) : (!/^(frei|urlaub|krank)$/i.test(entry.title) && (!entry.start || !entry.end)))); });
     dialog.querySelectorAll("[data-close-import]").forEach((button) => button.addEventListener("click", () => platform().dialog.close(dialog)));
     dialog.querySelector("form").addEventListener("submit", (event) => { event.preventDefault(); if (commit.disabled) return; const personalEntries = entries.filter((entry) => !entry.isColleague); const colleagueEntries = entries.filter((entry) => entry.isColleague && entry.personName?.trim()); const { learning, learnedCount } = rememberCorrections(readLearning(), personalEntries); writeLearning(learning); const saved = read(); const before = new Map(saved.map((entry) => [entry.date, entry])); const changes = personalEntries.map((entry) => { const previous = before.get(entry.date); if (previous && shiftSummary(previous) === shiftSummary(entry)) return null; const date = new Date(`${entry.date}T12:00:00`).toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "long", year: "numeric" }); return previous ? `${date}: ${shiftSummary(previous)} → ${shiftSummary(entry)}` : `${date}: ${shiftSummary(entry)} eingetragen`; }).filter(Boolean).slice(0, 40); const updated = personalEntries.filter((entry) => saved.some((item) => item.date === entry.date)).length; saveEntries(platform().storage, saved, personalEntries); saveColleagues(colleagueEntries); const at = new Date().toISOString(); platform().storage.setItem("timeflow-private-last-import-v1", JSON.stringify({ at, added: personalEntries.length - updated, updated, changes })); visibleWeekStart = ""; platform().dialog.close(dialog); renderLearning(); renderSaved(); document.dispatchEvent(new CustomEvent("timeflow:private-schedule-updated")); const toast = document.getElementById("toast"); toast.textContent = `${personalEntries.length - updated} persönliche Tage ergänzt${updated ? `, ${updated} aktualisiert` : ""}.${colleagueEntries.length ? ` ${colleagueEntries.length} Kollegenschichten gespeichert.` : ""}${learnedCount ? " Korrekturen für Kürzel und wiederkehrende Schichten gemerkt." : ""}`; toast.classList.add("is-visible"); });
     const updateMode = () => { panel.hidden = !privateMode(); if (privateMode()) { const weekTab = tabs.querySelector('[data-view="week"]'); if (weekTab && weekTab.getAttribute("aria-selected") !== "true") weekTab.click(); renderLearning(); renderSaved(); } }; updateMode(); new MutationObserver(updateMode).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
