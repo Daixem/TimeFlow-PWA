@@ -32,7 +32,9 @@ document.addEventListener("DOMContentLoaded", () => {
   let ready = false;
   let syncing = false;
   let queuedUpload = false;
+  let applyingSnapshot = false;
   let queuedWorkdaySnapshot = window.TimeFlowPlatform.storage.getItem("timeflow-workday-v2") || "";
+  const SYNC_POLL_INTERVAL = 30000;
 
   function parseJson(value, fallback = null) {
     try { return JSON.parse(value) ?? fallback; } catch { return fallback; }
@@ -123,11 +125,14 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function applySnapshot(snapshot) {
     if (!snapshot || typeof snapshot !== "object") return;
-    syncKeys().forEach((key) => {
-      const value = snapshot[key];
-      if (value && typeof value === "object") window.TimeFlowPlatform.storage.setItem(key, JSON.stringify(value));
-      else window.TimeFlowPlatform.storage.removeItem(key);
-    });
+    applyingSnapshot = true;
+    try {
+      syncKeys().forEach((key) => {
+        const value = snapshot[key];
+        if (value && typeof value === "object") window.TimeFlowPlatform.storage.setItem(key, JSON.stringify(value));
+        else window.TimeFlowPlatform.storage.removeItem(key);
+      });
+    } finally { applyingSnapshot = false; }
   }
 
   function stableSnapshotValue(value) {
@@ -375,6 +380,24 @@ document.addEventListener("DOMContentLoaded", () => {
     void upload(false);
   }
 
+  function watchAccountStorage() {
+    const storage = window.TimeFlowPlatform.storage;
+    if (storage.__timeflowSyncWatch) return;
+    const setItem = storage.setItem.bind(storage);
+    const removeItem = storage.removeItem.bind(storage);
+    storage.setItem = (key, value) => {
+      const previous = storage.getItem(key);
+      setItem(key, value);
+      if (!applyingSnapshot && previous !== String(value) && syncKeys().includes(String(key))) scheduleUpload();
+    };
+    storage.removeItem = (key) => {
+      const existed = storage.getItem(key) !== null;
+      removeItem(key);
+      if (!applyingSnapshot && existed && syncKeys().includes(String(key))) scheduleUpload();
+    };
+    storage.__timeflowSyncWatch = true;
+  }
+
   function scheduleWorkdayUpload() {
     if (serverWorkTimeAuthority()) return;
     const current = window.TimeFlowPlatform.storage.getItem("timeflow-workday-v2") || "";
@@ -397,6 +420,11 @@ document.addEventListener("DOMContentLoaded", () => {
       platformAccountEmail = String(event.detail?.user?.email || "").trim().toLowerCase();
       syncButton.disabled = false;
       initialSync();
+      if (!window.timeflowSyncPoll) {
+        window.timeflowSyncPoll = window.setInterval(() => {
+          if (document.visibilityState !== "hidden" && navigator.onLine) initialSync();
+        }, SYNC_POLL_INTERVAL);
+      }
     } else {
       markReady();
       renderStatus("local", "Demo-Daten bleiben lokal", "Cloud-Synchronisierung ist ausschließlich in der geschützten privaten Site aktiv.", "Lokal");
@@ -411,7 +439,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (event.detail?.mode === "disabled" && platformSession) initialSync();
   });
   syncButton.addEventListener("click", () => upload(true));
+  watchAccountStorage();
   window.addEventListener("online", () => platformSession ? initialSync() : undefined);
+  window.addEventListener("focus", () => { if (platformSession && navigator.onLine) initialSync(); });
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && platformSession && navigator.onLine) initialSync(); });
   window.addEventListener("offline", () => renderStatus("error", "Offline – lokale Daten aktiv", "Änderungen bleiben auf diesem Gerät und können später synchronisiert werden.", "Offline"));
 
 });
