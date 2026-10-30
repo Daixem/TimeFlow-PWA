@@ -148,9 +148,20 @@
     const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob(["\ufeff", csv], { type: "text/csv;charset=utf-8" })); link.download = `timeflow-arbeitszeitkonto-${new Date().toLocaleDateString("sv-SE")}.csv`; link.click(); URL.revokeObjectURL(link.href);
   }
   function printPdf(entries) {
-    const popup = window.open("", "_blank", "noopener,noreferrer"); if (!popup) return;
+    // Keep the popup reference: Safari returns null when `noopener` is passed,
+    // even if it opened the tab. The previous code then attempted to write to
+    // an unavailable window and could surface macOS error -50.
+    const popup = window.open("", "_blank");
+    if (!popup) {
+      const toast = document.getElementById("toast");
+      if (toast) { toast.textContent = "Der Browser hat das Druckfenster blockiert. Erlaube Pop-ups für TimeFlow und versuche es erneut."; toast.classList.add("is-visible"); window.setTimeout(() => toast.classList.remove("is-visible"), 5000); }
+      return;
+    }
+    popup.opener = null;
     const rows = entries.map((entry) => `<tr><td>${escapeHtml(entry.date)}</td><td>${escapeHtml(entryType(entry))}</td><td>${escapeHtml(entry.note || "")}</td><td>${isWork(entry) ? format(entry.minutes) : format(entry.adjustment, true)}</td></tr>`).join("");
-    popup.document.write(`<!doctype html><html lang="${document.documentElement.lang}"><head><meta charset="utf-8"><title>TimeFlow Arbeitszeitkonto</title><style>body{font:14px Arial;padding:32px;color:#10243b}h1{margin-bottom:4px}table{width:100%;border-collapse:collapse;margin-top:24px}th,td{padding:9px;border-bottom:1px solid #ccd6e0;text-align:left}</style></head><body><h1>TimeFlow Arbeitszeitkonto</h1><p>Export vom ${new Date().toLocaleString(locale())}</p><table><thead><tr><th>Datum</th><th>Art</th><th>Notiz</th><th>Wert</th></tr></thead><tbody>${rows}</tbody></table><script>window.onload=()=>window.print()<\/script></body></html>`); popup.document.close();
+    popup.document.open();
+    popup.document.write(`<!doctype html><html lang="${document.documentElement.lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>TimeFlow Arbeitszeitkonto</title><style>@page{size:A4;margin:16mm}*{box-sizing:border-box}body{font:14px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif;padding:24px;color:#10243b}h1{margin:0 0 4px}p{margin:0;color:#53677c}table{width:100%;border-collapse:collapse;margin-top:24px}th,td{padding:9px;border-bottom:1px solid #ccd6e0;text-align:left;vertical-align:top}thead{display:table-header-group}tr{break-inside:avoid}th:last-child,td:last-child{text-align:right;white-space:nowrap}@media print{body{padding:0}}</style></head><body><h1>TimeFlow Arbeitszeitkonto</h1><p>Export vom ${escapeHtml(new Date().toLocaleString(locale()))}</p><table><thead><tr><th>Datum</th><th>Art</th><th>Notiz</th><th>Wert</th></tr></thead><tbody>${rows || '<tr><td colspan="4">Für diesen Monat liegen keine Einträge vor.</td></tr>'}</tbody></table><script>window.addEventListener("load",()=>setTimeout(()=>{window.focus();window.print()},250))<\/script></body></html>`);
+    popup.document.close();
   }
   function captureCompletedWorkday() {
     if (window.TimeFlowWorkTimeReady && (!window.TimeFlowWorkTimeReady() || window.TimeFlowWorkTimeServerEnabled?.())) return;
