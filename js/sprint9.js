@@ -31,6 +31,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let platformAccountEmail = "";
   let ready = false;
   let syncing = false;
+  let queuedUpload = false;
   let queuedWorkdaySnapshot = window.TimeFlowPlatform.storage.getItem("timeflow-workday-v2") || "";
 
   function parseJson(value, fallback = null) {
@@ -127,6 +128,57 @@ document.addEventListener("DOMContentLoaded", () => {
       if (value && typeof value === "object") window.TimeFlowPlatform.storage.setItem(key, JSON.stringify(value));
       else window.TimeFlowPlatform.storage.removeItem(key);
     });
+  }
+
+  function stableSnapshotValue(value) {
+    if (Array.isArray(value)) return value.map(stableSnapshotValue);
+    if (value && typeof value === "object") return Object.fromEntries(Object.keys(value).sort().map((key) => [key, stableSnapshotValue(value[key])]));
+    return value;
+  }
+  function sameSnapshotValue(left, right) { return JSON.stringify(stableSnapshotValue(left)) === JSON.stringify(stableSnapshotValue(right)); }
+  function mergePersonalScheduleByDate(remoteRows, localRows, baseRows) {
+    if (![remoteRows, localRows, baseRows].every(Array.isArray)) return localRows;
+    const byDate = (rows) => new Map(rows.filter((entry) => entry && typeof entry.date === "string" && !entry.isColleague).map((entry) => [entry.date, entry]));
+    const remote = byDate(remoteRows), local = byDate(localRows), base = byDate(baseRows);
+    const merged = new Map(remoteRows.filter((entry) => entry && (entry.isColleague || typeof entry.date !== "string")).map((entry, index) => [`remote-extra-${index}`, entry]));
+    for (const date of new Set([...remote.keys(), ...local.keys(), ...base.keys()])) {
+      const localEntry = local.get(date), baseEntry = base.get(date);
+      const localChanged = !sameSnapshotValue(localEntry, baseEntry);
+      const selected = localChanged ? localEntry : remote.get(date);
+      if (selected) merged.set(date, selected);
+    }
+    return [...merged.values()].sort((a, b) => `${a.date || ""}${a.start || ""}`.localeCompare(`${b.date || ""}${b.start || ""}`));
+  }
+  async function uploadUnsyncedLocalChanges(cloud) {
+    const base = baseSnapshot();
+    if (!base) return false;
+    const local = collectSnapshot();
+    if (sameSnapshotValue(local, base)) return false;
+    const remote = cloud.snapshot || {};
+    const merged = conflictLogic.mergeChangedKeys(remote, local, base);
+    const scheduleKey = "timeflow-private-schedule-v1";
+    const localScheduleChanged = !sameSnapshotValue(local[scheduleKey], base[scheduleKey]);
+    if (localScheduleChanged) merged[scheduleKey] = mergePersonalScheduleByDate(remote[scheduleKey] || [], local[scheduleKey] || [], base[scheduleKey] || []);
+    if (sameSnapshotValue(merged, remote)) return false;
+    try {
+      const result = await requestSync("PUT", { snapshot: merged, expectedRevision: Number(cloud.revision || 0) });
+      applySnapshot(merged);
+      saveMeta(result.revision, result.updatedAt);
+      saveBaseSnapshot(merged);
+      document.dispatchEvent(new CustomEvent("timeflow:sync-restored", { detail: { revision: result.revision, updatedAt: result.updatedAt } }));
+      renderStatus("synced", "Cloud-Sicherung ist aktuell", "Deine Dienstplanänderungen wurden sicher mit deinen Geräten abgeglichen.", "Synchron");
+      markReady();
+      return true;
+    } catch (error) {
+      if (error.status === 409) {
+        const conflict = conflictLogic.handleSyncConflict({ storage: window.TimeFlowPlatform.storage, localSnapshot: local, baseSnapshot: base, response: error.result || {} });
+        showConflict({ data: conflict.serverSnapshot, revision: conflict.serverRevision, updatedAt: conflict.updatedAt });
+        renderStatus("error", "Änderungskonflikt erkannt", "Der Dienstplan wurde auf einem anderen Gerät geändert. Deine lokale Änderung bleibt erhalten.", "Abgleich nötig");
+        markReady();
+        return true;
+      }
+      throw error;
+    }
   }
 
   function accountScope() { return platformAccountId || platformAccountEmail || "unresolved"; }
@@ -228,6 +280,7 @@ document.addEventListener("DOMContentLoaded", () => {
     } finally {
       syncing = false;
       syncButton.disabled = !platformSession || !navigator.onLine;
+      if (queuedUpload && platformSession && navigator.onLine && ready) window.setTimeout(flushQueuedUpload, 0);
     }
   }
 
@@ -270,6 +323,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       if (await migrateColleagueSchedule(cloud)) return;
+      if (await uploadUnsyncedLocalChanges(cloud)) return;
       if (!localMeta.revision || Number(cloud.revision) > Number(localMeta.revision)) {
         applySnapshot(cloud.snapshot);
         saveMeta(cloud.revision, cloud.updatedAt);
@@ -283,7 +337,14 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       saveMeta(cloud.revision, cloud.updatedAt);
-      if (Number(cloud.revision) === Number(localMeta.revision)) saveBaseSnapshot(cloud.snapshot);
+      if (Number(cloud.revision) === Number(localMeta.revision)) {
+        const base = baseSnapshot();
+        if (base && sameSnapshotValue(collectSnapshot(), base) && !sameSnapshotValue(base, cloud.snapshot)) {
+          applySnapshot(cloud.snapshot);
+          document.dispatchEvent(new CustomEvent("timeflow:sync-restored", { detail: { revision: cloud.revision, updatedAt: cloud.updatedAt } }));
+        }
+        saveBaseSnapshot(cloud.snapshot);
+      }
       renderStatus("synced", "Cloud-Sicherung ist aktuell", "Profil und Einstellungen sind mit deinem privaten Konto verbunden.", "Synchron");
       markReady();
     } catch {
@@ -298,13 +359,20 @@ document.addEventListener("DOMContentLoaded", () => {
     } finally {
       syncing = false;
       syncButton.disabled = !platformSession || !navigator.onLine;
+      if (queuedUpload && platformSession && navigator.onLine && ready) window.setTimeout(flushQueuedUpload, 0);
     }
   }
 
   function scheduleUpload() {
-    if (!platformSession || !ready) return;
+    if (!platformSession) return;
+    queuedUpload = true;
     window.clearTimeout(scheduleUpload.timer);
-    scheduleUpload.timer = window.setTimeout(() => upload(false), 900);
+    scheduleUpload.timer = window.setTimeout(flushQueuedUpload, 900);
+  }
+  function flushQueuedUpload() {
+    if (!queuedUpload || !platformSession || !navigator.onLine || !ready || syncing) return;
+    queuedUpload = false;
+    void upload(false);
   }
 
   function scheduleWorkdayUpload() {
