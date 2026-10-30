@@ -5,8 +5,8 @@ const code = await readFile(new URL("../js/private-schedule-import.js", import.m
 const scheduleShell = await readFile(new URL("../js/sprint10.js", import.meta.url), "utf8");
 const scheduleStyles = await readFile(new URL("../css/theme-personalization.css", import.meta.url), "utf8");
 if (!code.includes("shifts[shifts.length - 1]") || !code.includes('visibleWeekStart = ""; renderSaved();') || !scheduleShell.includes('document.documentElement.classList.contains("timeflow-private-mode")')) throw new Error("Beim Öffnen des persönlichen Dienstplans muss die aktuelle relevante Woche statt einer alten Auswahl angezeigt werden.");
-if (!code.includes('class="colleague-day-shifts"') || !scheduleStyles.includes(".colleague-day-shifts { display: grid;")) throw new Error("Mehrere Kollegenschichten am selben Tag müssen gemeinsam in einer eigenen, breiten Tagesfläche stehen.");
-if (!code.includes('class="is-personal"') || !code.includes("${rosterDays}") || code.includes('<div class="week-list">')) throw new Error("Eigene Schichten und Kollegenschichten müssen in einer gemeinsamen Wochenübersicht erscheinen.");
+if (!code.includes('class="week-roster-table"') || !code.includes("Name / Schicht") || !scheduleStyles.includes(".week-roster-table { width: 100%")) throw new Error("Die Wochenübersicht muss alle Einträge in einer lesbaren Tabelle darstellen.");
+if (!code.includes('"is-personal" : "is-colleague"') || !code.includes("${rosterRows}") || code.includes('<div class="week-list">') || code.includes('class="colleague-day-shifts"')) throw new Error("Eigene Schichten und Kollegenschichten müssen in einer einzigen gemeinsamen Tabelle stehen.");
 for (const marker of ["multiple accept=", "application/pdf", "application/json", "async function readPlanFile", "json.schedule", "mehrere Dateien gleichzeitig möglich", "data-private-week=\"previous\"", "data-private-week=\"next\"", "data-absence-plan", "privateAbsenceDialog", "data-field=\"absenceType\"", "Geplante Schichtzeit wird gutgeschrieben", "absenceCreditMinutes: minutes(entry)"]) {
   if (!code.includes(marker)) throw new Error(`Mehrfach- oder Dateiformatimport fehlt: ${marker}`);
 }
