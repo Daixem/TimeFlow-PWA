@@ -1,6 +1,7 @@
 import vm from "node:vm";
 import { readFile } from "node:fs/promises";
 const source = await readFile(new URL("../js/work-protection.js", import.meta.url), "utf8");
+if (!source.includes("work-protection-details") || !source.includes("Hinweise ansehen (") || !source.includes("mögliche Hinweise aus den eingetragenen Diensten")) throw new Error("Arbeits- und Jugendschutz zeigt alle Hinweise ungefiltert statt einer kompakten Übersicht mit aufklappbaren Details.");
 const document = { addEventListener() {}, querySelectorAll() { return []; } };
 const localStorage = { getItem() { return null; }, setItem() {} };
 const window = { TimeFlowPlatform: { storage: localStorage } };
