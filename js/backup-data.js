@@ -2,6 +2,7 @@
   "use strict";
 
   const LEARNING_PREFIX = "timeflow-private-schedule-learning-v1:";
+  const COLLEAGUE_PREFIX = "timeflow-private-colleague-schedule-v1:";
   const ALLOWED_KEYS = new Set([
     "timeflow-profile-v1", "timeflow-settings-v1", "timeflow-profile-preferences-v1",
     "timeflow-custom-background-v1", "timeflow-private-schedule-v1", "timeflow-private-account-v1",
@@ -18,6 +19,10 @@
   function isAllowedKey(key, accountEmail = "") {
     if (EXCLUDED_KEYS.has(key)) return false;
     if (ALLOWED_KEYS.has(key)) return true;
+    if (key.startsWith(COLLEAGUE_PREFIX)) {
+      const suffix = key.slice(COLLEAGUE_PREFIX.length);
+      return suffix === "local-private-user" || (Boolean(accountEmail) && suffix.toLowerCase() === String(accountEmail).trim().toLowerCase());
+    }
     if (!key.startsWith(LEARNING_PREFIX)) return false;
     const suffix = key.slice(LEARNING_PREFIX.length);
     return suffix === "local-private-user" || (Boolean(accountEmail) && suffix.toLowerCase() === String(accountEmail).trim().toLowerCase());

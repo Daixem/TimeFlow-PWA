@@ -1,6 +1,8 @@
 (function () {
   "use strict";
   const KEY = "timeflow-private-schedule-v1";
+  const COLLEAGUE_KEY_PREFIX = "timeflow-private-colleague-schedule-v1:";
+  const colleagueKey = () => `${COLLEAGUE_KEY_PREFIX}${userKey()}`;
   const PDFJS_MODULE_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs";
   const PDFJS_WORKER_URL = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs";
   // OCR is a core private-schedule feature. It deliberately uses fixed local
@@ -21,9 +23,18 @@
   const platform = () => window.TimeFlowPlatform;
   const privateMode = () => document.documentElement.classList.contains("timeflow-private-mode") || document.body.dataset.appMode === "private";
   const read = () => { try { const value = JSON.parse(platform().storage.getItem(KEY) || "[]"); return Array.isArray(value) ? value : []; } catch (_error) { return []; } };
+  const readColleagues = () => { try { const value = JSON.parse(platform().storage.getItem(colleagueKey()) || "[]"); return Array.isArray(value) ? value : []; } catch (_error) { return []; } };
+  const saveColleagues = (incoming) => {
+    const merged = new Map(readColleagues().map((entry) => [`${entry.date}|${normalizeLearningText(entry.personName)}`, entry]));
+    incoming.forEach((entry) => merged.set(`${entry.date}|${normalizeLearningText(entry.personName)}`, entry));
+    const value = [...merged.values()].sort((a, b) => `${a.date}${a.start}${a.personName}`.localeCompare(`${b.date}${b.start}${b.personName}`));
+    platform().storage.setItem(colleagueKey(), JSON.stringify(value));
+    return value;
+  };
   const mergeEntries = (saved, incoming) => {
-    const merged = new Map(saved.map((entry) => [entry.date, entry]));
-    incoming.forEach((entry) => merged.set(entry.date, entry));
+    const key = (entry) => entry.isColleague ? `${entry.date}|colleague|${normalizeLearningText(entry.personName)}` : `${entry.date}|personal`;
+    const merged = new Map(saved.map((entry) => [key(entry), entry]));
+    incoming.forEach((entry) => merged.set(key(entry), entry));
     return [...merged.values()].sort((a, b) => `${a.date}${a.start}`.localeCompare(`${b.date}${b.start}`));
   };
   const shiftSummary = (entry) => !entry ? "Kein Eintrag" : /^(frei|urlaub|krank)$/i.test(entry.title || "") ? (entry.title || "Frei") : `${entry.title || "Arbeit"}, ${entry.start || "--:--"}–${entry.end || "--:--"}`;
@@ -218,6 +229,82 @@
     };
     visit({ blocks: data.blocks || [] });
     if (!words.length) return [];
+    const maxY = Math.max(...words.map((word) => Number(word.bbox.y1) || 0));
+    const headerLimit = maxY * .24;
+    const topWords = words.filter((word) => (word.bbox.y0 + word.bbox.y1) / 2 < headerLimit).sort((a, b) => ((a.bbox.y0 + a.bbox.y1) / 2) - ((b.bbox.y0 + b.bbox.y1) / 2));
+    const headerBands = [];
+    topWords.forEach((word) => {
+      const y = (word.bbox.y0 + word.bbox.y1) / 2;
+      let band = headerBands.find((candidate) => Math.abs(candidate.y - y) < Math.max(16, maxY * .018));
+      if (!band) { band = { y, words: [] }; headerBands.push(band); }
+      band.words.push(word); band.y = band.words.reduce((sum, item) => sum + (item.bbox.y0 + item.bbox.y1) / 2, 0) / band.words.length;
+    });
+    const dateHeaders = [];
+    headerBands.forEach((band) => {
+      const line = band.words.sort((a, b) => a.bbox.x0 - b.bbox.x0);
+      for (let start = 0; start < line.length; start += 1) {
+        for (let count = 1; count <= 3 && start + count <= line.length; count += 1) {
+          const selected = line.slice(start, start + count);
+          const value = selected.map((item) => item.text).join("").replace(/[^\d.]/g, "");
+          const match = value.match(/^(\d{1,2})\.(\d{1,2})\.?$/);
+          if (match) { dateHeaders.push({ day: Number(match[1]), month: Number(match[2]), x: (selected[0].bbox.x0 + selected[selected.length - 1].bbox.x1) / 2, y: band.y }); start += count - 1; break; }
+        }
+      }
+    });
+    const uniqueHeaders = dateHeaders.sort((a, b) => a.x - b.x).filter((header, index, list) => list.findIndex((item) => item.day === header.day && item.month === header.month) === index);
+    const currentDate = new Date();
+    const headerDates = uniqueHeaders.map((header) => {
+      let year = currentDate.getFullYear();
+      let value = new Date(Date.UTC(year, header.month - 1, header.day));
+      if (value < new Date(Date.UTC(year, currentDate.getMonth(), currentDate.getDate() - 60))) { year += 1; value = new Date(Date.UTC(year, header.month - 1, header.day)); }
+      return { ...header, date: value.toISOString().slice(0, 10) };
+    });
+    const hasWeekHeader = headerDates.length >= 4 && headerDates.slice(1).every((header, index) => {
+      const previous = new Date(`${headerDates[index].date}T12:00:00Z`); previous.setUTCDate(previous.getUTCDate() + 1);
+      return previous.toISOString().slice(5, 10) === header.date.slice(5, 10);
+    });
+    if (hasWeekHeader) {
+      const cellLines = headerDates.map((header, index) => {
+        const left = index ? (headerDates[index - 1].x + header.x) / 2 : header.x - (headerDates[index + 1].x - header.x) / 2;
+        const right = index < headerDates.length - 1 ? (header.x + headerDates[index + 1].x) / 2 : header.x + (header.x - headerDates[index - 1].x) / 2;
+        const cellWords = words.filter((word) => { const x = (word.bbox.x0 + word.bbox.x1) / 2; const y = (word.bbox.y0 + word.bbox.y1) / 2; return x >= left && x < right && y > header.y + Math.max(22, maxY * .025); }).sort((a, b) => ((a.bbox.y0 + a.bbox.y1) / 2) - ((b.bbox.y0 + b.bbox.y1) / 2));
+        const lines = [];
+        cellWords.forEach((word) => {
+          const y = (word.bbox.y0 + word.bbox.y1) / 2;
+          let line = lines.find((candidate) => Math.abs(candidate.y - y) < Math.max(13, maxY * .014));
+          if (!line) { line = { y, words: [] }; lines.push(line); }
+          line.words.push(word); line.y = line.words.reduce((sum, item) => sum + (item.bbox.y0 + item.bbox.y1) / 2, 0) / line.words.length;
+        });
+        lines.forEach((line) => { line.words.sort((a, b) => a.bbox.x0 - b.bbox.x0); line.text = line.words.map((word) => word.text).join(" ").trim(); });
+        return { header, lines };
+      });
+      const colleagueEntries = [];
+      const nonName = /\b(?:rezeption|hotel|restaurant|fruhschicht|spatschicht|nachtschicht|schicht|pause|dienstplan|kw|montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag)\b/i;
+      const personName = (line) => {
+        const cleaned = String(line || "").replace(/(?:[01]?\d|2[0-3])[:.][0-5]\d/g, " ").replace(/[|,:;–—-]/g, " ").replace(/\s+/g, " ").trim();
+        const tokens = cleaned.split(" ").filter(Boolean);
+        return tokens.length >= 2 && tokens.length <= 5 && !nonName.test(cleaned) && tokens.every((token) => /^[\p{L}][\p{L}'.-]*$/u.test(token)) ? cleaned : "";
+      };
+      cellLines.forEach(({ header, lines }) => {
+        const timeRows = lines.map((line) => {
+          const normalized = normalizeOcrTimes(line.text).replace(/\b([0-2]?\d)([0-5]\d)\b/g, "$1:$2");
+          const times = [...normalized.matchAll(/(?:^|\D)([0-2]?\d)[:.]([0-5]\d)(?=\D|$)/g)].map((match) => `${match[1].padStart(2, "0")}:${match[2]}`);
+          return times.length >= 2 ? { line, start: times[0], end: times[1] } : null;
+        }).filter(Boolean);
+        const consumedNames = new Set();
+        timeRows.forEach(({ line, start, end }, rowIndex) => {
+          const candidates = lines.map((candidate, candidateIndex) => ({ candidate, candidateIndex, name: personName(candidate.text), distance: line.y - candidate.y }))
+            .filter((item) => item.name && !consumedNames.has(item.candidateIndex) && item.distance >= -12 && item.distance <= Math.max(100, maxY * .14))
+            .sort((a, b) => Math.abs(a.distance) - Math.abs(b.distance));
+          let name = candidates[0]?.name || "";
+          if (candidates[0]) consumedNames.add(candidates[0].candidateIndex);
+          if (!name) name = personName(line.text);
+          if (!name) return;
+          colleagueEntries.push({ id: `colleague-${Date.now()}-${colleagueEntries.length}`, date: header.date, start, end, break: 0, title: "Schicht", personName: name, isColleague: true, note: "Kollegenschicht aus Wochenplan erkannt" });
+        });
+      });
+      if (colleagueEntries.length) return colleagueEntries;
+    }
     const allText = words.map((word) => word.text).join(" ").replace(/[–—]/g, "-");
     const range = allText.match(/(\d{1,2})\s*\.?\s*(\d{2})\s*\.?\s*-\s*(\d{1,2})\s*\.?\s*(\d{2})\s*\.?/);
     const now = new Date(); const startMonth = Number(range?.[2] || now.getMonth() + 1); const endMonth = Number(range?.[4] || startMonth); const startDay = Number(range?.[1] || 1);
@@ -384,9 +471,9 @@
     if (!tabs || document.querySelector(".private-import-panel")) return;
     const panel = document.createElement("section");
     panel.className = "private-import-panel";
-    panel.innerHTML = `<header><div><small>PRIVAT / EINZELNUTZUNG</small><h2>Mein eigener Dienstplan</h2><p>Lade einen oder mehrere Dienstpläne hoch oder trage deine Einsätze vollständig manuell ein.</p></div><div class="private-import-actions"><button type="button" data-pick-plan><i class="fa-solid fa-file-arrow-up"></i> Dienstplan hochladen</button><button type="button" data-manual-plan><i class="fa-solid fa-pen-to-square"></i> Manuell eintragen</button><button type="button" data-absence-plan><i class="fa-solid fa-calendar-day"></i> Abwesenheit eintragen</button></div></header><input hidden type="file" data-plan-file multiple accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp,.pdf,.csv,.txt,.json,.ics,application/pdf,text/csv,text/plain,application/json,text/calendar"><p class="private-import-formats"><i class="fa-solid fa-file-circle-check"></i> PNG, JPG, WEBP, PDF, JSON, CSV, TXT und ICS · mehrere Dateien gleichzeitig möglich</p><p class="private-import-note"><i class="fa-solid fa-shield-halved"></i> HEIC/HEIF bitte vor dem Import als JPG oder PNG exportieren. Auswählen oder Eintragen allein ändert nichts.</p><p class="private-learning-note" data-learning-note></p>`;
+    panel.innerHTML = `<header><div><small>PRIVAT / EINZELNUTZUNG</small><h2>Mein eigener Dienstplan</h2><p>Lade einen oder mehrere Dienstpläne hoch oder trage deine Einsätze vollständig manuell ein. Kollegenschichten werden separat angezeigt.</p></div><div class="private-import-actions"><button type="button" data-pick-plan><i class="fa-solid fa-file-arrow-up"></i> Dienstplan hochladen</button><button type="button" data-manual-plan><i class="fa-solid fa-pen-to-square"></i> Manuell eintragen</button><button type="button" data-absence-plan><i class="fa-solid fa-calendar-day"></i> Abwesenheit eintragen</button></div></header><input hidden type="file" data-plan-file multiple accept="image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp,.pdf,.csv,.txt,.json,.ics,application/pdf,text/csv,text/plain,application/json,text/calendar"><p class="private-import-formats"><i class="fa-solid fa-file-circle-check"></i> PNG, JPG, WEBP, PDF, JSON, CSV, TXT und ICS · mehrere Dateien gleichzeitig möglich</p><p class="private-import-note"><i class="fa-solid fa-shield-halved"></i> HEIC/HEIF bitte vor dem Import als JPG oder PNG exportieren. Kollegennamen und ihre Schichten bleiben nur auf diesem Gerät.</p><p class="private-learning-note" data-learning-note></p>`;
     tabs.insertAdjacentElement("afterend", panel);
-    document.body.insertAdjacentHTML("beforeend", `<dialog class="private-import-dialog" id="privateImportDialog"><header><div><small>IMPORT-VORSCHAU</small><h2>Erkannte Einsätze prüfen und korrigieren</h2><p data-import-status>Die Datei wird analysiert.</p></div><button type="button" data-close-import aria-label="Schließen"><i class="fa-solid fa-xmark"></i></button></header><form><div class="private-import-toolbar"><span>Jeder Wert kann vor der Übernahme geändert werden.</span><button type="button" data-add-import-row><i class="fa-solid fa-plus"></i> Fehlenden Einsatz ergänzen</button></div><div class="private-import-preview" data-import-preview></div><label class="private-import-consent"><input type="checkbox" data-import-consent><span>Ich habe alle Einträge geprüft und stimme der Übernahme in meinen privaten Dienstplan zu.</span></label><footer><button type="button" data-close-import>Abbrechen</button><button type="submit" data-commit-import disabled><i class="fa-solid fa-check"></i> Verbindlich übernehmen</button></footer></form></dialog><dialog class="private-absence-dialog" id="privateAbsenceDialog"><header><div><small>TAG KENNZEICHNEN</small><h2>Frei oder Abwesenheit eintragen</h2><p>An diesem Tag wird keine Sollzeit berechnet.</p></div><button type="button" data-close-absence aria-label="Schließen"><i class="fa-solid fa-xmark"></i></button></header><form><label>Datum<input name="date" type="date" required></label><label>Art<select name="title"><option value="Frei">Frei</option><option value="Urlaub">Urlaub</option><option value="Krank">Krank</option></select></label><footer><button type="button" data-close-absence>Abbrechen</button><button type="submit"><i class="fa-solid fa-check"></i> Tag speichern</button></footer></form></dialog>`);
+    document.body.insertAdjacentHTML("beforeend", `<dialog class="private-import-dialog" id="privateImportDialog"><header><div><small>IMPORT-VORSCHAU</small><h2>Erkannte Einsätze prüfen und korrigieren</h2><p data-import-status>Die Datei wird analysiert.</p></div><button type="button" data-close-import aria-label="Schließen"><i class="fa-solid fa-xmark"></i></button></header><form><div class="private-import-toolbar"><span>Jeder Wert kann vor der Übernahme geändert werden.</span><div><button type="button" data-add-import-row><i class="fa-solid fa-plus"></i> Fehlenden Einsatz ergänzen</button><button type="button" data-add-colleague-row><i class="fa-solid fa-user-plus"></i> Kollegenschicht ergänzen</button></div></div><div class="private-import-preview" data-import-preview></div><label class="private-import-consent"><input type="checkbox" data-import-consent><span>Ich habe die Angaben geprüft und stimme der Speicherung meines Plans und der lokalen Kollegenübersicht zu.</span></label><footer><button type="button" data-close-import>Abbrechen</button><button type="submit" data-commit-import disabled><i class="fa-solid fa-check"></i> Verbindlich übernehmen</button></footer></form></dialog><dialog class="private-absence-dialog" id="privateAbsenceDialog"><header><div><small>TAG KENNZEICHNEN</small><h2>Frei oder Abwesenheit eintragen</h2><p>An diesem Tag wird keine Sollzeit berechnet.</p></div><button type="button" data-close-absence aria-label="Schließen"><i class="fa-solid fa-xmark"></i></button></header><form><label>Datum<input name="date" type="date" required></label><label>Art<select name="title"><option value="Frei">Frei</option><option value="Urlaub">Urlaub</option><option value="Krank">Krank</option></select></label><footer><button type="button" data-close-absence>Abbrechen</button><button type="submit"><i class="fa-solid fa-check"></i> Tag speichern</button></footer></form></dialog>`);
     const dialog = document.getElementById("privateImportDialog"); const absenceDialog = document.getElementById("privateAbsenceDialog"); const absenceForm = absenceDialog.querySelector("form"); const input = panel.querySelector("[data-plan-file]"); const status = dialog.querySelector("[data-import-status]"); const preview = dialog.querySelector("[data-import-preview]"); const learningNote = panel.querySelector("[data-learning-note]"); const consent = dialog.querySelector("[data-import-consent]"); const commit = dialog.querySelector("[data-commit-import]"); let entries = []; let visibleWeekStart = ""; let visibleMonthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1, 12);
     const setStatus = (message, state = "info") => { status.textContent = message; status.dataset.state = state; };
     const renderLearning = () => {
@@ -401,11 +488,18 @@
       const dayPanel = document.querySelector('#schedulePage [data-panel="day"]'); const weekPanel = document.querySelector('#schedulePage [data-panel="week"]'); const periodPanel = document.querySelector('#schedulePage [data-panel="period"]');
       if (!dayPanel || !weekPanel || !periodPanel) return;
       const today = new Date().toLocaleDateString("sv-SE"); const selected = shifts.find((entry) => entry.date === today) || shifts.find((entry) => entry.date >= today) || shifts[0];
-      const selectedDate = selected ? new Date(`${selected.date}T12:00:00`) : new Date();
+      const colleagueFallback = readColleagues().find((entry) => entry.date >= today) || readColleagues()[0];
+      const selectedDate = selected ? new Date(`${selected.date}T12:00:00`) : colleagueFallback ? new Date(`${colleagueFallback.date}T12:00:00`) : new Date();
       dayPanel.innerHTML = `<div class="date-switch"><span>${selectedDate.toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}</span></div>${selected ? `<article class="my-shift"><p><i class="fa-solid fa-briefcase"></i> Eigener Dienstplan</p><div><i class="fa-regular fa-clock"></i><span><strong>${/^(frei|urlaub|krank)$/i.test(selected.title) ? escapeHtml(selected.title) : `${escapeHtml(selected.start)} – ${escapeHtml(selected.end)}`}</strong><small>${escapeHtml(selected.title || "Arbeit")}</small></span><em>Importiert</em></div><footer>${/^(frei|urlaub|krank)$/i.test(selected.title) ? "Kein Einsatz geplant" : `${duration(minutes(selected))} Arbeitszeit · ${Number(selected.break || 0)} Min. Pause`}</footer></article>` : '<p class="private-import-empty">Noch kein eigener Dienstplan übernommen.</p>'}`;
       const monday = visibleWeekStart ? new Date(`${visibleWeekStart}T12:00:00`) : new Date(selectedDate); const weekday = (monday.getDay() + 6) % 7; monday.setDate(monday.getDate() - weekday); visibleWeekStart = monday.toLocaleDateString("sv-SE"); const weekDates = Array.from({ length: 7 }, (_, index) => { const value = new Date(monday); value.setDate(monday.getDate() + index); return value; });
       const weekEntries = weekDates.map((date) => shifts.find((entry) => entry.date === date.toLocaleDateString("sv-SE")) || { date: date.toLocaleDateString("sv-SE"), title: "Frei", start: "", end: "", break: 0 }); const total = weekEntries.reduce((sum, entry) => sum + minutes(entry), 0);
-      weekPanel.innerHTML = `<div class="date-switch"><button type="button" data-private-week="previous" aria-label="Vorherige Woche"><i class="fa-solid fa-chevron-left"></i></button><span>KW ${isoWeek(weekDates[0])} • ${weekDates[0].toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })} – ${weekDates[6].toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })}</span><button type="button" data-private-week="next" aria-label="Nächste Woche"><i class="fa-solid fa-chevron-right"></i></button></div><div class="week-summary"><span>Arbeitszeit<strong>${duration(total)}</strong></span><span>Einsätze<strong>${weekEntries.filter((entry) => minutes(entry) > 0).length}</strong></span><span>Pausen<strong>${weekEntries.reduce((sum, entry) => sum + Number(entry.break || 0), 0)} Min.</strong></span><span>Freie Tage<strong>${weekEntries.filter((entry) => !minutes(entry)).length}</strong></span></div><div class="week-list">${weekEntries.map((entry) => { const date = new Date(`${entry.date}T12:00:00`); const free = !minutes(entry); return `<div class="week-row${free ? " free" : ""}"><b>${date.toLocaleDateString("de-DE", { weekday: "short" })}<small>${date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}</small></b><i></i><span>${escapeHtml(entry.title || "Arbeit")}</span><em>${free ? "" : `${Number(entry.break || 0)} Min. Pause`}</em><strong>${free ? "" : `${escapeHtml(entry.start)} – ${escapeHtml(entry.end)}`}</strong></div>`; }).join("")}</div>`;
+      const colleagueShifts = readColleagues();
+      const colleaguesThisWeek = colleagueShifts.map((entry, index) => ({ ...entry, savedIndex: index })).filter((entry) => entry.date >= weekDates[0].toLocaleDateString("sv-SE") && entry.date <= weekDates[6].toLocaleDateString("sv-SE"));
+      const colleagueDays = weekDates.map((date) => {
+        const key = date.toLocaleDateString("sv-SE"); const shiftsForDay = colleaguesThisWeek.filter((entry) => entry.date === key);
+        return `<div class="colleague-day${shiftsForDay.length ? " has-shifts" : ""}"><b>${date.toLocaleDateString("de-DE", { weekday: "short", day: "2-digit", month: "2-digit" })}</b>${shiftsForDay.length ? shiftsForDay.map((entry) => `<article><span><strong>${escapeHtml(entry.personName)}</strong><small>${escapeHtml(entry.title || "Schicht")}</small></span><time>${escapeHtml(entry.start)} – ${escapeHtml(entry.end)}</time><button type="button" data-remove-colleague="${entry.savedIndex}" aria-label="Kollegenschicht entfernen"><i class="fa-solid fa-xmark"></i></button></article>`).join("") : '<span class="colleague-day-empty">–</span>'}</div>`;
+      }).join("");
+      weekPanel.innerHTML = `<div class="date-switch"><button type="button" data-private-week="previous" aria-label="Vorherige Woche"><i class="fa-solid fa-chevron-left"></i></button><span>KW ${isoWeek(weekDates[0])} • ${weekDates[0].toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })} – ${weekDates[6].toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" })}</span><button type="button" data-private-week="next" aria-label="Nächste Woche"><i class="fa-solid fa-chevron-right"></i></button></div><div class="week-summary"><span>Arbeitszeit<strong>${duration(total)}</strong></span><span>Einsätze<strong>${weekEntries.filter((entry) => minutes(entry) > 0).length}</strong></span><span>Pausen<strong>${weekEntries.reduce((sum, entry) => sum + Number(entry.break || 0), 0)} Min.</strong></span><span>Freie Tage<strong>${weekEntries.filter((entry) => !minutes(entry)).length}</strong></span></div><div class="week-list">${weekEntries.map((entry) => { const date = new Date(`${entry.date}T12:00:00`); const free = !minutes(entry); return `<div class="week-row${free ? " free" : ""}"><b>${date.toLocaleDateString("de-DE", { weekday: "short" })}<small>${date.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" })}</small></b><i></i><span>${escapeHtml(entry.title || "Arbeit")}</span><em>${free ? "" : `${Number(entry.break || 0)} Min. Pause`}</em><strong>${free ? "" : `${escapeHtml(entry.start)} – ${escapeHtml(entry.end)}`}</strong></div>`; }).join("")}</div><section class="colleague-week"><header><strong>Kolleginnen und Kollegen</strong><small>Nur auf diesem Gerät gespeichert</small></header><div class="colleague-week-grid">${colleagueDays}</div>${colleaguesThisWeek.length ? '<button type="button" class="colleague-clear" data-clear-colleagues>Kollegenschichten dieser Woche löschen</button>' : '<p class="colleague-empty">Erkannte oder manuell ergänzte Kollegenschichten erscheinen hier. Prüfe die Namen und Zeiten vor dem Speichern.</p>'}</section>`;
       periodPanel.innerHTML = shifts.length ? shifts.map((entry) => { const date = new Date(`${entry.date}T12:00:00`); const free = !minutes(entry); return `<article class="period-day"><h2>${date.toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "long", year: "numeric" })}<span>${free ? "Frei" : duration(minutes(entry))}</span></h2><p${free ? "" : ' class="active"'}>${free ? "○" : "●"} ${free ? "Kein Einsatz" : `${escapeHtml(entry.start)} – ${escapeHtml(entry.end)}`} <span>Eigener Dienstplan</span><b>${escapeHtml(entry.title || "Arbeit")}</b></p></article>`; }).join("") : '<p class="private-import-empty">Noch kein eigener Dienstplan übernommen.</p>';
       const monthPanel = document.querySelector('#schedulePage [data-panel="month"]');
       if (monthPanel) {
@@ -439,7 +533,17 @@
       visibleMonthStart.setMonth(visibleMonthStart.getMonth() + (button.dataset.privateMonth === "next" ? 1 : -1));
       renderSaved();
     });
-    const render = () => { preview.innerHTML = entries.length ? entries.map((entry, index) => { const freeDay = /^frei$/i.test(String(entry.title || "")); return `<article><label class="import-free-toggle"><input type="checkbox" data-i="${index}" data-field="freeDay"${freeDay ? " checked" : ""}><span>Als freien Tag markieren</span></label><label class="import-title">Schicht<input type="text" maxlength="40" data-i="${index}" data-field="title" value="${escapeHtml(entry.title || "Arbeit")}"${freeDay ? " readonly" : ""}></label><label>Datum<input type="date" data-i="${index}" data-field="date" value="${escapeHtml(entry.date)}"></label>${freeDay ? '<p class="import-free-note">Für einen freien Tag sind keine Uhrzeiten nötig.</p>' : `<label>Beginn<input type="time" data-i="${index}" data-field="start" value="${escapeHtml(entry.start)}"></label><label>Ende<input type="time" data-i="${index}" data-field="end" value="${escapeHtml(entry.end)}"></label><label>Pause<select data-i="${index}" data-field="break"><option value="0"${Number(entry.break) === 0 ? " selected" : ""}>Keine</option><option value="15"${Number(entry.break) === 15 ? " selected" : ""}>15 Min.</option><option value="30"${Number(entry.break) === 30 ? " selected" : ""}>30 Min.</option><option value="45"${Number(entry.break) === 45 ? " selected" : ""}>45 Min.</option><option value="60"${Number(entry.break) === 60 ? " selected" : ""}>60 Min.</option></select></label>`}<button type="button" data-remove="${index}" aria-label="Entfernen"><i class="fa-regular fa-trash-can"></i></button></article>`; }).join("") : '<p class="private-import-empty">Keine vollständigen Schichten erkannt. Ergänze einen Einsatz oder wähle eine besser lesbare Datei.</p>'; consent.checked = false; commit.disabled = true; };
+    document.querySelector('#schedulePage [data-panel="week"]')?.addEventListener("click", (event) => {
+      const removeButton = event.target.closest("[data-remove-colleague]");
+      if (removeButton) { const saved = readColleagues(); saved.splice(Number(removeButton.dataset.removeColleague), 1); platform().storage.setItem(colleagueKey(), JSON.stringify(saved)); renderSaved(); return; }
+      const clearButton = event.target.closest("[data-clear-colleagues]");
+      if (!clearButton) return;
+      const start = new Date(`${visibleWeekStart}T12:00:00`); const end = new Date(start); end.setDate(start.getDate() + 6);
+      const from = start.toLocaleDateString("sv-SE"); const to = end.toLocaleDateString("sv-SE");
+      platform().storage.setItem(colleagueKey(), JSON.stringify(readColleagues().filter((entry) => entry.date < from || entry.date > to)));
+      renderSaved();
+    });
+    const render = () => { preview.innerHTML = entries.length ? entries.map((entry, index) => { const freeDay = !entry.isColleague && /^frei$/i.test(String(entry.title || "")); return `<article><label class="import-roster-type"><input type="checkbox" data-i="${index}" data-field="myShift"${entry.isColleague ? "" : " checked"}><span>Das ist mein Dienst</span></label><label class="import-person">Name<input type="text" maxlength="80" data-i="${index}" data-field="personName" value="${escapeHtml(entry.personName || "")}" placeholder="${entry.isColleague ? "Name erforderlich" : "Optional"}"></label><label class="import-title">Schicht<input type="text" maxlength="40" data-i="${index}" data-field="title" value="${escapeHtml(entry.title || "Arbeit")}"${freeDay ? " readonly" : ""}></label><label class="import-date">Datum<input type="date" data-i="${index}" data-field="date" value="${escapeHtml(entry.date)}"></label>${freeDay ? '<label class="import-free-toggle"><input type="checkbox" data-i="${index}" data-field="freeDay" checked><span>Als freien Tag markieren</span></label><p class="import-free-note">Für einen freien Tag sind keine Uhrzeiten nötig.</p>' : `<label class="import-date"><span>Beginn</span><input type="time" data-i="${index}" data-field="start" value="${escapeHtml(entry.start)}"></label><label class="import-date"><span>Ende</span><input type="time" data-i="${index}" data-field="end" value="${escapeHtml(entry.end)}"></label>${!entry.isColleague ? `<label class="import-break"><span>Pause</span><select data-i="${index}" data-field="break"><option value="0"${Number(entry.break) === 0 ? " selected" : ""}>Keine</option><option value="15"${Number(entry.break) === 15 ? " selected" : ""}>15 Min.</option><option value="30"${Number(entry.break) === 30 ? " selected" : ""}>30 Min.</option><option value="45"${Number(entry.break) === 45 ? " selected" : ""}>45 Min.</option><option value="60"${Number(entry.break) === 60 ? " selected" : ""}>60 Min.</option></select></label>` : ""}`}${!entry.isColleague && !freeDay ? `<label class="import-free-toggle"><input type="checkbox" data-i="${index}" data-field="freeDay"><span>Als freien Tag markieren</span></label>` : ""}<button type="button" data-remove="${index}" aria-label="Entfernen"><i class="fa-regular fa-trash-can"></i></button></article>`; }).join("") : '<p class="private-import-empty">Keine vollständigen Schichten erkannt. Ergänze einen Einsatz oder wähle eine besser lesbare Datei.</p>'; consent.checked = false; commit.disabled = true; };
     panel.querySelector("[data-pick-plan]").addEventListener("click", () => input.click());
     panel.querySelector("[data-manual-plan]").addEventListener("click", () => {
       entries = [{ id: `manual-${Date.now()}`, date: new Date().toLocaleDateString("sv-SE"), start: "08:00", end: "16:30", break: 30, title: "Arbeit", note: "Manuell eingetragen" }];
@@ -475,7 +579,7 @@
       // OCR layout information is useful for grid-like rosters, but it must
       // never hide a more complete text result. This also protects against a
       // partially read weekday column being mistaken for several free days.
-      if (entryQuality(textEntries) > entryQuality(found)) found = textEntries;
+      if (!found.some((entry) => entry.isColleague) && entryQuality(textEntries) > entryQuality(found)) found = textEntries;
       const valid = found.filter(validEntry).map((entry, index) => ({ ...entry, id: `import-${Date.now()}-${fileIndex}-${index}`, sourceFile: file.name }));
       if (!valid.length) throw importError("Keine lesbaren Schichten erkannt. Es wurde nichts gespeichert. Bitte Bild und Vorschau prüfen.");
       stage(status, `${valid.length} Einträge erkannt. Vorschau wird angezeigt.`, "success");
@@ -489,17 +593,18 @@
         catch (error) { failed.push(`${files[index].name}: ${error.importMessage || "Datei konnte nicht gelesen werden."}`); }
       }
       setStatus(entries.length
-        ? `${entries.length} Tage aus ${files.length} Datei${files.length === 1 ? "" : "en"} erkannt. Bitte alle Angaben kontrollieren.${failed.length ? ` Nicht gelesen: ${failed.join(", ")}.` : ""}`
+        ? `${entries.length} Einträge aus ${files.length} Datei${files.length === 1 ? "" : "en"} erkannt. Bitte alle Angaben kontrollieren.${failed.length ? ` Nicht gelesen: ${failed.join(", ")}.` : ""}`
         : failed.length ? `Es wurden keine Daten übernommen. ${failed.join(" ")}` : "Keine vollständigen Einsätze erkannt. Die Angaben können unten manuell ergänzt werden.", entries.length ? "success" : "error");
       render(); input.value = "";
     });
     preview.addEventListener("input", (event) => { const entry = entries[Number(event.target.dataset.i)]; if (entry && event.target.dataset.field) entry[event.target.dataset.field] = event.target.value; consent.checked = false; commit.disabled = true; });
-    preview.addEventListener("change", (event) => { const entry = entries[Number(event.target.dataset.i)]; if (entry && event.target.dataset.field === "freeDay") { if (event.target.checked) Object.assign(entry, { title: "Frei", start: "", end: "", break: 0 }); else Object.assign(entry, { title: "Arbeit", start: "08:00", end: "16:30", break: 30 }); render(); } else if (entry && event.target.dataset.field) entry[event.target.dataset.field] = event.target.dataset.field === "break" ? Number(event.target.value) : event.target.value; consent.checked = false; commit.disabled = true; });
+    preview.addEventListener("change", (event) => { const entry = entries[Number(event.target.dataset.i)]; if (entry && event.target.dataset.field === "freeDay") { if (event.target.checked) Object.assign(entry, { title: "Frei", start: "", end: "", break: 0 }); else Object.assign(entry, { title: "Arbeit", start: "08:00", end: "16:30", break: 30 }); render(); } else if (entry && event.target.dataset.field === "myShift") { entry.isColleague = !event.target.checked; render(); } else if (entry && event.target.dataset.field) entry[event.target.dataset.field] = event.target.dataset.field === "break" ? Number(event.target.value) : event.target.value; consent.checked = false; commit.disabled = true; });
     preview.addEventListener("click", (event) => { const button = event.target.closest("[data-remove]"); if (button) { entries.splice(Number(button.dataset.remove), 1); render(); } });
     dialog.querySelector("[data-add-import-row]").addEventListener("click", () => { entries.push({ id: `import-${Date.now()}-${entries.length}`, date: new Date().toLocaleDateString("sv-SE"), start: "08:00", end: "16:30", break: 30, title: "Arbeit", note: "In Import-Vorschau ergänzt" }); render(); });
-    consent.addEventListener("change", () => { commit.disabled = !consent.checked || !entries.length || entries.some((entry) => !entry.date || (!/^(frei|urlaub|krank)$/i.test(entry.title) && (!entry.start || !entry.end))); });
+    dialog.querySelector("[data-add-colleague-row]").addEventListener("click", () => { entries.push({ id: `colleague-${Date.now()}-${entries.length}`, date: new Date().toLocaleDateString("sv-SE"), start: "08:00", end: "16:00", break: 0, title: "Schicht", personName: "", isColleague: true, note: "Kollegenschicht manuell ergänzt" }); render(); });
+    consent.addEventListener("change", () => { commit.disabled = !consent.checked || !entries.length || entries.some((entry) => !entry.date || (entry.isColleague ? (!entry.personName?.trim() || !entry.start || !entry.end) : (!/^(frei|urlaub|krank)$/i.test(entry.title) && (!entry.start || !entry.end)))); });
     dialog.querySelectorAll("[data-close-import]").forEach((button) => button.addEventListener("click", () => platform().dialog.close(dialog)));
-    dialog.querySelector("form").addEventListener("submit", (event) => { event.preventDefault(); if (commit.disabled) return; const { learning, learnedCount } = rememberCorrections(readLearning(), entries); writeLearning(learning); const saved = read(); const before = new Map(saved.map((entry) => [entry.date, entry])); const changes = entries.map((entry) => { const previous = before.get(entry.date); if (previous && shiftSummary(previous) === shiftSummary(entry)) return null; const date = new Date(`${entry.date}T12:00:00`).toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "long", year: "numeric" }); return previous ? `${date}: ${shiftSummary(previous)} → ${shiftSummary(entry)}` : `${date}: ${shiftSummary(entry)} eingetragen`; }).filter(Boolean).slice(0, 40); const updated = entries.filter((entry) => saved.some((item) => item.date === entry.date)).length; saveEntries(platform().storage, saved, entries); const at = new Date().toISOString(); platform().storage.setItem("timeflow-private-last-import-v1", JSON.stringify({ at, added: entries.length - updated, updated, changes })); platform().dialog.close(dialog); renderLearning(); renderSaved(); document.dispatchEvent(new CustomEvent("timeflow:private-schedule-updated")); const toast = document.getElementById("toast"); toast.textContent = `${entries.length - updated} Tage ergänzt${updated ? `, ${updated} aktualisiert` : ""}.${learnedCount ? " Korrekturen für Kürzel und wiederkehrende Schichten gemerkt." : ""}`; toast.classList.add("is-visible"); });
+    dialog.querySelector("form").addEventListener("submit", (event) => { event.preventDefault(); if (commit.disabled) return; const personalEntries = entries.filter((entry) => !entry.isColleague); const colleagueEntries = entries.filter((entry) => entry.isColleague && entry.personName?.trim()); const { learning, learnedCount } = rememberCorrections(readLearning(), personalEntries); writeLearning(learning); const saved = read(); const before = new Map(saved.map((entry) => [entry.date, entry])); const changes = personalEntries.map((entry) => { const previous = before.get(entry.date); if (previous && shiftSummary(previous) === shiftSummary(entry)) return null; const date = new Date(`${entry.date}T12:00:00`).toLocaleDateString("de-DE", { weekday: "long", day: "2-digit", month: "long", year: "numeric" }); return previous ? `${date}: ${shiftSummary(previous)} → ${shiftSummary(entry)}` : `${date}: ${shiftSummary(entry)} eingetragen`; }).filter(Boolean).slice(0, 40); const updated = personalEntries.filter((entry) => saved.some((item) => item.date === entry.date)).length; saveEntries(platform().storage, saved, personalEntries); saveColleagues(colleagueEntries); const at = new Date().toISOString(); platform().storage.setItem("timeflow-private-last-import-v1", JSON.stringify({ at, added: personalEntries.length - updated, updated, changes })); visibleWeekStart = ""; platform().dialog.close(dialog); renderLearning(); renderSaved(); document.dispatchEvent(new CustomEvent("timeflow:private-schedule-updated")); const toast = document.getElementById("toast"); toast.textContent = `${personalEntries.length - updated} persönliche Tage ergänzt${updated ? `, ${updated} aktualisiert` : ""}.${colleagueEntries.length ? ` ${colleagueEntries.length} Kollegenschichten gespeichert.` : ""}${learnedCount ? " Korrekturen für Kürzel und wiederkehrende Schichten gemerkt." : ""}`; toast.classList.add("is-visible"); });
     const updateMode = () => { panel.hidden = !privateMode(); if (privateMode()) { const weekTab = tabs.querySelector('[data-view="week"]'); if (weekTab && weekTab.getAttribute("aria-selected") !== "true") weekTab.click(); renderLearning(); renderSaved(); } }; updateMode(); new MutationObserver(updateMode).observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
     document.addEventListener("timeflow:sync-restored", () => { visibleWeekStart = ""; renderLearning(); renderSaved(); });
   }
