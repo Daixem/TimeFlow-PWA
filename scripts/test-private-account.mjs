@@ -22,13 +22,20 @@ const context = {
 };
 vm.runInNewContext(account, context);
 const weeklyTarget = context.window.TimeFlowPrivateAccount.scheduleDueForMonth("2026-09", "2026-09-06");
-if (weeklyTarget.targetDue !== 1920 || weeklyTarget.extraFreeDays !== 1 || weeklyTarget.absenceCredit !== 0) throw new Error("40-Stunden-Vertrag: Vier Schichten ergeben 32 Stunden Sollzeit; freie Tage bleiben sollzeitfrei.");
+if (weeklyTarget.targetDue !== 2400 || weeklyTarget.extraFreeDays !== 1 || weeklyTarget.absenceCredit !== 0) throw new Error("Bei einer Fünftagewoche muss ein dritter freier Tag in derselben Kalenderwoche als fehlende Sollzeit zählen.");
 storage.set("timeflow-private-schedule-v1", JSON.stringify(week.map((entry) => entry.date === "2026-09-02" ? { ...entry, title: "Urlaub" } : entry)));
 const absenceTarget = context.window.TimeFlowPrivateAccount.scheduleDueForMonth("2026-09", "2026-09-06");
-if (absenceTarget.targetDue !== 1860 || absenceTarget.absenceCredit !== 420) throw new Error("Urlaub muss mit der geplanten Schichtzeit inklusive korrekter Pausenberechnung angerechnet werden.");
+if (absenceTarget.targetDue !== 2340 || absenceTarget.absenceCredit !== 420) throw new Error("Urlaub muss mit der geplanten Schichtzeit angerechnet werden; zusätzliche freie Tage bleiben davon unabhängig Minussoll.");
 storage.set("timeflow-private-schedule-v1", JSON.stringify(week.map((entry) => entry.date === "2026-09-02" ? { ...entry, title: "Krank", start: "", end: "", break: 0 } : entry)));
 const sickTarget = context.window.TimeFlowPrivateAccount.scheduleDueForMonth("2026-09", "2026-09-06");
-if (sickTarget.targetDue !== 1920 || sickTarget.absenceCredit !== 480) throw new Error("Bei fehlender geplanter Schicht muss Krankheit ersatzweise mit dem täglichen Vertragswert angerechnet werden.");
+if (sickTarget.targetDue !== 2400 || sickTarget.absenceCredit !== 480) throw new Error("Bei fehlender geplanter Schicht muss Krankheit ersatzweise mit dem täglichen Vertragswert angerechnet werden; zusätzliche freie Tage bleiben Minussoll.");
+const twoWeeks = [
+  ["2026-09-01", "Frühschicht"], ["2026-09-02", "Frühschicht"], ["2026-09-03", "Frühschicht"], ["2026-09-04", "Frühschicht"], ["2026-09-05", "Frei"], ["2026-09-06", "Frei"],
+  ["2026-09-07", "Frei"], ["2026-09-08", "Frei"], ["2026-09-09", "Frühschicht"], ["2026-09-10", "Frühschicht"], ["2026-09-11", "Frühschicht"], ["2026-09-12", "Frühschicht"], ["2026-09-13", "Frühschicht"]
+].map(([date, title]) => ({ date, title, start: title === "Frei" ? "" : "08:00", end: title === "Frei" ? "" : "16:00", break: title === "Frei" ? 0 : 0 }));
+storage.set("timeflow-private-schedule-v1", JSON.stringify(twoWeeks));
+const normalRestDays = context.window.TimeFlowPrivateAccount.scheduleDueForMonth("2026-09", "2026-09-14");
+if (normalRestDays.extraFreeDays !== 0 || normalRestDays.targetDue !== 4320) throw new Error("Zwei freie Tage dürfen in jeder einzelnen Kalenderwoche ohne Minusstunden bleiben.");
 storage.set("timeflow-private-schedule-v1", JSON.stringify(week));
 storage.set("timeflow-settings-v1", JSON.stringify({ weeklyTargetHours: 30, regularWorkDays: 4 }));
 const partTimeTarget = context.window.TimeFlowPrivateAccount.scheduleDueForMonth("2026-09", "2026-09-06");
