@@ -53,8 +53,16 @@ function dateKey(date) { return date.toLocaleDateString("sv-SE"); }
 function locale() { return window.TimeFlowLocalization?.locale?.() || "de-DE"; }
 function formatTime(date) { return date.toLocaleTimeString(locale(), { hour: "2-digit", minute: "2-digit" }); }
 function formatMinutes(minutes) { return `${Math.floor(minutes / 60)} h ${minutes % 60} min`; }
+function hasWorkTimeForToday() {
+  if (state.isWorking) return true;
+  const lastTimestamp = state.workEnd || state.workStart;
+  if (!lastTimestamp) return false;
+  const last = lastTimestamp instanceof Date ? lastTimestamp : new Date(lastTimestamp);
+  return !Number.isNaN(last.valueOf()) && dateKey(last) === dateKey(new Date());
+}
 function elapsedMinutes() {
   if (!state.workStart) return 0;
+  if (!hasWorkTimeForToday()) return 0;
   const end = state.isWorking ? new Date() : state.workEnd;
   return end ? Math.max(0, Math.floor((end - state.workStart) / 60000)) : 0;
 }
@@ -76,6 +84,7 @@ function activeWorkTimePolicy() {
   const settings = timeSettings(); return { automaticPauseEnabled: true, thresholdMinutes: settings.autoBreakAfterMinutes, pauseMinutes: settings.autoBreakMinutes };
 }
 function breakMinutes() {
+  if (!hasWorkTimeForToday()) return 0;
   const runningPause = state.isPaused && state.pauseStartedAt ? Math.max(0, new Date() - state.pauseStartedAt) : 0;
   if (state.hasManualPause) return Math.floor((Number(state.pauseAccumulatedMs || 0) + runningPause) / 60000);
   const policy = activeWorkTimePolicy();
@@ -284,8 +293,9 @@ function updateDateTime() {
 function updateWorkUi() {
   const targetMinutes = timeSettings().dailyTargetMinutes;
   const worked = workedMinutes(); const pause = breakMinutes(); const percentage = Math.min(100, Math.round((worked / targetMinutes) * 100));
-  elements.startTime.textContent = state.workStart ? formatTime(state.workStart) : "--:--";
-  elements.endTime.textContent = state.workEnd ? formatTime(state.workEnd) : "--:--";
+  const showToday = hasWorkTimeForToday();
+  elements.startTime.textContent = showToday && state.workStart ? formatTime(state.workStart) : "--:--";
+  elements.endTime.textContent = showToday && state.workEnd ? formatTime(state.workEnd) : "--:--";
   elements.workStatus.textContent = state.isWorking ? "Im Dienst" : "Nicht im Dienst";
   elements.clockHint.textContent = state.isWorking ? "Tippen zum Ausstempeln" : "Tippen zum Einstempeln";
   elements.clockButton.classList.toggle("is-working", state.isWorking);

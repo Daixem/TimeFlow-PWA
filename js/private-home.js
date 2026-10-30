@@ -130,25 +130,29 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   function renderPrivateClock() {
     const workday = currentWorkday();
+    const now = new Date();
+    const recordedAt = workday?.workEnd || workday?.workStart;
+    const recordedDate = recordedAt ? new Date(recordedAt) : null;
+    const hasTodayWork = Boolean(workday?.isWorking || (recordedDate && !Number.isNaN(recordedDate.valueOf()) && recordedDate.toLocaleDateString("sv-SE") === now.toLocaleDateString("sv-SE")));
     const settings = readJson("timeflow-settings-v1") || {};
     const target = number(settings.dailyTargetMinutes, 480);
     const breakAfter = number(settings.autoBreakAfterMinutes, 360);
     const breakLength = number(settings.autoBreakMinutes, 30);
     const policy = pausePolicy(workday, { autoBreakAfterMinutes: breakAfter, autoBreakMinutes: breakLength });
-    const start = workday?.workStart ? new Date(workday.workStart) : null;
-    const end = workday?.isWorking ? new Date() : workday?.workEnd ? new Date(workday.workEnd) : null;
+    const start = hasTodayWork && workday?.workStart ? new Date(workday.workStart) : null;
+    const end = workday?.isWorking ? now : hasTodayWork && workday?.workEnd ? new Date(workday.workEnd) : null;
     const gross = start && end ? Math.max(0, Math.floor((end - start) / 60000)) : 0;
     const runningPause = workday?.isPaused && workday.pauseStartedAt ? Math.max(0, new Date() - new Date(workday.pauseStartedAt)) : 0;
-    const usedBreak = workday?.hasManualPause ? Math.floor((Number(workday.pauseAccumulatedMs || 0) + runningPause) / 60000) : policy.enabled && gross >= policy.after ? policy.minutes : 0;
+    const usedBreak = hasTodayWork && workday?.hasManualPause ? Math.floor((Number(workday.pauseAccumulatedMs || 0) + runningPause) / 60000) : hasTodayWork && policy.enabled && gross >= policy.after ? policy.minutes : 0;
     const net = Math.max(0, gross - usedBreak);
     document.getElementById("privateHomeStart").textContent = start ? start.toLocaleTimeString(window.TimeFlowLocalization?.locale?.() || "de-DE", { hour: "2-digit", minute: "2-digit" }) : "--:--";
     document.getElementById("privateHomeBreakUsed").textContent = `${usedBreak} min`;
     document.getElementById("privateHomeNet").textContent = formatMinutes(net);
     document.getElementById("privateHomeTarget").textContent = formatMinutes(target);
-    document.getElementById("privateHomeState").textContent = workday?.isPaused ? "In Pause" : workday?.isWorking ? "Im Dienst" : start ? "Dienst beendet" : "Bereit";
+    document.getElementById("privateHomeState").textContent = workday?.isPaused && hasTodayWork ? "In Pause" : workday?.isWorking ? "Im Dienst" : start ? "Dienst beendet" : "Bereit";
     const pauseButton = document.querySelector("[data-private-pause]"); if (pauseButton) { pauseButton.hidden = !workday?.isWorking; pauseButton.classList.toggle("is-paused", Boolean(workday?.isPaused)); pauseButton.querySelector("span").textContent = workday?.isPaused ? "Pause beenden" : "Pause starten"; }
-    const scheduledEnd = scheduledEndFor(start || new Date());
-    document.getElementById("privateHomePlannedEnd").textContent = workday?.workEnd ? workday.workEnd ? new Date(workday.workEnd).toLocaleTimeString(window.TimeFlowLocalization?.locale?.() || "de-DE", { hour: "2-digit", minute: "2-digit" }) : "--:--" : scheduledEnd || "--:--";
+    const scheduledEnd = scheduledEndFor(now);
+    document.getElementById("privateHomePlannedEnd").textContent = hasTodayWork && workday?.workEnd ? new Date(workday.workEnd).toLocaleTimeString(window.TimeFlowLocalization?.locale?.() || "de-DE", { hour: "2-digit", minute: "2-digit" }) : scheduledEnd || "--:--";
   }
   function applyPrivateHome() {
     const root = document.documentElement;

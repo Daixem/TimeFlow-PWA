@@ -133,13 +133,16 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderClock() {
     const now = new Date();
     const saved = readState();
-    const start = saved.workStart ? new Date(saved.workStart) : null;
-    const end = saved.isWorking ? now : saved.workEnd ? new Date(saved.workEnd) : null;
+    const recordedAt = saved.workEnd || saved.workStart;
+    const recordedDate = recordedAt ? new Date(recordedAt) : null;
+    const hasTodayWork = Boolean(saved.isWorking || (recordedDate && !Number.isNaN(recordedDate.valueOf()) && recordedDate.toLocaleDateString("sv-SE") === now.toLocaleDateString("sv-SE")));
+    const start = hasTodayWork && saved.workStart ? new Date(saved.workStart) : null;
+    const end = saved.isWorking ? now : hasTodayWork && saved.workEnd ? new Date(saved.workEnd) : null;
     const settings = readSettings();
     const elapsedSeconds = start && end ? Math.max(0, Math.floor((end - start) / 1000)) : 0;
     const grossMinutes = Math.floor(elapsedSeconds / 60);
-    const runningPause = saved.isPaused && saved.pauseStartedAt ? Math.max(0, now - new Date(saved.pauseStartedAt)) : 0;
-    const policy = pausePolicy(saved, settings); const breakMinutes = saved.hasManualPause ? Math.floor((Number(saved.pauseAccumulatedMs || 0) + runningPause) / 60000) : policy.enabled && grossMinutes >= policy.after ? policy.minutes : 0;
+    const runningPause = hasTodayWork && saved.isPaused && saved.pauseStartedAt ? Math.max(0, now - new Date(saved.pauseStartedAt)) : 0;
+    const policy = pausePolicy(saved, settings); const breakMinutes = hasTodayWork && saved.hasManualPause ? Math.floor((Number(saved.pauseAccumulatedMs || 0) + runningPause) / 60000) : hasTodayWork && policy.enabled && grossMinutes >= policy.after ? policy.minutes : 0;
     const netMinutes = Math.max(0, grossMinutes - breakMinutes);
     const progress = Math.min(100, Math.round((netMinutes / settings.dailyTargetMinutes) * 100));
 
@@ -154,7 +157,7 @@ document.addEventListener("DOMContentLoaded", () => {
     elements.target.textContent = formatMinutes(settings.dailyTargetMinutes);
     elements.elapsedHint.textContent = saved.isWorking ? `${progress} % deines Tagesziels` : start ? `Beendet um ${formatTime(end)}` : "Noch nicht gestartet";
     elements.state.classList.toggle("is-working", Boolean(saved.isWorking));
-    elements.state.querySelector("span").textContent = saved.isPaused ? "In Pause" : saved.isWorking ? "Im Dienst" : start ? "Dienst beendet" : "Nicht im Dienst";
+    elements.state.querySelector("span").textContent = saved.isPaused && hasTodayWork ? "In Pause" : saved.isWorking ? "Im Dienst" : start ? "Dienst beendet" : "Nicht im Dienst";
     elements.action.classList.toggle("is-working", Boolean(saved.isWorking));
     const ready = window.TimeFlowWorkTimeReady?.() && (window.TimeFlowWorkTimeServerEnabled?.() || window.TimeFlowWorkTimeSnapshotAuthority?.() === false);
     const pending = window.TimeFlowWorkTimePending?.();
