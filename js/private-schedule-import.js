@@ -167,7 +167,9 @@
   const parse = (text) => {
     const source = String(text).replace(/[–—]/g, "-").replace(/\r/g, "\n");
     const lines = source.split(/\n|;/).map((line) => line.replace(/\s+/g, " ").trim()).filter(Boolean);
-    const range = source.match(/(\d{1,2})\s*\.?\s*(\d{2})\s*\.?\s*-\s*(\d{1,2})\s*\.?\s*(\d{2})\s*\.?/);
+    // Require a date separator so night shifts such as 22:00 - 06:00 are
+    // never mistaken for a week range and padded with unrelated free days.
+    const range = source.match(/(\d{1,2})\s*[./]\s*(\d{2})\s*\.?\s*-\s*(\d{1,2})\s*[./]\s*(\d{2})\s*\.?/);
     const now = new Date();
     const weekMarker = source.match(/\b(?:KW|Kalenderwoche)\s*:?\s*(\d{1,2})(?:\s*[/.-]?\s*(20\d{2}))?\b/i);
     const weekMonday = range
