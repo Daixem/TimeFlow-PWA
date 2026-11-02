@@ -80,17 +80,27 @@ document.addEventListener("DOMContentLoaded", () => {
     const key = accountColleagueKey();
     if (!key) return false;
     const base = baseSnapshot();
-    if (base && Object.prototype.hasOwnProperty.call(base, key)) return false;
     const storage = window.TimeFlowPlatform.storage;
-    const localRows = parseJson(storage.getItem(key), []);
-    const remoteRows = Array.isArray(cloud.snapshot?.[key]) ? cloud.snapshot[key] : [];
-    if (!localRows.length && !remoteRows.length) return false;
+    const prefix = COLLEAGUE_KEY_PREFIX;
+    const localKeys = storage.keys().filter((candidate) => candidate.startsWith(prefix));
+    const remoteKeys = Object.keys(cloud.snapshot || {}).filter((candidate) => candidate.startsWith(prefix));
+    const legacyKeys = [...new Set([...localKeys, ...remoteKeys])].filter((candidate) => candidate !== key);
+    if (base && Object.prototype.hasOwnProperty.call(base, key) && !legacyKeys.length) return false;
+    const localRows = localKeys.flatMap((candidate) => { const value = parseJson(storage.getItem(candidate), []); return Array.isArray(value) ? value : []; });
+    const remoteRows = remoteKeys.flatMap((candidate) => Array.isArray(cloud.snapshot?.[candidate]) ? cloud.snapshot[candidate] : []);
+    if (!localRows.length && !remoteRows.length && !legacyKeys.length) return false;
+    // The account snapshot is already isolated by the server. Merge any older
+    // device key suffixes into the current account key so a changed login
+    // identifier (email vs. account ID) cannot hide colleague shifts.
     const mergedRows = mergeColleagueRows(remoteRows, localRows);
-    const localChanged = JSON.stringify(localRows) !== JSON.stringify(mergedRows);
+    const localChanged = localKeys.some((candidate) => !sameSnapshotValue(parseJson(storage.getItem(candidate), []), mergedRows));
     storage.setItem(key, JSON.stringify(mergedRows));
+    localKeys.filter((candidate) => candidate !== key).forEach((candidate) => storage.removeItem(candidate));
     if (localChanged) document.dispatchEvent(new CustomEvent("timeflow:sync-restored", { detail: { revision: cloud.revision, updatedAt: cloud.updatedAt } }));
-    const nextSnapshot = { ...(cloud.snapshot || {}), [key]: mergedRows };
-    if (JSON.stringify(mergedRows) !== JSON.stringify(remoteRows)) {
+    const nextSnapshot = { ...(cloud.snapshot || {}) };
+    remoteKeys.filter((candidate) => candidate !== key).forEach((candidate) => { delete nextSnapshot[candidate]; });
+    nextSnapshot[key] = mergedRows;
+    if (!sameSnapshotValue(nextSnapshot, cloud.snapshot || {})) {
       try {
         const result = await requestSync("PUT", { snapshot: nextSnapshot, expectedRevision: Number(cloud.revision || 0) });
         saveMeta(result.revision, result.updatedAt);
