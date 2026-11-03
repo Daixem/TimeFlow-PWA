@@ -164,6 +164,57 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     return [...merged.values()].sort((a, b) => `${a.date || ""}${a.start || ""}`.localeCompare(`${b.date || ""}${b.start || ""}`));
   }
+  async function reconcilePersistedConflict(conflict) {
+    const remote = conflict.serverSnapshot || {};
+    const local = conflict.localSnapshot || collectSnapshot();
+    const base = conflict.baseSnapshot || {};
+    const merged = conflictLogic.mergeChangedKeys(remote, local, base);
+    const scheduleKey = "timeflow-private-schedule-v1";
+    const localSchedule = Array.isArray(local[scheduleKey]) ? local[scheduleKey] : [];
+    const baseSchedule = Array.isArray(base[scheduleKey]) ? base[scheduleKey] : [];
+    const remoteSchedule = Array.isArray(remote[scheduleKey]) ? remote[scheduleKey] : [];
+    // If local storage was cleared on a device, an empty list must not erase
+    // the schedule already present in the account.
+    merged[scheduleKey] = !localSchedule.length && baseSchedule.length
+      ? remoteSchedule
+      : mergePersonalScheduleByDate(remoteSchedule, localSchedule, baseSchedule);
+
+    const colleaguePrefix = COLLEAGUE_KEY_PREFIX;
+    const colleagueKeys = [...new Set([...Object.keys(remote), ...Object.keys(local), ...Object.keys(base)])]
+      .filter((key) => key.startsWith(colleaguePrefix));
+    if (colleagueKeys.length) {
+      const remoteRows = colleagueKeys.flatMap((key) => Array.isArray(remote[key]) ? remote[key] : []);
+      const localRows = colleagueKeys.flatMap((key) => Array.isArray(local[key]) ? local[key] : []);
+      colleagueKeys.forEach((key) => { delete merged[key]; });
+      const canonicalKey = accountColleagueKey();
+      if (canonicalKey) merged[canonicalKey] = mergeColleagueRows(remoteRows, localRows);
+    }
+
+    try {
+      let revision = Number(conflict.serverRevision || 0);
+      let updatedAt = conflict.updatedAt || null;
+      if (!sameSnapshotValue(merged, remote)) {
+        const result = await requestSync("PUT", { snapshot: merged, expectedRevision: revision });
+        revision = result.revision;
+        updatedAt = result.updatedAt;
+      }
+      applySnapshot(merged);
+      saveMeta(revision, updatedAt);
+      saveBaseSnapshot(merged);
+      conflictLogic.clearSyncConflict(window.TimeFlowPlatform.storage);
+      document.dispatchEvent(new CustomEvent("timeflow:sync-restored", { detail: { revision, updatedAt } }));
+      renderStatus("synced", "Cloud-Sicherung ist aktuell", "Deine Dienstpläne und Kollegenschichten wurden zusammengeführt.", "Synchron");
+      return true;
+    } catch (error) {
+      if (error.status === 409) {
+        conflictLogic.handleSyncConflict({ storage: window.TimeFlowPlatform.storage, localSnapshot: local, baseSnapshot: base, response: error.result || {} });
+        renderStatus("syncing", "Änderungen werden abgeglichen", "TimeFlow übernimmt neue Änderungen automatisch beim nächsten Abgleich.", "Abgleich");
+        return false;
+      }
+      renderStatus("error", "Synchronisierung pausiert", "Deine Daten bleiben erhalten. TimeFlow versucht den Abgleich erneut, sobald die Verbindung verfügbar ist.", "Wird erneut versucht");
+      return false;
+    }
+  }
   async function uploadUnsyncedLocalChanges(cloud) {
     const base = baseSnapshot();
     if (!base) return false;
@@ -318,8 +369,7 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
       if (persistedConflict) {
-        showConflict({ data: refreshedConflict.serverSnapshot, revision: refreshedConflict.serverRevision, updatedAt: refreshedConflict.updatedAt });
-        renderStatus("error", "Änderungskonflikt erkannt", "Deine Daten wurden auf einem anderen Gerät geändert. Deine lokale Änderung bleibt erhalten.", "Konflikt");
+        await reconcilePersistedConflict(refreshedConflict || persistedConflict);
         markReady();
         return;
       }
