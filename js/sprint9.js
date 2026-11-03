@@ -1,12 +1,13 @@
 "use strict";
 
 document.addEventListener("DOMContentLoaded", () => {
-  const SYNC_KEYS = ["timeflow-profile-v1", "timeflow-settings-v1", "timeflow-profile-preferences-v1", "timeflow-custom-background-v1", "timeflow-private-schedule-v1", "timeflow-private-schedule-learning-v1", "timeflow-private-account-v1", "timeflow-worktime-audit-v1", "timeflow-monthly-targets-v1", "timeflow-private-setup-v1", "timeflow-beta-consent-v1", "timeflow-workday-v2", "timeflow-notifications-v1", "timeflow-notification-read-v1", "timeflow-quick-actions-v1"];
+  const SYNC_KEYS = ["timeflow-profile-v1", "timeflow-settings-v1", "timeflow-profile-preferences-v1", "timeflow-custom-background-v1", "timeflow-private-schedule-v1", "timeflow-private-schedule-learning-v1", "timeflow-private-account-v1", "timeflow-worktime-audit-v1", "timeflow-monthly-targets-v1", "timeflow-private-setup-v1", "timeflow-beta-consent-v1", "timeflow-workday-v2", "timeflow-notifications-v1", "timeflow-notification-read-v1", "timeflow-quick-actions-v1", "timeflow-sync-recovery-v1"];
   const LEARNING_KEY_PREFIX = "timeflow-private-schedule-learning-v1:";
   const COLLEAGUE_KEY_PREFIX = "timeflow-private-colleague-schedule-v1:";
   const WORK_TIME_SNAPSHOT_KEYS = new Set(["timeflow-workday-v2", "timeflow-workday-history-v1", "timeflow-private-account-v1", "timeflow-worktime-audit-v1", "timeflow-work-time-current-v1", "timeflow-work-time-meta-v1", "timeflow-work-time-pending-v1", "timeflow-work-time-conflict-v1", "timeflow-work-time-correction-pending-v1", "timeflow-work-time-sessions-v1"]);
   const META_KEY = "timeflow-sync-meta-v1";
   const BASE_KEY = "timeflow-sync-base-v1";
+  const SYNC_RECOVERY_KEY = "timeflow-sync-recovery-v1";
   const BACKUP_RESTORE_KEY = "timeflow-backup-restore-pending-v1";
   const settingsLayout = document.querySelector("#settingsPage .settings-layout");
   if (!settingsLayout) return;
@@ -189,6 +190,23 @@ document.addEventListener("DOMContentLoaded", () => {
       const canonicalKey = accountColleagueKey();
       if (canonicalKey) merged[canonicalKey] = mergeColleagueRows(remoteRows, localRows);
     }
+
+    const recoveryColleagues = (snapshot) => Object.fromEntries(Object.entries(snapshot)
+      .filter(([key, value]) => key.startsWith(colleaguePrefix) && Array.isArray(value)));
+    const localScheduleState = { personal: localSchedule, colleagues: recoveryColleagues(local) };
+    const remoteScheduleState = { personal: remoteSchedule, colleagues: recoveryColleagues(remote) };
+    const previousRecoveries = [...(Array.isArray(remote[SYNC_RECOVERY_KEY]) ? remote[SYNC_RECOVERY_KEY] : []), ...(Array.isArray(local[SYNC_RECOVERY_KEY]) ? local[SYNC_RECOVERY_KEY] : [])];
+    const uniqueRecoveries = [...new Map(previousRecoveries.filter((entry) => entry && entry.id).map((entry) => [entry.id, entry])).values()];
+    if (!sameSnapshotValue(localScheduleState, remoteScheduleState)) {
+      uniqueRecoveries.push({
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+        savedAt: new Date().toISOString(),
+        serverRevision: Number(conflict.serverRevision || 0),
+        local: localScheduleState,
+        server: remoteScheduleState
+      });
+    }
+    merged[SYNC_RECOVERY_KEY] = uniqueRecoveries.slice(-3);
 
     try {
       let revision = Number(conflict.serverRevision || 0);

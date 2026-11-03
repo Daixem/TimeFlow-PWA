@@ -28,6 +28,8 @@ Die Ratenbegrenzung läuft im bestehenden Worker und ist daher eine zusätzliche
 | Lokale PWA-Daten | Nutzerexport innerhalb der App | nicht als zentrale Sicherung geeignet |
 | Secrets | Secret-/Kontoverwaltung der jeweiligen Plattform | nie im Repository oder Bundle |
 
+Bei einem automatischen Abgleich von Dienstplänen bleiben bis zu drei vorherige Stände der persönlichen und der Kollegenschichten im konto-gebundenen Cloudflare-Synchronisierungsdatensatz erhalten. Diese Wiederherstellungshilfe ist kein Ersatz für einen vollständigen D1-Export.
+
 `node_modules`, Build-Ausgaben, Caches, Debug-Artefakte und `.env`-Dateien werden bewusst nicht gesichert: sie sind reproduzierbar oder dürfen nicht in ein normales Backup gelangen.
 
 ## Portables Code-Backup
