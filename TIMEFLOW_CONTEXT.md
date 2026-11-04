@@ -6,6 +6,15 @@
 **Code-Stand vor dieser Dokumentation:** `53a114a` (`Keep recovery copies during schedule sync merges`)
 **App-Version im Paket:** `1.0.1`
 
+### Nachprüfung am 4. November 2026
+
+Nach Erstellung dieser Übergabe wurde `main` mit GitHub abgeglichen. Der
+aktuelle Repository-Stand ist `28c7317`, sauber und identisch mit
+`origin/main`. Zwei ältere Quellkopien wurden nach einem Vergleich unverändert
+unter `TimeFlow-Legacy-Archive` außerhalb des offiziellen Repositorys
+aufbewahrt. Die Details zum aktuellen Hosting-, Worker- und Backup-Stand stehen
+in [docs/Status-2026-11-04.md](docs/Status-2026-11-04.md).
+
 Diese Übergabe fasst den bisherigen Projektverlauf zusammen und gleicht ihn mit dem Repository sowie den beim letzten Abgleich erreichbaren Veröffentlichungen ab. Sie enthält bewusst keine Zugangsdaten, privaten Kontodaten, echten Dienstplandaten oder persönlichen Arbeitszeitwerte. Die Datei ist für das öffentliche Repository bestimmt.
 
 ## Arbeitsregeln und feste Nutzerwünsche

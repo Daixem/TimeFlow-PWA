@@ -5,7 +5,7 @@
 > Zusammenfassung bewahrt nur den damaligen Freigabestatus; private Konto- und
 > Arbeitszeitangaben gehören nicht in das öffentliche Repository.
 >
-> Für den heutigen Stand siehe [Status-2026-10-30.md](Status-2026-10-30.md).
+> Für den heutigen Stand siehe [Status-2026-11-04.md](Status-2026-11-04.md).
 
 Damals war ein begrenzter Administrator-Rollout aktiv. Ein isolierter
 Wiederherstellungstest war laut damaligem Bericht erfolgreich. Die

@@ -1,7 +1,7 @@
 # TimeFlow Connect / TimeFlow PWA
 
-Der verbindliche Überblick zu den Veröffentlichungen steht in
-[Status-2026-10-30.md](Status-2026-10-30.md). Ältere Beta-, Pre-Prod- und
+Der aktuelle Überblick zu Veröffentlichungen und Datenzugriff steht in
+[Status-2026-11-04.md](Status-2026-11-04.md). Ältere Beta-, Pre-Prod- und
 Phasenberichte sind historische Testnachweise; sie beschreiben nicht
 automatisch den heutigen Produktionsstand.
 
