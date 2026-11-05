@@ -140,7 +140,7 @@ document.addEventListener("DOMContentLoaded", () => {
           const data = await response.json();
           if (data.authenticated && data.user) {
             authMode = "platform";
-            session = { source: "platform", user: { ...data.user, role: window.TimeFlowBetaAccess?.admin ? "Administrator" : data.user.role } };
+            session = { source: "platform", authProvider: data.authProvider, user: { ...data.user, role: window.TimeFlowBetaAccess?.admin ? "Administrator" : data.user.role } };
             cachePlatformSession(session);
             showApp();
             return;
@@ -177,7 +177,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelector("[data-sign-out]")?.addEventListener("click", () => {
     if (authMode === "platform") {
       storageRemove(PLATFORM_SESSION_CACHE_KEY);
-      window.location.assign("/signout-with-chatgpt?return_to=/");
+      window.location.assign(session?.authProvider === "cloudflare-access" ? "/cdn-cgi/access/logout" : "/signout-with-chatgpt?return_to=/");
       return;
     }
     storageRemove(SESSION_KEY);

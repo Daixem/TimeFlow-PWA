@@ -118,6 +118,9 @@ const verifiedAccessResponse = await worker.fetch(spoofedAccessRequest, accessEn
   access: { getIdentity: async () => ({ email: accessEmail.toUpperCase(), name: "Dimitri" }) }
 });
 const verifiedAccessSession = await verifiedAccessResponse.json();
+if (verifiedAccessSession.authProvider !== "cloudflare-access") throw new Error("Cloudflare-Sitzungen müssen den passenden Abmeldeweg melden.");
+const platformSession = await (await worker.fetch(new Request("https://timeflow.test/api/session", { headers: adminHeaders }), { DB: database })).json();
+if (platformSession.authProvider !== "platform") throw new Error("Plattformsitzungen müssen ihren bisherigen Abmeldeweg behalten.");
 if (!verifiedAccessSession.authenticated || verifiedAccessSession.user.id !== accessUserId || verifiedAccessSession.user.email !== accessEmail || verifiedAccessSession.user.name !== "Dimitri") {
   throw new Error("Eine verifizierte Cloudflare-Access-Identität muss die ungeprüften Request-Header vollständig ersetzen.");
 }

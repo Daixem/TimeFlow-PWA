@@ -1340,7 +1340,7 @@ export default {
     request = await withCloudflareAccessIdentity(request, env, ctx);
     if (url.pathname === "/api/session") {
       const user = authenticatedUser(request);
-      return jsonResponse({ authenticated: user.authenticated, user: user.authenticated ? { id: user.id, email: user.email, name: user.name } : null });
+      return jsonResponse({ authenticated: user.authenticated, authProvider: env?.TIMEFLOW_CLOUDFLARE_ACCESS_ENABLED === "true" ? "cloudflare-access" : "platform", user: user.authenticated ? { id: user.id, email: user.email, name: user.name } : null });
     }
     if (url.pathname === "/api/sync") return handleSync(request, env, url, ctx);
     if (url.pathname === "/api/work-time") return handleWorkTime(request, env, url);
