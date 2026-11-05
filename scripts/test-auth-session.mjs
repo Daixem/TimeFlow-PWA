@@ -1,0 +1,27 @@
+import assert from "node:assert/strict";
+import { DatabaseSync } from "node:sqlite";
+import { readFileSync } from "node:fs";
+import { createSession, readSession, revokeSession, revokeAllSessions } from "../server/auth-session.mjs";
+
+const sqlite = new DatabaseSync(":memory:");
+sqlite.exec("PRAGMA foreign_keys = ON");
+sqlite.exec(readFileSync(new URL("../drizzle/0011_hourrise_auth.sql", import.meta.url), "utf8"));
+const insert = sqlite.prepare("INSERT INTO hourrise_auth_accounts (id,email,password_hash,email_verified_at,created_at,updated_at) VALUES (?,?,?,?,?,?)");
+insert.run("verified", "test@example.test", "hash", "2026-01-01", "2026-01-01", "2026-01-01");
+insert.run("unverified", "other@example.test", "hash", null, "2026-01-01", "2026-01-01");
+const db = { prepare(sql) { return { bind(...params) { return { first: async () => sqlite.prepare(sql).get(...params), run: async () => ({ meta: { changes: Number(sqlite.prepare(sql).run(...params).changes) } }) }; } }; } };
+const now = Date.parse("2026-11-06T12:00:00.000Z");
+await assert.rejects(() => createSession(db, "unverified", now));
+const cookie = await createSession(db, "verified", now);
+assert.match(cookie, /Secure; HttpOnly; SameSite=Strict/);
+const request = new Request("https://hourrise.example/", { headers: { Cookie: cookie.split(";")[0] } });
+assert.equal((await readSession(db, request, now))?.id, "verified");
+assert.equal(await readSession(db, request, now + 31 * 86400 * 1000), null);
+assert.equal(sqlite.prepare("SELECT count(*) AS n FROM hourrise_auth_sessions WHERE token_hash = ?").get(cookie.split(";")[0].split("=")[1]).n, 0, "raw token must not be stored");
+await revokeSession(db, request, now);
+assert.equal(await readSession(db, request, now), null);
+const another = await createSession(db, "verified", now);
+const req2 = new Request("https://hourrise.example/", { headers: { Cookie: another.split(";")[0] } });
+await revokeAllSessions(db, "verified", now);
+assert.equal(await readSession(db, req2, now), null);
+console.log("HourRise sessions: passed");

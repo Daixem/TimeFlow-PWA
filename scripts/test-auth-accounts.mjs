@@ -1,0 +1,24 @@
+import assert from "node:assert/strict";
+import { DatabaseSync } from "node:sqlite";
+import { readFileSync } from "node:fs";
+import { registerAccount, authenticateAccount, normalizeEmail, validNewPassword } from "../server/auth-accounts.mjs";
+
+const sqlite = new DatabaseSync(":memory:");
+sqlite.exec(readFileSync(new URL("../drizzle/0011_hourrise_auth.sql", import.meta.url), "utf8"));
+const db = { prepare(sql) { return { bind(...args) { return { first: async () => sqlite.prepare(sql).get(...args), run: async () => ({ meta: { changes: Number(sqlite.prepare(sql).run(...args).changes) } }) }; } }; } };
+const password = "Ein langes sicheres Passwort";
+assert.equal(normalizeEmail("  TEST@Example.test "), "test@example.test");
+assert.equal(normalizeEmail("not-an-email"), null);
+assert.equal(validNewPassword("kurz"), false);
+const account = await registerAccount(db, "  TEST@Example.test ", password);
+assert.equal(account.email, "test@example.test");
+assert.equal(await registerAccount(db, "test@example.test", password), null, "duplicate emails must not create accounts");
+assert.equal(await authenticateAccount(db, account.email, password), null, "unverified accounts must not sign in");
+sqlite.prepare("UPDATE hourrise_auth_accounts SET email_verified_at = ? WHERE id = ?").run("2026-11-06", account.id);
+assert.equal((await authenticateAccount(db, "TEST@example.test", password)).id, account.id);
+assert.equal(await authenticateAccount(db, account.email, "wrong password"), null);
+assert.equal(await authenticateAccount(db, "missing@example.test", password), null);
+sqlite.prepare("UPDATE hourrise_auth_accounts SET disabled_at = ? WHERE id = ?").run("2026-11-06", account.id);
+assert.equal(await authenticateAccount(db, account.email, password), null);
+assert.ok(!sqlite.prepare("SELECT password_hash FROM hourrise_auth_accounts WHERE id = ?").get(account.id).password_hash.includes(password));
+console.log("HourRise accounts: passed");
