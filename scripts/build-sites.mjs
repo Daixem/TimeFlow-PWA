@@ -1342,6 +1342,20 @@ export default {
       const user = authenticatedUser(request);
       return jsonResponse({ authenticated: user.authenticated, authProvider: env?.TIMEFLOW_CLOUDFLARE_ACCESS_ENABLED === "true" ? "cloudflare-access" : "platform", user: user.authenticated ? { id: user.id, email: user.email, name: user.name } : null });
     }
+    if (url.pathname === "/api/admin/auth-kdf-check") {
+      const user = authenticatedUser(request);
+      if (!user.authenticated || !user.id) return jsonResponse({ error: "authentication_required" }, 401);
+      if (!(await betaAdmin(user, env))) return jsonResponse({ error: "admin_required" }, 403);
+      if (request.method !== "GET") return jsonResponse({ error: "method_not_allowed" }, 405, { Allow: "GET" });
+      if (!allowRate(user, "auth_kdf_check", 2, 60_000)) return jsonResponse({ error: "rate_limited" }, 429);
+      try {
+        const key = await crypto.subtle.importKey("raw", new TextEncoder().encode("hourrise-runtime-probe"), "PBKDF2", false, ["deriveBits"]);
+        const result = await crypto.subtle.deriveBits({ name: "PBKDF2", hash: "SHA-256", salt: new Uint8Array(16), iterations: 600_000 }, key, 256);
+        return jsonResponse({ supported: result.byteLength === 32 });
+      } catch {
+        return jsonResponse({ supported: false });
+      }
+    }
     if (url.pathname === "/api/sync") return handleSync(request, env, url, ctx);
     if (url.pathname === "/api/work-time") return handleWorkTime(request, env, url);
     if (url.pathname === "/api/work-time/sessions") return handleWorkTimeSessions(request, env, url);

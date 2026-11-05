@@ -92,6 +92,11 @@ if (!syncWrite || syncWrite.values[0] !== normalUserId || syncWrite.values.inclu
 }
 
 const adminHeaders = headersFor(adminUserId);
+await expectStatus("/api/admin/auth-kdf-check", 401);
+await expectStatus("/api/admin/auth-kdf-check", 403, { headers: normalHeaders });
+const kdfCheck = await expectStatus("/api/admin/auth-kdf-check", 200, { headers: adminHeaders });
+if ((await kdfCheck.json()).supported !== true) throw new Error("Der KDF-Laufzeittest muss bei erfolgreicher Berechnung unterstützt melden.");
+await expectStatus("/api/admin/auth-kdf-check", 405, { method: "POST", headers: adminHeaders });
 await expectStatus("/api/beta/invites", 200, { headers: adminHeaders });
 await expectStatus("/api/team-access", 200, { headers: adminHeaders });
 await expectStatus("/api/support?admin=1", 200, { headers: adminHeaders });
