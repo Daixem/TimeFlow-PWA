@@ -1,0 +1,42 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "hourrise",
+  "main": "dist/server/index.js",
+  "upload_source_maps": false,
+  "compatibility_date": "2026-11-05",
+  "workers_dev": false,
+  "keep_vars": true,
+  "vars": {
+    "TIMEFLOW_WORK_TIME_SERVER_ENABLED": "true",
+    "TIMEFLOW_WORK_TIME_POLICY_VERSION": "hourrise-production-v1",
+    "TIMEFLOW_WORK_TIME_AUTO_BREAK_ENABLED": "true",
+    "TIMEFLOW_WORK_TIME_AUTO_BREAK_AFTER_MINUTES": "360",
+    "TIMEFLOW_WORK_TIME_AUTO_BREAK_MINUTES": "30",
+    "TIMEFLOW_ASSET_SOURCE": "bundled",
+    "TIMEFLOW_RETENTION_ADMIN_ENABLED": "true",
+    "TIMEFLOW_RETENTION_EXECUTE_ENABLED": "false",
+    "TIMEFLOW_CLOUDFLARE_ACCESS_ENABLED": "true"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "timeflow-main-clean-20261105",
+      "database_id": "ee494c52-2eb9-4615-b659-1bf549d24547",
+      "migrations_dir": "drizzle"
+    }
+  ],
+  "triggers": {
+    "crons": ["*/1 * * * *"]
+  },
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 0.1
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 0.1
+    }
+  }
+}
