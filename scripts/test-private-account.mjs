@@ -41,3 +41,30 @@ storage.set("timeflow-settings-v1", JSON.stringify({ weeklyTargetHours: 30, regu
 const partTimeTarget = context.window.TimeFlowPrivateAccount.scheduleDueForMonth("2026-09", "2026-09-06");
 if (partTimeTarget.targetDue !== 1800 || partTimeTarget.extraFreeDays !== 0 || partTimeTarget.normalFreeDays !== 3) throw new Error("Teilzeitvertrag: 30 Stunden auf vier Tage muss drei reguläre freie Tage berücksichtigen.");
 console.log("Privates Arbeitszeitkonto: Stempelungen, Anfangsstände sowie Plus-/Minuskorrekturen sind verbunden.");
+
+// Exercise completed server sessions through the real cache reader and totals.
+// Expose the closure only in this VM; the browser's public API stays unchanged.
+const serverStorage = new Map([
+  ["timeflow-work-time-sessions-v1", JSON.stringify({ sessions: [
+    { id: "test-session", work_date: "2026-11-04", net_minutes: 480 }
+  ] })],
+  ["timeflow-work-time-current-v1", JSON.stringify({ manualCorrections: [
+    { id: "test-correction", date: "2026-11-04", adjustmentMinutes: -50 }
+  ] })]
+]);
+const serverContext = {
+  ...context,
+  window: {
+    TimeFlowWorkTimeSnapshotAuthority: () => true,
+    TimeFlowPlatform: { storage: {
+      getItem: (key) => serverStorage.get(key) || null,
+      setItem: (key, value) => serverStorage.set(key, value)
+    } }
+  }
+};
+vm.runInNewContext(account.replace("window.TimeFlowPrivateAccount = {", "window.TimeFlowPrivateAccount = { monthlyValues,"), serverContext);
+const serverTotals = serverContext.window.TimeFlowPrivateAccount.monthlyValues("2026-11");
+if (serverTotals.stamped !== 480 || serverTotals.manual !== -50 || serverTotals.balance !== 430 - serverTotals.targetDue) {
+  throw new Error("Serverstempelungen müssen als Arbeitszeit zählen und getrennt von Zeitkorrekturen verrechnet werden.");
+}
+console.log("Serverstempelung: 480 Minuten Arbeitszeit und -50 Minuten Korrektur korrekt getrennt verrechnet.");
