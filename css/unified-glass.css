@@ -733,3 +733,73 @@ dialog[open]{position:fixed;inset:max(8px,var(--tf-safe-top)) max(8px,var(--tf-s
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}}
 @media(forced-colors:active){:is(button,input,select,textarea,.card,.list-card,.shift-card,.settings-card,dialog){forced-color-adjust:auto;outline-color:Highlight}}
+
+/* iPhone-sized screens: one inset owner and a balanced, thumb-friendly layout.
+   Keep these overrides last so earlier sprint styles cannot shrink controls. */
+@media (max-width:600px) {
+  body { padding-inline:0; }
+  html:is(.timeflow-private-mode,.timeflow-team-mode) .app {
+    padding-left:max(16px,calc(var(--tf-safe-left) + 12px))!important;
+    padding-right:max(16px,calc(var(--tf-safe-right) + 12px))!important;
+    padding-top:max(24px,calc(var(--tf-safe-top) + 16px))!important;
+    padding-bottom:calc(112px + var(--tf-safe-bottom))!important;
+  }
+  .header { gap:12px; margin-bottom:24px; }
+  .header-left { min-width:0; }
+  .header-left h1 { line-height:1.25; letter-spacing:-.025em; }
+  .header-right { gap:8px; }
+  .header-right button { min-width:44px; min-height:44px; }
+  :is(.timeflow-private-mode,.timeflow-team-mode) .dashboard { gap:20px; }
+  :is(.timeflow-private-mode,.timeflow-team-mode) .private-home-clock {
+    padding:18px; gap:16px; border-radius:22px;
+  }
+  .private-home-clock header { align-items:flex-start; }
+  .private-home-clock header>div { min-width:0; }
+  .private-home-clock header>span { flex-shrink:0; }
+  .private-home-timeline { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .private-home-timeline>span { padding:12px 8px; }
+  .private-home-timeline strong { font-size:1rem; font-variant-numeric:tabular-nums; }
+  .private-home-summary { grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px!important; }
+  .private-home-summary>span { grid-template-columns:minmax(0,1fr); justify-items:start; gap:8px; padding:8px 4px; }
+  .private-home-summary small { font-size:.7rem; letter-spacing:0; }
+  .private-home-summary b { font-size:.9rem; font-variant-numeric:tabular-nums; }
+  :is(.timeflow-private-mode,.timeflow-team-mode) .month-stats {
+    grid-template-columns:repeat(2,minmax(0,1fr))!important; gap:16px 0;
+  }
+  :is(.timeflow-private-mode,.timeflow-team-mode) .private-quick-nav {
+    width:calc(100% - 24px - var(--tf-safe-left) - var(--tf-safe-right))!important;
+    max-width:500px!important; padding:6px!important; border-radius:24px;
+  }
+  .private-quick-nav button {
+    min-width:0; min-height:56px; padding:8px 2px!important;
+    align-content:center; gap:6px; font-size:clamp(.66rem,2.8vw,.75rem)!important;
+    line-height:1.2; border-radius:18px;
+  }
+  .private-quick-nav .private-quick-main { margin-top:0; min-height:56px; }
+  .private-quick-nav .private-quick-main i {
+    width:24px; height:24px; border-radius:8px; font-size:1rem; box-shadow:none;
+  }
+  .private-quick-nav button>i { line-height:24px; }
+  :is(.schedule-tabs,.statistics-tabs) button { min-height:44px; padding-inline:8px; }
+  :is(.profile-page-header,.settings-page-header,.schedule-header) { gap:12px; flex-wrap:wrap; }
+  :is(input:not([type="checkbox"]):not([type="radio"]),select,textarea) {
+    font-size: max(16px,1rem)!important;
+  }
+  dialog { scroll-padding-block:20px; }
+  dialog button { min-height:44px; }
+  dialog :is(header>button,[aria-label="Schließen"]) { min-width:44px; flex-shrink:0; }
+  .auth-gate {
+    box-sizing:border-box; min-height:100%;
+    padding:max(20px,var(--tf-safe-top)) max(16px,var(--tf-safe-right)) max(20px,var(--tf-safe-bottom)) max(16px,var(--tf-safe-left));
+  }
+}
+@media (orientation:landscape) and (max-height:560px) and (max-width:600px) {
+  html:is(.timeflow-private-mode,.timeflow-team-mode) .app { padding-top:max(12px,var(--tf-safe-top))!important; }
+}
+@media (max-width:600px) {
+  /* The personal roster must not enlarge Safari's layout viewport and push
+     fixed navigation below the visible screen. */
+  .week-roster-table { min-width:0; width:100%; table-layout:fixed; }
+  .week-roster-table :is(th,td) { overflow-wrap:anywhere; white-space:normal; }
+  .week-roster-table .roster-action { width:52px; }
+}
