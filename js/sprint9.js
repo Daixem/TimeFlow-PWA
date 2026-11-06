@@ -77,52 +77,43 @@ document.addEventListener("DOMContentLoaded", () => {
     return [...merged.values()].sort((a, b) => `${a.date}${a.start || ""}${a.personName}`.localeCompare(`${b.date}${b.start || ""}${b.personName}`));
   }
 
-  async function migrateColleagueSchedule(cloud) {
+  function normalizeColleagueSchedule(cloud) {
     const key = accountColleagueKey();
-    if (!key) return false;
-    const base = baseSnapshot();
+    if (!key) return;
     const storage = window.TimeFlowPlatform.storage;
     const prefix = COLLEAGUE_KEY_PREFIX;
-    const localKeys = storage.keys().filter((candidate) => candidate.startsWith(prefix));
-    const remoteKeys = Object.keys(cloud.snapshot || {}).filter((candidate) => candidate.startsWith(prefix));
-    const legacyKeys = [...new Set([...localKeys, ...remoteKeys])].filter((candidate) => candidate !== key);
-    if (base && Object.prototype.hasOwnProperty.call(base, key) && !legacyKeys.length) return false;
-    const localRows = localKeys.flatMap((candidate) => { const value = parseJson(storage.getItem(candidate), []); return Array.isArray(value) ? value : []; });
-    const remoteRows = remoteKeys.flatMap((candidate) => Array.isArray(cloud.snapshot?.[candidate]) ? cloud.snapshot[candidate] : []);
-    if (!localRows.length && !remoteRows.length && !legacyKeys.length) return false;
-    // The account snapshot is already isolated by the server. Merge any older
-    // device key suffixes into the current account key so a changed login
-    // identifier (email vs. account ID) cannot hide colleague shifts.
-    const mergedRows = mergeColleagueRows(remoteRows, localRows);
-    const localChanged = localKeys.some((candidate) => !sameSnapshotValue(parseJson(storage.getItem(candidate), []), mergedRows));
-    storage.setItem(key, JSON.stringify(mergedRows));
-    localKeys.filter((candidate) => candidate !== key).forEach((candidate) => storage.removeItem(candidate));
-    if (localChanged) document.dispatchEvent(new CustomEvent("timeflow:sync-restored", { detail: { revision: cloud.revision, updatedAt: cloud.updatedAt } }));
-    const nextSnapshot = { ...(cloud.snapshot || {}) };
-    remoteKeys.filter((candidate) => candidate !== key).forEach((candidate) => { delete nextSnapshot[candidate]; });
-    nextSnapshot[key] = mergedRows;
-    if (!sameSnapshotValue(nextSnapshot, cloud.snapshot || {})) {
-      try {
-        const result = await requestSync("PUT", { snapshot: nextSnapshot, expectedRevision: Number(cloud.revision || 0) });
-        saveMeta(result.revision, result.updatedAt);
-        saveBaseSnapshot(nextSnapshot);
-        document.dispatchEvent(new CustomEvent("timeflow:sync-restored", { detail: { revision: result.revision, updatedAt: result.updatedAt } }));
-        renderStatus("synced", "Cloud-Sicherung ist aktuell", "Kollegenschichten wurden mit deinem privaten Konto verbunden.", "Synchron");
-        markReady();
-        return true;
-      } catch (error) {
-        if (error.status === 409) {
-          const conflict = conflictLogic.handleSyncConflict({ storage, localSnapshot: collectSnapshot(), baseSnapshot: baseSnapshot(), response: error.result || {} });
-          showConflict({ data: conflict.serverSnapshot, revision: conflict.serverRevision, updatedAt: conflict.updatedAt });
-          renderStatus("error", "Änderungskonflikt erkannt", "Die Kollegenschichten wurden auf einem anderen Gerät geändert. Bitte gleiche die Stände ab.", "Konflikt");
-          markReady();
-          return true;
-        }
-        throw error;
-      }
+    // Cloud snapshots are scoped by the authenticated server account. Local
+    // storage can also contain a previous user's data: never sweep all keys.
+    const ownKeys = new Set([key, platformAccountId && `${prefix}${platformAccountId}`,
+      platformAccountEmail && `${prefix}${platformAccountEmail}`].filter(Boolean));
+    const normalize = (snapshot, keys) => {
+      if (!keys.length) return snapshot;
+      const next = { ...snapshot };
+      const ordered = [...keys.filter((candidate) => candidate !== key), ...keys.filter((candidate) => candidate === key)];
+      const rows = ordered.flatMap((candidate) => Array.isArray(snapshot[candidate]) ? snapshot[candidate] : []);
+      keys.forEach((candidate) => { delete next[candidate]; });
+      next[key] = mergeColleagueRows([], rows);
+      return next;
+    };
+    const remote = cloud.snapshot || {};
+    cloud.snapshot = normalize(remote, Object.keys(remote).filter((candidate) => candidate.startsWith(prefix)));
+    const base = baseSnapshot();
+    if (base) {
+      const normalizedBase = normalize(base, Object.keys(base).filter((candidate) => candidate.startsWith(prefix)));
+      if (!sameSnapshotValue(base, normalizedBase)) saveBaseSnapshot(normalizedBase);
     }
-    saveBaseSnapshot(nextSnapshot);
-    return false;
+    const localKeys = storage.keys().filter((candidate) => ownKeys.has(candidate));
+    if (!localKeys.length) return;
+    const local = Object.fromEntries(localKeys.map((candidate) => [candidate, parseJson(storage.getItem(candidate), [])]));
+    const normalizedLocal = normalize(local, localKeys);
+    if (sameSnapshotValue(local, normalizedLocal)) return;
+    applyingSnapshot = true;
+    try {
+      storage.setItem(key, JSON.stringify(normalizedLocal[key]));
+      localKeys.filter((candidate) => candidate !== key).forEach((candidate) => storage.removeItem(candidate));
+    } finally { applyingSnapshot = false; }
+    // Do not advance the revision or baseline here. The complete snapshot,
+    // including personal shifts, still has to be reconciled below.
   }
 
   function collectSnapshot() {
@@ -405,7 +396,7 @@ document.addEventListener("DOMContentLoaded", () => {
         markReady();
         return;
       }
-      if (await migrateColleagueSchedule(cloud)) return;
+      normalizeColleagueSchedule(cloud);
       if (await uploadUnsyncedLocalChanges(cloud)) return;
       if (!localMeta.revision || Number(cloud.revision) > Number(localMeta.revision)) {
         applySnapshot(cloud.snapshot);
@@ -516,7 +507,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.addEventListener("timeflow:work-time-mode", (event) => {
     if (event.detail?.mode === "disabled" && platformSession) initialSync();
   });
-  syncButton.addEventListener("click", () => upload(true));
+  syncButton.addEventListener("click", () => initialSync());
   watchAccountStorage();
   window.addEventListener("online", () => platformSession ? initialSync() : undefined);
   window.addEventListener("focus", () => { if (platformSession && navigator.onLine) initialSync(); });
