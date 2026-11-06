@@ -1,0 +1,23 @@
+html:has(body.hourrise-setup) { color-scheme: dark; font: 16px/1.5 Inter, system-ui, sans-serif; }
+body.hourrise-setup { min-height: 100dvh; margin: 0; padding: 24px; box-sizing: border-box; display: grid; place-items: center; color: #edf5ff; background: radial-gradient(circle at top, #234d70, #102638 50%, #06131c); }
+.hourrise-auth-card { width: min(100%, 430px); box-sizing: border-box; padding: clamp(24px, 5vw, 40px); border: 1px solid #5c7282; border-radius: 24px; background: #1c3040; box-shadow: 0 20px 60px #0006; }
+.hourrise-auth-card img { border-radius: 16px; }
+.eyebrow { margin-bottom: 0; font-size: .8rem; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; color: #a7d7e6; }
+.hourrise-auth-card h1 { margin: .2em 0 .5em; line-height: 1.18; }
+.hourrise-auth-card p { color: #d1dce5; }
+.hourrise-auth-card form { display: grid; gap: 10px; margin: 26px 0; }
+.hourrise-auth-card form[hidden] { display: none; }
+.hourrise-auth-card label { font-weight: 700; }
+.hourrise-auth-card input { box-sizing: border-box; width: 100%; min-height: 48px; margin-bottom: 9px; padding: 10px 12px; color: #fff; font: inherit; border: 1px solid #8298a8; border-radius: 10px; background: #122435; }
+.hourrise-auth-card :is(input,button,a):focus-visible { outline: 3px solid #78d6d2; outline-offset: 2px; }
+.hourrise-auth-card button { min-height: 50px; border: 0; border-radius: 10px; color: #092229; background: #a8e4d9; font: inherit; font-weight: 800; cursor: pointer; }
+.hourrise-auth-card button:disabled { opacity: .55; cursor: wait; }
+.hourrise-auth-card a { color: #a8e4d9; }
+.hourrise-login-form { display: grid; gap: 8px; text-align: left; }
+.hourrise-login-form[hidden] { display: none; }
+.hourrise-login-form label { font-size: .8rem; font-weight: 700; }
+.hourrise-login-form input { width: 100%; min-height: 48px; box-sizing: border-box; padding: 10px; border: 1px solid #718b9e; border-radius: 10px; color: #fff; background: #102a40; font: inherit; font-size: 1rem; }
+.hourrise-login-form button { min-height: 46px; margin-top: 8px; padding: 10px; border: 0; border-radius: 10px; background: #a8e4d9; color: #092229; font: inherit; font-size: .9rem; font-weight: 800; cursor: pointer; }
+.hourrise-login-form button[type=button] { background: transparent; color: #c5e8e3; text-decoration: underline; }
+.hourrise-login-form button:disabled { opacity: .55; }
+#hourriseAuthMessage { min-height: 1.5em; font-size: .85rem; color: #fff; }

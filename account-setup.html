@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Passwort einrichten – HourRise</title>
+  <link rel="icon" href="assets/icons/timeflow-icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="css/hourrise-auth.css">
+  <script defer src="js/hourrise-setup.js"></script>
+</head>
+<body class="hourrise-setup">
+  <main class="hourrise-auth-card">
+    <img src="assets/icons/timeflow-phoenix-icon-192.png" alt="" width="68" height="68">
+    <p class="eyebrow">HourRise</p>
+    <h1>Passwort einrichten</h1>
+    <p>Für dein bestätigtes Konto kannst du ein eigenes Passwort festlegen. Der bisherige Anmeldecode bleibt während der Umstellung aktiv.</p>
+    <p id="setupAccount" aria-live="polite">Konto wird geprüft …</p>
+    <form id="setupForm" hidden>
+      <label for="password">Neues Passwort</label>
+      <input id="password" name="password" type="password" minlength="12" maxlength="1024" autocomplete="new-password" required>
+      <label for="repeat">Passwort wiederholen</label>
+      <input id="repeat" name="repeat" type="password" minlength="12" maxlength="1024" autocomplete="new-password" required>
+      <button type="submit">Passwort sicher einrichten</button>
+    </form>
+    <p id="setupMessage" role="status" aria-live="polite"></p>
+    <a href="/">Zur App zurück</a>
+  </main>
+</body>
+</html>

@@ -2,7 +2,7 @@ import { hashPassword, verifyPassword } from "./auth-crypto.mjs";
 
 // This placeholder deliberately has the same cost as a real password check.
 // It is public test data and must never correspond to a real account.
-const DUMMY_HASH = "pbkdf2-sha256$600000$242b35801e4e9fa73617f1ec56a55ced$8cd3d5c7d81ab5b4fb06272ccb02ac14674a5a373b66d43d33e9f46ba974e653";
+const DUMMY_HASH = "scrypt$16384$8$5$242b35801e4e9fa73617f1ec56a55ced$8cd3d5c7d81ab5b4fb06272ccb02ac14674a5a373b66d43d33e9f46ba974e653";
 
 export function normalizeEmail(value) {
   if (typeof value !== "string") return null;
@@ -25,6 +25,19 @@ export async function registerAccount(db, emailInput, password, now = Date.now()
   const timestamp = new Date(now).toISOString();
   const result = await db.prepare("INSERT INTO hourrise_auth_accounts (id, email, password_hash, created_at, updated_at) VALUES (?, ?, ?, ?, ?) ON CONFLICT(email) DO NOTHING")
     .bind(id, email, passwordHash, timestamp, timestamp).run();
+  return result?.meta?.changes === 1 ? { id, email } : null;
+}
+
+// Only for an administrator whose e-mail was already verified by the
+// Cloudflare Access identity service. Registration of other users stays closed.
+export async function registerVerifiedAccount(db, emailInput, password, now = Date.now()) {
+  const email = normalizeEmail(emailInput);
+  if (!email || !validNewPassword(password) || !Number.isSafeInteger(now)) throw new Error("Invalid registration");
+  const passwordHash = await hashPassword(password);
+  const id = crypto.randomUUID();
+  const timestamp = new Date(now).toISOString();
+  const result = await db.prepare("INSERT INTO hourrise_auth_accounts (id, email, password_hash, email_verified_at, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT(email) DO NOTHING")
+    .bind(id, email, passwordHash, timestamp, timestamp, timestamp).run();
   return result?.meta?.changes === 1 ? { id, email } : null;
 }
 

@@ -83,6 +83,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderAuthLink() {
+    if (window.location.hostname === "hourrise.de") return;
     authLinkContainer.replaceChildren();
     const link = document.createElement("a");
     link.href = "https://timeflow-connect.daixem.chatgpt.site/";
@@ -99,7 +100,7 @@ document.addEventListener("DOMContentLoaded", () => {
     gate.hidden = false;
     document.documentElement.classList.add("timeflow-auth-locked");
     document.documentElement.classList.remove("timeflow-auth-pending");
-    gate.querySelector("a")?.focus();
+    gate.querySelector("input, a")?.focus();
   }
 
   function showApp() {
@@ -155,7 +156,7 @@ document.addEventListener("DOMContentLoaded", () => {
         window.clearTimeout(requestTimeout);
       }
     }
-    if (navigator.onLine === false) {
+    if (navigator.onLine === false && window.location.hostname !== "hourrise.de") {
       const offlineSession = loadOfflinePlatformSession();
       if (offlineSession) {
         authMode = "platform";
@@ -177,6 +178,11 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelector("[data-sign-out]")?.addEventListener("click", () => {
     if (authMode === "platform") {
       storageRemove(PLATFORM_SESSION_CACHE_KEY);
+      if (session?.authProvider === "hourrise") {
+        fetch("/api/auth/logout", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}", credentials: "same-origin" })
+          .finally(() => window.location.assign("/"));
+        return;
+      }
       window.location.assign(session?.authProvider === "cloudflare-access" ? "/cdn-cgi/access/logout" : "/signout-with-chatgpt?return_to=/");
       return;
     }

@@ -6,7 +6,7 @@ const root = new URL("../", import.meta.url);
 const output = new URL("../dist/server/", import.meta.url);
 const releaseBuild = process.argv.includes("--release");
 if (releaseBuild) assertCleanWorkingTree(root);
-const publicEntries = ["index.html", "manifest.webmanifest", "sw.js", "release-notes.json"];
+const publicEntries = ["index.html", "account-setup.html", "manifest.webmanifest", "sw.js", "release-notes.json"];
 const publicDirectories = ["assets", "css", "js", "vendor"];
 const contentTypes = {
   ".css": "text/css; charset=utf-8",
@@ -52,7 +52,9 @@ for (const file of files) {
   };
 }
 
-const worker = `const FILES = ${JSON.stringify(payload)};
+const worker = `import { handleAuth } from "./auth-router.mjs";
+import { readSession } from "./auth-session.mjs";
+const FILES = ${JSON.stringify(payload)};
 const BUILD_METADATA = ${JSON.stringify(buildMetadata)};
 const BUILD_VERSION = ${JSON.stringify(buildVersion)};
 // GitHub Pages is published below this repository path. Keep the trailing
@@ -137,9 +139,17 @@ function authenticatedUser(request) {
 }
 
 async function withCloudflareAccessIdentity(request, env, ctx) {
-  if (env?.TIMEFLOW_CLOUDFLARE_ACCESS_ENABLED !== "true") return request;
+  if (env?.TIMEFLOW_CLOUDFLARE_ACCESS_ENABLED !== "true" && env?.HOURRISE_AUTH_ENABLED !== "true") return request;
   const headers = new Headers(request.headers);
   for (const header of ["oai-authenticated-user-id", "oai-authenticated-user-email", "oai-authenticated-user-full-name", "oai-authenticated-user-full-name-encoding"]) headers.delete(header);
+  if (env?.TIMEFLOW_CLOUDFLARE_ACCESS_ENABLED !== "true") {
+    const account = env?.DB ? await readSession(env.DB, request) : null;
+    if (account) {
+      headers.set("oai-authenticated-user-id", account.id);
+      headers.set("oai-authenticated-user-email", account.email);
+    }
+    return new Request(request, { headers });
+  }
   const identity = await ctx?.access?.getIdentity?.();
   const email = String(identity?.email || "").trim().toLowerCase();
   if (!email) return new Request(request, { headers });
@@ -375,6 +385,8 @@ async function betaAdmin(user, env) {
   if (user?.id && env?.TIMEFLOW_BETA_ADMIN_USER_FINGERPRINT
       && (await userIdentityFingerprint(user.id)) === env.TIMEFLOW_BETA_ADMIN_USER_FINGERPRINT) return true;
   const email = String(user?.email || "").trim().toLowerCase();
+  if (email && env?.TIMEFLOW_BETA_ADMIN_USER_FINGERPRINT
+      && (await userIdentityFingerprint("cf-access:" + email)) === env.TIMEFLOW_BETA_ADMIN_USER_FINGERPRINT) return true;
   return Boolean(email && env?.TIMEFLOW_BETA_ADMIN_EMAIL_FINGERPRINT
     && (await userIdentityFingerprint(email)) === env.TIMEFLOW_BETA_ADMIN_EMAIL_FINGERPRINT);
 }
@@ -1338,9 +1350,13 @@ export default {
     const url = new URL(request.url);
     if (url.pathname === "/api/internal/push-reminders") return handleScheduledPush(request, env);
     request = await withCloudflareAccessIdentity(request, env, ctx);
+    if (url.pathname.startsWith("/api/auth/")) {
+      const user = authenticatedUser(request);
+      return handleAuth(request, env, url.pathname, user, await betaAdmin(user, env));
+    }
     if (url.pathname === "/api/session") {
       const user = authenticatedUser(request);
-      return jsonResponse({ authenticated: user.authenticated, authProvider: env?.TIMEFLOW_CLOUDFLARE_ACCESS_ENABLED === "true" ? "cloudflare-access" : "platform", user: user.authenticated ? { id: user.id, email: user.email, name: user.name } : null });
+      return jsonResponse({ authenticated: user.authenticated, authProvider: env?.TIMEFLOW_CLOUDFLARE_ACCESS_ENABLED === "true" ? "cloudflare-access" : env?.HOURRISE_AUTH_ENABLED === "true" ? "hourrise" : "platform", user: user.authenticated ? { id: user.id, email: user.email, name: user.name } : null });
     }
     if (url.pathname === "/api/admin/auth-kdf-check") {
       const user = authenticatedUser(request);
@@ -1408,6 +1424,9 @@ export default {
 await rm(output, { recursive: true, force: true });
 await mkdir(output, { recursive: true });
 await writeFile(new URL("index.js", output), worker, "utf8");
+for (const filename of ["auth-router.mjs", "auth-accounts.mjs", "auth-crypto.mjs", "auth-recovery.mjs", "auth-session.mjs", "auth-rate-limit.mjs", "auth-email.mjs"]) {
+  await copyFile(new URL(`server/${filename}`, root), new URL(filename, output));
+}
 await mkdir(new URL("../.openai/", output), { recursive: true });
 await copyFile(new URL(".openai/hosting.json", root), new URL("../.openai/hosting.json", output));
 console.log(`Sites-Build enthält ${files.length} PWA-Dateien.`);
