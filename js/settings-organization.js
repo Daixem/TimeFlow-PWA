@@ -48,7 +48,7 @@
     set("#greeting", shell[0]); set(".header .subtitle", shell[1]);
     document.querySelectorAll(".shift-grid .shift-card").forEach((card, index) => { const values = index ? [shell[3], shell[5]] : [shell[2], shell[4]]; const heading = card.querySelector("h2"); const unit = card.querySelector("span"); if (heading) heading.textContent = values[0]; if (unit) unit.textContent = values[1]; });
     set('[data-target="schedule"] .nav-text', shell[6]); set('[data-target="clock"] .nav-text', shell[7]); set('[data-target="chat"] .nav-text', shell[8]);
-    document.title = `TimeFlow – ${t.home}`;
+    document.title = `${location.hostname === "hourrise.de" ? "HourRise" : "TimeFlow"} – ${t.home}`;
     document.querySelectorAll("[data-language-select]").forEach((select) => { select.value = language; });
     document.dispatchEvent(new CustomEvent("timeflow:language-changed", { detail: { language } }));
   }

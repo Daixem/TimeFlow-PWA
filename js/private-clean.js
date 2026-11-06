@@ -6,7 +6,7 @@
   const buildId = (() => { try { return new URL(document.currentScript?.src || location.href).searchParams.get("v"); } catch { return null; } })();
   const updateNewsEntry = (build, notes = {}) => {
     if (!build) return null;
-    const title = String(notes.title || "TimeFlow wurde aktualisiert");
+    const title = String(notes.title || "HourRise wurde aktualisiert");
     const summary = String(notes.summary || "Ein neues Update wurde erfolgreich installiert.");
     const changes = Array.isArray(notes.changes) ? notes.changes : [];
     // Tie the notice to its actual contents, not to the app build timestamp.
@@ -67,7 +67,7 @@
     if (next) { const start = new Date(`${next.date}T${next.start}:00`); const hours = (start - now) / 3600000; if (hours <= 48) result.push({ id: `private-next-${next.date}-${next.start}`, type: "schedule", category: "schedule", title: "Geplanter Einsatz", body: `${dateText(next.date)} · ${next.start} – ${next.end} Uhr`, createdAt: new Date().toISOString(), read: false, action: "schedule" }); }
     const lastImport = read("timeflow-private-last-import-v1", null); if (lastImport?.at && Date.now() - new Date(lastImport.at).getTime() < 86400000) result.push({ id: `private-import-${lastImport.at}`, type: "success", category: "schedule", title: "Dienstplan übernommen", body: `${Number(lastImport.added || 0)} Tage ergänzt${lastImport.updated ? `, ${lastImport.updated} aktualisiert` : ""}.`, details: Array.isArray(lastImport.changes) ? lastImport.changes : [], createdAt: lastImport.at, read: false, action: "schedule" });
     if (workday?.isWorking && workday.workStart) { const hours = (Date.now() - new Date(workday.workStart).getTime()) / 3600000; if (hours >= 10) result.push({ id: "private-long-workday", type: "system", category: "worktime", title: "Ausstempeln prüfen", body: `Deine laufende Arbeitszeit beträgt bereits mehr als ${Math.floor(hours)} Stunden.`, createdAt: new Date().toISOString(), read: false, action: "" }); }
-    if (!navigator.onLine) result.push({ id: "private-offline", type: "system", category: "system", title: "Offlinebetrieb aktiv", body: "TimeFlow arbeitet lokal. Änderungen werden auf diesem Gerät gespeichert.", createdAt: new Date().toISOString(), read: false, action: "" });
+    if (!navigator.onLine) result.push({ id: "private-offline", type: "system", category: "system", title: "Offlinebetrieb aktiv", body: "HourRise arbeitet lokal. Änderungen werden auf diesem Gerät gespeichert.", createdAt: new Date().toISOString(), read: false, action: "" });
     document.dispatchEvent(new CustomEvent("timeflow:replace-notifications", { detail: result }));
     const title = document.getElementById("notificationCenterTitle"); if (title) title.textContent = "Persönliche Hinweise";
     const copy = title?.nextElementSibling; if (copy) copy.textContent = "Arbeitszeit, Dienstplan und System – nur aus deinen tatsächlichen Daten.";

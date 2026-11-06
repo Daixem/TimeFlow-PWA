@@ -21,3 +21,16 @@ body.hourrise-setup { min-height: 100dvh; margin: 0; padding: 24px; box-sizing: 
 .hourrise-login-form button[type=button] { background: transparent; color: #c5e8e3; text-decoration: underline; }
 .hourrise-login-form button:disabled { opacity: .55; }
 #hourriseAuthMessage { min-height: 1.5em; font-size: .85rem; color: #fff; }
+.hourrise-login .auth-gate { background: radial-gradient(circle at 50% 0, #1e5263, transparent 55%), linear-gradient(155deg, #091b2c, #102f40 55%, #071521); }
+.hourrise-login .auth-gate-card { width: min(100%, 470px); background: #162c3d; border-color: #527484; }
+.hourrise-login .auth-gate-card > header { gap: 16px; padding: 22px; background: #1d3a4b; }
+.hourrise-login .auth-brand { width: 64px; height: 64px; overflow: hidden; background: #0b2635; box-shadow: none; }
+.hourrise-login .auth-brand img { width: 100%; height: 100%; object-fit: cover; }
+.hourrise-login .auth-gate-card > header small { color: #b9eee3; font-size: 1.05rem; letter-spacing: .06em; }
+.hourrise-login .auth-gate-card > header strong { font-size: .85rem; font-weight: 600; }
+.hourrise-login .auth-intro { padding: 22px 24px 16px; }
+.hourrise-login .auth-intro h1 { font-size: 1.45rem; }
+.hourrise-login .auth-intro p { color: #c9dae0; font-size: .9rem; }
+.hourrise-login .auth-demo-users { padding: 0 24px; }
+.hourrise-login .auth-security-note { margin: 16px 24px 24px; }
+.hourrise-login .auth-security-note :is(strong,small) { font-size: .75rem; }

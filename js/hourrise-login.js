@@ -4,9 +4,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const gate = document.getElementById("authGate");
   const box = document.getElementById("authDemoUsers");
   if (!gate || !box) return;
+  document.documentElement.classList.add("hourrise-login");
+  const brand = gate.querySelector(".auth-brand");
+  brand.replaceChildren();
+  const phoenix = document.createElement("img");
+  phoenix.src = "assets/icons/timeflow-phoenix-icon-192.png";
+  phoenix.alt = "";
+  phoenix.width = 64;
+  phoenix.height = 64;
+  brand.append(phoenix);
   gate.querySelector("header small").textContent = "HourRise";
   gate.querySelector("header strong").textContent = "Deine Zeit. Dein Überblick.";
-  gate.querySelector(".auth-intro p").textContent = "Melde dich mit deiner E-Mail-Adresse und deinem Passwort an.";
+  gate.querySelector("#authGateTitle").textContent = "Willkommen bei HourRise";
+  gate.querySelector(".auth-intro p").textContent = "Arbeitszeit, Schichten und Dienstpläne – alles an einem Ort. Melde dich mit E-Mail und Passwort an.";
   box.innerHTML = `
     <form id="hourriseLoginForm" class="hourrise-login-form">
       <label for="hourriseEmail">E-Mail-Adresse</label>

@@ -1,7 +1,7 @@
 {
   "id": "./",
-  "name": "TimeFlow – Zeiterfassung",
-  "short_name": "TimeFlow",
+  "name": "HourRise – Zeiterfassung und Dienstplan",
+  "short_name": "HourRise",
   "description": "Zeiterfassung, Dienstpläne, Teamchat, Benachrichtigungen, Benutzerrollen und sichere Profilsynchronisierung in einer modernen PWA.",
   "lang": "de",
   "start_url": "./",

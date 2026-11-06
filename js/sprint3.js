@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
     <section id="chatPage" class="chat-page app-page hidden" aria-labelledby="chatTitle">
       <header class="chat-page-header">
         <div>
-          <span class="eyebrow"><i class="fa-solid fa-bolt"></i> TimeFlow Connect</span>
+          <span class="eyebrow"><i class="fa-solid fa-bolt"></i> HourRise</span>
           <h1 id="chatTitle">Chats</h1>
           <p>Absprachen, Schichten und dein Team an einem Ort.</p>
         </div>
@@ -61,7 +61,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
           <div class="work-context" hidden>
             <span><i class="fa-solid fa-wand-magic-sparkles"></i></span>
-            <div><small>TimeFlow erkennt den Arbeitskontext</small><strong>Frühschicht am Freitag · 07:30 Uhr</strong></div>
+            <div><small>HourRise erkennt den Arbeitskontext</small><strong>Frühschicht am Freitag · 07:30 Uhr</strong></div>
             <button type="button" data-shift-details>Öffnen</button>
           </div>
 

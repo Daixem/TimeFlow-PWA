@@ -10,7 +10,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const heading = readinessCard.querySelector("header small");
   const title = readinessCard.querySelector("header h2");
   if (heading) heading.textContent = "Geräte-Check";
-  if (title) title.textContent = "TimeFlow auf diesem Gerät";
+  if (title) title.textContent = "HourRise auf diesem Gerät";
 
   readinessCard.querySelector("[data-open-readiness-settings]")?.insertAdjacentHTML("beforebegin", `
     <button class="device-check-button" type="button" data-run-device-check>
@@ -22,7 +22,7 @@ document.addEventListener("DOMContentLoaded", () => {
     <dialog class="settings-dialog device-check-dialog" id="deviceCheckDialog" aria-labelledby="deviceCheckTitle">
       <header>
         <span><i class="fa-solid fa-mobile-screen-button"></i></span>
-        <div><small>Version 1.0.1 · Build ${BUILD}</small><h2 id="deviceCheckTitle">Geräte- und PWA-Check</h2><p>TimeFlow prüft nur Funktionen dieses Geräts. Es werden keine persönlichen Inhalte übertragen.</p></div>
+        <div><small>Version 1.0.1 · Build ${BUILD}</small><h2 id="deviceCheckTitle">Geräte- und PWA-Check</h2><p>HourRise prüft nur Funktionen dieses Geräts. Es werden keine persönlichen Inhalte übertragen.</p></div>
         <strong id="deviceCheckScore">–/8</strong>
       </header>
       <div class="device-check-progress" aria-hidden="true"><i id="deviceCheckProgress"></i></div>
@@ -55,7 +55,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let running = false;
 
   const homeDetails = {
-    "vacation-countdown": { eyebrow: "Für dich · Information", title: "Dein Urlaub rückt näher", icon: "fa-umbrella-beach", copy: "Dein genehmigter Urlaub ist bereits in TimeFlow eingeplant. Diese Ansicht dient ausschließlich zur Information.", facts: [["Zeitraum", "15.–28. September 2026"], ["Dauer", "10 Urlaubstage"], ["Status", "Genehmigt"]], action: null, event: "info" },
+    "vacation-countdown": { eyebrow: "Für dich · Information", title: "Dein Urlaub rückt näher", icon: "fa-umbrella-beach", copy: "Dein genehmigter Urlaub ist bereits in HourRise eingeplant. Diese Ansicht dient ausschließlich zur Information.", facts: [["Zeitraum", "15.–28. September 2026"], ["Dauer", "10 Urlaubstage"], ["Status", "Genehmigt"]], action: null, event: "info" },
     "vacation-approved": { eyebrow: "Für dich", title: "Urlaubsantrag genehmigt", icon: "fa-clipboard-check", copy: "Die Freigabe ist abgeschlossen. Du musst keinen neuen Antrag stellen.", facts: [["Antrag", "Erholungsurlaub"], ["Zeitraum", "15.–28. September 2026"], ["Freigabe", "Abteilungsleitung"]], action: "Urlaubsdetails öffnen", event: "vacation" },
     birthday: { eyebrow: "Team-Update", title: "Anna hat morgen Geburtstag", icon: "fa-cake-candles", copy: "Ein persönlicher Teamhinweis – ohne automatische Weiterleitung in den Chat.", facts: [["Kollegin", "Anna Müller"], ["Team", "Restaurant"], ["Termin", "Morgen"]], action: "Im Chat gratulieren", event: "chat" },
     anniversary: { eyebrow: "Team-Update", title: "10-jähriges Jubiläum", icon: "fa-award", copy: "Thomas feiert am Freitag zehn Jahre im Unternehmen.", facts: [["Kollege", "Thomas Becker"], ["Anlass", "10 Jahre TimeFlow-Team"], ["Termin", "Freitag"]], action: "Im Chat gratulieren", event: "chat" }
@@ -233,7 +233,7 @@ document.addEventListener("DOMContentLoaded", () => {
     list.innerHTML = '<li class="is-running"><span><i class="fa-solid fa-spinner"></i></span><div><strong>Prüfung läuft</strong><small>Gerätefunktionen werden nacheinander geprüft.</small></div></li>';
     score.textContent = "…";
     progress.style.width = "12%";
-    summary.textContent = "TimeFlow prüft Installation, Offline-Betrieb und lokale Datensicherheit.";
+    summary.textContent = "HourRise prüft Installation, Offline-Betrieb und lokale Datensicherheit.";
     const results = [
       securityResult(),
       await serviceWorkerResult(),

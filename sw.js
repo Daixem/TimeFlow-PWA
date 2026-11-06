@@ -30,7 +30,7 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("push", (event) => {
   let data = {};
   try { data = event.data?.json?.() || {}; } catch (_error) { data = { body: event.data?.text?.() || "" }; }
-  const title = String(data.title || "TimeFlow");
+  const title = String(data.title || "HourRise");
   const options = {
     body: String(data.body || "Neue Informationen sind verfügbar."),
     icon: data.icon || "assets/icons/timeflow-phoenix-icon-192.png",

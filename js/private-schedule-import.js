@@ -131,7 +131,7 @@
   const stage = (status, message, state = "info") => {
     status.textContent = message;
     status.dataset.state = state;
-    console.info("[TimeFlow schedule import]", message);
+    console.info("[HourRise schedule import]", message);
   };
   const validateImportFile = (file) => {
     const type = String(file?.type || "").toLowerCase(); const extension = fileExtension(file);
@@ -545,7 +545,7 @@
     } finally {
       if (worker) {
         try { await withTimeout(worker.terminate(), 5000, ""); }
-        catch (_error) { console.warn("[TimeFlow schedule import] OCR-Worker konnte nicht rechtzeitig beendet werden."); }
+        catch (_error) { console.warn("[HourRise schedule import] OCR-Worker konnte nicht rechtzeitig beendet werden."); }
       }
     }
   }
@@ -565,7 +565,7 @@
       const labels = Object.keys(learned.labels).length;
       const times = Object.keys(learned.times).length;
       const details = [markers && `${markers} Kürzel`, labels && `${labels} Bezeichnungen`, times && `${times} Zeitmuster`].filter(Boolean).join(" · ");
-      learningNote.innerHTML = details ? `<i class="fa-solid fa-brain"></i> Persönlich gelernt: ${escapeHtml(details)}. Bestätigte Korrekturen werden bei neuen Dienstplänen berücksichtigt.` : '<i class="fa-solid fa-brain"></i> TimeFlow merkt sich bestätigte Korrekturen an Kürzeln, Schichtnamen und wiederkehrenden Uhrzeiten.';
+      learningNote.innerHTML = details ? `<i class="fa-solid fa-brain"></i> Persönlich gelernt: ${escapeHtml(details)}. Bestätigte Korrekturen werden bei neuen Dienstplänen berücksichtigt.` : '<i class="fa-solid fa-brain"></i> HourRise merkt sich bestätigte Korrekturen an Kürzeln, Schichtnamen und wiederkehrenden Uhrzeiten.';
     };
     const renderScheduleViews = (shifts) => {
       const dayPanel = document.querySelector('#schedulePage [data-panel="day"]'); const weekPanel = document.querySelector('#schedulePage [data-panel="week"]'); const periodPanel = document.querySelector('#schedulePage [data-panel="period"]');

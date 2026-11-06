@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", () => {
     <section id="settingsPage" class="settings-page app-page hidden" aria-labelledby="settingsTitle">
       <header class="settings-page-header">
         <button class="settings-back" type="button" data-settings-back aria-label="Zurück zum Profil"><i class="fa-solid fa-arrow-left"></i></button>
-        <div><span class="settings-eyebrow"><i class="fa-solid fa-sliders"></i> Persönlich</span><h1 id="settingsTitle">Einstellungen</h1><p>TimeFlow so einrichten, wie dein Arbeitstag funktioniert.</p></div>
+        <div><span class="settings-eyebrow"><i class="fa-solid fa-sliders"></i> Persönlich</span><h1 id="settingsTitle">Einstellungen</h1><p>HourRise so einrichten, wie dein Arbeitstag funktioniert.</p></div>
         <span class="settings-saved"><i class="fa-solid fa-check"></i> Lokal</span>
       </header>
 
@@ -57,18 +57,18 @@ document.addEventListener("DOMContentLoaded", () => {
 
         <section class="settings-card" aria-labelledby="dataSettingsTitle">
           <header><span class="settings-card-icon amber"><i class="fa-solid fa-database"></i></span><div><small>Selbstbestimmt</small><h2 id="dataSettingsTitle">Daten & Datenschutz</h2></div></header>
-          <p class="settings-card-copy">TimeFlow speichert einige Daten auf diesem Gerät und synchronisiert freigegebene Konto- und Arbeitszeitdaten geschützt. Du entscheidest getrennt über lokale Daten und Cloud-Daten.</p>
+          <p class="settings-card-copy">HourRise speichert einige Daten auf diesem Gerät und synchronisiert freigegebene Konto- und Arbeitszeitdaten geschützt. Du entscheidest getrennt über lokale Daten und Cloud-Daten.</p>
           <div class="data-actions">
-            <button type="button" data-export-data><span class="data-action-icon"><i class="fa-solid fa-file-arrow-down"></i></span><span><strong>Datensicherung erstellen</strong><small>Alle lokalen TimeFlow-Daten als JSON</small></span><i class="fa-solid fa-chevron-right"></i></button>
+            <button type="button" data-export-data><span class="data-action-icon"><i class="fa-solid fa-file-arrow-down"></i></span><span><strong>Datensicherung erstellen</strong><small>Alle lokalen HourRise-Daten als JSON</small></span><i class="fa-solid fa-chevron-right"></i></button>
             <button type="button" data-delete-cloud><span class="data-action-icon"><i class="fa-solid fa-cloud-arrow-down"></i></span><span><strong>Cloud-Daten löschen</strong><small data-delete-cloud-summary>Synchronisierte Daten und Teamzugang entfernen</small></span><i class="fa-solid fa-chevron-right"></i></button>
             <button type="button" data-restore-cloud hidden><span class="data-action-icon"><i class="fa-solid fa-clock-rotate-left"></i></span><span><strong>Private Arbeitszeit wiederherstellen</strong><small data-restore-cloud-deadline>Innerhalb der 30-Tage-Frist möglich</small></span><i class="fa-solid fa-chevron-right"></i></button>
             <button type="button" data-beta-privacy><span class="data-action-icon"><i class="fa-solid fa-shield-halved"></i></span><span><strong>Beta & Datenschutz</strong><small>Gespeicherte Daten, Grenzen und Einwilligung ansehen</small></span><i class="fa-solid fa-chevron-right"></i></button>
-            <button class="danger" type="button" data-open-reset><span class="data-action-icon"><i class="fa-solid fa-trash-can"></i></span><span><strong>Lokale Daten löschen</strong><small>TimeFlow auf diesem Gerät zurücksetzen</small></span><i class="fa-solid fa-chevron-right"></i></button>
+            <button class="danger" type="button" data-open-reset><span class="data-action-icon"><i class="fa-solid fa-trash-can"></i></span><span><strong>Lokale Daten löschen</strong><small>HourRise auf diesem Gerät zurücksetzen</small></span><i class="fa-solid fa-chevron-right"></i></button>
           </div>
         </section>
       </div>
 
-      <section class="settings-about"><span><i class="fa-solid fa-fingerprint"></i></span><div><strong>TimeFlow PWA</strong><p>Version 1.0.1 · Build 0040</p></div><em>Made for better workdays</em></section>
+      <section class="settings-about"><span><i class="fa-solid fa-fingerprint"></i></span><div><strong>HourRise PWA</strong><p>Version 1.0.1 · Build 0040</p></div><em>Made for better workdays</em></section>
 
       <dialog class="settings-dialog" id="settingsResetDialog" aria-labelledby="settingsResetTitle">
         <div class="settings-dialog-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
@@ -197,12 +197,12 @@ document.addEventListener("DOMContentLoaded", () => {
     const downloadUrl = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = downloadUrl;
-    link.download = `TimeFlow-Datensicherung-${new Date().toLocaleDateString("sv-SE")}.json`;
+    link.download = `HourRise-Datensicherung-${new Date().toLocaleDateString("sv-SE")}.json`;
     document.body.appendChild(link);
     link.click();
     link.remove();
     window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 1000);
-    notify("Deine TimeFlow-Datensicherung wurde erstellt.");
+    notify("Deine HourRise-Datensicherung wurde erstellt.");
   }
 
   async function checkForUpdate(button) {
@@ -219,7 +219,7 @@ document.addEventListener("DOMContentLoaded", () => {
         notify("Das Update wird beim nächsten vollständigen Start aktiviert. Deine laufende Nutzung bleibt unberührt.");
       } else {
         label.textContent = `Zuletzt geprüft um ${checkedAt} Uhr`;
-        notify("TimeFlow ist auf dem aktuellen Stand.");
+        notify("HourRise ist auf dem aktuellen Stand.");
       }
     } catch {
       label.textContent = "Prüfung derzeit nicht möglich";

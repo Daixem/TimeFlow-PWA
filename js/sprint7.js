@@ -305,7 +305,7 @@ document.addEventListener("DOMContentLoaded", () => {
       id: detail.id || window.crypto?.randomUUID?.() || `notification-${Date.now()}`,
       type: detail.type || "system",
       category: detail.category || detail.type || "system",
-      title: detail.title || "TimeFlow",
+      title: detail.title || "HourRise",
       body: detail.body || "Es gibt eine neue Information für dich.",
       createdAt: new Date().toISOString(),
       read: false,
@@ -375,7 +375,7 @@ document.addEventListener("DOMContentLoaded", () => {
       toast("Der Push-Dienst hat den Test angenommen. Die tatsächliche Anzeige auf dem Gerät ist damit noch nicht bestätigt.");
       return;
     }
-    const localShown = await showDeviceNotification("TimeFlow – lokaler Test", "Dieser Hinweis wurde nur auf diesem geöffneten Gerät angezeigt.", { tag: "timeflow-local-test" });
+    const localShown = await showDeviceNotification("HourRise – lokaler Test", "Dieser Hinweis wurde nur auf diesem geöffneten Gerät angezeigt.", { tag: "timeflow-local-test" });
     let detail;
     if (!responseOk) {
       if (responseStatus === 401) detail = "Deine Anmeldung ist abgelaufen. Bitte melde dich erneut an.";

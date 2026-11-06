@@ -23,33 +23,33 @@ document.addEventListener("DOMContentLoaded", () => {
   `);
   appSettingsCard?.querySelector("[data-check-update]")?.insertAdjacentHTML("afterend", `
     <button class="settings-primary-button sprint10-install-button" type="button" data-install-app>
-      <i class="fa-solid fa-arrow-down-to-bracket"></i><span><strong>TimeFlow installieren</strong><small id="installHint">App-Status wird geprüft</small></span>
+      <i class="fa-solid fa-arrow-down-to-bracket"></i><span><strong>HourRise installieren</strong><small id="installHint">App-Status wird geprüft</small></span>
     </button>
   `);
 
   dataSettingsCard?.querySelector("[data-export-data]")?.insertAdjacentHTML("afterend", `
     <button type="button" data-import-data><span class="data-action-icon"><i class="fa-solid fa-file-arrow-up"></i></span><span><strong>Datensicherung wiederherstellen</strong><small>Geprüfte TimeFlow-JSON auswählen</small></span><i class="fa-solid fa-chevron-right"></i></button>
-    <input class="sprint10-file-input" type="file" accept="application/json,.json" data-import-file aria-label="TimeFlow-Datensicherung auswählen">
+    <input class="sprint10-file-input" type="file" accept="application/json,.json" data-import-file aria-label="HourRise-Datensicherung auswählen">
   `);
 
   settingsPage.insertAdjacentHTML("beforeend", `
     <dialog class="settings-dialog sprint10-restore-dialog" id="restoreDialog" aria-labelledby="restoreTitle">
       <div class="settings-dialog-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
       <h2 id="restoreTitle">Datensicherung prüfen</h2>
-      <p id="restoreDescription">Wähle zuerst eine TimeFlow-Datensicherung aus.</p>
+      <p id="restoreDescription">Wähle zuerst eine HourRise-Datensicherung aus.</p>
       <dl class="restore-summary" id="restoreSummary" hidden>
         <div><dt>Erstellt</dt><dd data-restore-date>–</dd></div>
         <div><dt>Datensätze</dt><dd data-restore-count>–</dd></div>
         <div><dt>Ausgeschlossen</dt><dd>Sitzung & Cloud-Status</dd></div>
       </dl>
-      <p class="restore-warning" id="restoreWarning" hidden><i class="fa-solid fa-triangle-exclamation"></i> Vorhandene gleichnamige Daten werden ersetzt. Andere lokale TimeFlow-Daten bleiben erhalten.</p>
+      <p class="restore-warning" id="restoreWarning" hidden><i class="fa-solid fa-triangle-exclamation"></i> Vorhandene gleichnamige Daten werden ersetzt. Andere lokale HourRise-Daten bleiben erhalten.</p>
       <div><button type="button" data-close-restore>Abbrechen</button><button class="confirm-restore" type="button" data-confirm-restore disabled>Wiederherstellen</button></div>
     </dialog>
   `);
 
   settingsPage.querySelector(".settings-layout")?.insertAdjacentHTML("beforeend", `
     <section class="release-readiness-card" aria-labelledby="releaseReadinessTitle">
-      <header><span><i class="fa-solid fa-shield-heart"></i></span><div><small>App-Check</small><h2 id="releaseReadinessTitle">TimeFlow ist startklar</h2><p id="releaseReadinessCopy">App, Offline-Modus und Datensicherheit werden geprüft.</p></div><strong id="releaseReadinessScore">0/4</strong></header>
+      <header><span><i class="fa-solid fa-shield-heart"></i></span><div><small>App-Check</small><h2 id="releaseReadinessTitle">HourRise ist startklar</h2><p id="releaseReadinessCopy">App, Offline-Modus und Datensicherheit werden geprüft.</p></div><strong id="releaseReadinessScore">0/4</strong></header>
       <div class="release-readiness-grid">
         <span data-readiness="app"><i class="fa-solid fa-mobile-screen"></i><b>App</b><small>Browser</small></span>
         <span data-readiness="offline"><i class="fa-solid fa-cloud-arrow-down"></i><b>Offline</b><small>Prüfung</small></span>
@@ -188,7 +188,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const platform = window.TimeFlowPlatform?.name;
     if (platform === "ios" || platform === "ipados") return "Safari: Teilen → Zum Home-Bildschirm";
     if (platform === "android") return "Browsermenü → App installieren";
-    if (["windows", "macos", "linux"].includes(platform)) return "Browsermenü → TimeFlow installieren";
+    if (["windows", "macos", "linux"].includes(platform)) return "Browsermenü → HourRise installieren";
     return "Über das Browsermenü installierbar";
   }
 
@@ -198,9 +198,9 @@ document.addEventListener("DOMContentLoaded", () => {
     installButton.classList.toggle("is-installed", isInstalled);
     installStatus.textContent = isInstalled ? "Installiert" : timeFlowInstallPrompt ? "Bereit" : "Im Browser";
     installHint.textContent = isInstalled
-      ? "TimeFlow läuft bereits als App"
+      ? "HourRise läuft bereits als App"
       : timeFlowInstallPrompt ? "Zum Startbildschirm hinzufügen" : manualInstallHint();
-    installButton.querySelector("strong").textContent = isInstalled ? "TimeFlow ist installiert" : "TimeFlow installieren";
+    installButton.querySelector("strong").textContent = isInstalled ? "HourRise ist installiert" : "HourRise installieren";
     renderReadiness();
   }
 
@@ -214,7 +214,7 @@ document.addEventListener("DOMContentLoaded", () => {
     timeFlowInstallPrompt = null;
     await prompt.prompt();
     const choice = await prompt.userChoice.catch(() => ({ outcome: "dismissed" }));
-    if (choice.outcome === "accepted") notify("TimeFlow wird als App installiert.");
+    if (choice.outcome === "accepted") notify("HourRise wird als App installiert.");
     renderInstallState();
   }
 
@@ -283,7 +283,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   installButton?.addEventListener("click", installApp);
   document.addEventListener("timeflow:install-available", renderInstallState);
-  window.addEventListener("appinstalled", () => { timeFlowInstallPrompt = null; renderInstallState(); notify("TimeFlow wurde erfolgreich installiert."); });
+  window.addEventListener("appinstalled", () => { timeFlowInstallPrompt = null; renderInstallState(); notify("HourRise wurde erfolgreich installiert."); });
   importButton?.addEventListener("click", () => importFile.click());
   importFile?.addEventListener("change", () => { const [file] = importFile.files; if (file) inspectBackup(file); importFile.value = ""; });
   settingsPage.querySelector("[data-export-data]")?.addEventListener("click", () => { window.TimeFlowPlatform.storage.setItem(BACKUP_KEY, new Date().toISOString()); window.setTimeout(renderReadiness); });

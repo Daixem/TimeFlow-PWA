@@ -217,10 +217,10 @@ document.addEventListener("DOMContentLoaded", () => {
     } catch (error) {
       if (error.status === 409) {
         conflictLogic.handleSyncConflict({ storage: window.TimeFlowPlatform.storage, localSnapshot: local, baseSnapshot: base, response: error.result || {} });
-        renderStatus("syncing", "Änderungen werden abgeglichen", "TimeFlow übernimmt neue Änderungen automatisch beim nächsten Abgleich.", "Abgleich");
+        renderStatus("syncing", "Änderungen werden abgeglichen", "HourRise übernimmt neue Änderungen automatisch beim nächsten Abgleich.", "Abgleich");
         return false;
       }
-      renderStatus("error", "Synchronisierung pausiert", "Deine Daten bleiben erhalten. TimeFlow versucht den Abgleich erneut, sobald die Verbindung verfügbar ist.", "Wird erneut versucht");
+      renderStatus("error", "Synchronisierung pausiert", "Deine Daten bleiben erhalten. HourRise versucht den Abgleich erneut, sobald die Verbindung verfügbar ist.", "Wird erneut versucht");
       return false;
     }
   }
@@ -362,7 +362,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function initialSync() {
     if (!platformSession || syncing) return;
     syncing = true;
-    renderStatus("syncing", "Cloud-Daten werden abgeglichen", "TimeFlow vergleicht diesen Browser mit deinem privaten Konto.", "Abgleich");
+    renderStatus("syncing", "Cloud-Daten werden abgeglichen", "HourRise vergleicht diesen Browser mit deinem privaten Konto.", "Abgleich");
     try {
       const cloud = await requestSync("GET");
       const persistedConflict = conflictLogic.restorePersistedSyncConflict(window.TimeFlowPlatform.storage);

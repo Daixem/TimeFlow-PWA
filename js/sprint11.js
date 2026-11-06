@@ -10,8 +10,8 @@ document.addEventListener("DOMContentLoaded", () => {
     <dialog class="mode-onboarding" id="modeOnboarding" aria-labelledby="modeOnboardingTitle">
       <section>
         <span class="mode-onboarding-brand"><i class="fa-solid fa-stopwatch"></i></span>
-        <small>Dein TimeFlow</small>
-        <h2 id="modeOnboardingTitle">Wie möchtest du TimeFlow nutzen?</h2>
+        <small>Dein HourRise</small>
+        <h2 id="modeOnboardingTitle">Wie möchtest du HourRise nutzen?</h2>
         <p>Du kannst den Modus später jederzeit in den Einstellungen ändern.</p>
         <div class="mode-choice-grid">
           <button type="button" data-select-mode="private">
@@ -30,7 +30,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   settingsLayout.insertAdjacentHTML("afterbegin", `
     <section class="settings-card mode-settings-card" aria-labelledby="modeSettingsTitle">
-      <header><span class="settings-card-icon blue"><i class="fa-solid fa-users-viewfinder"></i></span><div><small>Nutzungsart</small><h2 id="modeSettingsTitle">Mein TimeFlow</h2></div></header>
+      <header><span class="settings-card-icon blue"><i class="fa-solid fa-users-viewfinder"></i></span><div><small>Nutzungsart</small><h2 id="modeSettingsTitle">Mein HourRise</h2></div></header>
       <p class="settings-card-copy">Wähle, ob du nur deine eigene Arbeitszeit oder zusätzlich Teamprozesse verwalten möchtest.</p>
       <div class="mode-settings-options" role="radiogroup" aria-label="Nutzungsmodus">
         <button type="button" role="radio" data-mode-setting="private" aria-checked="false"><i class="fa-solid fa-user"></i><span><strong>Privat</strong><small>Nur meine Daten</small></span><b><i class="fa-solid fa-check"></i></b></button>
@@ -202,7 +202,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const existing = settings.querySelector(".team-support-card");
     if (!isTeam) { existing?.remove(); return; }
     if (!existing) {
-      settings.insertAdjacentHTML("beforeend", `<section class="settings-card team-support-card"><header><span class="settings-card-icon blue"><i class="fa-regular fa-life-ring"></i></span><div><small>SUPPORT</small><h2>Support & Feedback</h2></div></header><p class="settings-card-copy">Melde Fehler oder Ideen direkt an TimeFlow. Es gelten dieselben Einstellungen und Datenschutzregeln wie in deiner Einzelnutzung.</p><button type="button" data-open-team-support><i class="fa-regular fa-paper-plane"></i> Support öffnen</button></section>`);
+      settings.insertAdjacentHTML("beforeend", `<section class="settings-card team-support-card"><header><span class="settings-card-icon blue"><i class="fa-regular fa-life-ring"></i></span><div><small>SUPPORT</small><h2>Support & Feedback</h2></div></header><p class="settings-card-copy">Melde Fehler oder Ideen direkt an HourRise. Es gelten dieselben Einstellungen und Datenschutzregeln wie in deiner Einzelnutzung.</p><button type="button" data-open-team-support><i class="fa-regular fa-paper-plane"></i> Support öffnen</button></section>`);
       settings.querySelector("[data-open-team-support]")?.addEventListener("click", () => {
         document.querySelector("[data-open-support]")?.click();
       });

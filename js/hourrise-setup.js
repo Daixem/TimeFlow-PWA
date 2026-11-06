@@ -10,6 +10,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     ]);
     const session = await sessionResponse.json();
     const access = await accessResponse.json();
+    if (session.authenticated && session.authProvider === "hourrise") {
+      account.textContent = "Dein HourRise-Konto ist eingerichtet. Die Anmeldung erfolgt jetzt mit E-Mail und Passwort.";
+      return;
+    }
     if (!session.authenticated || !access.admin || session.authProvider !== "cloudflare-access") {
       account.textContent = "Bitte melde dich zuerst mit deinem bestätigten Administratorkonto an.";
       return;
