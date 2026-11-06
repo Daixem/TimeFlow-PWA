@@ -96,6 +96,8 @@ await expectStatus("/api/admin/auth-kdf-check", 401);
 await expectStatus("/api/admin/auth-kdf-check", 403, { headers: normalHeaders });
 const kdfCheck = await expectStatus("/api/admin/auth-kdf-check", 200, { headers: adminHeaders });
 if ((await kdfCheck.json()).supported !== true) throw new Error("Der KDF-Laufzeittest muss bei erfolgreicher Berechnung unterstützt melden.");
+const scryptCheck = await expectStatus("/api/admin/auth-kdf-check?method=scrypt", 200, { headers: adminHeaders });
+if ((await scryptCheck.json()).supported !== true) throw new Error("Der scrypt-Laufzeittest muss bei erfolgreicher Berechnung unterstützt melden.");
 await expectStatus("/api/admin/auth-kdf-check", 405, { method: "POST", headers: adminHeaders });
 await expectStatus("/api/beta/invites", 200, { headers: adminHeaders });
 await expectStatus("/api/team-access", 200, { headers: adminHeaders });
