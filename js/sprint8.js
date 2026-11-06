@@ -117,7 +117,20 @@ document.addEventListener("DOMContentLoaded", () => {
     const meta = document.getElementById("sessionAccountMeta");
     const security = document.getElementById("sessionSecurityState");
     if (!role || !session) return;
-    role.textContent = session.user.role || "Kontoinhaber";
+    const isAdmin = session.user.role === "Administrator";
+    role.textContent = isAdmin ? "Entwickler · Administrator" : session.user.role || "Kontoinhaber";
+    const name = document.getElementById("profileName");
+    let badge = document.getElementById("profileAdminBadge");
+    if (isAdmin && name && !badge) {
+      badge = document.createElement("span");
+      badge.id = "profileAdminBadge";
+      badge.className = "profile-admin-badge";
+      name.insertAdjacentElement("afterend", badge);
+    }
+    if (badge) {
+      badge.textContent = "Entwickler · Administrator";
+      badge.hidden = !isAdmin;
+    }
     meta.textContent = session.offline
       ? `${session.user.email || "Gespeichertes Konto"} · zuletzt online bestätigt`
       : `${session.user.email || "Verifiziertes Konto"} · Site-verifiziert`;
@@ -141,7 +154,14 @@ document.addEventListener("DOMContentLoaded", () => {
           const data = await response.json();
           if (data.authenticated && data.user) {
             authMode = "platform";
-            session = { source: "platform", authProvider: data.authProvider, user: { ...data.user, role: window.TimeFlowBetaAccess?.admin ? "Administrator" : data.user.role } };
+            let admin = false;
+            if (window.location.hostname === "hourrise.de") {
+              try {
+                const accessResponse = await fetch("/api/beta/access", { cache: "no-store", signal: controller?.signal });
+                admin = accessResponse.ok && Boolean((await accessResponse.json()).admin);
+              } catch { /* Missing server proof never grants administrator rights. */ }
+            } else admin = Boolean(window.TimeFlowBetaAccess?.admin);
+            session = { source: "platform", authProvider: data.authProvider, user: { ...data.user, role: admin ? "Administrator" : data.user.role } };
             cachePlatformSession(session);
             showApp();
             return;

@@ -41,6 +41,8 @@ html.timeflow-auth-locked body > .app { display: none; }
 .profile-permission-button em { overflow: hidden; color: #7990aa; font-size: .39rem; font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
 .profile-signout-button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 35px; padding: 8px 10px; border: 1px solid rgba(209, 99, 111, .2); border-radius: 11px; color: #efa0a8; background: rgba(132, 45, 55, .11); font-size: .47rem; font-weight: 700; }
 .profile-hero-actions .edit-profile-button { justify-content: center; min-height: 35px; padding: 8px 10px; }
+.profile-admin-badge { display: inline-flex; width: fit-content; margin-top: 5px; padding: 5px 9px; border-radius: 999px; color: #d5fff0; background: #186e59; font-size: .7rem; font-weight: 800; }
+.profile-admin-badge[hidden] { display: none; }
 .user-management-dialog { width: min(94vw, 650px); max-height: min(90vh, 780px); padding: 0; overflow: auto; border: 1px solid rgba(94, 150, 213, .22); border-radius: 23px; color: #eaf2fb; background: #052440; box-shadow: 0 34px 105px rgba(0, 6, 18, .7); }
 .user-management-dialog::backdrop { background: rgba(0, 8, 21, .8); backdrop-filter: blur(7px); }
 .user-management-dialog > section > header { display: grid; grid-template-columns: 47px 1fr 33px; gap: 12px; align-items: start; padding: 18px; border-bottom: 1px solid rgba(91, 139, 190, .12); background: radial-gradient(circle at 12% 0, rgba(55, 123, 242, .18), transparent 38%); }

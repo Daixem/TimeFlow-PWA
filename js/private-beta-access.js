@@ -1,5 +1,17 @@
 (function () {
   "use strict";
+  if (location.hostname === "hourrise.de") {
+    document.addEventListener("DOMContentLoaded", async () => {
+      try {
+        const response = await fetch("/api/beta/access", { cache: "no-store", headers: { Accept: "application/json" } });
+        if (!response.ok) return;
+        const access = await response.json();
+        window.TimeFlowBetaAccess = access;
+        document.dispatchEvent(new CustomEvent("timeflow:beta-access-ready", { detail: access }));
+      } catch { /* Failed checks never grant administrator rights. */ }
+    });
+    return;
+  }
   if (!/\.chatgpt\.site$/i.test(location.hostname)) return;
   document.documentElement.classList.add("beta-access-pending");
   let finishAccessCheck;
