@@ -28,7 +28,7 @@ document.addEventListener("DOMContentLoaded", () => {
   `);
 
   dataSettingsCard?.querySelector("[data-export-data]")?.insertAdjacentHTML("afterend", `
-    <button type="button" data-import-data><span class="data-action-icon"><i class="fa-solid fa-file-arrow-up"></i></span><span><strong>Datensicherung wiederherstellen</strong><small>Geprüfte TimeFlow-JSON auswählen</small></span><i class="fa-solid fa-chevron-right"></i></button>
+    <button type="button" data-import-data><span class="data-action-icon"><i class="fa-solid fa-file-arrow-up"></i></span><span><strong>Datensicherung wiederherstellen</strong><small>Geprüfte HourRise-JSON auswählen</small></span><i class="fa-solid fa-chevron-right"></i></button>
     <input class="sprint10-file-input" type="file" accept="application/json,.json" data-import-file aria-label="HourRise-Datensicherung auswählen">
   `);
 

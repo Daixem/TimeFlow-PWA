@@ -39,7 +39,7 @@
 
   function validatePayload(payload, accountEmail = "") {
     if (!payload || payload.app !== "TimeFlow PWA" || !payload.data || typeof payload.data !== "object" || Array.isArray(payload.data)) {
-      throw new Error("Diese Datei ist keine gültige TimeFlow-Datensicherung.");
+      throw new Error("Diese Datei ist keine gültige HourRise-Datensicherung.");
     }
     if (JSON.stringify(payload).length > 1_000_000) throw new Error("Die Datensicherung ist zu groß.");
     const data = {};
@@ -47,7 +47,7 @@
       if (!key.startsWith("timeflow-") || !isAllowedKey(key, accountEmail) || value === undefined || typeof value === "function") continue;
       data[key] = value;
     }
-    if (!Object.keys(data).length || Object.keys(data).length > 100) throw new Error("Die Datensicherung enthält keine verwendbaren TimeFlow-Daten für dieses Konto.");
+    if (!Object.keys(data).length || Object.keys(data).length > 100) throw new Error("Die Datensicherung enthält keine verwendbaren HourRise-Daten für dieses Konto.");
     return { data, exportedAt: payload.exportedAt || null };
   }
 

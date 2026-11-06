@@ -99,7 +99,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const privateClock = dashboard.querySelector(".private-home-clock");
 
   document.body.insertAdjacentHTML("beforeend", `
-    <nav class="private-quick-nav" aria-label="TimeFlow-Navigation">
+    <nav class="private-quick-nav" aria-label="HourRise-Navigation">
       <button class="active" type="button" data-private-target="home"><i class="fa-solid fa-house"></i><span>Home</span></button>
       <button type="button" data-private-target="schedule"><i class="fa-regular fa-calendar"></i><span>Dienstpläne</span></button>
       <button class="private-quick-main" type="button" data-private-quick><i class="fa-solid fa-plus"></i><span>Schnellzugriff</span></button>

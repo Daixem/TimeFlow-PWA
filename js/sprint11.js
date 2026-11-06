@@ -23,7 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <small>Zusätzlich Chat, Freigaben, Rollen und gemeinsame Schichtprozesse nutzen.</small><em>Für Organisationen</em>
           </button>
         </div>
-        <p class="mode-privacy-note"><i class="fa-solid fa-shield-halved"></i> Deine Auswahl wird mit deinen übrigen TimeFlow-Einstellungen gespeichert.</p>
+        <p class="mode-privacy-note"><i class="fa-solid fa-shield-halved"></i> Deine Auswahl wird mit deinen übrigen HourRise-Einstellungen gespeichert.</p>
       </section>
     </dialog>
   `);

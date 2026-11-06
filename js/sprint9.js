@@ -341,7 +341,7 @@ document.addEventListener("DOMContentLoaded", () => {
       saveBaseSnapshot(snapshot);
       window.TimeFlowPlatform.storage.removeItem(BACKUP_RESTORE_KEY);
       renderStatus("synced", "Cloud-Sicherung ist aktuell", "Profil und Einstellungen sind mit deinem privaten Konto verbunden.", "Synchron");
-      if (showConfirmation) notify("Deine TimeFlow-Daten wurden synchronisiert.");
+      if (showConfirmation) notify("Deine HourRise-Daten wurden synchronisiert.");
     } catch (error) {
       if (error.status === 409) {
         const conflict = conflictLogic.handleSyncConflict({ storage: window.TimeFlowPlatform.storage, localSnapshot: collectSnapshot(), baseSnapshot: baseSnapshot(), response: error.result || {} });
